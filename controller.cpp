@@ -5,7 +5,6 @@
 #include "proc.h"
 #include "config/setup.h"
 #include "env/comm.h"
-#include "env/task.h"
 #include "env/pack.h"
 
 static DB_STATUS terminateAllWorkers() {
@@ -17,7 +16,7 @@ static DB_STATUS terminateAllWorkers() {
     }
 
     // perform the instruction locally as well
-    ret = comm::controller::sendInstructionMessageToAgent(MSG_INSTR_FIN);
+    ret = comm::controller::sendInstructionToAgent(MSG_INSTR_FIN);
     if (ret != DBERR_OK) {
         logger::log_error(ret, "Sending to local children failed");
         return ret;
@@ -59,16 +58,11 @@ void temp() {
 }
 
 int main(int argc, char* argv[]) {
-    DB_STATUS ret;
-    char c;
-    int provided;
-    int rank, wsize;
-    // init MPI
-	MPI_Init_thread(&argc, &argv, MPI_THREAD_MULTIPLE, &provided);
-	MPI_Comm_size(g_global_comm, &wsize);
-	MPI_Comm_rank(g_global_comm, &rank);
-    g_world_size = wsize;
-    g_node_rank = rank;
+    // initialize MPI environment
+    DB_STATUS ret = configure::initMPI(argc, argv);
+    if (ret != DBERR_OK) {
+        goto EXIT_SAFELY;
+    }
        
     // get parent process intercomm (must be null)
     MPI_Comm_get_parent(&g_local_comm);
@@ -123,7 +117,7 @@ EXIT_SAFELY:
 
     // Finalize the MPI environment.
     MPI_Finalize();
-    if (rank == g_host_rank) {
+    if (g_node_rank == g_host_rank) {
         logger::log_success("System finalized successfully");
     }
     return 0;

@@ -129,7 +129,14 @@ namespace comm
             return ret;
         }
 
-        static DB_STATUS pullMessage(MPI_Status status) {
+        /**
+         * @brief pulls incoming message sent by the controller 
+         * (the one probed last, whose info is stored in the status parameter)
+         * Based on the tag of the message, it performs the corresponding request
+         * @param status 
+         * @return DB_STATUS 
+         */
+        static DB_STATUS pullIncoming(MPI_Status status) {
             DB_STATUS ret = DBERR_OK;
             switch (status.MPI_TAG) {
                 case MSG_INSTR_INIT:
@@ -175,7 +182,7 @@ namespace comm
             while(true){
                 /* Do a blocking probe to wait for the next task/instruction by the local controller (parent) */
                 probeBlocking(PARENT_RANK, MPI_ANY_TAG, g_local_comm, status);
-                ret = pullMessage(status);
+                ret = pullIncoming(status);
                 if (ret == DB_FIN) {
                     goto STOP_LISTENING;
                 } else if(ret != DBERR_OK){
@@ -217,7 +224,7 @@ STOP_LISTENING:
             return ret;
         }
 
-        DB_STATUS sendInstructionMessageToAgent(int tag) {
+        DB_STATUS sendInstructionToAgent(int tag) {
             // send it to agent
             DB_STATUS ret = send::sendInstructionMessage(AGENT_RANK, tag, g_local_comm);
             if (ret != DBERR_OK) {
@@ -227,7 +234,7 @@ STOP_LISTENING:
             return ret;
         }
 
-        DB_STATUS forwardInstructionMsgToAgent(MPI_Status status) {
+        DB_STATUS forwardInstructionToAgent(MPI_Status status) {
             int messageTag = status.MPI_TAG;
             // receive instruction msg
             DB_STATUS ret = recv::receiveInstructionMessage(status.MPI_SOURCE, messageTag, g_global_comm, status);
@@ -236,7 +243,7 @@ STOP_LISTENING:
                 return ret;
             }
             // send it to agent
-            ret = sendInstructionMessageToAgent(messageTag);
+            ret = sendInstructionToAgent(messageTag);
             if (ret != DBERR_OK) {
                 logger::log_error(ret, "Failed forwarding instruction with tag", messageTag, "to agent");
                 return ret;
@@ -281,13 +288,21 @@ STOP_LISTENING:
             return ret;
         }
 
-        static DB_STATUS pullMessage(MPI_Status status) {
+        /**
+         * @brief pulls incoming message sent by the controller 
+         * (the one probed last, whose info is stored in the status parameter)
+         * Based on the tag of the message, it performs the corresponding request
+         * @param status 
+         * @return DB_STATUS 
+         */
+        static DB_STATUS pullIncoming(MPI_Status status) {
             DB_STATUS ret = DBERR_OK;
+            // check message tag
             switch (status.MPI_TAG) {
                 case MSG_INSTR_FIN:
                     /* terminate */
-                    // forward this instruction to the agent
-                    ret = comm::controller::forwardInstructionMsgToAgent(status);
+                    // forward this instruction to the local agent
+                    ret = comm::controller::forwardInstructionToAgent(status);
                     if (ret != DBERR_OK) {
                         return ret;
                     }
@@ -295,13 +310,11 @@ STOP_LISTENING:
                 case MSG_SINGLE_POINT:
                 case MSG_SINGLE_LINESTRING:
                 case MSG_SINGLE_POLYGON:
-                    /* single geometry message */
-                    
+                    /* message containing a single geometry (point, linestring or polygon) */
                     ret = forwardGeometryToAgent(status);
                     if (ret != DBERR_OK) {
                         return ret;
                     } 
-
                     break;
                 default:
                     // unkown instruction
@@ -328,8 +341,9 @@ STOP_LISTENING:
                 // check whether the host controller has sent a message (instruction)
                 messageFound = probeNonBlocking(g_host_rank, MPI_ANY_TAG, g_global_comm, status);
                 if (messageFound) {
-                    // pull the message and handle it
-                    ret = controller::pullMessage(status);
+                    // pull the message and perform its request
+                    ret = controller::pullIncoming(status);
+                    // true only if the termination instruction has been received
                     if (ret == DB_FIN) {
                         goto STOP_LISTENING;
                     }

@@ -10,6 +10,13 @@
 namespace configure
 {
     /**
+     * @brief initialize MPI environment
+     * 
+     * @return DB_STATUS 
+     */
+    DB_STATUS initMPI(int argc, char* argv[]);
+
+    /**
      * @brief verifies the required directories and/or creates any missing ones.
     */
     DB_STATUS verifySystemDirectories();

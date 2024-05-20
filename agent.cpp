@@ -7,17 +7,12 @@
 #include "env/comm.h"
 
 int main(int argc, char* argv[]) {
-    DB_STATUS ret;
-    char c;
-    int provided;
-    int rank, wsize;
+    // initialize MPI environment
     int mpi_ret;
-    // init MPI
-	MPI_Init_thread(&argc, &argv, MPI_THREAD_MULTIPLE, &provided);
-	MPI_Comm_size(g_global_comm, &wsize);
-	MPI_Comm_rank(g_global_comm, &rank);
-    g_world_size = wsize;
-    g_node_rank = rank;
+    DB_STATUS ret = configure::initMPI(argc, argv);
+    if (ret != DBERR_OK) {
+        goto EXIT_SAFELY;
+    }
     
     // get parent process intercomm
     MPI_Comm_get_parent(&g_local_comm);

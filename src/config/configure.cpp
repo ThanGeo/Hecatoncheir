@@ -2,6 +2,31 @@
 
 namespace configure
 {
+    DB_STATUS initMPI(int argc, char* argv[]) {
+        char c;
+        int provided;
+        int rank, wsize;
+        // init MPI
+        int mpi_ret = MPI_Init_thread(&argc, &argv, MPI_THREAD_MULTIPLE, &provided);
+        if (mpi_ret != MPI_SUCCESS) {
+            logger::log_error(DBERR_MPI_INIT_FAILED, "Init MPI failed.");
+            return DBERR_MPI_INIT_FAILED;
+        }
+        mpi_ret = MPI_Comm_size(g_global_comm, &wsize);
+        if (mpi_ret != MPI_SUCCESS) {
+            logger::log_error(DBERR_MPI_INIT_FAILED, "Init comm size failed.");
+            return DBERR_MPI_INIT_FAILED;
+        }
+        mpi_ret = MPI_Comm_rank(g_global_comm, &rank);
+        if (mpi_ret != MPI_SUCCESS) {
+            logger::log_error(DBERR_MPI_INIT_FAILED, "Init comm rank failed.");
+            return DBERR_MPI_INIT_FAILED;
+        }
+        g_world_size = wsize;
+        g_node_rank = rank;
+        return DBERR_OK;
+    }
+
     DB_STATUS verifySystemDirectories() {
         int ret;
         if (!verifyDirectoryExists(g_config.dirPaths.dataPath) ) {

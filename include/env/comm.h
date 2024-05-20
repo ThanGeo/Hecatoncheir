@@ -7,7 +7,6 @@
 #include "env/recv.h"
 #include "env/send.h"
 #include "config/configure.h"
-#include "task.h"
 #include "pack.h"
 
 namespace comm 
@@ -38,20 +37,10 @@ namespace comm
          * @param tag 
          * @return DB_STATUS 
          */
-        DB_STATUS sendInstructionMessageToAgent(int tag);
+        DB_STATUS sendInstructionToAgent(int tag);
 
         /**
-         * @brief receive an instruction message from a controller (usually host) ands send it to the agent process
-         * 
-         * @param sourceRank 
-         * @param sourceTag 
-         * @param sourceComm 
-         * @return DB_STATUS 
-         */
-        DB_STATUS forwardInstructionMsgToAgent(MPI_Status status);
-
-        /**
-         * @brief listens for messages from other controllers and this node's agent 
+         * @brief listens (probes) for messages from other controllers and the local agent 
          * 
          * @return DB_STATUS 
          */

@@ -51,7 +51,6 @@ set(SrcFiles
     src/env/comm.cpp
     src/env/recv.cpp
     src/env/send.cpp
-    src/env/task.cpp
     src/env/pack.cpp
 
     src/storage/write.cpp
