@@ -3,7 +3,6 @@
 namespace spatial_lib 
 {
     QueryOutputT g_queryOutput;
-    ScalabilityContainerT g_scalContainer;
 
     void resetQueryOutput() {
         // result
@@ -32,66 +31,6 @@ namespace spatial_lib
         // on the fly april
         g_queryOutput.rasterizationsDone = 0;
         
-    }
-
-    void setupScalabilityTesting() {
-        g_scalContainer.numberOfBuckets = 10;
-        g_scalContainer.bucketDataPath = "../data/scalability_tests/europe_buckets_" + std::to_string(g_scalContainer.numberOfBuckets) + ".csv";
-        g_scalContainer.bucketContentsPath = "../data/scalability_tests/europe_bucketed_pairs_" + std::to_string(g_scalContainer.numberOfBuckets) + ".csv";
-
-        // load bucket data (bucket ID and ranges)
-        char del;
-        uint bucketID, rangeMin, rangeMax, bucketCount;
-        std::string line;
-        // skip header
-        std::ifstream fin(g_scalContainer.bucketDataPath, std::ios::in);
-        getline(fin, line);
-        while (!fin.eof()) {
-            fin >> bucketID >> del >> rangeMin >> del >> rangeMax >> del >> bucketCount;
-            g_scalContainer.bucketIDTobucketRangeMap.insert(std::make_pair(bucketID, std::make_pair(rangeMin, rangeMax)));
-            g_scalContainer.bucketIfilterTime.insert(std::make_pair(bucketID,0));
-            g_scalContainer.bucketRefinementTime.insert(std::make_pair(bucketID,0));
-            g_scalContainer.bucketInconclusiveCount.insert(std::make_pair(bucketID, 0));
-        }
-        fin.close();
-        // load bucket contents
-        uint idR, idS, complexity;
-        fin.open(g_scalContainer.bucketContentsPath, std::ios::in);
-        // skip header
-        getline(fin, line);
-        while (!fin.eof()) {
-            fin >> idR >> del >> idS >> del >> complexity >> del >> bucketID;
-            g_scalContainer.pairToBucketIDMap.insert(std::make_pair(std::make_pair(idR,idS),bucketID));
-            // if (bucketID == 9) {
-            //     printf("%u,%u\n",idR,idS);
-            // }
-        }
-        fin.close();
-    }
-
-    uint getBucketOfPair(uint idR, uint idS) {
-        auto it = g_scalContainer.pairToBucketIDMap.find(std::make_pair(idR,idS));
-        if (it != g_scalContainer.pairToBucketIDMap.end()) {
-            return it->second;
-        } else {
-            printf("Error: couldn't find bucket for pair: %u,%u \n", idR, idS);
-            exit(-1);
-        }
-    }
-
-    void addIFilterTimeToBucket(uint bucketID, double time) {
-        auto it = g_scalContainer.bucketIfilterTime.find(bucketID);
-        it->second += time;
-    }
-
-    void addRefinementTimeToBucket(uint bucketID, double time) {
-        auto it = g_scalContainer.bucketRefinementTime.find(bucketID);
-        it->second += time;
-    }
-
-    void countInconclusiveToBucket(uint bucketID) {
-        auto it = g_scalContainer.bucketInconclusiveCount.find(bucketID);
-        it->second++;
     }
 
     void countAPRILResult(int result) {

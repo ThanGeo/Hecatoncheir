@@ -44,7 +44,7 @@ typedef enum DB_STATUS {
     DBERR_MISSING_FILE = DBBASE + 1000,
     DBERR_CREATE_DIR = DBBASE + 1001,
     DBERR_UNKNOWN_ARGUMENT = DBBASE + 1002,
-    DBERR_MPI_INIT_FAILED = DBBASE + 1003,
+    DBERR_INVALID_PARAMETER = DBBASE + 1003,
 
     // comm
     DBERR_COMM_RECV = DBBASE + 2000,
@@ -55,8 +55,13 @@ typedef enum DB_STATUS {
     DBERR_COMM_UNKNOWN_INSTR = DBBASE + 2005,
     DBERR_COMM_INVALID_MSG_TYPE = DBBASE + 2006,
     
-    // processes
-    DBERR_PROC_INIT_FAILED = DBBASE + 3000,
+    // processes/mpi
+    DBERR_MPI_INIT_FAILED = DBBASE + 3000,
+    DBERR_PROC_INIT_FAILED = DBBASE + 3001,
+
+    // data
+    DBERR_UNKNOWN_DATATYPE = DBBASE + 4000,
+    DBERR_UNSUPPORTED_DATATYPE_COMBINATION = DBBASE + 4001,
 } DB_STATUS;
 
 typedef struct DirectoryPaths {
@@ -67,15 +72,51 @@ typedef struct DirectoryPaths {
     const std::string approximationPath = "../data/approximations/";
 } DirectoryPathsT;
 
+typedef enum ActionType {
+    ACTION_PERFORM_PARTITIONING,
+    ACTION_CREATE_APRIL,
+    ACTION_PERFORM_VERIFICATION,
+} ActionTypeE;
+
+typedef enum PartitioningType {
+    PARTITIONING_ROUND_ROBIN,
+} PartitioningTypeE;
+
+typedef struct PartitioningInfo {
+    PartitioningTypeE type;                 // type of the partitioning technique
+    int partitionsPerDimension;             // # of partitions per dimension
+    
+    // cell enumeration function
+    int getCellID(int i, int j) {
+        return (i + (j * partitionsPerDimension));
+    }
+    // node assignment function
+    int getNodeRankForCell(int partitionID) {
+        return (partitionID % g_world_size);
+    }
+} PartitioningInfoT;
+
+typedef struct Action {
+    ActionTypeE type;
+
+    Action(ActionTypeE type) {
+        this->type = type;
+    }
+    
+} ActionT;
+
 typedef struct Config {
     DirectoryPathsT dirPaths;
     SystemOptionsT options;
+    std::vector<ActionT> actions;
+    PartitioningInfoT partitioningInfo;
 } ConfigT;
 
 /**
  * @brief global configuration variable 
 */
 extern ConfigT g_config;
+
 
 namespace logger
 {

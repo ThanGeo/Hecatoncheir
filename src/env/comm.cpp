@@ -167,6 +167,11 @@ namespace comm
                         return ret;
                     }                    
                     break;
+                case MSG_BATCH_POINT:
+                case MSG_BATCH_LINESTRING:
+                case MSG_BATCH_POLYGON:
+                    
+                    break;
                 default:
                     logger::log_error(DBERR_COMM_UNKNOWN_INSTR, "Unknown instruction type with tag", status.MPI_TAG);
                     // report error to controller
@@ -315,6 +320,11 @@ STOP_LISTENING:
                     if (ret != DBERR_OK) {
                         return ret;
                     } 
+                    break;
+                case MSG_BATCH_POINT:
+                case MSG_BATCH_LINESTRING:
+                case MSG_BATCH_POLYGON:
+                    
                     break;
                 default:
                     // unkown instruction

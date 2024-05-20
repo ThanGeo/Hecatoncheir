@@ -56,6 +56,59 @@ void temp() {
     }
 
 }
+void tempBatch() {
+    // imitate load polygon from disk
+    int idA = 420;
+    int partitionIDA = 69;
+    std::vector<double> coordsA = {-87.906508,32.896858,-87.906483,32.896926,-87.906396,32.897053,-87.906301,32.897177,-87.906245,32.897233,-87.906180,32.897281,-87.906101,32.897308,-87.906015,32.897303,-87.905940,32.897270,-87.905873,32.897224,-87.905743,32.897125,-87.905635,32.897007,-87.905563,32.896877,-87.905502,32.896744,-87.905431,32.896614,-87.905322,32.896490,-87.905645,32.896543,-87.905901,32.896577,-87.906161,32.896583,-87.906318,32.896631,-87.906392,32.896670,-87.906454,32.896721,-87.906497,32.896785,-87.906508,32.896858};
+    int vertexNumA = coordsA.size() / 2;
+    spatial_lib::PolygonT polygonA;
+    polygonA.recID = idA;
+    for(int i=0; i<coordsA.size(); i+=2) {
+        spatial_lib::PointT p;
+        p.x = coordsA.at(i);
+        p.y = coordsA.at(i+1);
+        polygonA.vertices.emplace_back(p);
+    }
+    int idB = 1080;
+    int partitionIDB = 72;
+    std::vector<double> coordsB = {-88.134417,33.014831,-88.133958,33.014830,-88.133970,33.014192,-88.134429,33.014193,-88.134417,33.014831};
+    int vertexNumB = coordsB.size() / 2;
+    spatial_lib::PolygonT polygonB;
+    polygonB.recID = idB;
+    for(int i=0; i<coordsB.size(); i+=2) {
+        spatial_lib::PointT p;
+        p.x = coordsB.at(i);
+        p.y = coordsB.at(i+1);
+        polygonB.vertices.emplace_back(p);
+    }
+
+
+    // send to controller 7
+    // DB_STATUS ret = comm::controller::sendPolygonToNode(polygon, partitionID, 7, MSG_SINGLE_POLYGON);
+    // if (ret != DBERR_OK) {
+    //     logger::log_error(ret, "Failed sending polygon to node");
+    // }
+
+}
+
+static DB_STATUS performActions() {
+    // perform the user-requested actions in order
+    for(int i=0;i <g_config.actions.size(); i++) {
+        // logger::log_task("Performing action", i, "of type", g_config.actions.at(i).type);
+
+        switch(g_config.actions.at(i).type) {
+            case ACTION_PERFORM_PARTITIONING:
+                
+                break;
+        }
+
+
+    }
+
+
+    return DBERR_OK;
+}
 
 int main(int argc, char* argv[]) {
     // initialize MPI environment
@@ -92,8 +145,15 @@ int main(int argc, char* argv[]) {
             goto EXIT_SAFELY;
         }
 
-        // perform the user-requested tasks
-        temp();
+        // perform the user-requested actions in order
+        ret = performActions();
+        if (ret != DBERR_OK) {
+            hostTerminate();
+            goto EXIT_SAFELY;
+        }
+
+        // temp();
+        // tempBatch();
 
 
 

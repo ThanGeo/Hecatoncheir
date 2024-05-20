@@ -815,60 +815,6 @@ namespace spatial_lib
         g_queryOutput.refinementTime += time::getElapsedTime(time::g_timer.refTimer);
     }
 
-    namespace scalability
-    {
-        void specializedRefinementEntrypoint(uint idR, uint idS, int relationCase) {
-            // time
-            time::markRefinementFilterTimer();
-            // count post mbr candidate
-            g_queryOutput.postMBRFilterCandidates += 1;
-            g_queryOutput.refinementCandidates += 1;
-
-            // get bucket
-            uint bucketID = getBucketOfPair(idR, idS);
-            countInconclusiveToBucket(bucketID);
-            
-            int refinementResult;
-
-            switch(relationCase) {
-                case MBR_R_IN_S:
-                    refinementResult = refineDisjointInsideCoveredbyMeetIntersect(idR, idS);
-                    break;
-                case MBR_S_IN_R:
-                    refinementResult = refineDisjointContainsCoversMeetIntersect(idR,idS);
-                    break;
-                case MBR_EQUAL:
-                    refinementResult = refineEqualCoversCoveredbyTrueHitIntersect(idR, idS);
-                    break;
-                case MBR_INTERSECT:
-                    refinementResult = refineDisjointMeetIntersect(idR, idS);
-                    break;
-                default:
-                    fprintf(stderr, "Failed. No refinement support for this relation case.\n");
-                    exit(-1);
-                    break;
-            }
-
-            // count result
-            countTopologyRelationResult(refinementResult);
-
-            // store time
-            double elapsedTime = time::getElapsedTime(time::g_timer.refTimer);
-            g_queryOutput.refinementTime += elapsedTime;
-            addRefinementTimeToBucket(bucketID, elapsedTime);
-        }
-    }
-
-
-
-
-
-
-
-
-
-
-
     bg_polygon loadBoostPolygonByIDandFlag(uint id, bool R) {
         if (R) {
             return loadPolygonFromDiskBoostGeometry(id, finR, offsetMapR);

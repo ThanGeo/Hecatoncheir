@@ -3,6 +3,7 @@
 
 #include "def.h"
 
+
 typedef enum SystemSetupType {
     SYS_LOCAL_MACHINE,
     SYS_CLUSTER,

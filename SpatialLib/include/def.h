@@ -38,36 +38,6 @@ namespace spatial_lib
 
     // global query output variable
     extern QueryOutputT g_queryOutput;
-
-    // just for testing, experiments about scalability
-    struct pair_hash {
-        template <class T1, class T2>
-        std::size_t operator () (const std::pair<T1,T2> &p) const {
-            auto h1 = std::hash<T1>{}(p.first);
-            auto h2 = std::hash<T2>{}(p.second);
-
-            // Mainly for demonstration purposes, i.e. works but is overly simple
-            // In the real world, use sth. like boost.hash_combine
-            return h1 ^ h2;  
-        }
-    };
-    typedef struct ScalabilityContainer {
-        std::string bucketContentsPath;
-        std::string bucketDataPath;
-        uint numberOfBuckets;
-        std::unordered_map<uint,std::pair<uint,uint>> bucketIDTobucketRangeMap;
-        std::unordered_map<std::pair<uint,uint>,uint,pair_hash> pairToBucketIDMap;
-        std::unordered_map<uint,double> bucketIfilterTime;
-        std::unordered_map<uint,double> bucketRefinementTime;
-        std::unordered_map<uint,uint> bucketInconclusiveCount;
-    } ScalabilityContainerT;
-
-    extern ScalabilityContainerT g_scalContainer;
-    uint getBucketOfPair(uint idR, uint idS);
-    void addIFilterTimeToBucket(uint bucketID, double time);
-    void addRefinementTimeToBucket(uint bucketID, double time);
-
-    void countInconclusiveToBucket(uint bucketID);
     typedef enum QueryType{
         Q_RANGE,
         Q_INTERSECT,
@@ -80,7 +50,6 @@ namespace spatial_lib
         Q_COVERED_BY,
         Q_FIND_RELATION,    // find what type of topological relation is there
     }QueryTypeE;
-
 
     typedef struct Section {
         uint sectionID;

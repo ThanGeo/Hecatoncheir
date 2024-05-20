@@ -52,6 +52,7 @@ set(SrcFiles
     src/env/recv.cpp
     src/env/send.cpp
     src/env/pack.cpp
+    src/env/partitioning.cpp
 
     src/storage/write.cpp
     src/storage/read.cpp
