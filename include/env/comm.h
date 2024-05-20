@@ -1,8 +1,6 @@
 #ifndef D_COMM_H
 #define D_COMM_H
 
-#include <mpi.h>
-
 #include "SpatialLib.h"
 #include "def.h"
 #include "proc.h"

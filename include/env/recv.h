@@ -1,7 +1,6 @@
 #ifndef D_COMM_RECV_H
 #define D_COMM_RECV_H
 
-#include <mpi.h>
 #include "def.h"
 
 namespace comm

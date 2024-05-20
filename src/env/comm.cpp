@@ -92,17 +92,17 @@ namespace comm
          */
         static DB_STATUS pullInitInstructionAndPerform(MPI_Status status) {
             // pull the message
-            DB_STATUS ret = recv::receiveInstructionMessage(PARENT_RANK, status.MPI_TAG, proc::g_intercomm, status);
+            DB_STATUS ret = recv::receiveInstructionMessage(PARENT_RANK, status.MPI_TAG, g_local_comm, status);
             if (ret != DBERR_OK) {
                 // report error to controller
-                ret = send::sendSingleIntMessage(ret, PARENT_RANK, MSG_ERR, proc::g_intercomm);
+                ret = send::sendSingleIntMessage(ret, PARENT_RANK, MSG_ERR, g_local_comm);
                 return ret;
             }
             // verify local directories
             ret = configure::verifySystemDirectories();
             if (ret != DBERR_OK) {
                 // report error to controller
-                ret = send::sendSingleIntMessage(ret, PARENT_RANK, MSG_ERR, proc::g_intercomm);
+                ret = send::sendSingleIntMessage(ret, PARENT_RANK, MSG_ERR, g_local_comm);
                 return ret ;
             }
             return ret;
@@ -113,7 +113,7 @@ namespace comm
             MsgPackT<double> coordsPack(MPI_DOUBLE);
 
             // retrieve
-            DB_STATUS ret = pullGeometryPacks(status, status.MPI_TAG, proc::g_intercomm, infoPack, coordsPack);
+            DB_STATUS ret = pullGeometryPacks(status, status.MPI_TAG, g_local_comm, infoPack, coordsPack);
             if (ret != DBERR_OK) {
                 return ret;
             }
@@ -138,14 +138,14 @@ namespace comm
                     ret = pullInitInstructionAndPerform(status);
                     if (ret != DBERR_OK) {
                         // report error to controller
-                        ret = send::sendSingleIntMessage(ret, PARENT_RANK, MSG_ERR, proc::g_intercomm);
+                        ret = send::sendSingleIntMessage(ret, PARENT_RANK, MSG_ERR, g_local_comm);
                         return ret ;
                     }
                     break;
                 case MSG_INSTR_FIN:
                     /* stop listening for instructions */
                     // pull the finalization message
-                    ret = recv::receiveInstructionMessage(PARENT_RANK, status.MPI_TAG, proc::g_intercomm, status);
+                    ret = recv::receiveInstructionMessage(PARENT_RANK, status.MPI_TAG, g_local_comm, status);
                     if (ret == DBERR_OK) {
                         // break the listening loop
                         return DB_FIN;
@@ -163,7 +163,7 @@ namespace comm
                 default:
                     logger::log_error(DBERR_COMM_UNKNOWN_INSTR, "Unknown instruction type with tag", status.MPI_TAG);
                     // report error to controller
-                    ret = send::sendSingleIntMessage(DBERR_COMM_UNKNOWN_INSTR, PARENT_RANK, MSG_ERR, proc::g_intercomm);
+                    ret = send::sendSingleIntMessage(DBERR_COMM_UNKNOWN_INSTR, PARENT_RANK, MSG_ERR, g_local_comm);
                     return ret;    // change to error codes to stop agent from working after errors
             }
             return ret;
@@ -174,7 +174,7 @@ namespace comm
             DB_STATUS ret = DBERR_OK;
             while(true){
                 /* Do a blocking probe to wait for the next task/instruction by the local controller (parent) */
-                probeBlocking(PARENT_RANK, MPI_ANY_TAG, proc::g_intercomm, status);
+                probeBlocking(PARENT_RANK, MPI_ANY_TAG, g_local_comm, status);
                 ret = pullMessage(status);
                 if (ret == DB_FIN) {
                     goto STOP_LISTENING;
@@ -219,7 +219,7 @@ STOP_LISTENING:
 
         DB_STATUS sendInstructionMessageToAgent(int tag) {
             // send it to agent
-            DB_STATUS ret = send::sendInstructionMessage(AGENT_RANK, tag, proc::g_intercomm);
+            DB_STATUS ret = send::sendInstructionMessage(AGENT_RANK, tag, g_local_comm);
             if (ret != DBERR_OK) {
                 logger::log_error(DBERR_COMM_SEND, "Failed sending instruction to agent");
                 return DBERR_COMM_SEND;
@@ -230,7 +230,7 @@ STOP_LISTENING:
         DB_STATUS forwardInstructionMsgToAgent(MPI_Status status) {
             int messageTag = status.MPI_TAG;
             // receive instruction msg
-            DB_STATUS ret = recv::receiveInstructionMessage(status.MPI_SOURCE, messageTag, MPI_COMM_WORLD, status);
+            DB_STATUS ret = recv::receiveInstructionMessage(status.MPI_SOURCE, messageTag, g_global_comm, status);
             if (ret != DBERR_OK) {
                 logger::log_error(ret, "Failed forwarding instruction with tag", messageTag, "to agent");
                 return ret;
@@ -264,12 +264,12 @@ STOP_LISTENING:
             MsgPackT<int> infoPack(MPI_INT); 
             MsgPackT<double> coordsPack(MPI_DOUBLE);
             // pull both packs for the geometry
-            ret = pullGeometryPacks(status, tag, MPI_COMM_WORLD, infoPack, coordsPack);
+            ret = pullGeometryPacks(status, tag, g_global_comm, infoPack, coordsPack);
             if (ret != DBERR_OK) {
                 return ret;
             } 
             // send the packs to the agent
-            ret = send::sendGeometryMessage(infoPack, coordsPack, AGENT_RANK, status.MPI_TAG, proc::g_intercomm);
+            ret = send::sendGeometryMessage(infoPack, coordsPack, AGENT_RANK, status.MPI_TAG, g_local_comm);
             if (ret != DBERR_OK) {
                 return ret;
             } 
@@ -320,13 +320,13 @@ STOP_LISTENING:
                 /* controller probes non-blockingly for messages either by the agent or by other controllers */
 
                 // check whether the agent has sent a message
-                messageFound = probeNonBlocking(AGENT_RANK, MPI_ANY_TAG, proc::g_intercomm, status);
+                messageFound = probeNonBlocking(AGENT_RANK, MPI_ANY_TAG, g_local_comm, status);
                 if (messageFound) {
                     
                 }
 
                 // check whether the host controller has sent a message (instruction)
-                messageFound = probeNonBlocking(g_host_rank, MPI_ANY_TAG, MPI_COMM_WORLD, status);
+                messageFound = probeNonBlocking(g_host_rank, MPI_ANY_TAG, g_global_comm, status);
                 if (messageFound) {
                     // pull the message and handle it
                     ret = controller::pullMessage(status);

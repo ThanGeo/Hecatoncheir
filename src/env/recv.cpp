@@ -11,7 +11,7 @@ namespace comm
         DB_STATUS receiveSingleIntMessage(int sourceRank, int tag, int &contents) {
             MPI_Status status;
             // receive msg
-            int mpi_ret = MPI_Recv(&contents, 1, MPI_CHAR, sourceRank, tag, MPI_COMM_WORLD, &status);
+            int mpi_ret = MPI_Recv(&contents, 1, MPI_CHAR, sourceRank, tag, g_global_comm, &status);
             if (mpi_ret != MPI_SUCCESS) {
                 logger::log_error(DBERR_COMM_RECV, "Failed to receive single int message with tag", tag);
                 return DBERR_COMM_RECV;

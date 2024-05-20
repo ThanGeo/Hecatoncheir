@@ -1,6 +1,4 @@
 
-#include <mpi.h>
-
 #include "SpatialLib.h"
 
 #include "def.h"
@@ -53,7 +51,7 @@ void temp() {
     }
 
     // send to controller 7
-    DB_STATUS ret = comm::controller::sendPolygonToNode(polygon, partitionID, 7, MSG_SINGLE_POLYGON, MPI_COMM_WORLD);
+    DB_STATUS ret = comm::controller::sendPolygonToNode(polygon, partitionID, 7, MSG_SINGLE_POLYGON, g_global_comm);
     if (ret != DBERR_OK) {
         logger::log_error(ret, "Failed sending polygon to node");
     }
@@ -67,14 +65,14 @@ int main(int argc, char* argv[]) {
     int rank, wsize;
     // init MPI
 	MPI_Init_thread(&argc, &argv, MPI_THREAD_MULTIPLE, &provided);
-	MPI_Comm_size(MPI_COMM_WORLD, &wsize);
-	MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+	MPI_Comm_size(g_global_comm, &wsize);
+	MPI_Comm_rank(g_global_comm, &rank);
     g_world_size = wsize;
     g_node_rank = rank;
        
     // get parent process intercomm (must be null)
-    MPI_Comm_get_parent(&proc::g_intercomm);
-    if (proc::g_intercomm != MPI_COMM_NULL) {
+    MPI_Comm_get_parent(&g_local_comm);
+    if (g_local_comm != MPI_COMM_NULL) {
         logger::log_error(DBERR_PROC_INIT_FAILED, "Controllers must be parentless");
         goto EXIT_SAFELY;
     }
@@ -118,10 +116,10 @@ int main(int argc, char* argv[]) {
 
 EXIT_SAFELY:
     // Wait for the children processes to finish
-    MPI_Barrier(proc::g_intercomm);
+    MPI_Barrier(g_local_comm);
 
     // Wait for all the controllers to finish
-    MPI_Barrier(MPI_COMM_WORLD);
+    MPI_Barrier(g_global_comm);
 
     // Finalize the MPI environment.
     MPI_Finalize();

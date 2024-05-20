@@ -77,7 +77,7 @@ namespace comm
                 for(int i=0; i<g_world_size; i++) {
                     if (i != g_host_rank) {
                         // printf("Broadcasting to controller %d\n", i);
-                        local_ret = send::sendInstructionMessage(i, tag, MPI_COMM_WORLD);
+                        local_ret = send::sendInstructionMessage(i, tag, g_global_comm);
                         if (local_ret != DBERR_OK) {
                             #pragma omp cancel for
                             ret = local_ret;

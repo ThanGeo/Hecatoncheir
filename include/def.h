@@ -5,6 +5,7 @@
 #include <iostream>
 #include <vector>
 #include <stdio.h>
+#include <mpi.h>
 
 #include "utils.h"
 #include "env/comm_def.h"
@@ -28,6 +29,10 @@ extern int g_world_size;
 extern int g_node_rank;
 extern int g_host_rank;
 extern int g_parent_original_rank;
+
+extern MPI_Comm g_global_comm;
+extern MPI_Comm g_local_comm;
+
 
 /* STATUS AND ERROR CODES */
 #define DBBASE 100000

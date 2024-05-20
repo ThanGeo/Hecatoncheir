@@ -2,7 +2,6 @@
 #define D_COMM_DEF_H
 
 #include "def.h"
-#include <mpi.h>
 #include <unordered_map>
 
 typedef enum NodeType {

@@ -1,6 +1,5 @@
 #ifndef D_PROC_H
 #define D_PROC_H
-#include <mpi.h>
 
 #include "def.h"
 
@@ -11,9 +10,7 @@ typedef struct ErrorReport {
 } ErrorReportT;
 
 namespace proc
-{
-    extern MPI_Comm g_intercomm;
-   
+{   
     /**
      * @brief sets up the processes in the host node
      */

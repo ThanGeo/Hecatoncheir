@@ -1,7 +1,6 @@
 #ifndef D_COMM_SEND_H
 #define D_COMM_SEND_H
 
-#include <mpi.h>
 #include "def.h"
 #include "proc.h"
 #include "comm_def.h"
