@@ -19,7 +19,7 @@ namespace comm
             return DBERR_OK;
         }
 
-        DB_STATUS receiveInstructionMessage(int sourceRank, int sourceTag, MPI_Comm comm, MPI_Status &status) {
+        DB_STATUS receiveInstructionMessage(int sourceRank, int sourceTag, MPI_Comm &comm, MPI_Status &status) {
             // check tag validity
             if (sourceTag < MSG_INSTR_BEGIN || sourceTag >= MSG_INSTR_END) {
                 logger::log_error(DBERR_COMM_WRONG_MSG_FORMAT, "Instruction messages must have an instruction tag. Current tag:", sourceTag);
@@ -46,7 +46,7 @@ namespace comm
     {
         namespace recv 
         {
-            DB_STATUS receiveInstruction(int sourceRank, int tag, MPI_Comm comm) {
+            DB_STATUS receiveInstruction(int sourceRank, int tag, MPI_Comm &comm) {
                 
             }
         }

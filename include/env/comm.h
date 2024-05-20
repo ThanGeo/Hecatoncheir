@@ -29,7 +29,7 @@ namespace comm
          * The message is first packed, then sent using the appropriate amount of individual messages,
          * and then all pack memory is freed.
          */
-        DB_STATUS sendPolygonToNode(spatial_lib::PolygonT &polygon, int partitionID, int destRank, int tag, MPI_Comm comm);
+        DB_STATUS sendPolygonToNode(spatial_lib::PolygonT &polygon, int partitionID, int destRank, int tag);
 
         /**
          * @brief Sends an instruction message with tag to the children (agent)

@@ -9,7 +9,7 @@ namespace comm
      * returns true/false if a message that fits the parameters exists.
      * Does not receive the message, must call MPI_Recv for that.
      */
-    static int probeNonBlocking(int sourceRank, int tag, MPI_Comm comm, MPI_Status &status) {
+    static int probeNonBlocking(int sourceRank, int tag, MPI_Comm &comm, MPI_Status &status) {
         int messageExists = false;        
         MPI_Iprobe(sourceRank, tag, comm, &messageExists, &status);
         return messageExists;
@@ -20,7 +20,7 @@ namespace comm
      * and blocks until such a message arrives. 
      * Does not receive the message, must call MPI_Recv for that.
      */
-    static void probeBlocking(int sourceRank, int tag, MPI_Comm comm, MPI_Status &status) {
+    static void probeBlocking(int sourceRank, int tag, MPI_Comm &comm, MPI_Status &status) {
         MPI_Probe(sourceRank, tag, comm, &status);
     }
 
@@ -61,7 +61,7 @@ namespace comm
      * @param status 
      * @return DB_STATUS 
      */
-    static DB_STATUS pullGeometryPacks(MPI_Status status, int tag, MPI_Comm comm, MsgPackT<int> &infoPack, MsgPackT<double> &coordsPack) {
+    static DB_STATUS pullGeometryPacks(MPI_Status status, int tag, MPI_Comm &comm, MsgPackT<int> &infoPack, MsgPackT<double> &coordsPack) {
         // info pack has been probed, so receive it
         DB_STATUS ret = recv::receiveMessagePack(status, infoPack.type, comm, infoPack);
         if (ret != DBERR_OK) {
@@ -198,7 +198,7 @@ STOP_LISTENING:
     namespace controller
     {
         
-        DB_STATUS sendPolygonToNode(spatial_lib::PolygonT &polygon, int partitionID, int destRank, int tag, MPI_Comm comm) {
+        DB_STATUS sendPolygonToNode(spatial_lib::PolygonT &polygon, int partitionID, int destRank, int tag) {
             // first pack the polygon to message packs
             // pack polygon to message
             MsgPackT<int> infoPack(MPI_INT);
@@ -210,7 +210,7 @@ STOP_LISTENING:
             }
 
             // send packs
-            ret = comm::send::sendGeometryMessage(infoPack, coordsPack, destRank, tag, comm);
+            ret = comm::send::sendGeometryMessage(infoPack, coordsPack, destRank, tag, g_global_comm);
             if (ret != DBERR_OK) {
                 logger::log_error(ret, "Sending single polygon failed");
                 return ret;

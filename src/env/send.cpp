@@ -4,7 +4,7 @@ namespace comm
 {
     namespace send
     {
-        DB_STATUS sendSingleIntMessage(int value, int destRank, int tag, MPI_Comm comm) {
+        DB_STATUS sendSingleIntMessage(int value, int destRank, int tag, MPI_Comm &comm) {
             // send the message
             int mpi_ret = MPI_Send(&value, 1, MPI_CHAR, destRank, tag, comm);
             if (mpi_ret != MPI_SUCCESS) {
@@ -13,7 +13,7 @@ namespace comm
             }
         }
 
-        DB_STATUS sendInstructionMessage(int destRank, int tag, MPI_Comm comm) {
+        DB_STATUS sendInstructionMessage(int destRank, int tag, MPI_Comm &comm) {
             // check tag validity
             if (tag < MSG_INSTR_BEGIN || tag >= MSG_INSTR_END) {
                 logger::log_error(DBERR_COMM_WRONG_MSG_FORMAT, "Instruction messages must have an instruction tag. Current tag", tag);
@@ -29,7 +29,7 @@ namespace comm
         }
 
         template <typename T> 
-        DB_STATUS sendMsgPack(MsgPackT<T> &msgPack, int destRank, int tag, MPI_Comm comm) {
+        DB_STATUS sendMsgPack(MsgPackT<T> &msgPack, int destRank, int tag, MPI_Comm &comm) {
             // send the info pack message           
             int mpi_ret = MPI_Send(msgPack.data, msgPack.count, msgPack.type, destRank, tag, comm);
             if (mpi_ret != MPI_SUCCESS) {
@@ -40,7 +40,7 @@ namespace comm
         }
 
 
-        DB_STATUS sendGeometryMessage(MsgPackT<int> &infoPack, MsgPackT<double> &coordsPack, int destRank, int tag, MPI_Comm comm) {
+        DB_STATUS sendGeometryMessage(MsgPackT<int> &infoPack, MsgPackT<double> &coordsPack, int destRank, int tag, MPI_Comm &comm) {
             DB_STATUS ret = DBERR_OK;
             // check tag validity
             if (tag < MSG_DATA_BEGIN || tag >= MSG_DATA_END) {

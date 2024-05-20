@@ -18,7 +18,7 @@ namespace comm
          * @brief receive an instruction message from sourceRank with tag.
          * Instruction messages are always of size 0 (empty) and their tag indicates which instruction to execute.
         */
-        DB_STATUS receiveInstructionMessage(int sourceRank, int sourceTag, MPI_Comm comm, MPI_Status &status);
+        DB_STATUS receiveInstructionMessage(int sourceRank, int sourceTag, MPI_Comm &comm, MPI_Status &status);
         
         /**
          * @brief receives a single message pack of type T
@@ -32,7 +32,7 @@ namespace comm
          * @return DB_STATUS 
          */
         template <typename T> 
-        DB_STATUS receiveMessagePack(MPI_Status &status, MPI_Datatype dataType, MPI_Comm comm, MsgPackT<T> &msgPack) {
+        DB_STATUS receiveMessagePack(MPI_Status &status, MPI_Datatype dataType, MPI_Comm &comm, MsgPackT<T> &msgPack) {
             DB_STATUS ret = DBERR_OK;
             // get message size 
             int mpi_ret = MPI_Get_count(&status, dataType, &msgPack.count);

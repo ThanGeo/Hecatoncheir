@@ -50,7 +50,7 @@ void temp() {
     }
 
     // send to controller 7
-    DB_STATUS ret = comm::controller::sendPolygonToNode(polygon, partitionID, 7, MSG_SINGLE_POLYGON, g_global_comm);
+    DB_STATUS ret = comm::controller::sendPolygonToNode(polygon, partitionID, 7, MSG_SINGLE_POLYGON);
     if (ret != DBERR_OK) {
         logger::log_error(ret, "Failed sending polygon to node");
     }
@@ -92,12 +92,13 @@ int main(int argc, char* argv[]) {
             goto EXIT_SAFELY;
         }
 
-        // listen for controller replies or the local agent's replies/errors (TODO: maybe employ dedicated thread?)
+        // perform the user-requested tasks
         temp();
+
+
 
         // terminate
         hostTerminate();
-
     } else {
         // worker controllers go directly to listening
         // printf("Controller %d listening...\n", g_node_rank);
