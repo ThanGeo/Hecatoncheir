@@ -36,7 +36,7 @@ namespace configure
         // in a cluster, each node is responsible for its directories.
         if (sysOps.setupType == SYS_CLUSTER) {
             // broadcaste init instruction
-            ret = comm::broadcast::broadcastInstructionMsg(MSG_INSTR_INIT);
+            ret = comm::broadcast::broadcastInstructionMessage(MSG_INSTR_INIT);
             if (ret != DBERR_OK) {
                 return ret;
             }

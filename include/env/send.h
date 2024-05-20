@@ -2,9 +2,9 @@
 #define D_COMM_SEND_H
 
 #include <mpi.h>
-
 #include "def.h"
 #include "proc.h"
+#include "comm_def.h"
 
 namespace comm
 {
@@ -16,8 +16,11 @@ namespace comm
         /**
          * sends an instruction message to one specific node with destRank.
         */
-        DB_STATUS sendInstructionMsg(int destRank, int tag, MPI_Comm comm);
+        DB_STATUS sendInstructionMessage(int destRank, int tag, MPI_Comm comm);
 
+
+
+        DB_STATUS sendGeometryMessage(MsgPackT<int> &infoPack, MsgPackT<double> &coordsPack, int destRank, int tag, MPI_Comm comm);
     }
 
     namespace broadcast
@@ -26,7 +29,7 @@ namespace comm
          * broadcasts an instruction message to all worker nodes.
          * messages are broadcasted parallely
         */
-        DB_STATUS broadcastInstructionMsg(int tag);
+        DB_STATUS broadcastInstructionMessage(int tag);
     }
 
 }

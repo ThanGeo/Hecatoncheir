@@ -3,8 +3,6 @@ project(Main VERSION 1.0.0)
 
 # find MPI
 find_package(MPI REQUIRED)
-set(CMAKE_C_COMPILER mpicc)
-set(CMAKE_CXX_COMPILER mpicxx.mpich)
 
 if(NOT CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE Release)
@@ -24,10 +22,10 @@ endif()
 # supress warnings
 # add_definitions(-w)
 
-# include_directories(SpatialLib)
-# if(NOT TARGET SpatialLib)
-#     add_subdirectory(SpatialLib)
-# endif()
+include_directories(SpatialLib)
+if(NOT TARGET SpatialLib)
+    add_subdirectory(SpatialLib)
+endif()
 
 # include_directories(Rasterizer)
 # if(NOT TARGET Rasterizer)
@@ -54,6 +52,7 @@ set(SrcFiles
     src/env/recv.cpp
     src/env/send.cpp
     src/env/task.cpp
+    src/env/pack.cpp
 
     src/storage/write.cpp
     src/storage/read.cpp
@@ -92,5 +91,6 @@ target_link_libraries(controller ${Boost_LIBRARIES})
 target_link_libraries(controller ${MPI_C_LIBRARIES})
 # target_link_libraries(main APRIL)
 # target_link_libraries(main TwoLayerFilter)
-# target_link_libraries(main SpatialLib)
+target_link_libraries(agent SpatialLib)
+target_link_libraries(controller SpatialLib)
 # target_link_libraries(main Rasterizer)

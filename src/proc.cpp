@@ -14,14 +14,14 @@ namespace proc
                 
         int mpi_ret = MPI_Comm_spawn(AGENT_PROGRAM_NAME, MPI_ARGV_NULL, 1, info, 0, MPI_COMM_SELF, &g_intercomm, error_codes);
         if (mpi_ret != MPI_SUCCESS) {
-            log::log_error(DBERR_PROC_INIT_FAILED, "Creating agent process failed");
+            logger::log_error(DBERR_PROC_INIT_FAILED, "Creating agent process failed");
             return DBERR_PROC_INIT_FAILED;
         }
 
         // broadcast the controller's node rank to the agent
         mpi_ret = MPI_Bcast(&g_node_rank, 1, MPI_INT, MPI_ROOT, g_intercomm);
         if (mpi_ret != MPI_SUCCESS) {
-            log::log_error(DBERR_COMM_BCAST, "Broadcasting controller rank failed");
+            logger::log_error(DBERR_COMM_BCAST, "Broadcasting controller rank failed");
             return DBERR_COMM_BCAST;
         }
 

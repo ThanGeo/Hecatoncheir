@@ -40,11 +40,11 @@ namespace parser
 
         // check If config files exist
         if (!verifyFileExists(g_config.dirPaths.configFilePath)) {
-            log::log_error(DBERR_MISSING_FILE, "Configuration file 'config.ini' missing from Database directory. Please refer to the README file.");
+            logger::log_error(DBERR_MISSING_FILE, "Configuration file 'config.ini' missing from Database directory. Please refer to the README file.");
             return DBERR_MISSING_FILE;
         }
         if (!verifyFileExists(g_config.dirPaths.datasetsConfigPath)) {
-            log::log_error(DBERR_MISSING_FILE, "Configuration file 'datasets.ini' missing from Database directory. Please refer to the README file.");
+            logger::log_error(DBERR_MISSING_FILE, "Configuration file 'datasets.ini' missing from Database directory. Please refer to the README file.");
             return DBERR_MISSING_FILE;
         }
         // parse configuration files
@@ -80,7 +80,7 @@ namespace parser
                     sysOpsStmt.setupType = (SystemSetupTypeE) atoi(optarg);
                     break;
                 default:
-                    log::log_error(DBERR_UNKNOWN_ARGUMENT, "Unkown cmd argument.");
+                    logger::log_error(DBERR_UNKNOWN_ARGUMENT, "Unkown cmd argument.");
                     exit(-1);
                     break;
             }

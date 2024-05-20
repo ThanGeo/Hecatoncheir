@@ -3,8 +3,9 @@
 
 #include <unistd.h>
 #include <iostream>
+#include <vector>
+#include <stdio.h>
 
-// #include "log.h"
 #include "utils.h"
 #include "env/comm_def.h"
 #include "config/containers.h"
@@ -43,9 +44,10 @@ typedef enum DB_STATUS {
     DBERR_COMM_RECV = DBBASE + 2000,
     DBERR_COMM_SEND = DBBASE + 2001,
     DBERR_COMM_BCAST = DBBASE + 2002,
-    DBERR_COMM_WRONG_MSG_FORMAT = DBBASE + 2003,
-    DBERR_COMM_UNKNOWN_INSTR = DBBASE + 2004,
-    DBERR_COMM_INVALID_MSG_TYPE = DBBASE + 2005,
+    DBERR_COMM_GET_COUNT = DBBASE + 2003,
+    DBERR_COMM_WRONG_MSG_FORMAT = DBBASE + 2004,
+    DBERR_COMM_UNKNOWN_INSTR = DBBASE + 2005,
+    DBERR_COMM_INVALID_MSG_TYPE = DBBASE + 2006,
     
     // processes
     DBERR_PROC_INIT_FAILED = DBBASE + 3000,
@@ -69,7 +71,7 @@ typedef struct Config {
 */
 extern ConfigT g_config;
 
-namespace log
+namespace logger
 {
     // Base case of the variadic template recursion
     static inline void print_args() {
@@ -129,6 +131,24 @@ namespace log
             std::cout << YELLOW "[C" + std::to_string(g_node_rank) + "]" NC ": ";
         }
         print_args(first, rest...);
+    }
+
+    /**
+     * @brief Log task function with undefined number of arguments. Separates input parameters with spaces.
+     * 
+     */
+    template<typename T, typename... Args>
+    inline void log_task_single_node(int rank, T first, Args... rest) {
+        if (g_parent_original_rank == rank) {
+            if (g_parent_original_rank != PARENTLESS_RANK) {
+                // agents
+                std::cout << YELLOW "[C" + std::to_string(g_parent_original_rank) + "]" NC BLUE "[A]" NC ": ";
+            } else {
+                // controllers
+                std::cout << YELLOW "[C" + std::to_string(g_node_rank) + "]" NC ": ";
+            }
+            print_args(first, rest...);
+        }
     }
 
 }
