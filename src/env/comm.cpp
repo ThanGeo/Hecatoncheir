@@ -108,7 +108,7 @@ namespace comm
             return ret;
         }
 
-        static DB_STATUS pullGeometryPacksAndPerform(MPI_Status status) {
+        static DB_STATUS pullGeometryPacksAndStore(MPI_Status status) {
             MsgPackT<int> infoPack(MPI_INT);
             MsgPackT<double> coordsPack(MPI_DOUBLE);
 
@@ -118,9 +118,8 @@ namespace comm
                 return ret;
             }
 
-            // save on disk (or whatever)
-            // pack::printMsgPack(infoPack);
-            // pack::printMsgPack(coordsPack);
+            // save on disk
+            logger::log_success("Successfully geometry pack with", infoPack.data[0], "objects.");
 
             // free memory
             free(infoPack.data);
@@ -162,7 +161,7 @@ namespace comm
                 case MSG_SINGLE_LINESTRING:
                 case MSG_SINGLE_POLYGON:
                     /* single geometry message */
-                    ret = pullGeometryPacksAndPerform(status);
+                    ret = pullGeometryPacksAndStore(status);
                     if (ret != DBERR_OK) {
                         return ret;
                     }                    
@@ -170,7 +169,11 @@ namespace comm
                 case MSG_BATCH_POINT:
                 case MSG_BATCH_LINESTRING:
                 case MSG_BATCH_POLYGON:
-                    
+                    /* batch geometry message */
+                    ret = pullGeometryPacksAndStore(status);
+                    if (ret != DBERR_OK) {
+                        return ret;
+                    }  
                     break;
                 default:
                     logger::log_error(DBERR_COMM_UNKNOWN_INSTR, "Unknown instruction type with tag", status.MPI_TAG);
@@ -229,6 +232,27 @@ STOP_LISTENING:
             return ret;
         }
 
+        DB_STATUS sendGeometryBatchToNode(BatchT &batch, int destRank, int tag) {
+            MsgPackT<int> infoPack(MPI_INT);
+            MsgPackT<double> coordsPack(MPI_DOUBLE);
+
+            // pack
+            infoPack.data = batch.infoPack.data();
+            infoPack.count = batch.infoPack.size();
+            coordsPack.data = batch.coordsPack.data();
+            coordsPack.count = batch.coordsPack.size();
+
+            // send batch message
+            DB_STATUS ret = comm::send::sendGeometryMessage(infoPack, coordsPack, destRank, tag, g_global_comm);
+            if (ret != DBERR_OK) {
+                logger::log_error(ret, "Sending single polygon failed");
+                return ret;
+            }
+            
+            return ret;
+        }
+
+
         DB_STATUS sendInstructionToAgent(int tag) {
             // send it to agent
             DB_STATUS ret = send::sendInstructionMessage(AGENT_RANK, tag, g_local_comm);
@@ -257,8 +281,6 @@ STOP_LISTENING:
 
             return DBERR_OK;
         }
-
-        
 
         /**
          * @brief Handles the complete communication for a single geometry message forwarding.
@@ -289,6 +311,26 @@ STOP_LISTENING:
             // free memory
             free(infoPack.data);
             free(coordsPack.data);
+
+            return ret;
+        }
+
+        DB_STATUS sendGeometryBatchToAgent(BatchT &batch, int tag) {
+            DB_STATUS ret = DBERR_OK;
+            MsgPackT<int> infoPack(MPI_INT); 
+            MsgPackT<double> coordsPack(MPI_DOUBLE);
+
+            // pack
+            infoPack.data = batch.infoPack.data();
+            infoPack.count = batch.infoPack.size();
+            coordsPack.data = batch.coordsPack.data();
+            coordsPack.count = batch.coordsPack.size();
+
+            // send the packs to the agent
+            ret = send::sendGeometryMessage(infoPack, coordsPack, AGENT_RANK, tag, g_local_comm);
+            if (ret != DBERR_OK) {
+                return ret;
+            } 
 
             return ret;
         }
@@ -324,7 +366,12 @@ STOP_LISTENING:
                 case MSG_BATCH_POINT:
                 case MSG_BATCH_LINESTRING:
                 case MSG_BATCH_POLYGON:
-                    
+                    /* message containing a batch of geometries */
+                    ret = forwardGeometryToAgent(status);
+                    if (ret != DBERR_OK) {
+                        return ret;
+                    } 
+
                     break;
                 default:
                     // unkown instruction

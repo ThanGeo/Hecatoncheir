@@ -78,4 +78,65 @@ namespace configure
 
         return DBERR_OK;
     }
+
+
+    DB_STATUS setDatasetInfo(DatasetStatementT* datasetStmt) {
+        if (datasetStmt->datasetCount == 0) {
+            // no datasets
+            g_config.datasetInfo.numberOfDatasets = 0;
+            return DBERR_OK;
+        } else {
+            // at least one dataset
+            spatial_lib::DatasetT R;
+            // get dataspace info
+            g_config.datasetInfo.dataspaceInfo.xMinGlobal = datasetStmt->xMinGlobal;
+            g_config.datasetInfo.dataspaceInfo.yMinGlobal = datasetStmt->yMinGlobal;
+            g_config.datasetInfo.dataspaceInfo.xMaxGlobal = datasetStmt->xMaxGlobal;
+            g_config.datasetInfo.dataspaceInfo.yMaxGlobal = datasetStmt->yMaxGlobal;
+            g_config.datasetInfo.dataspaceInfo.xExtent = g_config.datasetInfo.dataspaceInfo.xMaxGlobal - g_config.datasetInfo.dataspaceInfo.xMinGlobal;
+            g_config.datasetInfo.dataspaceInfo.yExtent = g_config.datasetInfo.dataspaceInfo.yMaxGlobal - g_config.datasetInfo.dataspaceInfo.yMinGlobal;
+            
+            // build dataset R objects
+            R.dataspaceInfo = g_config.datasetInfo.dataspaceInfo;
+            R.dataType = datasetStmt->datatypeR;
+
+            auto it = parser::fileTypeStrToIntMap.find(datasetStmt->filetypeR);
+            if (it == parser::fileTypeStrToIntMap.end()) {
+                logger::log_error(DBERR_UNKNOWN_FILETYPE, "Unknown filetype for dataset", datasetStmt->datasetNicknameR, ":", datasetStmt->filetypeR);
+                return DBERR_UNKNOWN_FILETYPE;
+            }
+            R.fileType = it->second;
+
+            R.path = datasetStmt->datasetPathR;
+            R.nickname = datasetStmt->datasetNicknameR;
+            R.offsetMapPath = datasetStmt->offsetMapPathR;
+            R.datasetName = getDatasetNameFromPath(R.path);
+            // add to config
+            g_config.datasetInfo.numberOfDatasets = 1;
+            g_config.datasetInfo.datasets.emplace_back(R);
+            
+            if (datasetStmt->datasetCount == 2) {
+                spatial_lib::DatasetT S;
+                // build dataset S objects
+                S.dataspaceInfo = g_config.datasetInfo.dataspaceInfo;
+                S.dataType = datasetStmt->datatypeS;
+
+                auto it = parser::fileTypeStrToIntMap.find(datasetStmt->filetypeS);
+                if (it == parser::fileTypeStrToIntMap.end()) {
+                    logger::log_error(DBERR_UNKNOWN_FILETYPE, "Unknown filetype for dataset", datasetStmt->datasetNicknameS, ":", datasetStmt->filetypeS);
+                    return DBERR_UNKNOWN_FILETYPE;
+                }
+                S.fileType = it->second;
+
+                S.path = datasetStmt->datasetPathS;
+                S.nickname = datasetStmt->datasetNicknameS;
+                S.offsetMapPath = datasetStmt->offsetMapPathS;
+                S.datasetName = getDatasetNameFromPath(S.path);
+                // add to config
+                g_config.datasetInfo.numberOfDatasets++;
+                g_config.datasetInfo.datasets.emplace_back(S);
+            }
+        }
+        return DBERR_OK;
+    }
 }

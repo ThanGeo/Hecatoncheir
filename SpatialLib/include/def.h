@@ -11,6 +11,12 @@
 
 namespace spatial_lib
 {
+    typedef enum FileType {
+        FT_BINARY,
+        FT_CSV,
+        FT_WKT,
+    } FileTypeE;
+
     typedef enum QueryResult {
         TRUE_NEGATIVE,
         TRUE_HIT,
@@ -72,7 +78,8 @@ namespace spatial_lib
     } DataspaceInfoT;
 
     typedef struct Dataset{
-        spatial_lib::DataTypeE dataType;
+        DataTypeE dataType;
+        FileTypeE fileType;
         std::string path;
         std::string offsetMapPath;
         // derived from the path
@@ -105,7 +112,6 @@ namespace spatial_lib
 
 
     void resetQueryOutput();
-    void setupScalabilityTesting();
     void countAPRILResult(int result);
     void countResult();
     void countTopologyRelationResult(int relation);

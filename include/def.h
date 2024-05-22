@@ -7,6 +7,7 @@
 #include <stdio.h>
 #include <mpi.h>
 
+#include "SpatialLib.h"
 #include "utils.h"
 #include "env/comm_def.h"
 #include "config/containers.h"
@@ -45,6 +46,7 @@ typedef enum DB_STATUS {
     DBERR_CREATE_DIR = DBBASE + 1001,
     DBERR_UNKNOWN_ARGUMENT = DBBASE + 1002,
     DBERR_INVALID_PARAMETER = DBBASE + 1003,
+    DBERR_FEATURE_UNSUPPORTED = DBBASE + 1004,
 
     // comm
     DBERR_COMM_RECV = DBBASE + 2000,
@@ -61,61 +63,12 @@ typedef enum DB_STATUS {
 
     // data
     DBERR_UNKNOWN_DATATYPE = DBBASE + 4000,
-    DBERR_UNSUPPORTED_DATATYPE_COMBINATION = DBBASE + 4001,
+    DBERR_UNKNOWN_FILETYPE = DBBASE + 4001,
+    DBERR_UNSUPPORTED_DATATYPE_COMBINATION = DBBASE + 4002,
+
+    // partitioning
+    DBERR_INVALID_PARTITION = DBBASE + 5000,
 } DB_STATUS;
-
-typedef struct DirectoryPaths {
-    const std::string configFilePath = "../config.ini";
-    const std::string datasetsConfigPath = "../datasets.ini";
-    const std::string dataPath = "../data/";
-    const std::string partitionsPath = "../data/partitions/";
-    const std::string approximationPath = "../data/approximations/";
-} DirectoryPathsT;
-
-typedef enum ActionType {
-    ACTION_PERFORM_PARTITIONING,
-    ACTION_CREATE_APRIL,
-    ACTION_PERFORM_VERIFICATION,
-} ActionTypeE;
-
-typedef enum PartitioningType {
-    PARTITIONING_ROUND_ROBIN,
-} PartitioningTypeE;
-
-typedef struct PartitioningInfo {
-    PartitioningTypeE type;                 // type of the partitioning technique
-    int partitionsPerDimension;             // # of partitions per dimension
-    
-    // cell enumeration function
-    int getCellID(int i, int j) {
-        return (i + (j * partitionsPerDimension));
-    }
-    // node assignment function
-    int getNodeRankForCell(int partitionID) {
-        return (partitionID % g_world_size);
-    }
-} PartitioningInfoT;
-
-typedef struct Action {
-    ActionTypeE type;
-
-    Action(ActionTypeE type) {
-        this->type = type;
-    }
-    
-} ActionT;
-
-typedef struct Config {
-    DirectoryPathsT dirPaths;
-    SystemOptionsT options;
-    std::vector<ActionT> actions;
-    PartitioningInfoT partitioningInfo;
-} ConfigT;
-
-/**
- * @brief global configuration variable 
-*/
-extern ConfigT g_config;
 
 
 namespace logger
@@ -199,6 +152,113 @@ namespace logger
     }
 
 }
+
+typedef struct DirectoryPaths {
+    const std::string configFilePath = "../config.ini";
+    const std::string datasetsConfigPath = "../datasets.ini";
+    const std::string dataPath = "../data/";
+    const std::string partitionsPath = "../data/partitions/";
+    const std::string approximationPath = "../data/approximations/";
+} DirectoryPathsT;
+
+typedef enum ActionType {
+    ACTION_PERFORM_PARTITIONING,
+    ACTION_CREATE_APRIL,
+    ACTION_PERFORM_VERIFICATION,
+} ActionTypeE;
+
+typedef enum PartitioningType {
+    PARTITIONING_ROUND_ROBIN,
+} PartitioningTypeE;
+
+typedef struct PartitioningInfo {
+    PartitioningTypeE type;                 // type of the partitioning technique
+    int partitionsPerDimension;             // # of partitions per dimension
+    int batchSize;                          // size of each batche, in number of objects
+    
+    // cell enumeration function
+    int getCellID(int i, int j) {
+        return (i + (j * partitionsPerDimension));
+    }
+    // node assignment function
+    int getNodeRankForPartitionID(int partitionID) {
+        return (partitionID % g_world_size);
+    }
+} PartitioningInfoT;
+
+typedef struct Action {
+    ActionTypeE type;
+
+    Action(ActionTypeE type) {
+        this->type = type;
+    }
+    
+} ActionT;
+
+typedef struct DatasetInfo {
+    int numberOfDatasets;
+    std::vector<spatial_lib::DatasetT> datasets;
+    spatial_lib::DataspaceInfoT dataspaceInfo;
+    
+    /**
+     * @brief Returns a pointer to the requested dataset object.
+     * R is 0, S is 1
+     * 
+     * @param idx 
+     * @return spatial_lib::DatasetT* 
+     */
+    spatial_lib::DatasetT* getDatasetByIdx(int idx) {
+        if (idx >= numberOfDatasets) {
+            logger::log_error(DBERR_INVALID_PARAMETER, "Cant retrieve dataset in position", idx, "Total datasets:",numberOfDatasets);
+            return nullptr;
+        }
+        return &datasets[idx];
+    }
+} DatasetInfoT;
+
+typedef struct Config {
+    DirectoryPathsT dirPaths;
+    SystemOptionsT options;
+    std::vector<ActionT> actions;
+    PartitioningInfoT partitioningInfo;
+    DatasetInfoT datasetInfo;
+} ConfigT;
+
+typedef struct Batch {
+    int nodeRank;       // to whom it is destined for
+    int size;           // how many objects it contains
+    int maxSize;        // maximum capacity in terms of objects
+    std::vector<int> infoPack;
+    std::vector<double> coordsPack;
+
+    void updateInfoPackObjectCount(int objectCount) {
+        infoPack.at(0) = objectCount;
+    }
+
+    void addObjectToBatch(int recID, int partitionID, int vertexCount, std::vector<double> &coords) {
+        infoPack.emplace_back(recID);
+        infoPack.emplace_back(partitionID);
+        infoPack.emplace_back(vertexCount);
+        coordsPack.insert(std::end(coordsPack), std::begin(coords), std::end(coords));
+        size += 1;
+        updateInfoPackObjectCount(size);
+    }
+
+    void clearBatch() {
+        infoPack.clear();
+        infoPack.emplace_back(0);
+        coordsPack.clear();
+        size = 0;
+    }
+
+} BatchT;
+
+/**
+ * @brief global configuration variable 
+*/
+extern ConfigT g_config;
+
+
 
 
 #endif

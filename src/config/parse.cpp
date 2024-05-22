@@ -3,6 +3,9 @@
 namespace parser
 {
     std::unordered_map<std::string, PartitioningTypeE> partitioningTypeStrToIntMap = {{"RR",PARTITIONING_ROUND_ROBIN}};
+    std::unordered_map<std::string, spatial_lib::FileTypeE> fileTypeStrToIntMap = {{"BINARY",spatial_lib::FT_BINARY},
+                                                                                    {"CSV",spatial_lib::FT_CSV},
+                                                                                    {"WKT",spatial_lib::FT_WKT},};
 
     // property tree var
     static boost::property_tree::ptree system_config_pt;
@@ -43,9 +46,9 @@ namespace parser
     static int adjustPartitions(int partitionsPerDimension) {
         int newPartitionsPerDimension = partitionsPerDimension;
         int modCells = partitionsPerDimension % g_world_size;
-        int halfWorldSize = g_world_size / 2;
-        if (modCells != halfWorldSize) {
-            newPartitionsPerDimension += halfWorldSize - modCells + 1;
+        
+        if (modCells != 1) {
+            newPartitionsPerDimension += modCells + 1;
         }
         return newPartitionsPerDimension;
     }
@@ -54,6 +57,7 @@ namespace parser
         std::string partitioningTypeStr = system_config_pt.get<std::string>("Partitioning.type");
         int partitionsPerDimension = system_config_pt.get<int>("Partitioning.partitionsPerDimension");
         std::string assignmentFuncStr = system_config_pt.get<std::string>("Partitioning.assignmentFunc");
+        int batchSize = system_config_pt.get<int>("Partitioning.batchSize");
 
         // partitioning type
         auto it = partitioningTypeStrToIntMap.find(partitioningTypeStr);
@@ -75,101 +79,164 @@ namespace parser
             // optimized, adjust the partitions per num automatically to improve load balancing
             g_config.partitioningInfo.partitionsPerDimension = adjustPartitions(partitionsPerDimension);
             logger::log_task("Adjusted partitions per dimension to", g_config.partitioningInfo.partitionsPerDimension);
-            // partitioning::printPartitionAssignment();
         } else if(assignmentFuncStr == "ST") {
             // standard, do nothing extra on the grid
         } else {
             logger::log_error(DBERR_INVALID_PARAMETER, "Unknown enumeration function string:", assignmentFuncStr);
             return DBERR_INVALID_PARAMETER;
         }
+        // partitioning::printPartitionAssignment();
 
+        // batch size
+        if (batchSize <= 0) {
+            logger::log_error(DBERR_INVALID_PARAMETER, "Batch size needs to be a positive number. Batch Size: ", batchSize);
+            return DBERR_INVALID_PARAMETER;
+        }
+        g_config.partitioningInfo.batchSize = batchSize;
 
         return DBERR_OK;
     }
 
-    static DB_STATUS parseDatasetOptions(QueryStatementT *queryStmt) {
+    static DB_STATUS verifyDatasetOptions(DatasetStatementT *datasetStmt) {
+        if (datasetStmt->datasetCount == 1 && datasetStmt->datasetNicknameR == "") {
+            logger::log_error(DBERR_INVALID_PARAMETER, "If only one dataset is specified, the '-R' argument must be used instead of '-S'");
+            return DBERR_INVALID_PARAMETER;
+        }
+
+        if (datasetStmt->datasetCount > 2) {
+            logger::log_error(DBERR_FEATURE_UNSUPPORTED, "System doesn't support more than 2 datasets at a time.");
+            return DBERR_FEATURE_UNSUPPORTED;
+        }
+
+        if (datasetStmt->datasetCount > 0) {
+            if (datasetStmt->filetypeR != "BINARY") {
+                logger::log_error(DBERR_INVALID_PARAMETER, "Unkown file type of dataset R:", datasetStmt->filetypeR);
+                return DBERR_INVALID_PARAMETER;
+            }
+
+            if (datasetStmt->datasetCount > 1) {
+                if (datasetStmt->filetypeS != "BINARY") {
+                    logger::log_error(DBERR_INVALID_PARAMETER, "Unkown file type of dataset S:", datasetStmt->filetypeS);
+                    return DBERR_INVALID_PARAMETER;
+                }
+            }
+        }
+
+        return DBERR_OK;
+    }
+
+    static DB_STATUS parseDatasetOptions(DatasetStatementT *datasetStmt) {
         // check if datasets.ini file exists
         if (!verifyFileExists(g_config.dirPaths.datasetsConfigPath)) {
             logger::log_error(DBERR_MISSING_FILE, "Dataset configuration file 'dataset.ini' missing from Database directory.");
             return DBERR_MISSING_FILE;
         }
 
-        // if not specified
-        if (queryStmt->datasetNicknameR == "" || queryStmt->datasetNicknameS == "") {
-            // run default scenario (dev only)
-            queryStmt->datasetPathR = dataset_config_pt.get<std::string>("T1NA.path");
-            queryStmt->datasetPathS = dataset_config_pt.get<std::string>("T2NA.path");
-            queryStmt->datasetNicknameR = "T1NA";
-            queryStmt->datasetNicknameS = "T2NA";
-        } else {
-            queryStmt->datasetPathR = dataset_config_pt.get<std::string>(queryStmt->datasetNicknameR+".path");
-            queryStmt->datasetPathS = dataset_config_pt.get<std::string>(queryStmt->datasetNicknameS+".path");
-        }
+        // if no argument is passed, read config
+        if (datasetStmt->datasetNicknameR != "") {
+            datasetStmt->datasetPathR = dataset_config_pt.get<std::string>(datasetStmt->datasetNicknameR+".path");
+            // dataset data type
+            spatial_lib::DataTypeE datatypeR = spatial_lib::dataTypeTextToInt(dataset_config_pt.get<std::string>(datasetStmt->datasetNicknameR+".datatype"));
+            if (datatypeR == spatial_lib::DT_INVALID) {
+                logger::log_error(DBERR_UNKNOWN_DATATYPE, "Unknown data type for dataset R.");
+                return DBERR_UNKNOWN_DATATYPE;
+            }
+            datasetStmt->datatypeR = datatypeR;
 
-        // dataset count (todo, make more flexible)
-        queryStmt->datasetCount = 2;
+            // file type
+            datasetStmt->filetypeR = dataset_config_pt.get<std::string>(datasetStmt->datasetNicknameR+".filetype");
+
+            // offset map
+            datasetStmt->offsetMapPathR = dataset_config_pt.get<std::string>(datasetStmt->datasetNicknameR+".offsetMapPath");
+            if (datasetStmt->offsetMapPathR == "") {
+                logger::log_error(DBERR_MISSING_FILE, "Missing offset map path for dataset R.");
+                return DBERR_MISSING_FILE;
+            }
+            
+        }
+        if (datasetStmt->datasetNicknameS != "") {
+            datasetStmt->datasetPathS = dataset_config_pt.get<std::string>(datasetStmt->datasetNicknameS+".path");
+            // dataset data type
+            spatial_lib::DataTypeE datatypeS = spatial_lib::dataTypeTextToInt(dataset_config_pt.get<std::string>(datasetStmt->datasetNicknameS+".datatype"));
+            if (datatypeS == spatial_lib::DT_INVALID) {
+                logger::log_error(DBERR_UNKNOWN_DATATYPE, "Unknown data type for dataset S.");
+                return DBERR_UNKNOWN_DATATYPE;
+            }
+            datasetStmt->datatypeS = datatypeS;
+
+            // file type
+            datasetStmt->filetypeR = dataset_config_pt.get<std::string>(datasetStmt->datasetNicknameR+".filetype");
+
+            // offset map
+            datasetStmt->offsetMapPathS = dataset_config_pt.get<std::string>(datasetStmt->datasetNicknameS+".offsetMapPath");
+            if (datasetStmt->offsetMapPathS == "") {
+                logger::log_error(DBERR_MISSING_FILE, "Missing offset map path for dataset S.");
+                return DBERR_MISSING_FILE;
+            }
+            
+        }
         
-        // dataset data types
-        spatial_lib::DataTypeE datatypeR = spatial_lib::dataTypeTextToInt(dataset_config_pt.get<std::string>(queryStmt->datasetNicknameR+".datatype"));
-        if (datatypeR == spatial_lib::DT_INVALID) {
-            logger::log_error(DBERR_UNKNOWN_DATATYPE, "Unknown data type for dataset R.");
-            return DBERR_UNKNOWN_DATATYPE;
-        }
-        spatial_lib::DataTypeE datatypeS = spatial_lib::dataTypeTextToInt(dataset_config_pt.get<std::string>(queryStmt->datasetNicknameS+".datatype"));
-        if (datatypeS == spatial_lib::DT_INVALID) {
-            logger::log_error(DBERR_UNKNOWN_DATATYPE, "Unknown data type for dataset S.");
-            return DBERR_UNKNOWN_DATATYPE;
-        }
-        queryStmt->datatypeR = datatypeR;
-        queryStmt->datatypeS = datatypeS;
         // datatype combination
-        if(datatypeR == spatial_lib::DT_POLYGON && datatypeS == spatial_lib::DT_POLYGON) {
-            queryStmt->datasetTypeCombination = spatial_lib::POLYGON_POLYGON;
-        } else {
-            logger::log_error(DBERR_UNSUPPORTED_DATATYPE_COMBINATION, "Dataset data type combination not yet supported.");
-            return DBERR_UNSUPPORTED_DATATYPE_COMBINATION;
+        if (datasetStmt->datasetCount == 2) {
+            if(datasetStmt->datatypeR == spatial_lib::DT_POLYGON && datasetStmt->datatypeS == spatial_lib::DT_POLYGON) {
+                datasetStmt->datasetTypeCombination = spatial_lib::POLYGON_POLYGON;
+            } else {
+                logger::log_error(DBERR_UNSUPPORTED_DATATYPE_COMBINATION, "Dataset data type combination not yet supported.");
+                return DBERR_UNSUPPORTED_DATATYPE_COMBINATION;
+            }
         }
-        
-        // offset maps
-        queryStmt->offsetMapPathR = dataset_config_pt.get<std::string>(queryStmt->datasetNicknameR+".offsetMapPath");
-        if (queryStmt->offsetMapPathR == "") {
-            logger::log_error(DBERR_MISSING_FILE, "Missing offset map path for dataset R.");
-            return DBERR_MISSING_FILE;
-        }
-        queryStmt->offsetMapPathS = dataset_config_pt.get<std::string>(queryStmt->datasetNicknameS+".offsetMapPath");
-        if (queryStmt->offsetMapPathS == "") {
-            logger::log_error(DBERR_MISSING_FILE, "Missing offset map path for dataset S.");
-            return DBERR_MISSING_FILE;
+        if (datasetStmt->datasetCount > 0) {
+            // hardcoded bounds
+            double xMinR = std::numeric_limits<int>::max();
+            double yMinR = std::numeric_limits<int>::max();
+            double xMaxR = -std::numeric_limits<int>::max();
+            double yMaxR = -std::numeric_limits<int>::max();
+            if(dataset_config_pt.get<int>(datasetStmt->datasetNicknameR+".bounds")) {
+                xMinR = dataset_config_pt.get<double>(datasetStmt->datasetNicknameR+".xMin");
+                yMinR = dataset_config_pt.get<double>(datasetStmt->datasetNicknameR+".yMin");
+                xMaxR = dataset_config_pt.get<double>(datasetStmt->datasetNicknameR+".xMax");
+                yMaxR = dataset_config_pt.get<double>(datasetStmt->datasetNicknameR+".yMax");
+                datasetStmt->boundsSet = true;
+            }
+            if (datasetStmt->datasetCount == 2) {
+                double xMinS = std::numeric_limits<int>::max();
+                double yMinS = std::numeric_limits<int>::max();
+                double xMaxS = -std::numeric_limits<int>::max();
+                double yMaxS = -std::numeric_limits<int>::max();
+                if(dataset_config_pt.get<int>(datasetStmt->datasetNicknameS+".bounds")) {
+                    xMinS = dataset_config_pt.get<double>(datasetStmt->datasetNicknameS+".xMin");
+                    yMinS = dataset_config_pt.get<double>(datasetStmt->datasetNicknameS+".yMin");
+                    xMaxS = dataset_config_pt.get<double>(datasetStmt->datasetNicknameS+".xMax");
+                    yMaxS = dataset_config_pt.get<double>(datasetStmt->datasetNicknameS+".yMax");
+                    datasetStmt->boundsSet = true;
+                }
+                // if they have different hardcoded bounds, assign as global the outermost ones (min of min, max of max)
+                datasetStmt->xMinGlobal = std::min(xMinR, xMinS);
+                datasetStmt->yMinGlobal = std::min(yMinR, yMinS);
+                datasetStmt->xMaxGlobal = std::max(xMaxR, xMaxS);
+                datasetStmt->yMaxGlobal = std::max(yMaxR, yMaxS);
+            } else {
+                // only one dataset (R)
+                datasetStmt->xMinGlobal = xMinR;
+                datasetStmt->yMinGlobal = yMinR;
+                datasetStmt->xMaxGlobal = xMaxR;
+                datasetStmt->yMaxGlobal = yMaxR;
+            }
         }
 
-        // hardcoded bounds
-        double xMinR = std::numeric_limits<int>::max();
-        double yMinR = std::numeric_limits<int>::max();
-        double xMaxR = -std::numeric_limits<int>::min();
-        double yMaxR = -std::numeric_limits<int>::max();
-        if(dataset_config_pt.get<int>(queryStmt->datasetNicknameR+".bounds")) {
-            xMinR = dataset_config_pt.get<double>(queryStmt->datasetNicknameR+".xMin");
-            yMinR = dataset_config_pt.get<double>(queryStmt->datasetNicknameR+".yMin");
-            xMaxR = dataset_config_pt.get<double>(queryStmt->datasetNicknameR+".xMax");
-            yMaxR = dataset_config_pt.get<double>(queryStmt->datasetNicknameR+".yMax");
-            queryStmt->boundsSet = true;
+        // verify 
+        DB_STATUS ret = verifyDatasetOptions(datasetStmt);
+        if (ret != DBERR_OK) {
+            return ret;
         }
-        double xMinS = std::numeric_limits<int>::max();
-        double yMinS = std::numeric_limits<int>::max();
-        double xMaxS = -std::numeric_limits<int>::min();
-        double yMaxS = -std::numeric_limits<int>::max();
-        if(dataset_config_pt.get<int>(queryStmt->datasetNicknameS+".bounds")) {
-            xMinS = dataset_config_pt.get<double>(queryStmt->datasetNicknameS+".xMin");
-            yMinS = dataset_config_pt.get<double>(queryStmt->datasetNicknameS+".yMin");
-            xMaxS = dataset_config_pt.get<double>(queryStmt->datasetNicknameS+".xMax");
-            yMaxS = dataset_config_pt.get<double>(queryStmt->datasetNicknameS+".yMax");
-            queryStmt->boundsSet = true;
+
+        // set to config
+        ret = configure::setDatasetInfo(datasetStmt);
+        if (ret != DBERR_OK) {
+            return ret;
         }
-        // if they have different hardcoded bounds, assign as global the outermost ones (min of min, max of max)
-        queryStmt->xMinGlobal = std::min(xMinR, xMinS);
-        queryStmt->yMinGlobal = std::min(yMinR, yMinS);
-        queryStmt->xMaxGlobal = std::max(xMaxR, xMaxS);
-        queryStmt->yMaxGlobal = std::max(yMaxR, yMaxS);
+        
+        logger::log_success("Setup", datasetStmt->datasetCount,"datasets");
 
         return DBERR_OK;
     }
@@ -199,9 +266,7 @@ namespace parser
 
     DB_STATUS parse(int argc, char *argv[], SystemOptionsT &sysOps) {
         char c;
-        SystemOptionsStatementT sysOpsStmt;
-        QueryStatementT queryStmt;
-        ActionsStatementT actionsStmt;
+        SettingsStatementT settingsStmt;
 
         // check If config files exist
         if (!verifyFileExists(g_config.dirPaths.configFilePath)) {
@@ -217,7 +282,7 @@ namespace parser
         boost::property_tree::ini_parser::read_ini(g_config.dirPaths.datasetsConfigPath, dataset_config_pt);
 
         // setup options
-        DB_STATUS ret = loadSetupOptions(sysOpsStmt);
+        DB_STATUS ret = loadSetupOptions(settingsStmt.sysOpsStmt);
         if (ret != DBERR_OK) {
             return ret;
         }
@@ -233,19 +298,19 @@ namespace parser
                 //     break;
                 case 'R':
                     // Dataset R path
-                    queryStmt.datasetNicknameR = std::string(optarg);
-                    queryStmt.datasetCount++;
+                    settingsStmt.datasetStmt.datasetNicknameR = std::string(optarg);
+                    settingsStmt.datasetStmt.datasetCount++;
                     break;
                 case 'S':
                     // Dataset S path
-                    queryStmt.datasetNicknameS = std::string(optarg);
-                    queryStmt.datasetCount++;
+                    settingsStmt.datasetStmt.datasetNicknameS = std::string(optarg);
+                    settingsStmt.datasetStmt.datasetCount++;
                     break;
                 case 't':
-                    sysOpsStmt.setupType = (SystemSetupTypeE) atoi(optarg);
+                    settingsStmt.sysOpsStmt.setupType = (SystemSetupTypeE) atoi(optarg);
                     break;
                 case 'p':
-                    actionsStmt.performPartitioning = true;
+                    settingsStmt.actionsStmt.performPartitioning = true;
                     break;
                 default:
                     logger::log_error(DBERR_UNKNOWN_ARGUMENT, "Unkown cmd argument.");
@@ -257,7 +322,7 @@ namespace parser
         // verify setup (TODO)
 
         // set configuration options
-        ret = parseConfigurationOptions(sysOpsStmt, sysOps);
+        ret = parseConfigurationOptions(settingsStmt.sysOpsStmt, sysOps);
         if (ret != DBERR_OK) {
             return ret;
         }
@@ -269,13 +334,15 @@ namespace parser
         }
 
         // parse dataset options
-        ret = parseDatasetOptions(&queryStmt);
+        ret = parseDatasetOptions(&settingsStmt.datasetStmt);
         if (ret != DBERR_OK) {
             return ret;
         }
 
+        // parse query options
+
         // parse actions
-        ret = parseActions(&actionsStmt);
+        ret = parseActions(&settingsStmt.actionsStmt);
         if (ret != DBERR_OK) {
             return ret;
         }

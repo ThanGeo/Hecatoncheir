@@ -93,12 +93,20 @@ void tempBatch() {
 }
 
 static DB_STATUS performActions() {
+    DB_STATUS ret = DBERR_OK;
     // perform the user-requested actions in order
     for(int i=0;i <g_config.actions.size(); i++) {
         // logger::log_task("Performing action", i, "of type", g_config.actions.at(i).type);
 
         switch(g_config.actions.at(i).type) {
             case ACTION_PERFORM_PARTITIONING:
+                
+                for (int i=0; i<g_config.datasetInfo.numberOfDatasets; i++) {
+                    ret = partitioning::partitionDataset(g_config.datasetInfo.datasets.at(i));
+                    if (ret != DBERR_OK) {
+                        return ret;
+                    }
+                }
                 
                 break;
         }

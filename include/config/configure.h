@@ -6,7 +6,8 @@
 #include "def.h"
 #include "containers.h"
 #include "env/comm.h"
-
+#include "statement.h"
+#include "parse.h"
 
 namespace configure
 {
@@ -25,6 +26,9 @@ namespace configure
      * @brief creates configuration for the system based on the options
     */
     DB_STATUS createConfiguration(SystemOptionsT &sysOps);
+
+
+    DB_STATUS setDatasetInfo(DatasetStatementT* datasetStmt);
 }
 
 #endif
