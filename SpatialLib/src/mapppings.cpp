@@ -16,7 +16,7 @@ namespace spatial_lib
         }
     }
 
-    std::string dataTypeIntToText(int val){
+    std::string dataTypeIntToText(DataTypeE val){
         switch(val) {
             case spatial_lib::DT_POLYGON: return "POLYGON";
             case spatial_lib::DT_POINT: return "POINT";
@@ -25,10 +25,9 @@ namespace spatial_lib
     }
 
     DataTypeE dataTypeTextToInt(std::string val){
-        if (val == "POLYGON") return spatial_lib::DT_POLYGON;
-        if (val == "POINT") return spatial_lib::DT_POINT;
-        if (val == "LINESTRING") return spatial_lib::DT_LINESTRING;
-
+        if (val.compare("POLYGON") == 0) return spatial_lib::DT_POLYGON;
+        else if (val.compare("POINT") == 0) return spatial_lib::DT_POINT;
+        else if (val.compare("LINESTRING") == 0) return spatial_lib::DT_LINESTRING;
 
         return DT_INVALID;
     }

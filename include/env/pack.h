@@ -8,6 +8,23 @@
 namespace pack
 {
     /**
+     * @brief serializes a vector of strings into a single string.
+     * for each string in the vector, its size is also included in the serialized string.
+     * each entry is delimited by a whitespace
+     * 
+     */
+    std::string serializeStrings(std::vector<std::string> &strings);
+
+    /**
+     * @brief deserializes a string into a vector of its serialized strings
+     * 
+     * @param serializedString 
+     * @param strings 
+     * @return DB_STATUS 
+     */
+    DB_STATUS deserializeStrings(std::string &serializedString, std::vector<std::string> &strings);
+
+    /**
      * @brief packs a single polygon of partition ID to packs (info and coords packs)
      * 
      * @param polygon 
@@ -18,7 +35,17 @@ namespace pack
      */
     DB_STATUS packPolygon(spatial_lib::PolygonT &polygon, int partitionID, MsgPackT<int> &infoPack, MsgPackT<double> &coordsPack);
 
+    /**
+     * @brief Packs the arrays for a geometry into the MsgPack for send
+     * 
+     */
+    DB_STATUS packGeometryArrays(std::vector<int> &infoArray, std::vector<double> &coordsArray, MsgPackT<int> &infoPack, MsgPackT<double> &coordsPack);
 
+    /**
+     * @brief Packs all the necessary dataset info into a message pack for send
+     * 
+     */
+    DB_STATUS packDatasetInfo(spatial_lib::DatasetT &dataset, MsgPackT<char> &datasetInfoPack);
 
     /**
      * @brief Prints a message pack
@@ -42,6 +69,15 @@ namespace pack
     }
 }
 
-
+namespace unpack
+{   
+    /**
+     * @brief unpacks a dataset info pack and builds a new dataset in the local configuration
+     * 
+     * @param datasetInfoPack 
+     * @return DB_STATUS 
+     */
+    DB_STATUS unpackDatasetInfoPack(MsgPackT<char> &datasetInfoPack);
+}
 
 #endif 

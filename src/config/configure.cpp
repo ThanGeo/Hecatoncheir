@@ -102,8 +102,8 @@ namespace configure
 
             auto it = parser::fileTypeStrToIntMap.find(datasetStmt->filetypeR);
             if (it == parser::fileTypeStrToIntMap.end()) {
-                logger::log_error(DBERR_UNKNOWN_FILETYPE, "Unknown filetype for dataset", datasetStmt->datasetNicknameR, ":", datasetStmt->filetypeR);
-                return DBERR_UNKNOWN_FILETYPE;
+                logger::log_error(DBERR_INVALID_FILETYPE, "Unknown filetype for dataset", datasetStmt->datasetNicknameR, ":", datasetStmt->filetypeR);
+                return DBERR_INVALID_FILETYPE;
             }
             R.fileType = it->second;
 
@@ -112,8 +112,7 @@ namespace configure
             R.offsetMapPath = datasetStmt->offsetMapPathR;
             R.datasetName = getDatasetNameFromPath(R.path);
             // add to config
-            g_config.datasetInfo.numberOfDatasets = 1;
-            g_config.datasetInfo.datasets.emplace_back(R);
+            g_config.datasetInfo.addDataset(R);
             
             if (datasetStmt->datasetCount == 2) {
                 spatial_lib::DatasetT S;
@@ -123,8 +122,8 @@ namespace configure
 
                 auto it = parser::fileTypeStrToIntMap.find(datasetStmt->filetypeS);
                 if (it == parser::fileTypeStrToIntMap.end()) {
-                    logger::log_error(DBERR_UNKNOWN_FILETYPE, "Unknown filetype for dataset", datasetStmt->datasetNicknameS, ":", datasetStmt->filetypeS);
-                    return DBERR_UNKNOWN_FILETYPE;
+                    logger::log_error(DBERR_INVALID_FILETYPE, "Unknown filetype for dataset", datasetStmt->datasetNicknameS, ":", datasetStmt->filetypeS);
+                    return DBERR_INVALID_FILETYPE;
                 }
                 S.fileType = it->second;
 
@@ -133,8 +132,7 @@ namespace configure
                 S.offsetMapPath = datasetStmt->offsetMapPathS;
                 S.datasetName = getDatasetNameFromPath(S.path);
                 // add to config
-                g_config.datasetInfo.numberOfDatasets++;
-                g_config.datasetInfo.datasets.emplace_back(S);
+                g_config.datasetInfo.addDataset(S);
             }
         }
         return DBERR_OK;

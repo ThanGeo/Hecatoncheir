@@ -54,6 +54,15 @@ namespace comm
          * @return DB_STATUS 
          */
         DB_STATUS sendGeometryBatchToAgent(BatchT &batch, int tag);
+
+        /**
+         * @brief Packs and sends the dataset info to all worker nodes
+         * 
+         * @param dataset 
+         * @param destRank 
+         * @return DB_STATUS 
+         */
+        DB_STATUS broadcastDatasetInfo(spatial_lib::DatasetT &dataset);
         
 
         /**

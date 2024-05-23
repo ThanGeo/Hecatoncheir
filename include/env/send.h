@@ -17,7 +17,7 @@ namespace comm
         */
         DB_STATUS sendInstructionMessage(int destRank, int tag, MPI_Comm &comm);
 
-
+        DB_STATUS sendDatasetInfoMessage(MsgPackT<char> &datasetInfoPack, int destRank, int tag, MPI_Comm &comm);
 
         DB_STATUS sendGeometryMessage(MsgPackT<int> &infoPack, MsgPackT<double> &coordsPack, int destRank, int tag, MPI_Comm &comm);
     }
@@ -29,6 +29,15 @@ namespace comm
          * messages are broadcasted parallely
         */
         DB_STATUS broadcastInstructionMessage(int tag);
+
+
+        /**
+         * @brief broadcasts the dataset info to all worker nodes
+         * messages are broadcasted parallely
+         * @param msgPack 
+         * @return DB_STATUS 
+         */
+        DB_STATUS broadcastDatasetInfo(MsgPackT<char> &msgPack);
     }
 
 }

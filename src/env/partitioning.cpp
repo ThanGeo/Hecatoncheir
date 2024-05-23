@@ -90,13 +90,19 @@ namespace partitioning
             }
 
             // add to buffers for the batch
-            for (auto partitionID : partitionIDs) {
-                int nodeRank = g_config.partitioningInfo.getNodeRankForPartitionID(partitionID);
+            // for (auto partitionID : partitionIDs) {
+            for (auto partitionIT = partitionIDs.begin(); partitionIT != partitionIDs.end(); partitionIT++) {
+                int nodeRank = g_config.partitioningInfo.getNodeRankForPartitionID(*partitionIT);
                 BatchT *batch = &batches.at(nodeRank);
-                batch->addObjectToBatch(recID, partitionID, vertexCount, coords);
+                batch->addObjectToBatch(recID, *partitionIT, vertexCount, coords);
 
                 // if batch is full, send and reset
                 if (batch->size >= batch->maxSize) {
+
+                    // check if it is the last batch for this dataset
+                    if (partitionIT == partitionIDs.end() - 1 && i == polygonCount-1) {
+                        batch->updateInfoPackFlag(0);
+                    }
                     
                     // send
                     if (batch->nodeRank != HOST_RANK) {
@@ -115,7 +121,7 @@ namespace partitioning
                     }
 
                     // reset
-                    batch->clearBatch();
+                    batch->clearBatch(1);
                 }
 
             }
@@ -123,23 +129,27 @@ namespace partitioning
 
         // send any remaining batches
         for (auto &batch : batches) {
-            // send
-            if (batch.nodeRank != HOST_RANK) {
-                // if the destination is a worker node, send to that node's controller
-                ret = comm::controller::sendGeometryBatchToNode(batch, batch.nodeRank, MSG_BATCH_POLYGON);
-                if (ret != DBERR_OK) {
-                    return ret;
-                }
-            } else {
-                // else, send to local agent
-                ret = comm::controller::sendGeometryBatchToAgent(batch, MSG_BATCH_POLYGON);
-                if (ret != DBERR_OK) {
-                    return ret;
+            if (batch.size > 0) {        
+                // it is the last batch for this dataset
+                batch.updateInfoPackFlag(0);
+                // send
+                if (batch.nodeRank != HOST_RANK) {
+                    // if the destination is a worker node, send to that node's controller
+                    ret = comm::controller::sendGeometryBatchToNode(batch, batch.nodeRank, MSG_BATCH_POLYGON);
+                    if (ret != DBERR_OK) {
+                        return ret;
+                    }
+                } else {
+                    // else, send to local agent
+                    ret = comm::controller::sendGeometryBatchToAgent(batch, MSG_BATCH_POLYGON);
+                    if (ret != DBERR_OK) {
+                        return ret;
+                    }
                 }
             }
 
             // reset
-            batch.clearBatch();
+            batch.clearBatch(0);
         }
 
 
@@ -148,13 +158,15 @@ namespace partitioning
 
     static DB_STATUS performPartitioningBinary(spatial_lib::DatasetT &dataset) {
         int polygonCount;
-        // open file stream
+        DB_STATUS ret = DBERR_OK;
+        // first, broadcast the dataset info message
+        ret = comm::controller::broadcastDatasetInfo(dataset);
+        if (ret != DBERR_OK) {
+            return ret;
+        }
+        
+        // open dataset file stream
         std::ifstream fin(dataset.path, std::fstream::in | std::ios_base::binary);
-
-        /* INFO PACKS */
-        // object count | rec ID | section ID | vertex count | ... |
-        /* COORDS PACKS */
-        // x | y | x | y | ... |
 
         // Node maps for each pack. Reserve a large chunk in advance.
         std::vector<BatchT> batches;
@@ -167,6 +179,7 @@ namespace partitioning
             std::vector<int> infoBuf;
             infoBuf.reserve(1 + g_config.partitioningInfo.batchSize * 3 * 3);
             infoBuf.emplace_back(0);    // current size
+            infoBuf.emplace_back(1);    // flag
 
             std::vector<double> coordsBuf;
             coordsBuf.reserve(g_config.partitioningInfo.batchSize * 2 * 500);
@@ -183,7 +196,7 @@ namespace partitioning
 
 
         // load data and partition
-        DB_STATUS ret = loadAndPartition(fin, polygonCount, batches);
+        ret = loadAndPartition(fin, polygonCount, batches);
         if (ret != DBERR_OK) {
             return ret;
         }

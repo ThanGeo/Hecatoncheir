@@ -7,7 +7,7 @@ namespace spatial_lib
 {
     std::string queryTypeIntToText(int val);
 
-    std::string dataTypeIntToText(int val);
+    std::string dataTypeIntToText(DataTypeE val);
 
     DataTypeE dataTypeTextToInt(std::string val);
 

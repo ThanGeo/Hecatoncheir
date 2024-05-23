@@ -4,6 +4,17 @@ namespace comm
 {
     namespace send
     {
+        template <typename T> 
+        DB_STATUS sendMsgPack(MsgPackT<T> &msgPack, int destRank, int tag, MPI_Comm &comm) {
+            // send the info pack message           
+            int mpi_ret = MPI_Send(msgPack.data, msgPack.count, msgPack.type, destRank, tag, comm);
+            if (mpi_ret != MPI_SUCCESS) {
+                logger::log_error(DBERR_COMM_SEND, "Send message with tag", tag);
+                return DBERR_COMM_SEND;
+            }
+            return DBERR_OK;
+        }
+
         DB_STATUS sendSingleIntMessage(int value, int destRank, int tag, MPI_Comm &comm) {
             // send the message
             int mpi_ret = MPI_Send(&value, 1, MPI_CHAR, destRank, tag, comm);
@@ -28,17 +39,20 @@ namespace comm
             return DBERR_OK;
         }
 
-        template <typename T> 
-        DB_STATUS sendMsgPack(MsgPackT<T> &msgPack, int destRank, int tag, MPI_Comm &comm) {
-            // send the info pack message           
-            int mpi_ret = MPI_Send(msgPack.data, msgPack.count, msgPack.type, destRank, tag, comm);
+        DB_STATUS sendDatasetInfoMessage(MsgPackT<char> &datasetInfoPack, int destRank, int tag, MPI_Comm &comm) {
+            // check tag validity
+            if (tag != MSG_DATASET_INFO) {
+                logger::log_error(DBERR_COMM_WRONG_MSG_FORMAT, "Dataset info messages must have the appropriate tag. Current tag", tag);
+                return DBERR_COMM_WRONG_MSG_FORMAT;
+            }
+            // send the message
+            int mpi_ret = MPI_Send(datasetInfoPack.data, datasetInfoPack.count, MPI_CHAR, destRank, tag, comm);
             if (mpi_ret != MPI_SUCCESS) {
                 logger::log_error(DBERR_COMM_SEND, "Send message with tag", tag);
                 return DBERR_COMM_SEND;
             }
             return DBERR_OK;
         }
-
 
         DB_STATUS sendGeometryMessage(MsgPackT<int> &infoPack, MsgPackT<double> &coordsPack, int destRank, int tag, MPI_Comm &comm) {
             DB_STATUS ret = DBERR_OK;
@@ -78,6 +92,27 @@ namespace comm
                     if (i != g_host_rank) {
                         // printf("Broadcasting to controller %d\n", i);
                         local_ret = send::sendInstructionMessage(i, tag, g_global_comm);
+                        if (local_ret != DBERR_OK) {
+                            #pragma omp cancel for
+                            ret = local_ret;
+                        } 
+                    }
+                }
+            }
+            return ret;
+        }
+
+        DB_STATUS broadcastDatasetInfo(MsgPackT<char> &msgPack) {
+            DB_STATUS ret = DBERR_OK;
+            // broadcast to all other controllers parallely
+            #pragma omp parallel
+            {
+                DB_STATUS local_ret = DBERR_OK;
+                #pragma omp for
+                for(int i=0; i<g_world_size; i++) {
+                    if (i != g_host_rank) {
+                        // printf("Broadcasting to controller %d\n", i);
+                        local_ret = send::sendMsgPack(msgPack, i, MSG_DATASET_INFO, g_global_comm);
                         if (local_ret != DBERR_OK) {
                             #pragma omp cancel for
                             ret = local_ret;

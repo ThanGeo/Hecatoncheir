@@ -78,7 +78,7 @@ namespace parser
         if (assignmentFuncStr == "OP") {
             // optimized, adjust the partitions per num automatically to improve load balancing
             g_config.partitioningInfo.partitionsPerDimension = adjustPartitions(partitionsPerDimension);
-            logger::log_task("Adjusted partitions per dimension to", g_config.partitioningInfo.partitionsPerDimension);
+            // logger::log_task("Adjusted partitions per dimension to", g_config.partitioningInfo.partitionsPerDimension);
         } else if(assignmentFuncStr == "ST") {
             // standard, do nothing extra on the grid
         } else {
@@ -138,8 +138,8 @@ namespace parser
             // dataset data type
             spatial_lib::DataTypeE datatypeR = spatial_lib::dataTypeTextToInt(dataset_config_pt.get<std::string>(datasetStmt->datasetNicknameR+".datatype"));
             if (datatypeR == spatial_lib::DT_INVALID) {
-                logger::log_error(DBERR_UNKNOWN_DATATYPE, "Unknown data type for dataset R.");
-                return DBERR_UNKNOWN_DATATYPE;
+                logger::log_error(DBERR_INVALID_DATATYPE, "Unknown data type for dataset R.");
+                return DBERR_INVALID_DATATYPE;
             }
             datasetStmt->datatypeR = datatypeR;
 
@@ -159,13 +159,13 @@ namespace parser
             // dataset data type
             spatial_lib::DataTypeE datatypeS = spatial_lib::dataTypeTextToInt(dataset_config_pt.get<std::string>(datasetStmt->datasetNicknameS+".datatype"));
             if (datatypeS == spatial_lib::DT_INVALID) {
-                logger::log_error(DBERR_UNKNOWN_DATATYPE, "Unknown data type for dataset S.");
-                return DBERR_UNKNOWN_DATATYPE;
+                logger::log_error(DBERR_INVALID_DATATYPE, "Unknown data type for dataset S.");
+                return DBERR_INVALID_DATATYPE;
             }
             datasetStmt->datatypeS = datatypeS;
 
             // file type
-            datasetStmt->filetypeR = dataset_config_pt.get<std::string>(datasetStmt->datasetNicknameR+".filetype");
+            datasetStmt->filetypeS = dataset_config_pt.get<std::string>(datasetStmt->datasetNicknameS+".filetype");
 
             // offset map
             datasetStmt->offsetMapPathS = dataset_config_pt.get<std::string>(datasetStmt->datasetNicknameS+".offsetMapPath");
@@ -236,8 +236,6 @@ namespace parser
             return ret;
         }
         
-        logger::log_success("Setup", datasetStmt->datasetCount,"datasets");
-
         return DBERR_OK;
     }
 

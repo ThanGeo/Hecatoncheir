@@ -56,14 +56,16 @@ typedef enum DB_STATUS {
     DBERR_COMM_WRONG_MSG_FORMAT = DBBASE + 2004,
     DBERR_COMM_UNKNOWN_INSTR = DBBASE + 2005,
     DBERR_COMM_INVALID_MSG_TYPE = DBBASE + 2006,
+    DBERR_COMM_WRONG_PACK_ORDER = DBBASE + 2007,
+    DBERR_COMM_PROBE_FAILED = DBBASE + 2008,
     
     // processes/mpi
     DBERR_MPI_INIT_FAILED = DBBASE + 3000,
     DBERR_PROC_INIT_FAILED = DBBASE + 3001,
 
     // data
-    DBERR_UNKNOWN_DATATYPE = DBBASE + 4000,
-    DBERR_UNKNOWN_FILETYPE = DBBASE + 4001,
+    DBERR_INVALID_DATATYPE = DBBASE + 4000,
+    DBERR_INVALID_FILETYPE = DBBASE + 4001,
     DBERR_UNSUPPORTED_DATATYPE_COMBINATION = DBBASE + 4002,
 
     // partitioning
@@ -93,10 +95,10 @@ namespace logger
     inline void log_error(int errorCode, T first, Args... rest) {
         if (g_parent_original_rank != PARENTLESS_RANK) {
             // agents
-            std::cout << YELLOW "[C" + std::to_string(g_parent_original_rank) + "]" NC BLUE "[A]" NC RED "[ERROR: " + std::to_string(errorCode) + "]" NC ": ";
+            std::cout << YELLOW "[N" + std::to_string(g_parent_original_rank) + "]" NC BLUE "[A]" NC RED "[ERROR: " + std::to_string(errorCode) + "]" NC ": ";
         } else {
             // controllers
-            std::cout << YELLOW "[C" + std::to_string(g_node_rank) + "]" NC RED "[ERROR: " + std::to_string(errorCode) + "]" NC ": ";
+            std::cout << YELLOW "[N" + std::to_string(g_node_rank) + "]" NC PURPLE "[C]" NC RED "[ERROR: " + std::to_string(errorCode) + "]" NC ": ";
         }
         print_args(first, rest...);
     }
@@ -109,10 +111,10 @@ namespace logger
     inline void log_success(T first, Args... rest) {
         if (g_parent_original_rank != PARENTLESS_RANK) {
             // agents
-            std::cout << YELLOW "[C" + std::to_string(g_parent_original_rank) + "]" NC BLUE "[A]" NC GREEN "[SUCCESS]" NC ": ";
+            std::cout << YELLOW "[N" + std::to_string(g_parent_original_rank) + "]" NC BLUE "[A]" NC GREEN "[SUCCESS]" NC ": ";
         } else {
             // controllers
-            std::cout << YELLOW "[C" + std::to_string(g_node_rank) + "]" NC GREEN "[SUCCESS]" NC ": ";
+            std::cout << YELLOW "[N" + std::to_string(g_node_rank) + "]" NC PURPLE "[C]" NC GREEN "[SUCCESS]" NC ": ";
         }
         print_args(first, rest...);
     }
@@ -125,10 +127,10 @@ namespace logger
     inline void log_task(T first, Args... rest) {
         if (g_parent_original_rank != PARENTLESS_RANK) {
             // agents
-            std::cout << YELLOW "[C" + std::to_string(g_parent_original_rank) + "]" NC BLUE "[A]" NC ": ";
+            std::cout << YELLOW "[N" + std::to_string(g_parent_original_rank) + "]" NC BLUE "[A]" NC ": ";
         } else {
             // controllers
-            std::cout << YELLOW "[C" + std::to_string(g_node_rank) + "]" NC ": ";
+            std::cout << YELLOW "[N" + std::to_string(g_node_rank) + "]" NC PURPLE "[C]" NC ": ";
         }
         print_args(first, rest...);
     }
@@ -142,10 +144,10 @@ namespace logger
         if (g_parent_original_rank == rank) {
             if (g_parent_original_rank != PARENTLESS_RANK) {
                 // agents
-                std::cout << YELLOW "[C" + std::to_string(g_parent_original_rank) + "]" NC BLUE "[A]" NC ": ";
+                std::cout << YELLOW "[N" + std::to_string(g_parent_original_rank) + "]" NC BLUE "[A]" NC ": ";
             } else {
                 // controllers
-                std::cout << YELLOW "[C" + std::to_string(g_node_rank) + "]" NC ": ";
+                std::cout << YELLOW "[N" + std::to_string(g_node_rank) + "]" NC PURPLE "[C]" NC ": ";
             }
             print_args(first, rest...);
         }
@@ -214,6 +216,12 @@ typedef struct DatasetInfo {
         }
         return &datasets[idx];
     }
+
+    void addDataset(spatial_lib::DatasetT &dataset) {
+        datasets.emplace_back(dataset);
+        numberOfDatasets++;
+    }
+
 } DatasetInfoT;
 
 typedef struct Config {
@@ -228,11 +236,25 @@ typedef struct Batch {
     int nodeRank;       // to whom it is destined for
     int size;           // how many objects it contains
     int maxSize;        // maximum capacity in terms of objects
+    /**
+     * @brief info pack for a geometry batch
+     * |OBJECT COUNT|FINAL MSG FLAG|REC ID|PARTITION ID|VERTEX COUNT|REC ID|PARTITION ID|VERTEX COUNT|...|
+     * 
+     */
     std::vector<int> infoPack;
+    /**
+     * @brief coords pack for a geometry batch
+     * |X|Y|X|Y|...|
+     * 
+     */
     std::vector<double> coordsPack;
 
     void updateInfoPackObjectCount(int objectCount) {
         infoPack.at(0) = objectCount;
+    }
+
+    void updateInfoPackFlag(int flag) {
+        infoPack.at(1) = flag;
     }
 
     void addObjectToBatch(int recID, int partitionID, int vertexCount, std::vector<double> &coords) {
@@ -244,9 +266,10 @@ typedef struct Batch {
         updateInfoPackObjectCount(size);
     }
 
-    void clearBatch() {
+    void clearBatch(int flag) {
         infoPack.clear();
-        infoPack.emplace_back(0);
+        infoPack.emplace_back(0);       // geometries count
+        infoPack.emplace_back(flag);    // final message flag 
         coordsPack.clear();
         size = 0;
     }

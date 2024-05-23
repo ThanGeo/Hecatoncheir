@@ -20,8 +20,13 @@ namespace comm
      * and blocks until such a message arrives. 
      * Does not receive the message, must call MPI_Recv for that.
      */
-    static void probeBlocking(int sourceRank, int tag, MPI_Comm &comm, MPI_Status &status) {
-        MPI_Probe(sourceRank, tag, comm, &status);
+    static DB_STATUS probeBlocking(int sourceRank, int tag, MPI_Comm &comm, MPI_Status &status) {
+        int mpi_ret = MPI_Probe(sourceRank, tag, comm, &status);
+        if(mpi_ret != MPI_SUCCESS) {
+            logger::log_error(DBERR_COMM_PROBE_FAILED, "Blocking probe failed");
+            return DBERR_COMM_PROBE_FAILED;
+        }
+        return DBERR_OK;
     }
 
     /**
@@ -70,11 +75,27 @@ namespace comm
         }
 
         // probe for the coords pack (blocking probe for safety, same tag) 
-        probeBlocking(g_host_rank, tag, comm, status);
+        ret = probeBlocking(g_host_rank, tag, comm, status);
+        if (ret != DBERR_OK) {
+            return ret;
+        }
         // receive the coords pack
         ret = recv::receiveMessagePack(status, coordsPack.type, comm, coordsPack);
         if (ret != DBERR_OK) {
             logger::log_error(ret, "Failed pulling the coords pack");
+            return ret;
+        }
+
+        return ret;
+    }
+
+    
+    
+    static DB_STATUS pullDatasetInfoPack(MPI_Status status, int tag, MPI_Comm &comm, MsgPackT<char> &datasetInfopack) {
+        // info pack has been probed, so receive it
+        DB_STATUS ret = recv::receiveMessagePack(status, datasetInfopack.type, comm, datasetInfopack);
+        if (ret != DBERR_OK) {
+            logger::log_error(ret, "Failed pulling the info pack");
             return ret;
         }
 
@@ -108,7 +129,7 @@ namespace comm
             return ret;
         }
 
-        static DB_STATUS pullGeometryPacksAndStore(MPI_Status status) {
+        static DB_STATUS pullGeometryPacksAndStore(MPI_Status status, int &continueListening) {
             MsgPackT<int> infoPack(MPI_INT);
             MsgPackT<double> coordsPack(MPI_DOUBLE);
 
@@ -119,11 +140,79 @@ namespace comm
             }
 
             // save on disk
-            logger::log_success("Successfully geometry pack with", infoPack.data[0], "objects.");
+            logger::log_success("Successfully geometry pack with", infoPack.data[0], "objects and flag", infoPack.data[1]);
+
+            // set flag
+            continueListening = infoPack.data[1];
 
             // free memory
             free(infoPack.data);
             free(coordsPack.data);
+
+            return ret;
+        }
+
+        static DB_STATUS listenForDataset(MPI_Status status) {
+            MsgPackT<char> datasetInfoPack(MPI_CHAR);
+
+            // retrieve dataset info pack
+            DB_STATUS ret = pullDatasetInfoPack(status, status.MPI_TAG, g_local_comm, datasetInfoPack);
+            if (ret != DBERR_OK) {
+                return ret;
+            }
+
+
+            // unpack dataste info
+            ret = unpack::unpackDatasetInfoPack(datasetInfoPack);
+            if (ret != DBERR_OK) {
+                return ret;
+            }
+
+            // free temp memory
+            free(datasetInfoPack.data);
+
+            // next, listen for the infoPacks and coordPacks
+            int listen = 1;
+            while(listen) {
+                // proble blockingly for info pack
+                ret = probeBlocking(PARENT_RANK, MPI_ANY_TAG, g_local_comm, status);
+                if (ret != DBERR_OK) {
+                    return ret;
+                }
+                // pull
+                switch (status.MPI_TAG) {
+                    case MSG_INSTR_FIN:
+                        /* stop listening for instructions */
+                        // pull the finalization message
+                        ret = recv::receiveInstructionMessage(PARENT_RANK, status.MPI_TAG, g_local_comm, status);
+                        if (ret == DBERR_OK) {
+                            // break the listening loop
+                            return DB_FIN;
+                        }
+                        return ret;
+                    case MSG_SINGLE_POINT:
+                    case MSG_SINGLE_LINESTRING:
+                    case MSG_SINGLE_POLYGON:
+                        /* single geometry message */
+                        ret = pullGeometryPacksAndStore(status, listen);
+                        if (ret != DBERR_OK) {
+                            return ret;
+                        }                    
+                        break;
+                    case MSG_BATCH_POINT:
+                    case MSG_BATCH_LINESTRING:
+                    case MSG_BATCH_POLYGON:
+                        /* batch geometry message */
+                        ret = pullGeometryPacksAndStore(status, listen);
+                        if (ret != DBERR_OK) {
+                            return ret;
+                        }  
+                        break;
+                    default:
+                        logger::log_error(DBERR_COMM_WRONG_PACK_ORDER, "After the dataset info pack, only geometry packs are expected");
+                        return DBERR_COMM_WRONG_PACK_ORDER;
+                }
+            }
 
             return ret;
         }
@@ -157,24 +246,22 @@ namespace comm
                         return DB_FIN;
                     }
                     return ret;
+                case MSG_DATASET_INFO:
+                    /* dataset info pack*/
+                    ret = listenForDataset(status);
+                    if (ret != DBERR_OK) {
+                        return ret;
+                    }
+                    break;
+                /* unavailable messages at this moment */
                 case MSG_SINGLE_POINT:
                 case MSG_SINGLE_LINESTRING:
                 case MSG_SINGLE_POLYGON:
-                    /* single geometry message */
-                    ret = pullGeometryPacksAndStore(status);
-                    if (ret != DBERR_OK) {
-                        return ret;
-                    }                    
-                    break;
                 case MSG_BATCH_POINT:
                 case MSG_BATCH_LINESTRING:
                 case MSG_BATCH_POLYGON:
-                    /* batch geometry message */
-                    ret = pullGeometryPacksAndStore(status);
-                    if (ret != DBERR_OK) {
-                        return ret;
-                    }  
-                    break;
+                    logger::log_error(DBERR_COMM_WRONG_PACK_ORDER, "Geometry packs must follow a dataset info pack", status.MPI_TAG);
+                    return DBERR_COMM_WRONG_PACK_ORDER;    // change to error codes to stop agent from working after errors
                 default:
                     logger::log_error(DBERR_COMM_UNKNOWN_INSTR, "Unknown instruction type with tag", status.MPI_TAG);
                     // report error to controller
@@ -189,7 +276,10 @@ namespace comm
             DB_STATUS ret = DBERR_OK;
             while(true){
                 /* Do a blocking probe to wait for the next task/instruction by the local controller (parent) */
-                probeBlocking(PARENT_RANK, MPI_ANY_TAG, g_local_comm, status);
+                ret = probeBlocking(PARENT_RANK, MPI_ANY_TAG, g_local_comm, status);
+                if (ret != DBERR_OK) {
+                    return ret;
+                }
                 ret = pullIncoming(status);
                 if (ret == DB_FIN) {
                     goto STOP_LISTENING;
@@ -205,6 +295,31 @@ STOP_LISTENING:
 
     namespace controller
     {
+
+        DB_STATUS broadcastDatasetInfo(spatial_lib::DatasetT &dataset) {
+            MsgPackT<char> msgPack(MPI_CHAR);
+            // pack the info
+            DB_STATUS ret = pack::packDatasetInfo(dataset, msgPack);
+            if (ret != DBERR_OK) {
+                logger::log_error(ret, "Failed to pack dataset info");
+                return ret;
+            }
+
+            // send the pack
+            ret = broadcast::broadcastDatasetInfo(msgPack);
+            if (ret != DBERR_OK) {
+                logger::log_error(ret, "Failed to broadcast dataset info");
+                return ret;
+            }
+
+            // send it to the local agent
+            ret = send::sendDatasetInfoMessage(msgPack, AGENT_RANK, MSG_DATASET_INFO, g_local_comm);
+            if (ret != DBERR_OK) {
+                return ret;
+            } 
+
+            return ret;
+        }
         
         DB_STATUS sendPolygonToNode(spatial_lib::PolygonT &polygon, int partitionID, int destRank, int tag) {
             // first pack the polygon to message packs
@@ -237,15 +352,16 @@ STOP_LISTENING:
             MsgPackT<double> coordsPack(MPI_DOUBLE);
 
             // pack
-            infoPack.data = batch.infoPack.data();
-            infoPack.count = batch.infoPack.size();
-            coordsPack.data = batch.coordsPack.data();
-            coordsPack.count = batch.coordsPack.size();
+            DB_STATUS ret = pack::packGeometryArrays(batch.infoPack, batch.coordsPack, infoPack, coordsPack);
+            if (ret != DBERR_OK) {
+                logger::log_error(ret, "Packing geometry batch failed");
+                return ret;
+            }
 
             // send batch message
-            DB_STATUS ret = comm::send::sendGeometryMessage(infoPack, coordsPack, destRank, tag, g_global_comm);
+            ret = comm::send::sendGeometryMessage(infoPack, coordsPack, destRank, tag, g_global_comm);
             if (ret != DBERR_OK) {
-                logger::log_error(ret, "Sending single polygon failed");
+                logger::log_error(ret, "Sending geometry batch failed");
                 return ret;
             }
             
@@ -315,16 +431,47 @@ STOP_LISTENING:
             return ret;
         }
 
-        DB_STATUS sendGeometryBatchToAgent(BatchT &batch, int tag) {
+        /**
+         * @brief Pulls and forwards a dataset info message to the local agent
+         * 
+         * @param status 
+         * @return DB_STATUS 
+         */
+        static DB_STATUS forwardDatasetInfoToAgent(MPI_Status status) {
             DB_STATUS ret = DBERR_OK;
+            int tag = status.MPI_TAG;
+            MsgPackT<char> datasetInfoPack(MPI_CHAR);
+            
+            // pull 
+            ret = pullDatasetInfoPack(status, tag, g_global_comm, datasetInfoPack);
+            if (ret != DBERR_OK) {
+                return ret;
+            }
+
+            // send
+            ret = send::sendDatasetInfoMessage(datasetInfoPack, AGENT_RANK, status.MPI_TAG, g_local_comm);
+            if (ret != DBERR_OK) {
+                return ret;
+            } 
+
+            // free memory
+            free(datasetInfoPack.data);
+
+            // logger::log_success("Successfully forwarded dataset info to agent");
+
+            return ret;
+        }
+
+        DB_STATUS sendGeometryBatchToAgent(BatchT &batch, int tag) {
             MsgPackT<int> infoPack(MPI_INT); 
             MsgPackT<double> coordsPack(MPI_DOUBLE);
 
             // pack
-            infoPack.data = batch.infoPack.data();
-            infoPack.count = batch.infoPack.size();
-            coordsPack.data = batch.coordsPack.data();
-            coordsPack.count = batch.coordsPack.size();
+            DB_STATUS ret = pack::packGeometryArrays(batch.infoPack, batch.coordsPack, infoPack, coordsPack);
+            if (ret != DBERR_OK) {
+                logger::log_error(ret, "Packing geometry batch failed");
+                return ret;
+            }
 
             // send the packs to the agent
             ret = send::sendGeometryMessage(infoPack, coordsPack, AGENT_RANK, tag, g_local_comm);
@@ -354,6 +501,13 @@ STOP_LISTENING:
                         return ret;
                     }
                     return DB_FIN;
+                case MSG_DATASET_INFO:
+                    /* message containing dataset info */
+                    ret = forwardDatasetInfoToAgent(status);
+                    if (ret != DBERR_OK) {
+                        return ret;
+                    } 
+                    break;
                 case MSG_SINGLE_POINT:
                 case MSG_SINGLE_LINESTRING:
                 case MSG_SINGLE_POLYGON:
@@ -373,6 +527,7 @@ STOP_LISTENING:
                     } 
 
                     break;
+                
                 default:
                     // unkown instruction
                     logger::log_error(DBERR_COMM_UNKNOWN_INSTR, "Controller failed with unkown instruction");
