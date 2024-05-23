@@ -11,7 +11,7 @@ namespace partitioning
 
     void printPartitionAssignment();
 
-    DB_STATUS partitionDataset(spatial_lib::DatasetT &dataset);
+    DB_STATUS partitionDataset(spatial_lib::DatasetT *dataset);
 
     /**
      * @brief returns a vector containing the IDs of the partitions that intersect with the given MBR

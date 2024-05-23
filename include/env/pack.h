@@ -45,7 +45,7 @@ namespace pack
      * @brief Packs all the necessary dataset info into a message pack for send
      * 
      */
-    DB_STATUS packDatasetInfo(spatial_lib::DatasetT &dataset, MsgPackT<char> &datasetInfoPack);
+    DB_STATUS packDatasetInfo(spatial_lib::DatasetT* dataset, MsgPackT<char> &datasetInfoPack);
 
     /**
      * @brief Prints a message pack

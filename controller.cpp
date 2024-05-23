@@ -94,20 +94,28 @@ void tempBatch() {
 
 static DB_STATUS performActions() {
     DB_STATUS ret = DBERR_OK;
+    // printf("I have %d datasets: %s and %s\n", g_config.datasetInfo.numberOfDatasets, g_config.datasetInfo.getDatasetByIdx(0)->nickname.c_str(), g_config.datasetInfo.getDatasetByIdx(1)->nickname.c_str());
+
+
     // perform the user-requested actions in order
     for(int i=0;i <g_config.actions.size(); i++) {
         // logger::log_task("Performing action", i, "of type", g_config.actions.at(i).type);
 
         switch(g_config.actions.at(i).type) {
             case ACTION_PERFORM_PARTITIONING:
-                
+                // logger::log_task("size:", g_config.datasetInfo.datasets.size());
                 for (int i=0; i<g_config.datasetInfo.numberOfDatasets; i++) {
-                    ret = partitioning::partitionDataset(g_config.datasetInfo.datasets.at(i));
+                    // ret = partitioning::partitionDataset(g_config.datasetInfo.datasets.at(i));
+                    ret = partitioning::partitionDataset(g_config.datasetInfo.getDatasetByIdx(i));
                     if (ret != DBERR_OK) {
                         return ret;
                     }
                 }
                 
+                break;
+            default:
+                logger::log_error(DBERR_INVALID_PARAMETER, "Unknown action. Type:",g_config.actions.at(i).type);
+                return ret;
                 break;
         }
 
@@ -166,6 +174,7 @@ int main(int argc, char* argv[]) {
 
 
         // terminate
+        logger::log_task("Terminating everyone...");
         hostTerminate();
     } else {
         // worker controllers go directly to listening

@@ -152,11 +152,10 @@ namespace partitioning
             batch.clearBatch(0);
         }
 
-
         return ret;
     }
 
-    static DB_STATUS performPartitioningBinary(spatial_lib::DatasetT &dataset) {
+    static DB_STATUS performPartitioningBinary(spatial_lib::DatasetT *dataset) {
         int polygonCount;
         DB_STATUS ret = DBERR_OK;
         // first, broadcast the dataset info message
@@ -164,9 +163,10 @@ namespace partitioning
         if (ret != DBERR_OK) {
             return ret;
         }
+
         
         // open dataset file stream
-        std::ifstream fin(dataset.path, std::fstream::in | std::ios_base::binary);
+        std::ifstream fin(dataset->path, std::fstream::in | std::ios_base::binary);
 
         // Node maps for each pack. Reserve a large chunk in advance.
         std::vector<BatchT> batches;
@@ -194,30 +194,30 @@ namespace partitioning
         //first read the total polygon count of the dataset
         fin.read((char*) &polygonCount, sizeof(int));
 
-
         // load data and partition
         ret = loadAndPartition(fin, polygonCount, batches);
         if (ret != DBERR_OK) {
             return ret;
         }
 
-
-
         fin.close();
 
         return DBERR_OK;
     }
 
-    DB_STATUS partitionDataset(spatial_lib::DatasetT &dataset) {
+    DB_STATUS partitionDataset(spatial_lib::DatasetT *dataset) {
         DB_STATUS ret;
-        switch (dataset.fileType) {
+        switch (dataset->fileType) {
             case spatial_lib::FT_BINARY:
                 ret = performPartitioningBinary(dataset);
+                if (ret != DBERR_OK) {
+                    return ret;
+                }
                 break;
             case spatial_lib::FT_CSV:
             case spatial_lib::FT_WKT:
             default:
-                logger::log_error(DBERR_FEATURE_UNSUPPORTED, "Unsupported file type: ", dataset.fileType);
+                logger::log_error(DBERR_FEATURE_UNSUPPORTED, "Unsupported file type: ", dataset->fileType);
                 break;
         }
 

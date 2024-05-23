@@ -296,7 +296,7 @@ STOP_LISTENING:
     namespace controller
     {
 
-        DB_STATUS broadcastDatasetInfo(spatial_lib::DatasetT &dataset) {
+        DB_STATUS broadcastDatasetInfo(spatial_lib::DatasetT* dataset) {
             MsgPackT<char> msgPack(MPI_CHAR);
             // pack the info
             DB_STATUS ret = pack::packDatasetInfo(dataset, msgPack);
@@ -317,6 +317,9 @@ STOP_LISTENING:
             if (ret != DBERR_OK) {
                 return ret;
             } 
+
+            // free
+            free(msgPack.data);
 
             return ret;
         }

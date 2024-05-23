@@ -78,12 +78,14 @@ namespace logger
     // Base case of the variadic template recursion
     static inline void print_args() {
         std::cout << std::endl;
+        std::cout.flush();
     }
 
     // Recursive template function
     template<typename T, typename... Args>
     static inline void print_args(T first, Args... rest) {
         std::cout << first << " ";
+        std::cout.flush();
         print_args(rest...);
     }
 
@@ -100,6 +102,7 @@ namespace logger
             // controllers
             std::cout << YELLOW "[N" + std::to_string(g_node_rank) + "]" NC PURPLE "[C]" NC RED "[ERROR: " + std::to_string(errorCode) + "]" NC ": ";
         }
+        std::cout.flush();
         print_args(first, rest...);
     }
 
@@ -116,6 +119,7 @@ namespace logger
             // controllers
             std::cout << YELLOW "[N" + std::to_string(g_node_rank) + "]" NC PURPLE "[C]" NC GREEN "[SUCCESS]" NC ": ";
         }
+        std::cout.flush();
         print_args(first, rest...);
     }
 
@@ -132,6 +136,7 @@ namespace logger
             // controllers
             std::cout << YELLOW "[N" + std::to_string(g_node_rank) + "]" NC PURPLE "[C]" NC ": ";
         }
+        std::cout.flush();
         print_args(first, rest...);
     }
 
@@ -149,6 +154,7 @@ namespace logger
                 // controllers
                 std::cout << YELLOW "[N" + std::to_string(g_node_rank) + "]" NC PURPLE "[C]" NC ": ";
             }
+            std::cout.flush();
             print_args(first, rest...);
         }
     }
@@ -217,7 +223,7 @@ typedef struct DatasetInfo {
         return &datasets[idx];
     }
 
-    void addDataset(spatial_lib::DatasetT &dataset) {
+    void addDataset(spatial_lib::DatasetT dataset) {
         datasets.emplace_back(dataset);
         numberOfDatasets++;
     }

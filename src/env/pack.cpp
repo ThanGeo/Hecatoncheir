@@ -39,14 +39,15 @@ namespace pack
         return DBERR_OK;
     }
 
-    DB_STATUS packDatasetInfo(spatial_lib::DatasetT &dataset, MsgPackT<char> &datasetInfoPack) {      
+    DB_STATUS packDatasetInfo(spatial_lib::DatasetT* dataset, MsgPackT<char> &datasetInfoPack) {      
         std::vector<std::string> datasetInfo;
-        datasetInfo.emplace_back(dataset.nickname);
-        datasetInfo.emplace_back(spatial_lib::dataTypeIntToText(dataset.dataType));
+        datasetInfo.emplace_back(dataset->nickname);
+        datasetInfo.emplace_back(spatial_lib::dataTypeIntToText(dataset->dataType));
         // serialize
         std::string serializedStr = serializeStrings(datasetInfo);
 
         int length = serializedStr.length()+1;
+        datasetInfoPack.data = (char*) malloc(length * sizeof(char));
         strncpy(datasetInfoPack.data, serializedStr.c_str(), length);
         datasetInfoPack.count = length;
 

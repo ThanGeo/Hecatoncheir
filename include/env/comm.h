@@ -62,7 +62,7 @@ namespace comm
          * @param destRank 
          * @return DB_STATUS 
          */
-        DB_STATUS broadcastDatasetInfo(spatial_lib::DatasetT &dataset);
+        DB_STATUS broadcastDatasetInfo(spatial_lib::DatasetT* dataset);
         
 
         /**
