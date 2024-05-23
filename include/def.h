@@ -97,10 +97,10 @@ namespace logger
     inline void log_error(int errorCode, T first, Args... rest) {
         if (g_parent_original_rank != PARENTLESS_RANK) {
             // agents
-            std::cout << YELLOW "[N" + std::to_string(g_parent_original_rank) + "]" NC BLUE "[A]" NC RED "[ERROR: " + std::to_string(errorCode) + "]" NC ": ";
+            std::cout << YELLOW "[" + std::to_string(g_parent_original_rank) + "]" NC BLUE "[A]" NC RED "[ERROR: " + std::to_string(errorCode) + "]" NC ": ";
         } else {
             // controllers
-            std::cout << YELLOW "[N" + std::to_string(g_node_rank) + "]" NC PURPLE "[C]" NC RED "[ERROR: " + std::to_string(errorCode) + "]" NC ": ";
+            std::cout << YELLOW "[" + std::to_string(g_node_rank) + "]" NC PURPLE "[C]" NC RED "[ERROR: " + std::to_string(errorCode) + "]" NC ": ";
         }
         std::cout.flush();
         print_args(first, rest...);
@@ -114,10 +114,10 @@ namespace logger
     inline void log_success(T first, Args... rest) {
         if (g_parent_original_rank != PARENTLESS_RANK) {
             // agents
-            std::cout << YELLOW "[N" + std::to_string(g_parent_original_rank) + "]" NC BLUE "[A]" NC GREEN "[SUCCESS]" NC ": ";
+            std::cout << YELLOW "[" + std::to_string(g_parent_original_rank) + "]" NC BLUE "[A]" NC GREEN "[SUCCESS]" NC ": ";
         } else {
             // controllers
-            std::cout << YELLOW "[N" + std::to_string(g_node_rank) + "]" NC PURPLE "[C]" NC GREEN "[SUCCESS]" NC ": ";
+            std::cout << YELLOW "[" + std::to_string(g_node_rank) + "]" NC PURPLE "[C]" NC GREEN "[SUCCESS]" NC ": ";
         }
         std::cout.flush();
         print_args(first, rest...);
@@ -131,10 +131,10 @@ namespace logger
     inline void log_task(T first, Args... rest) {
         if (g_parent_original_rank != PARENTLESS_RANK) {
             // agents
-            std::cout << YELLOW "[N" + std::to_string(g_parent_original_rank) + "]" NC BLUE "[A]" NC ": ";
+            std::cout << YELLOW "[" + std::to_string(g_parent_original_rank) + "]" NC BLUE "[A]" NC ": ";
         } else {
             // controllers
-            std::cout << YELLOW "[N" + std::to_string(g_node_rank) + "]" NC PURPLE "[C]" NC ": ";
+            std::cout << YELLOW "[" + std::to_string(g_node_rank) + "]" NC PURPLE "[C]" NC ": ";
         }
         std::cout.flush();
         print_args(first, rest...);
@@ -149,10 +149,10 @@ namespace logger
         if (g_parent_original_rank == rank) {
             if (g_parent_original_rank != PARENTLESS_RANK) {
                 // agents
-                std::cout << YELLOW "[N" + std::to_string(g_parent_original_rank) + "]" NC BLUE "[A]" NC ": ";
+                std::cout << YELLOW "[" + std::to_string(g_parent_original_rank) + "]" NC BLUE "[A]" NC ": ";
             } else {
                 // controllers
-                std::cout << YELLOW "[N" + std::to_string(g_node_rank) + "]" NC PURPLE "[C]" NC ": ";
+                std::cout << YELLOW "[" + std::to_string(g_node_rank) + "]" NC PURPLE "[C]" NC ": ";
             }
             std::cout.flush();
             print_args(first, rest...);

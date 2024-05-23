@@ -214,6 +214,9 @@ namespace comm
                 }
             }
 
+
+            logger::log_success("Received all batches successfully");
+
             return ret;
         }
 

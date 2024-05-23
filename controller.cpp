@@ -174,7 +174,6 @@ int main(int argc, char* argv[]) {
 
 
         // terminate
-        logger::log_task("Terminating everyone...");
         hostTerminate();
     } else {
         // worker controllers go directly to listening
