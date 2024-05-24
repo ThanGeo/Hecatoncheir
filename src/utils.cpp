@@ -49,3 +49,14 @@ std::string getDatasetNameFromPath(std::string &datasetPath) {
     std::string datasetName = token.substr(0, token.length() - 4);
     return datasetName;
 }
+
+namespace mpi_timer
+{
+    double markTime() {
+        return MPI_Wtime();
+    }
+
+    double getElapsedTime(double startTime) {
+        return MPI_Wtime() - startTime;
+    }
+}

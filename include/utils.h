@@ -5,9 +5,28 @@
 #include <string>
 #include <sstream>
 
+#include <mpi.h>
+
 bool verifyFileExists(std::string filePath);
 bool verifyDirectoryExists(std::string directoryPath);
 std::string getDatasetNameFromPath(std::string &datasetPath);
 
+namespace mpi_timer
+{
+    /**
+     * @brief get the timestamp of the current time
+     * 
+     * @return double 
+     */
+    double markTime();
+
+    /**
+     * @brief Get the elapsed time in seconds, from the given start timestamp
+     * 
+     * @param startTime 
+     * @return double 
+     */
+    double getElapsedTime(double startTime);
+}
 
 #endif

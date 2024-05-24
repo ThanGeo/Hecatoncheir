@@ -206,10 +206,13 @@ namespace partitioning
     }
 
     DB_STATUS partitionDataset(spatial_lib::DatasetT *dataset) {
+        double startTime;
         DB_STATUS ret;
         switch (dataset->fileType) {
             case spatial_lib::FT_BINARY:
+                startTime = mpi_timer::markTime();
                 ret = performPartitioningBinary(dataset);
+                logger::log_success("Partitioning for dataset", dataset->nickname, "finished in", mpi_timer::getElapsedTime(startTime), "seconds.");
                 if (ret != DBERR_OK) {
                     return ret;
                 }
