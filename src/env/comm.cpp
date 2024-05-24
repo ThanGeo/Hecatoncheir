@@ -256,7 +256,7 @@ namespace comm
                         return ret;
                     }
                     break;
-                /* unavailable messages at this moment */
+                /* geometry messages must follow the dataset info message (listened for in listenForDataset) */
                 case MSG_SINGLE_POINT:
                 case MSG_SINGLE_LINESTRING:
                 case MSG_SINGLE_POLYGON:
@@ -414,7 +414,7 @@ STOP_LISTENING:
          * @param status 
          * @return DB_STATUS 
          */
-        static DB_STATUS forwardGeometryToAgent(MPI_Status status) {
+        static DB_STATUS forwardGeometryToAgent(MPI_Status status, int &continueListening) {
             DB_STATUS ret = DBERR_OK;
             int tag = status.MPI_TAG;
             MsgPackT<int> infoPack(MPI_INT); 
@@ -429,6 +429,9 @@ STOP_LISTENING:
             if (ret != DBERR_OK) {
                 return ret;
             } 
+
+            // update flag
+            continueListening = infoPack.data[1];
 
             // free memory
             free(infoPack.data);
@@ -488,6 +491,64 @@ STOP_LISTENING:
             return ret;
         }
 
+        static DB_STATUS listenForDataset(MPI_Status status) {
+            MsgPackT<char> datasetInfoPack(MPI_CHAR);
+
+            // forward dataset info to agent
+            DB_STATUS ret = forwardDatasetInfoToAgent(status);
+            if (ret != DBERR_OK) {
+                return ret;
+            }
+
+            // next, listen for the infoPacks and coordPacks explicitly
+            int listen = 1;
+            while(listen) {
+                // proble blockingly
+                ret = probeBlocking(g_host_rank, MPI_ANY_TAG, g_global_comm, status);
+                if (ret != DBERR_OK) {
+                    return ret;
+                }
+                // pull
+                switch (status.MPI_TAG) {
+                    case MSG_INSTR_FIN:
+                        /* stop listening for instructions */
+                        // pull the finalization message
+                        ret = recv::receiveInstructionMessage(PARENT_RANK, status.MPI_TAG, g_local_comm, status);
+                        if (ret == DBERR_OK) {
+                            // break the listening loop
+                            return DB_FIN;
+                        }
+                        return ret;
+                    case MSG_SINGLE_POINT:
+                    case MSG_SINGLE_LINESTRING:
+                    case MSG_SINGLE_POLYGON:
+                        /* single geometry message */  
+                        ret = forwardGeometryToAgent(status, listen);
+                        if (ret != DBERR_OK) {
+                            return ret;
+                        }               
+                        break;
+                    case MSG_BATCH_POINT:
+                    case MSG_BATCH_LINESTRING:
+                    case MSG_BATCH_POLYGON:
+                        /* batch geometry message */
+                        ret = forwardGeometryToAgent(status, listen);
+                        if (ret != DBERR_OK) {
+                            return ret;
+                        } 
+                        break;
+                    default:
+                        logger::log_error(DBERR_COMM_WRONG_PACK_ORDER, "After the dataset info pack, only geometry packs are expected");
+                        return DBERR_COMM_WRONG_PACK_ORDER;
+                }
+            }
+
+
+            logger::log_success("Received all batches successfully");
+
+            return ret;
+        }
+
         /**
          * @brief pulls incoming message sent by the controller 
          * (the one probed last, whose info is stored in the status parameter)
@@ -497,6 +558,8 @@ STOP_LISTENING:
          */
         static DB_STATUS pullIncoming(MPI_Status status) {
             DB_STATUS ret = DBERR_OK;
+            
+            
             // check message tag
             switch (status.MPI_TAG) {
                 case MSG_INSTR_FIN:
@@ -509,31 +572,42 @@ STOP_LISTENING:
                     return DB_FIN;
                 case MSG_DATASET_INFO:
                     /* message containing dataset info */
-                    ret = forwardDatasetInfoToAgent(status);
+                    // ret = forwardDatasetInfoToAgent(status);
+                    // if (ret != DBERR_OK) {
+                    //     return ret;
+                    // } 
+                    ret = listenForDataset(status);
                     if (ret != DBERR_OK) {
                         return ret;
-                    } 
+                    }
                     break;
+                // case MSG_SINGLE_POINT:
+                // case MSG_SINGLE_LINESTRING:
+                // case MSG_SINGLE_POLYGON:
+                //     /* message containing a single geometry (point, linestring or polygon) */
+                //     ret = forwardGeometryToAgent(status);
+                //     if (ret != DBERR_OK) {
+                //         return ret;
+                //     } 
+                //     break;
+                // case MSG_BATCH_POINT:
+                // case MSG_BATCH_LINESTRING:
+                // case MSG_BATCH_POLYGON:
+                //     /* message containing a batch of geometries */
+                //     ret = forwardGeometryToAgent(status);
+                //     if (ret != DBERR_OK) {
+                //         return ret;
+                //     } 
+
+                //     break;
                 case MSG_SINGLE_POINT:
                 case MSG_SINGLE_LINESTRING:
                 case MSG_SINGLE_POLYGON:
-                    /* message containing a single geometry (point, linestring or polygon) */
-                    ret = forwardGeometryToAgent(status);
-                    if (ret != DBERR_OK) {
-                        return ret;
-                    } 
-                    break;
                 case MSG_BATCH_POINT:
                 case MSG_BATCH_LINESTRING:
                 case MSG_BATCH_POLYGON:
-                    /* message containing a batch of geometries */
-                    ret = forwardGeometryToAgent(status);
-                    if (ret != DBERR_OK) {
-                        return ret;
-                    } 
-
-                    break;
-                
+                    logger::log_error(DBERR_COMM_WRONG_PACK_ORDER, "Geometry packs must follow a dataset info pack", status.MPI_TAG);
+                    return DBERR_COMM_WRONG_PACK_ORDER;    // change to error codes to stop agent from working after errors
                 default:
                     // unkown instruction
                     logger::log_error(DBERR_COMM_UNKNOWN_INSTR, "Controller failed with unkown instruction");

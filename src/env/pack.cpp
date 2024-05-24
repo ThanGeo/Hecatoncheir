@@ -110,7 +110,7 @@ namespace unpack
             return DBERR_INVALID_DATATYPE;
         }
 
-        logger::log_success("Received dataset info for dataset", dataset.nickname);
+        // logger::log_success("Received dataset info for dataset", dataset.nickname);
 
         // add to configuration
         g_config.datasetInfo.addDataset(dataset);
