@@ -77,6 +77,16 @@ namespace comm
             }
             return ret;
         }
+
+        DB_STATUS sendSerializedMessage(char **buffer, int bufferSize, int destRank, int tag, MPI_Comm &comm) {
+            // send the serialized message
+            int mpi_ret = MPI_Send((*buffer), bufferSize, MPI_CHAR, destRank, tag, comm);
+            if (mpi_ret != MPI_SUCCESS) {
+                logger::log_error(DBERR_COMM_SEND, "Sending serialized message failed.");
+                return DBERR_COMM_SEND;
+            }
+            return DBERR_OK;
+        }
     }
 
     namespace broadcast

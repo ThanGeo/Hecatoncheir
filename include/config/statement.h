@@ -8,6 +8,7 @@ typedef struct ActionsStatement {
     bool performPartitioning = false;
     bool createAPRIL = false;
     bool performVerification = false;
+    bool sendSerializedTestMsg = false;
 }ActionsStatementT;
 
 typedef struct DatasetStatement {

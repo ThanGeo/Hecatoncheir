@@ -54,6 +54,9 @@ namespace comm
          * @return DB_STATUS 
          */
         DB_STATUS sendGeometryBatchToAgent(BatchT &batch, int tag);
+        DB_STATUS serializeAndSendGeometryBatchToAgent(GeometryBatchT &batch, int tag);
+
+        DB_STATUS serializeAndSendGeometryBatchToNode(GeometryBatchT &batch, int destRank, int tag);
 
         /**
          * @brief Packs and sends the dataset info to all worker nodes

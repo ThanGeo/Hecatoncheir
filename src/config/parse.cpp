@@ -35,6 +35,12 @@ namespace parser
             g_config.actions.emplace_back(action);
         }
 
+        // test
+        if (actionsStmt->sendSerializedTestMsg) {
+            ActionT action(ACTION_SERIALIZED_TEST);
+            g_config.actions.emplace_back(action);
+        }
+
         return DBERR_OK;
     }
 
@@ -286,7 +292,7 @@ namespace parser
         }
 
         // after config file has been loaded, parse cmd arguments and overwrite any selected options
-        while ((c = getopt(argc, argv, "t:s:m:pcf:q:R:S:ev:z?")) != -1)
+        while ((c = getopt(argc, argv, "t:sm:pcf:q:R:S:ev:z?")) != -1)
         {
             switch (c)
             {
@@ -306,6 +312,9 @@ namespace parser
                     break;
                 case 't':
                     settingsStmt.sysOpsStmt.setupType = (SystemSetupTypeE) atoi(optarg);
+                    break;
+                case 's':
+                    settingsStmt.actionsStmt.sendSerializedTestMsg = true;
                     break;
                 case 'p':
                     settingsStmt.actionsStmt.performPartitioning = true;

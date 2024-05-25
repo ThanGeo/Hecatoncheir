@@ -20,6 +20,8 @@ namespace comm
         DB_STATUS sendDatasetInfoMessage(MsgPackT<char> &datasetInfoPack, int destRank, int tag, MPI_Comm &comm);
 
         DB_STATUS sendGeometryMessage(MsgPackT<int> &infoPack, MsgPackT<double> &coordsPack, int destRank, int tag, MPI_Comm &comm);
+        
+        DB_STATUS sendSerializedMessage(char **buffer, int bufferSize, int destRank, int tag, MPI_Comm &comm);
     }
 
     namespace broadcast

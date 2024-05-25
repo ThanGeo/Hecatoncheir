@@ -54,6 +54,136 @@ struct MsgPackT {
     }
 }; 
 
+typedef struct Geometry {
+    int recID;
+    int partitionID;
+    int vertexCount;
+    std::vector<double> coords;
 
+    Geometry(int recID, int partitionID, int vertexCount, std::vector<double> &coords) {
+        this->recID = recID;
+        this->partitionID = partitionID;
+        this->vertexCount = vertexCount;
+        this->coords = coords;
+    }
+
+    void setPartitionID(int partitionID) {
+        this->partitionID = partitionID;
+    }
+
+} GeometryT;
+
+typedef struct GeometryBatch {
+    // serializable
+    int objectCount = 0;
+    std::vector<GeometryT> geometries;
+    // unserializable/unclearable (todo: make const?)
+    int destRank;
+    int maxObjectCount;
+
+    void addGeometryToBatch(GeometryT &geometry) {
+        geometries.emplace_back(geometry);
+        objectCount += 1;
+    }
+
+    void setDestNodeRank(int destRank) {
+        this->destRank = destRank;
+    }
+
+    // calculate the size needed for the serialization buffer
+    int calculateBufferSize() {
+        int size = 0;
+        size += sizeof(int);                        // objectCount
+        size += 3 * objectCount * sizeof(int);      // objectCount * (rec ID,partition ID,vertex count)
+        
+        for (auto &it: geometries) {
+            size += it.vertexCount * 2 * sizeof(double);
+        }
+        
+        return size;
+    }
+
+    void clear() {
+        objectCount = 0;
+        geometries.clear();
+    }
+
+    /**
+     * @brief serialize the batch into the given buffer.
+     * returns the serialized buffer size
+     * Caller is responsible for freeing the buffer memory
+     * 
+     * @param buffer 
+     */
+    int serialize(char **buffer) {
+        int position = 0;
+        // calculate size
+        int bufferSize = calculateBufferSize();
+        // allocate space
+        char* localBuffer = (char*) malloc(bufferSize * sizeof(char));
+
+        if (localBuffer == NULL) {
+            // malloc failed
+            return -1;
+        }
+
+        // add object count
+        memcpy(localBuffer + position, &objectCount, sizeof(int));
+        position += sizeof(int);
+
+        // add batch geometry info
+        for (auto &it : geometries) {
+            memcpy(localBuffer + position, &it.recID, sizeof(int));
+            position += sizeof(int);
+            memcpy(localBuffer + position, &it.partitionID, sizeof(int));
+            position += sizeof(int);
+            memcpy(localBuffer + position, &it.vertexCount, sizeof(int));
+            position += sizeof(int);
+            memcpy(localBuffer + position, it.coords.data(), it.vertexCount * 2 * sizeof(double));
+            position += it.vertexCount * 2 * sizeof(double);
+        }
+
+        // set and return
+        (*buffer) = localBuffer;
+
+        return bufferSize;
+    }
+
+    /**
+     * @brief fills the struct with data from the input serialized buffer
+     * The caller must free the buffer memory
+     * @param buffer 
+     */
+    void deserialize(const char *buffer, int bufferSize) {
+        int recID, partitionID, vertexCount;
+        int position = 0;
+        
+        // get object count
+        int objectCount = 0;
+        memcpy(&objectCount, buffer + position, sizeof(int));
+        position += sizeof(int);
+
+        for (int i=0; i<objectCount; i++) {
+            std::vector<double> coords;
+            
+            // deserialize fields
+            memcpy(&recID, buffer + position, sizeof(int));
+            position += sizeof(int);
+            memcpy(&partitionID, buffer + position, sizeof(int));
+            position += sizeof(int);
+            memcpy(&vertexCount, buffer + position, sizeof(int));
+            position += sizeof(int);
+
+            int coordsLength = vertexCount * 2 * sizeof(double);
+            coords.insert(coords.end(), buffer + position, buffer + position + coordsLength);
+            position += coordsLength;
+
+            // add to batch
+            GeometryT geometry(recID, partitionID, vertexCount, coords);
+            this->addGeometryToBatch(geometry);
+        }
+    }
+
+} GeometryBatchT;
 
 #endif

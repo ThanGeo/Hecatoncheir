@@ -54,7 +54,11 @@ namespace comm
             return ret;
         }
 
-
+        /**
+         * @brief receives a serialized message with sourceTag from sourceRank
+         * the buffer must be allocated and freed by the caller
+        */
+        DB_STATUS receiveSerializedMessage(int sourceRank, int sourceTag, MPI_Comm &comm, MPI_Status &status, char** buffer, int bufferSize);
         
     }
 

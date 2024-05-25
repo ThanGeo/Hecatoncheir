@@ -12,19 +12,19 @@
 #include "env/comm_def.h"
 #include "config/containers.h"
 
+#define AGENT_PROGRAM_NAME "./agent"
+
+#define HOST_RANK 0
+#define AGENT_RANK 0
+#define PARENT_RANK 0
+#define PARENTLESS_RANK -1
+
 #define RED "\e[0;31m"
 #define GREEN "\e[0;32m"
 #define YELLOW "\e[0;33m"
 #define BLUE "\e[0;34m"
 #define PURPLE "\e[0;35m"
 #define NC "\e[0m"
-
-#define AGENT_PROGRAM_NAME "./agent"
-
-#define HOST_RANK 0
-#define PARENT_RANK 0
-#define PARENTLESS_RANK -1
-#define AGENT_RANK 0
 
 extern int g_world_size;
 extern int g_node_rank;
@@ -47,6 +47,8 @@ typedef enum DB_STATUS {
     DBERR_UNKNOWN_ARGUMENT = DBBASE + 1002,
     DBERR_INVALID_PARAMETER = DBBASE + 1003,
     DBERR_FEATURE_UNSUPPORTED = DBBASE + 1004,
+    DBERR_MALLOC_FAILED = DBBASE + 1005,
+    DBERR_BATCH_FAILED = DBBASE + 1006,
 
     // comm
     DBERR_COMM_RECV = DBBASE + 2000,
@@ -71,7 +73,6 @@ typedef enum DB_STATUS {
     // partitioning
     DBERR_INVALID_PARTITION = DBBASE + 5000,
 } DB_STATUS;
-
 
 namespace logger
 {
@@ -161,6 +162,7 @@ namespace logger
 
 }
 
+
 typedef struct DirectoryPaths {
     const std::string configFilePath = "../config.ini";
     const std::string datasetsConfigPath = "../datasets.ini";
@@ -173,6 +175,7 @@ typedef enum ActionType {
     ACTION_PERFORM_PARTITIONING,
     ACTION_CREATE_APRIL,
     ACTION_PERFORM_VERIFICATION,
+    ACTION_SERIALIZED_TEST,
 } ActionTypeE;
 
 typedef enum PartitioningType {
