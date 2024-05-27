@@ -123,14 +123,12 @@ namespace comm
             batch.deserialize(buffer, bufferSize);
 
             // do stuff
-            // logger::log_success("Received batch with", batch.objectCount, "objects");
-
-
-            // set flag
-            if (batch.objectCount == 0) {
+            if (batch.objectCount > 0) {
+                // logger::log_success("Received batch with", batch.objectCount, "objects");
+            } else {
+                // empty batch, set flag to stop listening for this dataset
                 continueListening = 0;
             }
-
 
             return DBERR_OK;
         }
@@ -334,13 +332,6 @@ STOP_LISTENING:
 
         DB_STATUS broadcastDatasetInfo(spatial_lib::DatasetT* dataset) {
             SerializedMsgT<char> msgPack(MPI_CHAR);
-            // pack the info
-            // DB_STATUS ret = pack::packDatasetInfo(dataset, msgPack);
-            // if (ret != DBERR_OK) {
-            //     logger::log_error(ret, "Failed to pack dataset info");
-            //     return ret;
-            // }
-
             // serialize
             msgPack.count = dataset->serialize(&msgPack.data);
             if (msgPack.count == -1) {
