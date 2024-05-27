@@ -5,7 +5,7 @@ namespace comm
     namespace send
     {
         template <typename T> 
-        DB_STATUS sendMsgPack(MsgPackT<T> &msgPack, int destRank, int tag, MPI_Comm &comm) {
+        DB_STATUS sendMsgPack(SerializedMsgT<T> &msgPack, int destRank, int tag, MPI_Comm &comm) {
             // send the info pack message           
             int mpi_ret = MPI_Send(msgPack.data, msgPack.count, msgPack.type, destRank, tag, comm);
             if (mpi_ret != MPI_SUCCESS) {
@@ -39,7 +39,7 @@ namespace comm
             return DBERR_OK;
         }
 
-        DB_STATUS sendDatasetInfoMessage(MsgPackT<char> &datasetInfoPack, int destRank, int tag, MPI_Comm &comm) {
+        DB_STATUS sendDatasetInfoMessage(SerializedMsgT<char> &datasetInfoPack, int destRank, int tag, MPI_Comm &comm) {
             // check tag validity
             if (tag != MSG_DATASET_INFO) {
                 logger::log_error(DBERR_COMM_WRONG_MSG_FORMAT, "Dataset info messages must have the appropriate tag. Current tag", tag);
@@ -53,40 +53,7 @@ namespace comm
             }
             return DBERR_OK;
         }
-
-        DB_STATUS sendGeometryMessage(MsgPackT<int> &infoPack, MsgPackT<double> &coordsPack, int destRank, int tag, MPI_Comm &comm) {
-            DB_STATUS ret = DBERR_OK;
-            // check tag validity
-            if (tag < MSG_DATA_BEGIN || tag >= MSG_DATA_END) {
-                logger::log_error(DBERR_COMM_WRONG_MSG_FORMAT, "Data messages must have a data tag. Current tag", tag);
-                return DBERR_COMM_WRONG_MSG_FORMAT;
-            }
-            
-            // send the info pack message
-            ret = sendMsgPack(infoPack, destRank, tag, comm);
-            if (ret != DBERR_OK) {
-                logger::log_error(ret, "Sending info pack message for single polygon failed.");
-                return ret;
-            }
-
-            // send the coords pack message
-            ret = sendMsgPack(coordsPack, destRank, tag, comm);
-            if (ret != DBERR_OK) {
-                logger::log_error(ret, "Sending coords pack message for single polygon failed.");
-                return ret;
-            }
-            return ret;
-        }
-
-        DB_STATUS sendSerializedMessage(char **buffer, int bufferSize, int destRank, int tag, MPI_Comm &comm) {
-            // send the serialized message
-            int mpi_ret = MPI_Send((*buffer), bufferSize, MPI_CHAR, destRank, tag, comm);
-            if (mpi_ret != MPI_SUCCESS) {
-                logger::log_error(DBERR_COMM_SEND, "Sending serialized message failed.");
-                return DBERR_COMM_SEND;
-            }
-            return DBERR_OK;
-        }
+        
     }
 
     namespace broadcast
@@ -112,7 +79,7 @@ namespace comm
             return ret;
         }
 
-        DB_STATUS broadcastDatasetInfo(MsgPackT<char> &msgPack) {
+        DB_STATUS broadcastDatasetInfo(SerializedMsgT<char> &msgPack) {
             DB_STATUS ret = DBERR_OK;
             // broadcast to all other controllers parallely
             #pragma omp parallel

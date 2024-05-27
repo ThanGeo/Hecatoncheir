@@ -26,17 +26,15 @@ namespace comm
     namespace controller
     {   
         /**
-         * @brief sends a single polygon to destination with destRank, using tag 
-         * The message is first packed, then sent using the appropriate amount of individual messages,
-         * and then all pack memory is freed.
-         */
-        DB_STATUS sendPolygonToNode(spatial_lib::PolygonT &polygon, int partitionID, int destRank, int tag);
-
-        /**
-         * @brief sends a batch of objects to node with destRank, using tag
+         * @brief Serializes a geometry batch and sends it to destrank, with tag through comm
          * 
+         * @param batch 
+         * @param destRank 
+         * @param tag 
+         * @param comm 
+         * @return DB_STATUS 
          */
-        DB_STATUS sendGeometryBatchToNode(BatchT &batch, int destRank, int tag);
+        DB_STATUS serializeAndSendGeometryBatch(GeometryBatchT &batch, int destRank, int tag, MPI_Comm &comm);
 
         /**
          * @brief Sends an instruction message with tag to the children (agent)
@@ -54,9 +52,6 @@ namespace comm
          * @return DB_STATUS 
          */
         DB_STATUS sendGeometryBatchToAgent(BatchT &batch, int tag);
-        DB_STATUS serializeAndSendGeometryBatchToAgent(GeometryBatchT &batch, int tag);
-
-        DB_STATUS serializeAndSendGeometryBatchToNode(GeometryBatchT &batch, int destRank, int tag);
 
         /**
          * @brief Packs and sends the dataset info to all worker nodes

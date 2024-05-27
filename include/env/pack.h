@@ -25,27 +25,10 @@ namespace pack
     DB_STATUS deserializeStrings(std::string &serializedString, std::vector<std::string> &strings);
 
     /**
-     * @brief packs a single polygon of partition ID to packs (info and coords packs)
-     * 
-     * @param polygon 
-     * @param partitionID 
-     * @param infoPack 
-     * @param coordsPack 
-     * @return DB_STATUS 
-     */
-    DB_STATUS packPolygon(spatial_lib::PolygonT &polygon, int partitionID, MsgPackT<int> &infoPack, MsgPackT<double> &coordsPack);
-
-    /**
-     * @brief Packs the arrays for a geometry into the MsgPack for send
-     * 
-     */
-    DB_STATUS packGeometryArrays(std::vector<int> &infoArray, std::vector<double> &coordsArray, MsgPackT<int> &infoPack, MsgPackT<double> &coordsPack);
-
-    /**
      * @brief Packs all the necessary dataset info into a message pack for send
      * 
      */
-    DB_STATUS packDatasetInfo(spatial_lib::DatasetT* dataset, MsgPackT<char> &datasetInfoPack);
+    DB_STATUS packDatasetInfo(spatial_lib::DatasetT* dataset, SerializedMsgT<char> &datasetInfoPack);
 
     /**
      * @brief Prints a message pack
@@ -54,7 +37,7 @@ namespace pack
      * @param msgPack 
      */
     template <typename T> 
-    void printMsgPack(MsgPackT<T> &msgPack) {
+    void printMsgPack(SerializedMsgT<T> &msgPack) {
         std::cout << "Message:" << std::endl;
         std::cout << "\ttype: " << g_MPI_Datatype_map[msgPack.type] << std::endl;
         std::cout << "\tsize: " << msgPack.count << std::endl;
@@ -77,7 +60,7 @@ namespace unpack
      * @param datasetInfoPack 
      * @return DB_STATUS 
      */
-    DB_STATUS unpackDatasetInfoPack(MsgPackT<char> &datasetInfoPack);
+    DB_STATUS unpackDatasetInfoPack(SerializedMsgT<char> &datasetInfoPack);
 }
 
 #endif 

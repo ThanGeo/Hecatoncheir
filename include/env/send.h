@@ -17,11 +17,18 @@ namespace comm
         */
         DB_STATUS sendInstructionMessage(int destRank, int tag, MPI_Comm &comm);
 
-        DB_STATUS sendDatasetInfoMessage(MsgPackT<char> &datasetInfoPack, int destRank, int tag, MPI_Comm &comm);
-
-        DB_STATUS sendGeometryMessage(MsgPackT<int> &infoPack, MsgPackT<double> &coordsPack, int destRank, int tag, MPI_Comm &comm);
+        DB_STATUS sendDatasetInfoMessage(SerializedMsgT<char> &datasetInfoPack, int destRank, int tag, MPI_Comm &comm);
         
-        DB_STATUS sendSerializedMessage(char **buffer, int bufferSize, int destRank, int tag, MPI_Comm &comm);
+        template <typename T>
+        DB_STATUS sendSerializedMessage(SerializedMsgT<T> &msg, int destRank, int tag, MPI_Comm &comm) {
+            // send the serialized message
+            int mpi_ret = MPI_Send(msg.data, msg.count, msg.type, destRank, tag, comm);
+            if (mpi_ret != MPI_SUCCESS) {
+                logger::log_error(DBERR_COMM_SEND, "Sending serialized message failed.");
+                return DBERR_COMM_SEND;
+            }
+            return DBERR_OK;
+        }
     }
 
     namespace broadcast
@@ -39,7 +46,7 @@ namespace comm
          * @param msgPack 
          * @return DB_STATUS 
          */
-        DB_STATUS broadcastDatasetInfo(MsgPackT<char> &msgPack);
+        DB_STATUS broadcastDatasetInfo(SerializedMsgT<char> &msgPack);
     }
 
 }

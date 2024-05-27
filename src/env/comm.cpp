@@ -57,65 +57,28 @@ namespace comm
         return DBERR_OK;
     }
 
-    /**
-     * @brief Handles the complete communication for a single geometry message retrieval.
-     * Such messages are comprised by 2 separate MPI messages (called packs):
-     * INFO msg (int): recID | sectionID | vertexNum
-     * COORDS msg (double): x | y | x | y | ...
-     * 
-     * @param status 
-     * @return DB_STATUS 
-     */
-    static DB_STATUS pullGeometryPacks(MPI_Status status, int tag, MPI_Comm &comm, MsgPackT<int> &infoPack, MsgPackT<double> &coordsPack) {
-        // info pack has been probed, so receive it
-        DB_STATUS ret = recv::receiveMessagePack(status, infoPack.type, comm, infoPack);
-        if (ret != DBERR_OK) {
-            logger::log_error(ret, "Failed pulling the info pack");
-            return ret;
-        }
-
-        // probe for the coords pack (blocking probe for safety, same tag) 
-        ret = probeBlocking(g_host_rank, tag, comm, status);
-        if (ret != DBERR_OK) {
-            return ret;
-        }
-        // receive the coords pack
-        ret = recv::receiveMessagePack(status, coordsPack.type, comm, coordsPack);
-        if (ret != DBERR_OK) {
-            logger::log_error(ret, "Failed pulling the coords pack");
-            return ret;
-        }
-
-        return ret;
-    }
-
-    static DB_STATUS pullSerializedMessage(MPI_Status status, int tag, MPI_Comm &comm, char **buffer, int &bufferSize) {
-        char* localBuffer;
+    template <typename T> 
+    static DB_STATUS pullSerializedMessage(MPI_Status status, int tag, MPI_Comm &comm, SerializedMsgT<T> &msg) {
         // get message size 
-        int mpi_ret = MPI_Get_count(&status, MPI_CHAR, &bufferSize);
+        int mpi_ret = MPI_Get_count(&status, msg.type, &msg.count);
         if (mpi_ret != MPI_SUCCESS) {
             logger::log_error(DBERR_COMM_GET_COUNT, "Failed when trying to get the message size");
             return DBERR_COMM_GET_COUNT;
         }
 
         // allocate space
-        localBuffer = (char*) malloc(bufferSize * sizeof(char));
+        msg.data = (T*) malloc(msg.count * sizeof(T));
         
-        DB_STATUS ret = recv::receiveSerializedMessage(status.MPI_SOURCE, tag, comm, status, &localBuffer, bufferSize);
+        DB_STATUS ret = recv::receiveSerializedMessage(status.MPI_SOURCE, tag, comm, status, msg);
         if (ret != DBERR_OK) {
             logger::log_error(ret, "Failed pulling serialized message");
             return ret;
         }
 
-        // set and return
-        (*buffer) = localBuffer;
-
         return ret;
     }
 
-    
-    
-    static DB_STATUS pullDatasetInfoPack(MPI_Status status, int tag, MPI_Comm &comm, MsgPackT<char> &datasetInfopack) {
+    static DB_STATUS pullDatasetInfoPack(MPI_Status status, int tag, MPI_Comm &comm, SerializedMsgT<char> &datasetInfopack) {
         // info pack has been probed, so receive it
         DB_STATUS ret = recv::receiveMessagePack(status, datasetInfopack.type, comm, datasetInfopack);
         if (ret != DBERR_OK) {
@@ -126,6 +89,7 @@ namespace comm
         return ret;
     }
 
+    
 
     namespace agent
     {
@@ -153,29 +117,6 @@ namespace comm
             return ret;
         }
 
-        static DB_STATUS pullGeometryPacksAndStore(MPI_Status status, int &continueListening) {
-            MsgPackT<int> infoPack(MPI_INT);
-            MsgPackT<double> coordsPack(MPI_DOUBLE);
-
-            // retrieve
-            DB_STATUS ret = pullGeometryPacks(status, status.MPI_TAG, g_local_comm, infoPack, coordsPack);
-            if (ret != DBERR_OK) {
-                return ret;
-            }
-
-            // save on disk
-            logger::log_success("Successfully geometry pack with", infoPack.data[0], "objects and flag", infoPack.data[1]);
-
-            // set flag
-            continueListening = infoPack.data[1];
-
-            // free memory
-            free(infoPack.data);
-            free(coordsPack.data);
-
-            return ret;
-        }
-
         static DB_STATUS unpackBatchMessageAndStore(char *buffer, int bufferSize, int &continueListening) {
             GeometryBatchT batch;
             // deserialize
@@ -196,10 +137,9 @@ namespace comm
 
         static DB_STATUS pullSerializedMessageAndHandle(MPI_Status status, int &continueListening) {
             int tag = status.MPI_TAG;
-            char* buffer;
-            int bufferSize;
+            SerializedMsgT<char> msg(MPI_CHAR);
 
-            DB_STATUS ret = pullSerializedMessage(status, tag, g_local_comm, &buffer, bufferSize);
+            DB_STATUS ret = pullSerializedMessage(status, tag, g_local_comm, msg);
             if (ret != DBERR_OK) {
                 return ret;
             }
@@ -214,7 +154,7 @@ namespace comm
                 case MSG_BATCH_POINT:
                 case MSG_BATCH_LINESTRING:
                 case MSG_BATCH_POLYGON:
-                    ret = unpackBatchMessageAndStore(buffer, bufferSize, continueListening);
+                    ret = unpackBatchMessageAndStore(msg.data, msg.count, continueListening);
                     if (ret != DBERR_OK) {
                         return ret;
                     }
@@ -225,14 +165,11 @@ namespace comm
                     break;
             }
 
-            // free memory
-            free(buffer);
-
             return ret;
         }
 
         static DB_STATUS listenForDataset(MPI_Status status) {
-            MsgPackT<char> datasetInfoPack(MPI_CHAR);
+            SerializedMsgT<char> datasetInfoPack(MPI_CHAR);
 
             // retrieve dataset info pack
             DB_STATUS ret = pullDatasetInfoPack(status, status.MPI_TAG, g_local_comm, datasetInfoPack);
@@ -240,12 +177,12 @@ namespace comm
                 return ret;
             }
 
-            // unpack dataste info
-            ret = unpack::unpackDatasetInfoPack(datasetInfoPack);
-            if (ret != DBERR_OK) {
-                return ret;
-            }
-
+            // new dataset
+            spatial_lib::DatasetT dataset;
+            // deserialize
+            dataset.deserialize(datasetInfoPack.data, datasetInfoPack.count);
+            // store in local g_config
+            g_config.datasetInfo.addDataset(dataset);
             // free temp memory
             free(datasetInfoPack.data);
 
@@ -376,18 +313,43 @@ STOP_LISTENING:
 
     namespace controller
     {
+        DB_STATUS serializeAndSendGeometryBatch(GeometryBatchT &batch, int destRank, int tag, MPI_Comm &comm) {
+            DB_STATUS ret = DBERR_OK;
+            SerializedMsgT<char> msg(MPI_CHAR);
+            // serialize (todo: add try/catch for segfauls, mem access etc...)   
+            msg.count = batch.serialize(&msg.data);
+            if (msg.count == -1) {
+                logger::log_error(DBERR_BATCH_FAILED, "Batch serialization failed");
+                return DBERR_BATCH_FAILED;
+            }
+            // send batch message
+            ret = comm::send::sendSerializedMessage(msg, destRank, tag, comm);
+            if (ret != DBERR_OK) {
+                logger::log_error(ret, "Sending serialized geometry batch failed");
+                return ret;
+            }
+            
+            return ret;
+        }
 
         DB_STATUS broadcastDatasetInfo(spatial_lib::DatasetT* dataset) {
-            MsgPackT<char> msgPack(MPI_CHAR);
+            SerializedMsgT<char> msgPack(MPI_CHAR);
             // pack the info
-            DB_STATUS ret = pack::packDatasetInfo(dataset, msgPack);
-            if (ret != DBERR_OK) {
-                logger::log_error(ret, "Failed to pack dataset info");
-                return ret;
+            // DB_STATUS ret = pack::packDatasetInfo(dataset, msgPack);
+            // if (ret != DBERR_OK) {
+            //     logger::log_error(ret, "Failed to pack dataset info");
+            //     return ret;
+            // }
+
+            // serialize
+            msgPack.count = dataset->serialize(&msgPack.data);
+            if (msgPack.count == -1) {
+                logger::log_error(DBERR_MALLOC_FAILED, "Dataset serialization failed");
+                return DBERR_MALLOC_FAILED;
             }
 
             // send the pack
-            ret = broadcast::broadcastDatasetInfo(msgPack);
+            DB_STATUS ret = broadcast::broadcastDatasetInfo(msgPack);
             if (ret != DBERR_OK) {
                 logger::log_error(ret, "Failed to broadcast dataset info");
                 return ret;
@@ -405,74 +367,6 @@ STOP_LISTENING:
             return ret;
         }
         
-        DB_STATUS sendPolygonToNode(spatial_lib::PolygonT &polygon, int partitionID, int destRank, int tag) {
-            // first pack the polygon to message packs
-            // pack polygon to message
-            MsgPackT<int> infoPack(MPI_INT);
-            MsgPackT<double> coordsPack(MPI_DOUBLE);
-            DB_STATUS ret = pack::packPolygon(polygon, partitionID, infoPack, coordsPack);
-            if (ret != DBERR_OK) {
-                logger::log_error(ret, "Sending single polygon failed");
-                return ret;
-            }
-
-            // send packs
-            ret = comm::send::sendGeometryMessage(infoPack, coordsPack, destRank, tag, g_global_comm);
-            if (ret != DBERR_OK) {
-                logger::log_error(ret, "Sending single polygon failed");
-                return ret;
-            }
-
-            // free pack allocated memory
-            // logger::log_task("About to fre...");
-            free(infoPack.data);
-            free(coordsPack.data);
-            // logger::log_success("Freed!");
-            return ret;
-        }
-
-        DB_STATUS sendGeometryBatchToNode(BatchT &batch, int destRank, int tag) {
-            MsgPackT<int> infoPack(MPI_INT);
-            MsgPackT<double> coordsPack(MPI_DOUBLE);
-
-            // pack
-            DB_STATUS ret = pack::packGeometryArrays(batch.infoPack, batch.coordsPack, infoPack, coordsPack);
-            if (ret != DBERR_OK) {
-                logger::log_error(ret, "Packing geometry batch failed");
-                return ret;
-            }
-
-            // send batch message
-            ret = comm::send::sendGeometryMessage(infoPack, coordsPack, destRank, tag, g_global_comm);
-            if (ret != DBERR_OK) {
-                logger::log_error(ret, "Sending geometry batch failed");
-                return ret;
-            }
-            
-            return ret;
-        }
-
-        DB_STATUS serializeAndSendGeometryBatchToNode(GeometryBatchT &batch, int destRank, int tag) {
-            DB_STATUS ret = DBERR_OK;
-            char *buffer;
-            int bufferSize = 0;
-            // serialize (todo: add try/catch for segfauls, mem access etc...)   
-            bufferSize = batch.serialize(&buffer);
-            if (bufferSize == -1) {
-                logger::log_error(DBERR_BATCH_FAILED, "Batch serialization failed");
-                return DBERR_BATCH_FAILED;
-            }
-            // send batch message
-            ret = comm::send::sendSerializedMessage(&buffer, bufferSize, destRank, tag, g_global_comm);
-            if (ret != DBERR_OK) {
-                logger::log_error(ret, "Sending serialized geometry batch failed");
-                return ret;
-            }
-            
-            return ret;
-        }
-
-
         DB_STATUS sendInstructionToAgent(int tag) {
             // send it to agent
             DB_STATUS ret = send::sendInstructionMessage(AGENT_RANK, tag, g_local_comm);
@@ -512,15 +406,14 @@ STOP_LISTENING:
             DB_STATUS ret = DBERR_OK;
             int tag = status.MPI_TAG;
             // pull serialized batch
-            char *buffer;
-            int bufferSize;
-            ret = pullSerializedMessage(status, tag, g_global_comm, &buffer, bufferSize);
+            SerializedMsgT<char> msg(MPI_CHAR);
+            ret = pullSerializedMessage(status, tag, g_global_comm, msg);
             if (ret != DBERR_OK) {
                 logger::log_error(ret, "Forwarding geometry batch failed");
                 return ret;
             } 
             // send the packs to the agent
-            ret = send::sendSerializedMessage(&buffer, bufferSize, AGENT_RANK, status.MPI_TAG, g_local_comm);
+            ret = send::sendSerializedMessage(msg, AGENT_RANK, status.MPI_TAG, g_local_comm);
             if (ret != DBERR_OK) {
                 logger::log_error(ret, "Forwarding geometry batch failed");
                 return ret;
@@ -532,15 +425,10 @@ STOP_LISTENING:
 
             // get batch object count
             int objectCount;
-            memcpy(&objectCount, buffer, sizeof(int));
+            memcpy(&objectCount, msg.data, sizeof(int));
             if (objectCount == 0) {
                 continueListening = 0;
             }
-
-
-
-            // free memory
-            free(buffer);
 
             return ret;
         }
@@ -554,7 +442,7 @@ STOP_LISTENING:
         static DB_STATUS forwardDatasetInfoToAgent(MPI_Status status) {
             DB_STATUS ret = DBERR_OK;
             int tag = status.MPI_TAG;
-            MsgPackT<char> datasetInfoPack(MPI_CHAR);
+            SerializedMsgT<char> datasetInfoPack(MPI_CHAR);
             
             // pull 
             ret = pullDatasetInfoPack(status, tag, g_global_comm, datasetInfoPack);
@@ -576,48 +464,8 @@ STOP_LISTENING:
             return ret;
         }
 
-        DB_STATUS sendGeometryBatchToAgent(BatchT &batch, int tag) {
-            MsgPackT<int> infoPack(MPI_INT); 
-            MsgPackT<double> coordsPack(MPI_DOUBLE);
-
-            // pack
-            DB_STATUS ret = pack::packGeometryArrays(batch.infoPack, batch.coordsPack, infoPack, coordsPack);
-            if (ret != DBERR_OK) {
-                logger::log_error(ret, "Packing geometry batch failed");
-                return ret;
-            }
-
-            // send the packs to the agent
-            ret = send::sendGeometryMessage(infoPack, coordsPack, AGENT_RANK, tag, g_local_comm);
-            if (ret != DBERR_OK) {
-                return ret;
-            } 
-
-            return ret;
-        }
-
-        DB_STATUS serializeAndSendGeometryBatchToAgent(GeometryBatchT &batch, int tag) {
-            DB_STATUS ret = DBERR_OK;
-            char *buffer;
-            int bufferSize = 0;
-            // serialize (todo: add try/catch for segfauls, mem access etc...)   
-            bufferSize = batch.serialize(&buffer);
-            if (bufferSize == -1) {
-                logger::log_error(DBERR_BATCH_FAILED, "Batch serialization failed");
-                return DBERR_BATCH_FAILED;
-            }
-            // send batch message
-            ret = comm::send::sendSerializedMessage(&buffer, bufferSize, AGENT_RANK, tag, g_local_comm);
-            if (ret != DBERR_OK) {
-                logger::log_error(ret, "Sending serialized geometry batch failed");
-                return ret;
-            }
-            
-            return ret;
-        }
-
         static DB_STATUS listenForDataset(MPI_Status status) {
-            MsgPackT<char> datasetInfoPack(MPI_CHAR);
+            SerializedMsgT<char> datasetInfoPack(MPI_CHAR);
 
             // forward dataset info to agent
             DB_STATUS ret = forwardDatasetInfoToAgent(status);

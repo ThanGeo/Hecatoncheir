@@ -43,118 +43,6 @@ namespace partitioning
         return DBERR_OK;
     }
 
-    static DB_STATUS loadAndPartition(std::ifstream &fin, int polygonCount, std::vector<BatchT> &batches) {
-        int recID;
-        int partitionID;
-        int vertexCount;
-        double x,y;
-        double xMin, yMin, xMax, yMax;
-        DB_STATUS ret = DBERR_OK;
-
-        //read polygons
-        for(int i=0; i<polygonCount; i++){
-
-            //read the polygon id
-            fin.read((char*) &recID, sizeof(int)); 
-
-            //read the vertex count
-            fin.read((char*) &vertexCount, sizeof(int));
-
-            xMin = std::numeric_limits<int>::max();
-            yMin = std::numeric_limits<int>::max();
-            xMax = -std::numeric_limits<int>::max();
-            yMax = -std::numeric_limits<int>::max();
-
-            std::vector<double> coords;
-            coords.reserve(vertexCount);
-            for(int i=0; i<vertexCount; i++){
-                fin.read((char*) &x, sizeof(double));
-                fin.read((char*) &y, sizeof(double));
-
-                // store coordinates temporarily
-                coords.emplace_back(x);
-                coords.emplace_back(y);
-
-                // compute MBR
-                xMin = std::min(xMin, x);
-                yMin = std::min(yMin, y);
-                xMax = std::max(xMax, x);
-                yMax = std::max(yMax, y);
-            }
-
-            // find partition IDs
-            std::vector<int> partitionIDs;
-            ret = partitioning::getPartitionsForMBR(xMin, yMin, xMax, yMax, partitionIDs);
-            if (ret != DBERR_OK) {
-                return ret;
-            }
-
-            // add to buffers for the batch
-            // for (auto partitionID : partitionIDs) {
-            for (auto partitionIT = partitionIDs.begin(); partitionIT != partitionIDs.end(); partitionIT++) {
-                int nodeRank = g_config.partitioningInfo.getNodeRankForPartitionID(*partitionIT);
-                BatchT *batch = &batches.at(nodeRank);
-                batch->addObjectToBatch(recID, *partitionIT, vertexCount, coords);
-
-                // if batch is full, send and reset
-                if (batch->size >= batch->maxSize) {
-
-                    // check if it is the last batch for this dataset
-                    if (partitionIT == partitionIDs.end() - 1 && i == polygonCount-1) {
-                        batch->updateInfoPackFlag(0);
-                    }
-                    
-                    // send
-                    if (batch->nodeRank != HOST_RANK) {
-                        // if the destination is a worker node, send to that node's controller
-                        ret = comm::controller::sendGeometryBatchToNode(*batch, batch->nodeRank, MSG_BATCH_POLYGON);
-                        if (ret != DBERR_OK) {
-                            return ret;
-                        }
-                    } else {
-                        // else, send to local agent
-                        ret = comm::controller::sendGeometryBatchToAgent(*batch, MSG_BATCH_POLYGON);
-                        if (ret != DBERR_OK) {
-                            return ret;
-                        }
-                        
-                    }
-
-                    // reset
-                    batch->clearBatch(1);
-                }
-
-            }
-        }
-
-        // send any remaining batches
-        for (auto &batch : batches) {
-            if (batch.size > 0) {        
-                // it is the last batch for this dataset
-                batch.updateInfoPackFlag(0);
-                // send
-                if (batch.nodeRank != HOST_RANK) {
-                    // if the destination is a worker node, send to that node's controller
-                    ret = comm::controller::sendGeometryBatchToNode(batch, batch.nodeRank, MSG_BATCH_POLYGON);
-                    if (ret != DBERR_OK) {
-                        return ret;
-                    }
-                } else {
-                    // else, send to local agent
-                    ret = comm::controller::sendGeometryBatchToAgent(batch, MSG_BATCH_POLYGON);
-                    if (ret != DBERR_OK) {
-                        return ret;
-                    }
-                }
-            }
-
-            // reset
-            batch.clearBatch(0);
-        }
-
-        return ret;
-    }
-
     static DB_STATUS loadAndPartitionBinarySerialized(std::ifstream &fin, int polygonCount) {
         int recID;
         int partitionID;
@@ -235,13 +123,13 @@ namespace partitioning
                     // send
                     if (batch->destRank != HOST_RANK) {
                         // if the destination is a worker node, send to that node's controller
-                        ret = comm::controller::serializeAndSendGeometryBatchToNode(*batch, batch->destRank, MSG_BATCH_POLYGON);
+                        ret = comm::controller::serializeAndSendGeometryBatch(*batch, batch->destRank, MSG_BATCH_POLYGON, g_global_comm);
                         if (ret != DBERR_OK) {
                             return ret;
                         }
                     } else {
                         // else, send to local agent
-                        ret = comm::controller::serializeAndSendGeometryBatchToAgent(*batch, MSG_BATCH_POLYGON);
+                        ret = comm::controller::serializeAndSendGeometryBatch(*batch, AGENT_RANK, MSG_BATCH_POLYGON, g_local_comm);
                         if (ret != DBERR_OK) {
                             return ret;
                         }
@@ -266,7 +154,7 @@ namespace partitioning
             GeometryBatchT *batch = &it->second;
             if (batch->destRank != HOST_RANK) {
                 // if the destination is a worker node, send to that node's controller
-                ret = comm::controller::serializeAndSendGeometryBatchToNode(*batch, batch->destRank, MSG_BATCH_POLYGON);
+                ret = comm::controller::serializeAndSendGeometryBatch(*batch, batch->destRank, MSG_BATCH_POLYGON, g_global_comm);
                 if (ret != DBERR_OK) {
                     return ret;
                 }
@@ -274,14 +162,14 @@ namespace partitioning
                 if (batch->objectCount > 0) {
                     // reset and send empty (final) message
                     batch->clear();
-                    ret = comm::controller::serializeAndSendGeometryBatchToNode(*batch, batch->destRank, MSG_BATCH_POLYGON);
+                    ret = comm::controller::serializeAndSendGeometryBatch(*batch, batch->destRank, MSG_BATCH_POLYGON, g_global_comm);
                     if (ret != DBERR_OK) {
                         return ret;
                     }
                 }
             } else {
                 // else, send to local agent
-                ret = comm::controller::serializeAndSendGeometryBatchToAgent(*batch, MSG_BATCH_POLYGON);
+                ret = comm::controller::serializeAndSendGeometryBatch(*batch, AGENT_RANK, MSG_BATCH_POLYGON, g_local_comm);
                 if (ret != DBERR_OK) {
                     return ret;
                 }
@@ -289,7 +177,7 @@ namespace partitioning
                 if (batch->objectCount > 0) {     
                     // reset and send empty (final message)
                     batch->clear();
-                    ret = comm::controller::serializeAndSendGeometryBatchToAgent(*batch, MSG_BATCH_POLYGON);
+                    ret = comm::controller::serializeAndSendGeometryBatch(*batch, AGENT_RANK, MSG_BATCH_POLYGON, g_local_comm);
                     if (ret != DBERR_OK) {
                         return ret;
                     }
@@ -298,56 +186,6 @@ namespace partitioning
         }
 
         return ret;
-    }
-
-    static DB_STATUS performPartitioningBinary(spatial_lib::DatasetT *dataset) {
-        int polygonCount;
-        DB_STATUS ret = DBERR_OK;
-        // first, broadcast the dataset info message
-        ret = comm::controller::broadcastDatasetInfo(dataset);
-        if (ret != DBERR_OK) {
-            return ret;
-        }
-
-        
-        // open dataset file stream
-        std::ifstream fin(dataset->path, std::fstream::in | std::ios_base::binary);
-
-        // Node maps for each pack. Reserve a large chunk in advance.
-        std::vector<BatchT> batches;
-        for (int i=0; i<g_world_size; i++) {
-            BatchT batch;
-            batch.nodeRank = i;
-            batch.maxSize = g_config.partitioningInfo.batchSize;
-            batch.size = 0;
-            
-            std::vector<int> infoBuf;
-            infoBuf.reserve(1 + g_config.partitioningInfo.batchSize * 3 * 3);
-            infoBuf.emplace_back(0);    // current size
-            infoBuf.emplace_back(1);    // flag
-
-            std::vector<double> coordsBuf;
-            coordsBuf.reserve(g_config.partitioningInfo.batchSize * 2 * 500);
-
-            batch.infoPack = infoBuf;
-            batch.coordsPack = coordsBuf;
-            
-            batches.emplace_back(batch);
-        }
-
-
-        //first read the total polygon count of the dataset
-        fin.read((char*) &polygonCount, sizeof(int));
-
-        // load data and partition
-        ret = loadAndPartition(fin, polygonCount, batches);
-        if (ret != DBERR_OK) {
-            return ret;
-        }
-
-        fin.close();
-
-        return DBERR_OK;
     }
 
     static DB_STATUS performPartitioningBinarySerialized(spatial_lib::DatasetT *dataset) {
@@ -382,7 +220,6 @@ namespace partitioning
         switch (dataset->fileType) {
             case spatial_lib::FT_BINARY:
                 startTime = mpi_timer::markTime();
-                // ret = performPartitioningBinary(dataset);
                 ret = performPartitioningBinarySerialized(dataset);
                 logger::log_success("Partitioning for dataset", dataset->nickname, "finished in", mpi_timer::getElapsedTime(startTime), "seconds.");
                 if (ret != DBERR_OK) {

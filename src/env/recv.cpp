@@ -34,24 +34,6 @@ namespace comm
             
             return DBERR_OK;
         }
-
-        DB_STATUS receiveSerializedMessage(int sourceRank, int sourceTag, MPI_Comm &comm, MPI_Status &status, char** buffer, int bufferSize) {
-            int mpi_ret = MPI_Recv(*buffer, bufferSize, MPI_CHAR, sourceRank, sourceTag, comm, &status);
-            if (mpi_ret != MPI_SUCCESS) {
-                logger::log_error(DBERR_COMM_RECV, "Failed to receive serialized message");
-                return DBERR_COMM_RECV;
-            }
-            // if (bufferSize > 0) {
-            // } else {
-            //     int mpi_ret = MPI_Recv(NULL, 0, MPI_CHAR, sourceRank, sourceTag, comm, &status);
-            //     if (mpi_ret != MPI_SUCCESS) {
-            //         logger::log_error(DBERR_COMM_RECV, "Failed to receive serialized message");
-            //         return DBERR_COMM_RECV;
-            //     }
-            // }
-            return DBERR_OK;
-        }
-
     }
     namespace controller
     {

@@ -44,12 +44,12 @@ inline std::unordered_map<MPI_Datatype, std::string> g_MPI_Datatype_map = {{MPI_
                                                                 };
 
 template <typename T> 
-struct MsgPackT { 
+struct SerializedMsgT { 
     MPI_Datatype type;      // mpi datatype of message data
     int count = 0;             // number of elements in message
     T *data;                // pointer to the message data
 
-    MsgPackT(MPI_Datatype type) {
+    SerializedMsgT(MPI_Datatype type) {
         this->type = type;
     }
 }; 
@@ -108,43 +108,39 @@ typedef struct GeometryBatch {
         geometries.clear();
     }
 
-    /**
-     * @brief serialize the batch into the given buffer.
-     * returns the serialized buffer size
-     * Caller is responsible for freeing the buffer memory
-     * 
-     * @param buffer 
-     */
     int serialize(char **buffer) {
-        int position = 0;
         // calculate size
         int bufferSize = calculateBufferSize();
         // allocate space
-        char* localBuffer = (char*) malloc(bufferSize * sizeof(char));
-
-        if (localBuffer == NULL) {
+        (*buffer) = (char*) malloc(bufferSize * sizeof(char));
+        if (*buffer == NULL) {
             // malloc failed
             return -1;
         }
+        char* localBuffer = *buffer;
 
         // add object count
-        memcpy(localBuffer + position, &objectCount, sizeof(int));
-        position += sizeof(int);
+        *reinterpret_cast<int*>(localBuffer) = objectCount;
+        localBuffer += sizeof(int);
 
         // add batch geometry info
         for (auto &it : geometries) {
-            memcpy(localBuffer + position, &it.recID, sizeof(int));
-            position += sizeof(int);
-            memcpy(localBuffer + position, &it.partitionID, sizeof(int));
-            position += sizeof(int);
-            memcpy(localBuffer + position, &it.vertexCount, sizeof(int));
-            position += sizeof(int);
-            memcpy(localBuffer + position, it.coords.data(), it.vertexCount * 2 * sizeof(double));
-            position += it.vertexCount * 2 * sizeof(double);
-        }
+            *reinterpret_cast<int*>(localBuffer) = it.recID;
+            localBuffer += sizeof(int);
+            *reinterpret_cast<int*>(localBuffer) = it.partitionID;
+            localBuffer += sizeof(int);
+            *reinterpret_cast<int*>(localBuffer) = it.vertexCount;
+            localBuffer += sizeof(int);
 
-        // set and return
-        (*buffer) = localBuffer;
+            // double* vertexDataPtr = reinterpret_cast<double*>(localBuffer);
+            // for (int i=0; i<it.vertexCount*2; i++) {
+            //     vertexDataPtr[i] = it.coords[i];
+            // }
+            // localBuffer += it.vertexCount * 2 * sizeof(double);
+
+            std::memcpy(localBuffer, it.coords.data(), it.vertexCount * 2 * sizeof(double));
+            localBuffer += it.vertexCount * 2 * sizeof(double);
+        }
 
         return bufferSize;
     }
@@ -156,28 +152,31 @@ typedef struct GeometryBatch {
      */
     void deserialize(const char *buffer, int bufferSize) {
         int recID, partitionID, vertexCount;
-        int position = 0;
-        
+        const char *localBuffer = buffer;
+
         // get object count
-        int objectCount = 0;
-        memcpy(&objectCount, buffer + position, sizeof(int));
-        position += sizeof(int);
+        int objectCount = *reinterpret_cast<const int*>(localBuffer);
+        localBuffer += sizeof(int);
+
+        // extend reserve space
+        geometries.reserve(geometries.size() + objectCount);
 
         for (int i=0; i<objectCount; i++) {
-            std::vector<double> coords;
-            
             // deserialize fields
-            memcpy(&recID, buffer + position, sizeof(int));
-            position += sizeof(int);
-            memcpy(&partitionID, buffer + position, sizeof(int));
-            position += sizeof(int);
-            memcpy(&vertexCount, buffer + position, sizeof(int));
-            position += sizeof(int);
+            recID = *reinterpret_cast<const int*>(localBuffer);
+            localBuffer += sizeof(int);
+            partitionID = *reinterpret_cast<const int*>(localBuffer);
+            localBuffer += sizeof(int);
+            vertexCount = *reinterpret_cast<const int*>(localBuffer);
+            localBuffer += sizeof(int);
 
-            int coordsLength = vertexCount * 2 * sizeof(double);
-            coords.insert(coords.end(), buffer + position, buffer + position + coordsLength);
-            position += coordsLength;
-
+            std::vector<double> coords(vertexCount * 2);
+            const double* vertexDataPtr = reinterpret_cast<const double*>(localBuffer);
+            for (size_t j = 0; j < vertexCount * 2; ++j) {
+                coords[j] = vertexDataPtr[j];
+            }
+            localBuffer += vertexCount * 2 * sizeof(double);
+            
             // add to batch
             GeometryT geometry(recID, partitionID, vertexCount, coords);
             this->addGeometryToBatch(geometry);
