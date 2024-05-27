@@ -121,6 +121,8 @@ int main(int argc, char* argv[]) {
     if (ret != DBERR_OK) {
         goto EXIT_SAFELY;
     }
+
+    logger::log_success("Initialized successfully");
        
     // get parent process intercomm (must be null)
     MPI_Comm_get_parent(&g_local_comm);
