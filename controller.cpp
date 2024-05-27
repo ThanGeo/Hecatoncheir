@@ -116,13 +116,12 @@ static DB_STATUS performActions() {
 }
 
 int main(int argc, char* argv[]) {
+    std::ofstream fout;
     // initialize MPI environment
     DB_STATUS ret = configure::initMPI(argc, argv);
     if (ret != DBERR_OK) {
         goto EXIT_SAFELY;
     }
-
-    logger::log_success("Initialized successfully");
        
     // get parent process intercomm (must be null)
     MPI_Comm_get_parent(&g_local_comm);
@@ -131,6 +130,16 @@ int main(int argc, char* argv[]) {
         goto EXIT_SAFELY;
     }
     g_parent_original_rank = PARENTLESS_RANK;
+
+    logger::log_success("Initialized successfully");
+    if (g_parent_original_rank != PARENTLESS_RANK) { 
+        fout.open("output_A.txt");
+        fout << "Hi, my rank is [" << g_parent_original_rank << "][A]";
+    } else {
+        fout.open("output_C.txt");
+        fout << "Hi, my rank is [" << g_node_rank << "][C]";
+    }
+    fout .close();
 
     // print cpu
     // logger::log_task("Runs on cpu", sched_getcpu());
