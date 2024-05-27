@@ -262,13 +262,10 @@ CLOSE_AND_RETURN:
 
             // add to buffers for the batch
             for (auto partitionIT = partitionIDs.begin(); partitionIT != partitionIDs.end(); partitionIT++) {
-                
                 // set partitionID
                 geometry.setPartitionID(*partitionIT);
-                
                 // get node rank responsible
                 int nodeRank = g_config.partitioningInfo.getNodeRankForPartitionID(*partitionIT);
-
                 // add geometry to batch
                 auto it = batchMap.find(nodeRank);
                 if (it == batchMap.end()) {
@@ -278,7 +275,6 @@ CLOSE_AND_RETURN:
                 }
                 GeometryBatchT *batch = &it->second;
                 batch->addGeometryToBatch(geometry);
-
                 // if batch is full, send and reset
                 if (batch->objectCount >= batch->maxObjectCount) {
                     // send
@@ -296,7 +292,6 @@ CLOSE_AND_RETURN:
                         }
                         
                     }
-
                     // reset
                     batch->clear();
                 }
