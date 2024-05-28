@@ -68,7 +68,7 @@ namespace comm
 
         // allocate space
         msg.data = (T*) malloc(msg.count * sizeof(T));
-        
+                
         DB_STATUS ret = recv::receiveSerializedMessage(status.MPI_SOURCE, tag, comm, status, msg);
         if (ret != DBERR_OK) {
             logger::log_error(ret, "Failed pulling serialized message");
@@ -124,7 +124,7 @@ namespace comm
 
             // do stuff
             if (batch.objectCount > 0) {
-                // logger::log_success("Received batch with", batch.objectCount, "objects");
+                logger::log_success("Received batch with", batch.objectCount, "objects");
             } else {
                 // empty batch, set flag to stop listening for this dataset
                 continueListening = 0;
@@ -216,6 +216,7 @@ namespace comm
                     case MSG_BATCH_LINESTRING:
                     case MSG_BATCH_POLYGON:
                         /* batch geometry message */
+                        // logger::log_success("Probed a batch msg");
                         ret = pullSerializedMessageAndHandle(status, listen);
                         if (ret != DBERR_OK) {
                             return ret;
@@ -248,9 +249,7 @@ namespace comm
                     // pull the message
                     ret = pullInitInstructionAndPerform(status);
                     if (ret != DBERR_OK) {
-                        // report error to controller
-                        ret = send::sendSingleIntMessage(ret, PARENT_RANK, MSG_ERR, g_local_comm);
-                        return ret ;
+                        return ret;
                     }
                     break;
                 case MSG_INSTR_FIN:
@@ -296,6 +295,7 @@ namespace comm
                 if (ret != DBERR_OK) {
                     return ret;
                 }
+
                 ret = pullIncoming(status);
                 if (ret == DB_FIN) {
                     goto STOP_LISTENING;
@@ -410,10 +410,6 @@ STOP_LISTENING:
                 return ret;
             } 
 
-            // logger::log_success("Forwarded serialized message to agent");
-
-
-
             // get batch object count
             int objectCount;
             memcpy(&objectCount, msg.data, sizeof(int));
@@ -464,6 +460,8 @@ STOP_LISTENING:
                 return ret;
             }
 
+            // logger::log_success("Forwarded dataset info to agent");
+
             // next, listen for the infoPacks and coordPacks explicitly
             int listen = 1;
             while(listen) {
@@ -496,6 +494,7 @@ STOP_LISTENING:
                     case MSG_BATCH_LINESTRING:
                     case MSG_BATCH_POLYGON:
                         /* batch geometry message */
+                        // logger::log_success("Probed a batch msg");
                         ret = forwardSerializedMessageToAgent(status, listen);
                         if (ret != DBERR_OK) {
                             return ret;
@@ -525,9 +524,16 @@ STOP_LISTENING:
             
             // check message tag
             switch (status.MPI_TAG) {
+                case MSG_INSTR_INIT:
+                    /* initialize */
+                    ret = comm::controller::forwardInstructionToAgent(status);
+                    if (ret != DBERR_OK) {
+                        return ret;
+                    }
+                    break;
                 case MSG_INSTR_FIN:
                     /* terminate */
-                    // forward this instruction to the local agent
+                    // forward the instruction to the local agent
                     ret = comm::controller::forwardInstructionToAgent(status);
                     if (ret != DBERR_OK) {
                         return ret;
@@ -574,6 +580,7 @@ STOP_LISTENING:
                 // check whether the host controller has sent a message (instruction)
                 messageFound = probeNonBlocking(g_host_rank, MPI_ANY_TAG, g_global_comm, status);
                 if (messageFound) {
+                    // logger::log_success("Message found!");
                     // pull the message and perform its request
                     ret = controller::pullIncoming(status);
                     // true only if the termination instruction has been received

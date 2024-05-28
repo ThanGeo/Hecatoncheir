@@ -90,7 +90,6 @@ static DB_STATUS performActions() {
             case ACTION_PERFORM_PARTITIONING:
                 // logger::log_task("size:", g_config.datasetInfo.datasets.size());
                 for (int i=0; i<g_config.datasetInfo.numberOfDatasets; i++) {
-                    // ret = partitioning::partitionDataset(g_config.datasetInfo.datasets.at(i));
                     ret = partitioning::partitionDataset(g_config.datasetInfo.getDatasetByIdx(i));
                     if (ret != DBERR_OK) {
                         return ret;
@@ -116,7 +115,6 @@ static DB_STATUS performActions() {
 }
 
 int main(int argc, char* argv[]) {
-    std::ofstream fout;
     // initialize MPI environment
     DB_STATUS ret = configure::initMPI(argc, argv);
     if (ret != DBERR_OK) {
@@ -132,15 +130,7 @@ int main(int argc, char* argv[]) {
     g_parent_original_rank = PARENTLESS_RANK;
 
     logger::log_success("Initialized successfully");
-    if (g_parent_original_rank != PARENTLESS_RANK) { 
-        fout.open("output_A.txt");
-        fout << "Hi, my rank is [" << g_parent_original_rank << "][A]";
-    } else {
-        fout.open("output_C.txt");
-        fout << "Hi, my rank is [" << g_node_rank << "][C]";
-    }
-    fout .close();
-
+    
     // print cpu
     // logger::log_task("Runs on cpu", sched_getcpu());
 

@@ -225,7 +225,7 @@ CLOSE_AND_RETURN:
 
         //read polygons
         int intBuf[2];
-        for(int i=0; i<polygonCount; i++){            
+        for(int i=0; i<polygonCount; i++){
             //read the polygon id and vertex count
             fread(&intBuf, sizeof(int), 2, pFile);
             recID = intBuf[0];
@@ -349,13 +349,14 @@ CLOSE_AND_RETURN:
 
     static DB_STATUS performPartitioningBinary(spatial_lib::DatasetT *dataset) {
         int polygonCount;
-        DB_STATUS ret = DBERR_OK;
+        DB_STATUS ret = DBERR_OK;  
+
         // first, broadcast the dataset info message
         ret = comm::controller::broadcastDatasetInfo(dataset);
         if (ret != DBERR_OK) {
             return ret;
         }
-        
+       
         // load data and partition
         // ret = loadDatasetAndPartitionBinary(dataset->path, polygonCount);
         ret = loadDatasetAndPartitionBinaryOptimized(dataset->path, polygonCount);

@@ -8,7 +8,6 @@ typedef struct ActionsStatement {
     bool performPartitioning = false;
     bool createAPRIL = false;
     bool performVerification = false;
-    bool sendSerializedTestMsg = false;
 }ActionsStatementT;
 
 typedef struct DatasetStatement {
@@ -34,8 +33,8 @@ typedef struct QueryStatement {
 }QueryStatementT;
 
 typedef struct SystemOptionsStatement {
-    SystemSetupTypeE setupType = SYS_LOCAL_MACHINE;
-    std::string nodefilePath;
+    std::string setupType = "";
+    std::string nodefilePath = "";
     uint nodeCount;
 } SystemOptionsStatementT;
 

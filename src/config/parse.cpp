@@ -11,6 +11,15 @@ namespace parser
     static boost::property_tree::ptree system_config_pt;
     static boost::property_tree::ptree dataset_config_pt;
 
+    static int systemSetupTypeStrToInt(std::string &str) {
+        if (str == "LOCAL") {
+            return SYS_LOCAL_MACHINE;
+        } else if (str == "CLUSTER") {
+            return SYS_CLUSTER;
+        }
+        return -1;
+    }
+
     /**
      * @brief parses the selected actions and puts them in proper order inside the configuration
      * 
@@ -32,12 +41,6 @@ namespace parser
         // verification always last
         if (actionsStmt->performVerification) {
             ActionT action(ACTION_PERFORM_VERIFICATION);
-            g_config.actions.emplace_back(action);
-        }
-
-        // test
-        if (actionsStmt->sendSerializedTestMsg) {
-            ActionT action(ACTION_SERIALIZED_TEST);
             g_config.actions.emplace_back(action);
         }
 
@@ -251,7 +254,18 @@ namespace parser
     static DB_STATUS parseConfigurationOptions(SystemOptionsStatementT &sysOpsStmt, SystemOptionsT &sysOps) {
         sysOps.nodeCount = sysOpsStmt.nodeCount;
         sysOps.nodefilePath = sysOpsStmt.nodefilePath;
-        sysOps.setupType = sysOpsStmt.setupType;
+
+        if (sysOpsStmt.setupType != "") {
+            // user specified system type, overwrite the loaded type from config.ini
+            int setupType = systemSetupTypeStrToInt(sysOpsStmt.setupType);
+            if (setupType == -1) {
+                logger::log_error(DBERR_INVALID_PARAMETER, "Unknown system setup type:", sysOpsStmt.setupType);
+                return DBERR_INVALID_PARAMETER;
+            }
+            sysOps.setupType = (SystemSetupTypeE) setupType;
+
+        }
+
 
 
         return DBERR_OK;
@@ -261,7 +275,7 @@ namespace parser
      * @brief parse system related options from config file
     */
     static DB_STATUS loadSetupOptions(SystemOptionsStatementT &sysOpsStmt) {
-        sysOpsStmt.setupType = (SystemSetupTypeE) system_config_pt.get<int>("Environment.type");
+        sysOpsStmt.setupType = system_config_pt.get<std::string>("Environment.type");
         sysOpsStmt.nodefilePath = system_config_pt.get<std::string>("Environment.nodefilePath");
         sysOpsStmt.nodeCount = system_config_pt.get<int>("Environment.nodeCount");
 
@@ -292,7 +306,7 @@ namespace parser
         }
 
         // after config file has been loaded, parse cmd arguments and overwrite any selected options
-        while ((c = getopt(argc, argv, "t:sm:pcf:q:R:S:ev:z?")) != -1)
+        while ((c = getopt(argc, argv, "d:t:sm:pcf:q:R:S:ev:z?")) != -1)
         {
             switch (c)
             {
@@ -300,6 +314,9 @@ namespace parser
                 //     // Query Type
                 //     queryStmt.queryType = std::string(optarg);
                 //     break;
+                case 'd':
+                    settingsStmt.sysOpsStmt.setupType = std::string(optarg);
+                    break;
                 case 'R':
                     // Dataset R path
                     settingsStmt.datasetStmt.datasetNicknameR = std::string(optarg);
@@ -312,9 +329,6 @@ namespace parser
                     break;
                 case 't':
                     settingsStmt.sysOpsStmt.setupType = (SystemSetupTypeE) atoi(optarg);
-                    break;
-                case 's':
-                    settingsStmt.actionsStmt.sendSerializedTestMsg = true;
                     break;
                 case 'p':
                     settingsStmt.actionsStmt.performPartitioning = true;
