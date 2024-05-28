@@ -10,6 +10,8 @@
 #include "pack.h"
 #include "env/partitioning.h"
 
+#include <omp.h>
+
 namespace comm 
 {
     namespace agent
@@ -60,6 +62,8 @@ namespace comm
          * @return DB_STATUS 
          */
         DB_STATUS listen();
+
+        DB_STATUS gatherResponses();
     }
 
     

@@ -2,7 +2,11 @@
 
 namespace comm 
 {
-   
+    static DB_STATUS receiveAndVerifyResponse(MPI_Status &status) {
+
+    }
+
+
     /**
      * @brief probes for a message in the given communicator with the specified parameters.
      * if it exists, its info is stored in the status parameters.
@@ -56,50 +60,6 @@ namespace comm
 
         return DBERR_OK;
     }
-
-    /**
-     * @brief Gets the size and receives the probed serialized message
-     * 
-     * @tparam T 
-     * @param status 
-     * @param tag 
-     * @param comm 
-     * @param msg output
-     * @return DB_STATUS 
-     */
-    template <typename T> 
-    static DB_STATUS pullSerializedMessage(MPI_Status status, int tag, MPI_Comm &comm, SerializedMsgT<T> &msg) {
-        // get message size 
-        int mpi_ret = MPI_Get_count(&status, msg.type, &msg.count);
-        if (mpi_ret != MPI_SUCCESS) {
-            logger::log_error(DBERR_COMM_GET_COUNT, "Failed when trying to get the message size");
-            return DBERR_COMM_GET_COUNT;
-        }
-
-        // allocate space
-        msg.data = (T*) malloc(msg.count * sizeof(T));
-                
-        DB_STATUS ret = recv::receiveSerializedMessage(status.MPI_SOURCE, tag, comm, status, msg);
-        if (ret != DBERR_OK) {
-            logger::log_error(ret, "Failed pulling serialized message");
-            return ret;
-        }
-
-        return ret;
-    }
-
-    static DB_STATUS pullDatasetInfoMessage(MPI_Status status, int tag, MPI_Comm &comm, SerializedMsgT<char> &datasetInfopack) {
-        // it has been probed, so receive it
-        DB_STATUS ret = recv::receiveMessage(status, datasetInfopack.type, comm, datasetInfopack);
-        if (ret != DBERR_OK) {
-            logger::log_error(ret, "Failed pulling the dataset info message");
-            return ret;
-        }
-
-        return ret;
-    }
-
-    
 
     namespace agent
     {
@@ -164,10 +124,10 @@ namespace comm
         static DB_STATUS pullSerializedMessageAndHandle(MPI_Status status, int &continueListening) {
             int tag = status.MPI_TAG;
             SerializedMsgT<char> msg(MPI_CHAR);
-            
             // receive the message
-            DB_STATUS ret = pullSerializedMessage(status, tag, g_local_comm, msg);
+            DB_STATUS ret = recv::receiveMessage(status, msg.type, g_local_comm, msg);
             if (ret != DBERR_OK) {
+                logger::log_error(ret, "Failed pulling serialized message");
                 return ret;
             }
 
@@ -190,54 +150,74 @@ namespace comm
         }
 
         static DB_STATUS listenForDataset(MPI_Status status) {
-            SerializedMsgT<char> datasetInfoPack(MPI_CHAR);
+            SerializedMsgT<char> datasetInfoMsg(MPI_CHAR);
+            spatial_lib::DatasetT dataset;
+            int listen = 1;
 
             // retrieve dataset info pack
-            DB_STATUS ret = pullDatasetInfoMessage(status, status.MPI_TAG, g_local_comm, datasetInfoPack);
+            DB_STATUS ret = recv::receiveMessage(status, datasetInfoMsg.type, g_local_comm, datasetInfoMsg);
             if (ret != DBERR_OK) {
-                return ret;
+                logger::log_error(ret, "Failed pulling the dataset info message");
+                goto STOP_LISTENING;
             }
 
             // new dataset
-            spatial_lib::DatasetT dataset;
             // deserialize
-            dataset.deserialize(datasetInfoPack.data, datasetInfoPack.count);
+            dataset.deserialize(datasetInfoMsg.data, datasetInfoMsg.count);
             // store in local g_config
             g_config.datasetInfo.addDataset(dataset);
             // free temp memory
-            free(datasetInfoPack.data);
+            free(datasetInfoMsg.data);
 
             // listen for dataset batches until an empty batch arrives
-            int listen = 1;
             while(listen) {
                 // proble blockingly for batch
                 ret = probeBlocking(PARENT_RANK, MPI_ANY_TAG, g_local_comm, status);
                 if (ret != DBERR_OK) {
-                    return ret;
+                    goto STOP_LISTENING;
                 }
                 // pull
                 switch (status.MPI_TAG) {
-                    case MSG_INSTR_FIN:
+                    case MSG_INSTR_FIN: // todo: maybe this is not needed
                         /* stop listening for instructions */
                         ret = recv::receiveInstructionMessage(PARENT_RANK, status.MPI_TAG, g_local_comm, status);
                         if (ret == DBERR_OK) {
                             // break the listening loop
                             return DB_FIN;
                         }
-                        return ret;
+                        goto STOP_LISTENING;
                     case MSG_BATCH_POINT:
                     case MSG_BATCH_LINESTRING:
                     case MSG_BATCH_POLYGON:
                         /* batch geometry message */
                         ret = pullSerializedMessageAndHandle(status, listen);
                         if (ret != DBERR_OK) {
-                            return ret;
+                            goto STOP_LISTENING;
                         }  
                         break;
                     default:
                         logger::log_error(DBERR_COMM_WRONG_MESSAGE_ORDER, "After the dataset info pack, only geometry packs are expected");
-                        return DBERR_COMM_WRONG_MESSAGE_ORDER;
+                        ret = DBERR_COMM_WRONG_MESSAGE_ORDER;
+                        goto STOP_LISTENING;
                 }
+            }
+            
+STOP_LISTENING:
+            if (ret == DBERR_OK) {
+                // send ACK back that all data for this dataset has been received and processed successfully
+                ret = send::sendResponse(PARENT_RANK, MSG_ACK, g_local_comm);
+                if (ret != DBERR_OK) {
+                    logger::log_error(ret, "Send ACK failed.");
+                }
+            } else {
+                // there was an error, send NACK and propagate error code locally
+                DB_STATUS errorCode = ret;
+                ret = send::sendResponse(PARENT_RANK, MSG_NACK, g_local_comm);
+                if (ret != DBERR_OK) {
+                    logger::log_error(ret, "Send NACK failed.");
+                    return ret;
+                }
+                return errorCode;
             }
             return ret;
         }
@@ -314,7 +294,7 @@ STOP_LISTENING:
                 return DBERR_BATCH_FAILED;
             }
             // send batch message
-            ret = comm::send::sendSerializedMessage(msg, destRank, tag, comm);
+            ret = comm::send::sendMessage(msg, destRank, tag, comm);
             if (ret != DBERR_OK) {
                 logger::log_error(ret, "Sending serialized geometry batch failed");
                 return ret;
@@ -375,8 +355,6 @@ STOP_LISTENING:
                 logger::log_error(ret, "Failed forwarding instruction with tag", messageTag, "to agent");
                 return ret;
             }
-            // printf("Controller %d forwarded the instruction with code %d to the children\n", g_node_rank, status.MPI_TAG);
-
             return DBERR_OK;
         }
 
@@ -389,27 +367,26 @@ STOP_LISTENING:
         static DB_STATUS forwardSerializedMessageToAgent(MPI_Status status, int &continueListening) {
             DB_STATUS ret = DBERR_OK;
             int tag = status.MPI_TAG;
-            // pull serialized batch
             SerializedMsgT<char> msg(MPI_CHAR);
-            ret = pullSerializedMessage(status, tag, g_global_comm, msg);
+            // receive batch message
+            ret = recv::receiveMessage(status, msg.type, g_global_comm, msg);
             if (ret != DBERR_OK) {
-                logger::log_error(ret, "Forwarding geometry batch failed");
+                logger::log_error(ret, "Failed pulling serialized message");
                 return ret;
-            } 
+            }
+            
             // send the packs to the agent
-            ret = send::sendSerializedMessage(msg, AGENT_RANK, status.MPI_TAG, g_local_comm);
+            ret = send::sendMessage(msg, AGENT_RANK, status.MPI_TAG, g_local_comm);
             if (ret != DBERR_OK) {
                 logger::log_error(ret, "Forwarding geometry batch failed");
                 return ret;
-            } 
-
+            }
             // get batch object count
             int objectCount;
             memcpy(&objectCount, msg.data, sizeof(int));
             if (objectCount == 0) {
                 continueListening = 0;
             }
-
             return ret;
         }
 
@@ -422,25 +399,20 @@ STOP_LISTENING:
         static DB_STATUS forwardDatasetInfoToAgent(MPI_Status status) {
             DB_STATUS ret = DBERR_OK;
             int tag = status.MPI_TAG;
-            SerializedMsgT<char> datasetInfoPack(MPI_CHAR);
-            
-            // pull 
-            ret = pullDatasetInfoMessage(status, tag, g_global_comm, datasetInfoPack);
+            SerializedMsgT<char> datasetInfoMsg(MPI_CHAR);
+            // receive dataset info message
+            ret = recv::receiveMessage(status, datasetInfoMsg.type, g_global_comm, datasetInfoMsg);
             if (ret != DBERR_OK) {
+                logger::log_error(ret, "Failed pulling the dataset info message");
                 return ret;
             }
-
             // send
-            ret = send::sendDatasetInfoMessage(datasetInfoPack, AGENT_RANK, status.MPI_TAG, g_local_comm);
+            ret = send::sendDatasetInfoMessage(datasetInfoMsg, AGENT_RANK, status.MPI_TAG, g_local_comm);
             if (ret != DBERR_OK) {
                 return ret;
             } 
-
-            // free memory
-            free(datasetInfoPack.data);
-
-            // logger::log_success("Successfully forwarded dataset info to agent");
-
+            // free temp memory
+            free(datasetInfoMsg.data);
             return ret;
         }
 
@@ -450,7 +422,6 @@ STOP_LISTENING:
             if (ret != DBERR_OK) {
                 return ret;
             }
-
             // next, listen for the infoPacks and coordPacks explicitly
             int listen = 1;
             while(listen) {
@@ -483,6 +454,24 @@ STOP_LISTENING:
                         return DBERR_COMM_WRONG_MESSAGE_ORDER;
                 }
             }
+
+            // wait for response by the agent that all is well for this dataset partitioning
+            ret = probeBlocking(AGENT_RANK, MPI_ANY_TAG, g_local_comm, status);
+            if (ret != DBERR_OK) {
+                return ret;
+            }
+            // receive response
+            ret = recv::receiveResponse(AGENT_RANK, status.MPI_TAG, g_local_comm, status);
+            if (ret != DBERR_OK) {
+                return ret;
+            }
+            // forward response to host controller
+            ret = send::sendResponse(g_host_rank, status.MPI_TAG, g_global_comm);
+            if (ret != DBERR_OK) {
+                logger::log_error(ret, "Forwarding response to host controller failed");
+                return ret;
+            }
+            // todo: maybe do something on nack?
             return ret;
         }
 
@@ -525,7 +514,6 @@ STOP_LISTENING:
                 case MSG_BATCH_POLYGON:
                     logger::log_error(DBERR_COMM_WRONG_MESSAGE_ORDER, "Geometry packs must follow a dataset info pack", status.MPI_TAG);
                     return DBERR_COMM_WRONG_MESSAGE_ORDER;    // change to error codes to stop agent from working after errors
-                    break;
                 default:
                     // unkown instruction
                     logger::log_error(DBERR_COMM_UNKNOWN_INSTR, "Controller failed with unkown instruction");
@@ -548,7 +536,7 @@ STOP_LISTENING:
                     
                 }
 
-                // check whether the host controller has sent a message (instruction)
+                // check whether the host controller has sent a message
                 messageFound = probeNonBlocking(g_host_rank, MPI_ANY_TAG, g_global_comm, status);
                 if (messageFound) {
                     // pull the message and perform its request
@@ -559,7 +547,6 @@ STOP_LISTENING:
                     } else if (ret != DBERR_OK) {
                         return ret;
                     }
-                    // continue listening
                 }
 
                 // do periodic waiting before probing again
@@ -567,6 +554,57 @@ STOP_LISTENING:
             }
 STOP_LISTENING:
             return DBERR_OK;
+        }
+
+        DB_STATUS gatherResponses() {
+            DB_STATUS ret = DBERR_OK;
+
+            // use threads to parallelize gathering of responses
+            #pragma omp parallel num_threads(g_world_size)
+            {
+                DB_STATUS local_ret = DBERR_OK;
+                int messageFound;
+                MPI_Status status;
+                int tid = omp_get_thread_num();
+
+                // probe for responses
+                if (tid == 0) {
+                    // wait for agent's response
+                    local_ret = probeBlocking(AGENT_RANK, MPI_ANY_TAG, g_local_comm, status);
+                    if (local_ret != DBERR_OK) {
+                        #pragma omp cancel parallel
+                        ret = local_ret;
+                    }
+                    // receive response
+                    local_ret = recv::receiveResponse(status.MPI_SOURCE, status.MPI_TAG, g_local_comm, status);
+                    if (local_ret != DBERR_OK) {
+                        #pragma omp cancel parallel
+                        ret = local_ret;
+                    }
+                } else {
+                    // wait for workers' responses (each thread with id X receives from worker with rank X)
+                    local_ret = probeBlocking(tid, MPI_ANY_TAG, g_global_comm, status);
+                    if (local_ret != DBERR_OK) {
+                        #pragma omp cancel parallel
+                        ret = local_ret;
+                    }
+                    // receive response
+                    local_ret = recv::receiveResponse(status.MPI_SOURCE, status.MPI_TAG, g_global_comm, status);
+                    if (local_ret != DBERR_OK) {
+                        #pragma omp cancel parallel
+                        ret = local_ret;
+                    }
+                }
+
+                // check response
+                if (status.MPI_TAG != MSG_ACK) {
+                    #pragma omp cancel parallel
+                    logger::log_error(DBERR_PARTITIONING_FAILED, "Node", status.MPI_SOURCE, "did not finish partitioning successfully");
+                    ret = DBERR_PARTITIONING_FAILED;
+                }
+            }
+
+            return ret;
         }
     }
 }

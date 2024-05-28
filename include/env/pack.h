@@ -28,7 +28,7 @@ namespace pack
      * @brief Packs all the necessary dataset info into a message pack for send
      * 
      */
-    DB_STATUS packDatasetInfo(spatial_lib::DatasetT* dataset, SerializedMsgT<char> &datasetInfoPack);
+    DB_STATUS packDatasetInfo(spatial_lib::DatasetT* dataset, SerializedMsgT<char> &datasetInfoMsg);
 
     /**
      * @brief Prints a message pack
@@ -57,10 +57,10 @@ namespace unpack
     /**
      * @brief unpacks a dataset info pack and builds a new dataset in the local configuration
      * 
-     * @param datasetInfoPack 
+     * @param datasetInfoMsg 
      * @return DB_STATUS 
      */
-    DB_STATUS unpackDatasetInfoPack(SerializedMsgT<char> &datasetInfoPack);
+    DB_STATUS unpackDatasetInfoPack(SerializedMsgT<char> &datasetInfoMsg);
 }
 
 #endif 

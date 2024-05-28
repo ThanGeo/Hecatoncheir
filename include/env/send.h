@@ -9,18 +9,36 @@ namespace comm
 {
     namespace send
     {   
-
-        DB_STATUS sendSingleIntMessage(int value, int destRank, int tag, MPI_Comm &comm);
+        /**
+         * @brief sends a response that is either ACK or NACK
+         * 
+         * @param destRank 
+         * @param tag 
+         * @param comm 
+         * @return DB_STATUS 
+         */
+        DB_STATUS sendResponse(int destRank, int tag, MPI_Comm &comm);
         
         /**
          * sends an instruction message to one specific node with destRank.
         */
         DB_STATUS sendInstructionMessage(int destRank, int tag, MPI_Comm &comm);
 
-        DB_STATUS sendDatasetInfoMessage(SerializedMsgT<char> &datasetInfoPack, int destRank, int tag, MPI_Comm &comm);
+        DB_STATUS sendDatasetInfoMessage(SerializedMsgT<char> &datasetInfoMsg, int destRank, int tag, MPI_Comm &comm);
         
+
+        /**
+         * @brief sends a serialized message to destrank with tag through comm
+         * 
+         * @tparam T 
+         * @param msg 
+         * @param destRank 
+         * @param tag 
+         * @param comm 
+         * @return DB_STATUS 
+         */
         template <typename T>
-        DB_STATUS sendSerializedMessage(SerializedMsgT<T> &msg, int destRank, int tag, MPI_Comm &comm) {
+        DB_STATUS sendMessage(SerializedMsgT<T> &msg, int destRank, int tag, MPI_Comm &comm) {
             // send the serialized message
             int mpi_ret = MPI_Send(msg.data, msg.count, msg.type, destRank, tag, comm);
             if (mpi_ret != MPI_SUCCESS) {

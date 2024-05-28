@@ -71,6 +71,7 @@ typedef enum DB_STATUS {
 
     // partitioning
     DBERR_INVALID_PARTITION = DBBASE + 5000,
+    DBERR_PARTITIONING_FAILED = DBBASE + 5001,
 } DB_STATUS;
 
 namespace logger
@@ -172,7 +173,6 @@ typedef enum ActionType {
     ACTION_PERFORM_PARTITIONING,
     ACTION_CREATE_APRIL,
     ACTION_PERFORM_VERIFICATION,
-    ACTION_SERIALIZED_TEST,
 } ActionTypeE;
 
 typedef enum PartitioningType {

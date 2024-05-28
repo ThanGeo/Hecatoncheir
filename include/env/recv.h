@@ -7,12 +7,7 @@ namespace comm
 {
     namespace recv
     {
-        /**
-         * @brief receives a single int message from senderRank with messageTag.
-         * message contents are stored in the contents parameter. 
-         * 
-         */
-        DB_STATUS receiveSingleIntMessage(int sourceRank, int messageTag, int &contents);
+        DB_STATUS receiveResponse(int sourceRank, int sourceTag, MPI_Comm &comm, MPI_Status &status);
 
         /**
          * @brief receive an instruction message from sourceRank with tag.

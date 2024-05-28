@@ -2,22 +2,22 @@
 
 namespace comm 
 {
-
-    
-
-
     namespace recv
     {
-        DB_STATUS receiveSingleIntMessage(int sourceRank, int tag, int &contents) {
-            MPI_Status status;
-            // receive msg
-            int mpi_ret = MPI_Recv(&contents, 1, MPI_CHAR, sourceRank, tag, g_global_comm, &status);
+        DB_STATUS receiveResponse(int sourceRank, int sourceTag, MPI_Comm &comm, MPI_Status &status) {
+            if (sourceTag != MSG_ACK && sourceTag != MSG_NACK) {
+                logger::log_error(DBERR_INVALID_PARAMETER, "Response tag must by either ACK or NACK. Tag:", sourceTag);
+                return DBERR_INVALID_PARAMETER;
+            }
+            // receive response
+            int mpi_ret = MPI_Recv(NULL, 0, MPI_CHAR, sourceRank, sourceTag, comm, &status);
             if (mpi_ret != MPI_SUCCESS) {
-                logger::log_error(DBERR_COMM_RECV, "Failed to receive single int message with tag", tag);
+                logger::log_error(DBERR_COMM_RECV, "Failed to receive response with tag ", sourceTag);
                 return DBERR_COMM_RECV;
             }
             return DBERR_OK;
         }
+
 
         DB_STATUS receiveInstructionMessage(int sourceRank, int sourceTag, MPI_Comm &comm, MPI_Status &status) {
             // check tag validity
