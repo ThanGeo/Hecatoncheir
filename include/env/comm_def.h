@@ -4,6 +4,8 @@
 #include "def.h"
 #include <unordered_map>
 
+#define LISTENING_INTERVAL 1
+
 typedef enum NodeType {
     NODE_HOST,
     NODE_WORKER

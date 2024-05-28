@@ -45,15 +45,6 @@ namespace comm
         DB_STATUS sendInstructionToAgent(int tag);
 
         /**
-         * @brief Sends a batch to the controller's respective agent
-         * 
-         * @param batch 
-         * @param tag 
-         * @return DB_STATUS 
-         */
-        DB_STATUS sendGeometryBatchToAgent(BatchT &batch, int tag);
-
-        /**
          * @brief Packs and sends the dataset info to all worker nodes
          * 
          * @param dataset 

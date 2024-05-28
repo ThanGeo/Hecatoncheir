@@ -34,7 +34,6 @@ extern int g_parent_original_rank;
 extern MPI_Comm g_global_comm;
 extern MPI_Comm g_local_comm;
 
-
 /* STATUS AND ERROR CODES */
 #define DBBASE 100000
 typedef enum DB_STATUS {
@@ -57,8 +56,8 @@ typedef enum DB_STATUS {
     DBERR_COMM_GET_COUNT = DBBASE + 2003,
     DBERR_COMM_WRONG_MSG_FORMAT = DBBASE + 2004,
     DBERR_COMM_UNKNOWN_INSTR = DBBASE + 2005,
-    DBERR_COMM_INVALID_MSG_TYPE = DBBASE + 2006,
-    DBERR_COMM_WRONG_PACK_ORDER = DBBASE + 2007,
+    DBERR_COMM_INVALID_MSG_TAG = DBBASE + 2006,
+    DBERR_COMM_WRONG_MESSAGE_ORDER = DBBASE + 2007,
     DBERR_COMM_PROBE_FAILED = DBBASE + 2008,
     
     // processes/mpi
@@ -159,9 +158,7 @@ namespace logger
             print_args(first, rest...);
         }
     }
-
 }
-
 
 typedef struct DirectoryPaths {
     const std::string configFilePath = "../config.ini";
@@ -240,50 +237,6 @@ typedef struct Config {
     PartitioningInfoT partitioningInfo;
     DatasetInfoT datasetInfo;
 } ConfigT;
-
-typedef struct Batch {
-    int nodeRank;       // to whom it is destined for
-    int size;           // how many objects it contains
-    int maxSize;        // maximum capacity in terms of objects
-    /**
-     * @brief info pack for a geometry batch
-     * |OBJECT COUNT|FINAL MSG FLAG|REC ID|PARTITION ID|VERTEX COUNT|REC ID|PARTITION ID|VERTEX COUNT|...|
-     * 
-     */
-    std::vector<int> infoPack;
-    /**
-     * @brief coords pack for a geometry batch
-     * |X|Y|X|Y|...|
-     * 
-     */
-    std::vector<double> coordsPack;
-
-    void updateInfoPackObjectCount(int objectCount) {
-        infoPack.at(0) = objectCount;
-    }
-
-    void updateInfoPackFlag(int flag) {
-        infoPack.at(1) = flag;
-    }
-
-    void addObjectToBatch(int recID, int partitionID, int vertexCount, std::vector<double> &coords) {
-        infoPack.emplace_back(recID);
-        infoPack.emplace_back(partitionID);
-        infoPack.emplace_back(vertexCount);
-        coordsPack.insert(std::end(coordsPack), std::begin(coords), std::end(coords));
-        size += 1;
-        updateInfoPackObjectCount(size);
-    }
-
-    void clearBatch(int flag) {
-        infoPack.clear();
-        infoPack.emplace_back(0);       // geometries count
-        infoPack.emplace_back(flag);    // final message flag 
-        coordsPack.clear();
-        size = 0;
-    }
-
-} BatchT;
 
 /**
  * @brief global configuration variable 

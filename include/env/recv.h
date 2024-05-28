@@ -32,7 +32,7 @@ namespace comm
          * @return DB_STATUS 
          */
         template <typename T> 
-        DB_STATUS receiveMessagePack(MPI_Status &status, MPI_Datatype dataType, MPI_Comm &comm, SerializedMsgT<T> &msgPack) {
+        DB_STATUS receiveMessage(MPI_Status &status, MPI_Datatype dataType, MPI_Comm &comm, SerializedMsgT<T> &msgPack) {
             DB_STATUS ret = DBERR_OK;
             // get message size 
             int mpi_ret = MPI_Get_count(&status, dataType, &msgPack.count);
