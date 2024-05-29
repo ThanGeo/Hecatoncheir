@@ -50,11 +50,24 @@ namespace partitioning
         //first read the total polygon count of the dataset
         fread(&polygonCount, sizeof(int), 1, pFile);
 
-        // init batches per node
+        // sanity check
+        if (HOST_RANK != AGENT_RANK) {
+            // this will never happen unless somebody did a malakia
+            logger::log_error(DBERR_INVALID_PARAMETER, "Host node rank and every agent's rank must match");
+            return DBERR_INVALID_PARAMETER;
+        }
+
+        // initialize batches
         std::unordered_map<int,GeometryBatchT> batchMap;
         for (int i=0; i<g_world_size; i++) {
             GeometryBatchT batch;
             batch.destRank = i;
+            if (i > 0) {
+                batch.comm = &g_global_comm;
+            } else {
+                batch.comm = &g_local_comm;
+            }
+            batch.tag = MSG_BATCH_POLYGON;
             batch.maxObjectCount = g_config.partitioningInfo.batchSize;
             batchMap.insert(std::make_pair(i,batch));
         }
@@ -113,20 +126,9 @@ namespace partitioning
                 batch->addGeometryToBatch(geometry);
                 // if batch is full, send and reset
                 if (batch->objectCount >= batch->maxObjectCount) {
-                    // send
-                    if (batch->destRank != HOST_RANK) {
-                        // if the destination is a worker node, send to that node's controller
-                        ret = comm::controller::serializeAndSendGeometryBatch(*batch, batch->destRank, MSG_BATCH_POLYGON, g_global_comm);
-                        if (ret != DBERR_OK) {
-                            goto CLOSE_AND_RETURN;
-                        }
-                    } else {
-                        // else, send to local agent
-                        ret = comm::controller::serializeAndSendGeometryBatch(*batch, AGENT_RANK, MSG_BATCH_POLYGON, g_local_comm);
-                        if (ret != DBERR_OK) {
-                            goto CLOSE_AND_RETURN;
-                        }
-                        
+                    ret = comm::controller::serializeAndSendGeometryBatch(batch);
+                    if (ret != DBERR_OK) {
+                        goto CLOSE_AND_RETURN;
                     }
                     // reset
                     batch->clear();
@@ -144,35 +146,17 @@ namespace partitioning
                 goto CLOSE_AND_RETURN;
             }
             GeometryBatchT *batch = &it->second;
-            if (batch->destRank != HOST_RANK) {
-                // if the destination is a worker node, send to that node's controller
-                ret = comm::controller::serializeAndSendGeometryBatch(*batch, batch->destRank, MSG_BATCH_POLYGON, g_global_comm);
+            ret = comm::controller::serializeAndSendGeometryBatch(batch);
+            if (ret != DBERR_OK) {
+                goto CLOSE_AND_RETURN;
+            }
+            // send also an empty pack to signify the end of the partitioning for this dataset
+            if (batch->objectCount > 0) {     
+                // reset and send empty (final message)
+                batch->clear();
+                ret = comm::controller::serializeAndSendGeometryBatch(batch);
                 if (ret != DBERR_OK) {
                     goto CLOSE_AND_RETURN;
-                }
-                // send also an empty pack to signify the end of the partitioning for this dataset
-                if (batch->objectCount > 0) {
-                    // reset and send empty (final) message
-                    batch->clear();
-                    ret = comm::controller::serializeAndSendGeometryBatch(*batch, batch->destRank, MSG_BATCH_POLYGON, g_global_comm);
-                    if (ret != DBERR_OK) {
-                        goto CLOSE_AND_RETURN;
-                    }
-                }
-            } else {
-                // else, send to local agent
-                ret = comm::controller::serializeAndSendGeometryBatch(*batch, AGENT_RANK, MSG_BATCH_POLYGON, g_local_comm);
-                if (ret != DBERR_OK) {
-                    goto CLOSE_AND_RETURN;
-                }
-                // send also an empty pack to signify the end of the partitioning for this dataset
-                if (batch->objectCount > 0) {     
-                    // reset and send empty (final message)
-                    batch->clear();
-                    ret = comm::controller::serializeAndSendGeometryBatch(*batch, AGENT_RANK, MSG_BATCH_POLYGON, g_local_comm);
-                    if (ret != DBERR_OK) {
-                        goto CLOSE_AND_RETURN;
-                    }
                 }
             }
         }
@@ -213,7 +197,7 @@ CLOSE_AND_RETURN:
                     logger::log_error(DBERR_PARTITIONING_FAILED, "Partitioning failed for dataset", dataset->nickname);
                     return ret;
                 }
-                // wait for response by workers that all is ok
+                // wait for response by workers+agent that all is ok
                 ret = comm::controller::gatherResponses();
                 if (ret != DBERR_OK) {
                     return ret;

@@ -28,15 +28,15 @@ namespace comm
     namespace controller
     {   
         /**
-         * @brief Serializes a geometry batch and sends it to destrank, with tag through comm
-         * 
+         * @brief Serializes a geometry batch and sends it to its assigned destination rank, with tag through comm
+         * The batch must contain all of this information
          * @param batch 
          * @param destRank 
          * @param tag 
          * @param comm 
          * @return DB_STATUS 
          */
-        DB_STATUS serializeAndSendGeometryBatch(GeometryBatchT &batch, int destRank, int tag, MPI_Comm &comm);
+        DB_STATUS serializeAndSendGeometryBatch(GeometryBatchT* batch);
 
         /**
          * @brief Sends an instruction message with tag to the children (agent)

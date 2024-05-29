@@ -284,22 +284,26 @@ STOP_LISTENING:
 
     namespace controller
     {
-        DB_STATUS serializeAndSendGeometryBatch(GeometryBatchT &batch, int destRank, int tag, MPI_Comm &comm) {
+        DB_STATUS serializeAndSendGeometryBatch(GeometryBatchT* batch) {
             DB_STATUS ret = DBERR_OK;
             SerializedMsgT<char> msg(MPI_CHAR);
+            // check if batch is valid
+            if (!batch->isValid()) {
+                logger::log_error(DBERR_BATCH_FAILED, "Batch is invalid, check its destRank, tag and comm");
+                return DBERR_BATCH_FAILED;
+            }
             // serialize (todo: add try/catch for segfauls, mem access etc...)   
-            msg.count = batch.serialize(&msg.data);
+            msg.count = batch->serialize(&msg.data);
             if (msg.count == -1) {
                 logger::log_error(DBERR_BATCH_FAILED, "Batch serialization failed");
                 return DBERR_BATCH_FAILED;
             }
             // send batch message
-            ret = comm::send::sendMessage(msg, destRank, tag, comm);
+            ret = comm::send::sendMessage(msg, batch->destRank, batch->tag, *batch->comm);
             if (ret != DBERR_OK) {
                 logger::log_error(ret, "Sending serialized geometry batch failed");
                 return ret;
             }
-            
             return ret;
         }
 

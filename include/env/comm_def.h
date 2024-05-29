@@ -85,8 +85,14 @@ typedef struct GeometryBatch {
     int objectCount = 0;
     std::vector<GeometryT> geometries;
     // unserializable/unclearable (todo: make const?)
-    int destRank;
-    int maxObjectCount;
+    int destRank = -1;   // destination node rank
+    int maxObjectCount; 
+    MPI_Comm* comm; // communicator that the batch will be send through
+    int tag = -1;        // MPI tag = indicates spatial data type
+
+    bool isValid() {
+        return !(destRank == -1 || tag == -1 || comm == nullptr);
+    }
 
     void addGeometryToBatch(GeometryT &geometry) {
         geometries.emplace_back(geometry);

@@ -101,7 +101,13 @@ namespace logger
             std::cout << YELLOW "[" + std::to_string(g_parent_original_rank) + "]" NC BLUE "[A]" NC RED "[ERROR: " + std::to_string(errorCode) + "]" NC ": ";
         } else {
             // controllers
-            std::cout << YELLOW "[" + std::to_string(g_node_rank) + "]" NC PURPLE "[C]" NC RED "[ERROR: " + std::to_string(errorCode) + "]" NC ": ";
+            if (g_node_rank == HOST_RANK) {
+                // host controller
+                std::cout << PURPLE "[" + std::to_string(g_node_rank) + "]" "[C]" NC RED "[ERROR: " + std::to_string(errorCode) + "]" NC ": ";
+            } else {
+                // worker controller
+                std::cout << YELLOW "[" + std::to_string(g_node_rank) + "]" NC PURPLE "[C]" NC RED "[ERROR: " + std::to_string(errorCode) + "]" NC ": ";
+            }
         }
         std::cout.flush();
         print_args(first, rest...);
@@ -118,7 +124,13 @@ namespace logger
             std::cout << YELLOW "[" + std::to_string(g_parent_original_rank) + "]" NC BLUE "[A]" NC GREEN "[SUCCESS]" NC ": ";
         } else {
             // controllers
-            std::cout << YELLOW "[" + std::to_string(g_node_rank) + "]" NC PURPLE "[C]" NC GREEN "[SUCCESS]" NC ": ";
+            if (g_node_rank == HOST_RANK) {
+                // host controller
+                std::cout << PURPLE "[" + std::to_string(g_node_rank) + "]" "[C]" NC GREEN "[SUCCESS]" NC ": ";
+            } else {
+                // worker controller
+                std::cout << YELLOW "[" + std::to_string(g_node_rank) + "]" NC PURPLE "[C]" NC GREEN "[SUCCESS]" NC ": ";
+            }
         }
         std::cout.flush();
         print_args(first, rest...);
@@ -135,7 +147,13 @@ namespace logger
             std::cout << YELLOW "[" + std::to_string(g_parent_original_rank) + "]" NC BLUE "[A]" NC ": ";
         } else {
             // controllers
-            std::cout << YELLOW "[" + std::to_string(g_node_rank) + "]" NC PURPLE "[C]" NC ": ";
+            if (g_node_rank == HOST_RANK) {
+                // host controller
+                std::cout << PURPLE "[" + std::to_string(g_node_rank) + "]" "[C]" NC ": ";
+            } else {
+                // worker controller
+                std::cout << YELLOW "[" + std::to_string(g_node_rank) + "]" NC PURPLE "[C]" NC ": ";
+            }
         }
         std::cout.flush();
         print_args(first, rest...);
@@ -153,7 +171,13 @@ namespace logger
                 std::cout << YELLOW "[" + std::to_string(g_parent_original_rank) + "]" NC BLUE "[A]" NC ": ";
             } else {
                 // controllers
-                std::cout << YELLOW "[" + std::to_string(g_node_rank) + "]" NC PURPLE "[C]" NC ": ";
+                if (g_node_rank == HOST_RANK) { 
+                    // host controller
+                    std::cout << PURPLE "[" + std::to_string(g_node_rank) + "]" "[C]" NC ": ";
+                } else {
+                    // worker controller
+                    std::cout << YELLOW "[" + std::to_string(g_node_rank) + "]" NC PURPLE "[C]" NC ": ";
+                }
             }
             std::cout.flush();
             print_args(first, rest...);
