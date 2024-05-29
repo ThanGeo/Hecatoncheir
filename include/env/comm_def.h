@@ -25,16 +25,19 @@ typedef enum MsgType {
     MSG_INSTR_FIN = MSG_BASE + 2001,
     MSG_INSTR_END,
 
-    /* DATA */
-    MSG_DATASET_INFO = MSG_BASE + 3000,
+    /* SETUP */
+    MSG_SYS_INFO = MSG_BASE + 3000,
 
-    MSG_DATATYPE_BEGIN = MSG_BASE + 3001,
+    /* DATA */
+    MSG_DATASET_INFO = MSG_BASE + 4000,
+
+    MSG_DATATYPE_BEGIN = MSG_BASE + 4001,
     MSG_SINGLE_POINT = MSG_DATATYPE_BEGIN,
-    MSG_SINGLE_LINESTRING = MSG_BASE + 3002,
-    MSG_SINGLE_POLYGON = MSG_BASE + 3003,
-    MSG_BATCH_POINT = MSG_BASE + 3004,
-    MSG_BATCH_LINESTRING = MSG_BASE + 3005,
-    MSG_BATCH_POLYGON = MSG_BASE + 3006,
+    MSG_SINGLE_LINESTRING = MSG_BASE + 4002,
+    MSG_SINGLE_POLYGON = MSG_BASE + 4003,
+    MSG_BATCH_POINT = MSG_BASE + 4004,
+    MSG_BATCH_LINESTRING = MSG_BASE + 4005,
+    MSG_BATCH_POLYGON = MSG_BASE + 4006,
 
     MSG_DATATYPE_END,
     
@@ -144,13 +147,6 @@ typedef struct GeometryBatch {
             localBuffer += sizeof(int);
             *reinterpret_cast<int*>(localBuffer) = it.vertexCount;
             localBuffer += sizeof(int);
-
-            // double* vertexDataPtr = reinterpret_cast<double*>(localBuffer);
-            // for (int i=0; i<it.vertexCount*2; i++) {
-            //     vertexDataPtr[i] = it.coords[i];
-            // }
-            // localBuffer += it.vertexCount * 2 * sizeof(double);
-
             std::memcpy(localBuffer, it.coords.data(), it.vertexCount * 2 * sizeof(double));
             localBuffer += it.vertexCount * 2 * sizeof(double);
         }

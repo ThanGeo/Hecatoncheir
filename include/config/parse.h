@@ -29,7 +29,7 @@ namespace parser
      * @brief Load config options and parse any cmd arguments.
      * @return fills the sysOps object with data
     */
-    DB_STATUS parse(int argc, char *argv[], SystemOptionsT &sysOps);
+    DB_STATUS parse(int argc, char *argv[]);
 }
 
 #endif

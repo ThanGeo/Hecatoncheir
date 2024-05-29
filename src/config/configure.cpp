@@ -56,10 +56,10 @@ namespace configure
         return DBERR_OK;
     }
 
-    DB_STATUS createConfiguration(SystemOptionsT &sysOps) {
+    DB_STATUS createConfiguration() {
         DB_STATUS ret = DBERR_OK;
-        // in a cluster, each node is responsible for its directories.
-        if (sysOps.setupType == SYS_CLUSTER) {
+        // in a cluster, each node is responsible to verify its own directories.
+        if (g_config.options.setupType == SYS_CLUSTER) {
             // broadcaste init instruction
             ret = comm::broadcast::broadcastInstructionMessage(MSG_INSTR_INIT);
             if (ret != DBERR_OK) {
@@ -72,9 +72,11 @@ namespace configure
             return ret;
         }
 
-        // set to global variable
-        g_config.options = sysOps;
-
+        // broadcast system info
+        ret = comm::controller::broadcastSysInfo();
+        if (ret != DBERR_OK) {
+            return ret;
+        }
 
         return DBERR_OK;
     }

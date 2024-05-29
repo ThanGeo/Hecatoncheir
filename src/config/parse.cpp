@@ -251,9 +251,9 @@ namespace parser
     /**
      * @brief passes the configuration on to the sysOps return object
     */
-    static DB_STATUS parseConfigurationOptions(SystemOptionsStatementT &sysOpsStmt, SystemOptionsT &sysOps) {
-        sysOps.nodeCount = sysOpsStmt.nodeCount;
-        sysOps.nodefilePath = sysOpsStmt.nodefilePath;
+    static DB_STATUS parseConfigurationOptions(SystemOptionsStatementT &sysOpsStmt) {
+        g_config.options.nodeCount = sysOpsStmt.nodeCount;
+        g_config.options.nodefilePath = sysOpsStmt.nodefilePath;
 
         if (sysOpsStmt.setupType != "") {
             // user specified system type, overwrite the loaded type from config.ini
@@ -262,12 +262,8 @@ namespace parser
                 logger::log_error(DBERR_INVALID_PARAMETER, "Unknown system setup type:", sysOpsStmt.setupType);
                 return DBERR_INVALID_PARAMETER;
             }
-            sysOps.setupType = (SystemSetupTypeE) setupType;
-
+            g_config.options.setupType = (SystemSetupTypeE) setupType;
         }
-
-
-
         return DBERR_OK;
     }
 
@@ -282,7 +278,7 @@ namespace parser
         return DBERR_OK;
     }
 
-    DB_STATUS parse(int argc, char *argv[], SystemOptionsT &sysOps) {
+    DB_STATUS parse(int argc, char *argv[]) {
         char c;
         SettingsStatementT settingsStmt;
 
@@ -343,7 +339,7 @@ namespace parser
         // verify setup (TODO)
 
         // set configuration options
-        ret = parseConfigurationOptions(settingsStmt.sysOpsStmt, sysOps);
+        ret = parseConfigurationOptions(settingsStmt.sysOpsStmt);
         if (ret != DBERR_OK) {
             return ret;
         }

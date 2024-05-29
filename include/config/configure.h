@@ -25,7 +25,7 @@ namespace configure
     /**
      * @brief creates configuration for the system based on the options
     */
-    DB_STATUS createConfiguration(SystemOptionsT &sysOps);
+    DB_STATUS createConfiguration();
 
 
     DB_STATUS setDatasetInfo(DatasetStatementT* datasetStmt);

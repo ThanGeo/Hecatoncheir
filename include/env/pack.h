@@ -7,28 +7,8 @@
 
 namespace pack
 {
-    /**
-     * @brief serializes a vector of strings into a single string.
-     * for each string in the vector, its size is also included in the serialized string.
-     * each entry is delimited by a whitespace
-     * 
-     */
-    std::string serializeStrings(std::vector<std::string> &strings);
+    DB_STATUS packSystemInfo(SerializedMsgT<char> &sysInfoMsg);
 
-    /**
-     * @brief deserializes a string into a vector of its serialized strings
-     * 
-     * @param serializedString 
-     * @param strings 
-     * @return DB_STATUS 
-     */
-    DB_STATUS deserializeStrings(std::string &serializedString, std::vector<std::string> &strings);
-
-    /**
-     * @brief Packs all the necessary dataset info into a message pack for send
-     * 
-     */
-    DB_STATUS packDatasetInfo(spatial_lib::DatasetT* dataset, SerializedMsgT<char> &datasetInfoMsg);
 
     /**
      * @brief Prints a message pack
@@ -54,13 +34,8 @@ namespace pack
 
 namespace unpack
 {   
-    /**
-     * @brief unpacks a dataset info pack and builds a new dataset in the local configuration
-     * 
-     * @param datasetInfoMsg 
-     * @return DB_STATUS 
-     */
-    DB_STATUS unpackDatasetInfoPack(SerializedMsgT<char> &datasetInfoMsg);
+
+    DB_STATUS unpackSystemInfo(SerializedMsgT<char> &sysInfoMsg);
 }
 
 #endif 

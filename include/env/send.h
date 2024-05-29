@@ -57,14 +57,35 @@ namespace comm
         */
         DB_STATUS broadcastInstructionMessage(int tag);
 
-
         /**
-         * @brief broadcasts the dataset info to all worker nodes
-         * messages are broadcasted parallely
-         * @param msgPack 
+         * @brief broadcasts a serialized/packed message with the given tag to all worker nodes.
+         * Sending the same message to the agent must be handled separately
+         * 
+         * @tparam T 
+         * @param msg 
+         * @param tag 
          * @return DB_STATUS 
          */
-        DB_STATUS broadcastDatasetInfo(SerializedMsgT<char> &msgPack);
+        template <typename T>
+        DB_STATUS broadcastMessage(SerializedMsgT<T> &msg, int tag) {
+            DB_STATUS ret = DBERR_OK;
+            // broadcast to all other controllers parallely
+            #pragma omp parallel
+            {
+                DB_STATUS local_ret = DBERR_OK;
+                #pragma omp for
+                for(int i=0; i<g_world_size; i++) {
+                    if (i != g_host_rank) {
+                        local_ret = send::sendMessage(msg, i, tag, g_global_comm);
+                        if (local_ret != DBERR_OK) {
+                            #pragma omp cancel for
+                            ret = local_ret;
+                        } 
+                    }
+                }
+            }
+            return ret;
+        }
     }
 
 }

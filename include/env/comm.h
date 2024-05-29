@@ -9,6 +9,7 @@
 #include "config/configure.h"
 #include "pack.h"
 #include "env/partitioning.h"
+#include "storage/utils.h"
 
 #include <omp.h>
 
@@ -54,6 +55,8 @@ namespace comm
          * @return DB_STATUS 
          */
         DB_STATUS broadcastDatasetInfo(spatial_lib::DatasetT* dataset);
+
+        DB_STATUS broadcastSysInfo();
         
 
         /**

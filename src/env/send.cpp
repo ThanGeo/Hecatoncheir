@@ -71,26 +71,6 @@ namespace comm
             }
             return ret;
         }
-
-        DB_STATUS broadcastDatasetInfo(SerializedMsgT<char> &msgPack) {
-            DB_STATUS ret = DBERR_OK;
-            // broadcast to all other controllers parallely
-            #pragma omp parallel
-            {
-                DB_STATUS local_ret = DBERR_OK;
-                #pragma omp for
-                for(int i=0; i<g_world_size; i++) {
-                    if (i != g_host_rank) {
-                        // printf("Broadcasting to controller %d\n", i);
-                        local_ret = send::sendMessage(msgPack, i, MSG_DATASET_INFO, g_global_comm);
-                        if (local_ret != DBERR_OK) {
-                            #pragma omp cancel for
-                            ret = local_ret;
-                        } 
-                    }
-                }
-            }
-            return ret;
-        }
+       
     }
 }

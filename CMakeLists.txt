@@ -54,6 +54,7 @@ set(SrcFiles
     src/env/pack.cpp
     src/env/partitioning.cpp
 
+    src/storage/utils.cpp
     src/storage/write.cpp
     src/storage/read.cpp
 

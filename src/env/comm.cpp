@@ -2,11 +2,6 @@
 
 namespace comm 
 {
-    static DB_STATUS receiveAndVerifyResponse(MPI_Status &status) {
-
-    }
-
-
     /**
      * @brief probes for a message in the given communicator with the specified parameters.
      * if it exists, its info is stored in the status parameters.
@@ -145,13 +140,27 @@ namespace comm
                     logger::log_error(DBERR_COMM_INVALID_MSG_TAG, "Invalid message tag");
                     break;
             }
-
+            // free memory
+            free(msg.data);
             return ret;
+        }
+
+        static DB_STATUS createPartitionedDatasetFromMessage(SerializedMsgT<char> &datasetInfoMsg) {
+            spatial_lib::DatasetT dataset;
+            // deserialize message
+            dataset.deserialize(datasetInfoMsg.data, datasetInfoMsg.count);
+            // generate partition filepath
+            DB_STATUS ret = storage::generatePartitionFilePath(dataset);
+            if (ret != DBERR_OK) {
+                return ret;
+            }
+            // store in local g_config
+            g_config.datasetInfo.addDataset(dataset);
+            return DBERR_OK;
         }
 
         static DB_STATUS listenForDataset(MPI_Status status) {
             SerializedMsgT<char> datasetInfoMsg(MPI_CHAR);
-            spatial_lib::DatasetT dataset;
             int listen = 1;
 
             // retrieve dataset info pack
@@ -160,13 +169,13 @@ namespace comm
                 logger::log_error(ret, "Failed pulling the dataset info message");
                 goto STOP_LISTENING;
             }
-
-            // new dataset
-            // deserialize
-            dataset.deserialize(datasetInfoMsg.data, datasetInfoMsg.count);
-            // store in local g_config
-            g_config.datasetInfo.addDataset(dataset);
-            // free temp memory
+            // create dataset from the received message
+            ret = createPartitionedDatasetFromMessage(datasetInfoMsg);
+            if (ret != DBERR_OK) {
+                logger::log_error(ret, "Failed creating the dataset from the dataset info message");
+                goto STOP_LISTENING;
+            }
+            // free memory
             free(datasetInfoMsg.data);
 
             // listen for dataset batches until an empty batch arrives
@@ -222,6 +231,23 @@ STOP_LISTENING:
             return ret;
         }
 
+        static DB_STATUS handleSysInfoMessage(MPI_Status status) {
+            SerializedMsgT<char> msg(MPI_CHAR);
+            // receive the message
+            DB_STATUS ret = recv::receiveMessage(status, msg.type, g_local_comm, msg);
+            if (ret != DBERR_OK) {
+                return ret;
+            }
+            // unpack info and store
+            ret = unpack::unpackSystemInfo(msg);
+            if (ret != DBERR_OK) {
+                return ret;
+            }
+            // free memory
+            free(msg.data);
+            return ret;
+        }
+
         /**
          * @brief pulls incoming message sent by the local controller 
          * (the one probed last, whose info is stored in the status parameter)
@@ -239,6 +265,12 @@ STOP_LISTENING:
             }
             /* non-instruction message */
             switch (status.MPI_TAG) {
+                case MSG_SYS_INFO:
+                    ret = handleSysInfoMessage(status);
+                    if (ret != DBERR_OK) {
+                        return ret;
+                    }
+                    break;
                 case MSG_DATASET_INFO:
                     /* dataset partitioning */
                     ret = listenForDataset(status);
@@ -317,7 +349,7 @@ STOP_LISTENING:
             }
 
             // send the pack
-            DB_STATUS ret = broadcast::broadcastDatasetInfo(msgPack);
+            DB_STATUS ret = broadcast::broadcastMessage(msgPack, MSG_DATASET_INFO);
             if (ret != DBERR_OK) {
                 logger::log_error(ret, "Failed to broadcast dataset info");
                 return ret;
@@ -328,6 +360,32 @@ STOP_LISTENING:
             if (ret != DBERR_OK) {
                 return ret;
             } 
+
+            // free
+            free(msgPack.data);
+
+            return ret;
+        }
+
+        DB_STATUS broadcastSysInfo() {
+            SerializedMsgT<char> msgPack(MPI_CHAR);
+            // serialize
+            DB_STATUS ret = pack::packSystemInfo(msgPack);
+            if (ret != DBERR_OK) {
+                return ret;
+            }
+
+            // send the pack to workers
+            ret = comm::broadcast::broadcastMessage(msgPack, MSG_SYS_INFO);
+            if (ret != DBERR_OK) {
+                return ret;
+            }
+            
+            // send it to the local agent
+            ret = send::sendMessage(msgPack, AGENT_RANK, MSG_SYS_INFO, g_local_comm);
+            if (ret != DBERR_OK) {
+                return ret;
+            }                   
 
             // free
             free(msgPack.data);
@@ -391,6 +449,8 @@ STOP_LISTENING:
             if (objectCount == 0) {
                 continueListening = 0;
             }
+            // free memory
+            free(msg.data);
             return ret;
         }
 
@@ -464,7 +524,7 @@ STOP_LISTENING:
             if (ret != DBERR_OK) {
                 return ret;
             }
-            // receive response
+            // receive response from agent
             ret = recv::receiveResponse(AGENT_RANK, status.MPI_TAG, g_local_comm, status);
             if (ret != DBERR_OK) {
                 return ret;
@@ -476,6 +536,28 @@ STOP_LISTENING:
                 return ret;
             }
             // todo: maybe do something on nack?
+            return ret;
+        }
+
+        static DB_STATUS handleSysInfoMessage(MPI_Status status) {
+            SerializedMsgT<char> msg(MPI_CHAR);
+            // receive the message
+            DB_STATUS ret = recv::receiveMessage(status, msg.type, g_global_comm, msg);
+            if (ret != DBERR_OK) {
+                return ret;
+            }
+            // forward to local agent
+            ret = send::sendMessage(msg, AGENT_RANK, status.MPI_TAG, g_local_comm);
+            if (ret != DBERR_OK) {
+                return ret;
+            }
+            // unpack info and store (since it may be useful to this controller as well)
+            ret = unpack::unpackSystemInfo(msg);
+            if (ret != DBERR_OK) {
+                return ret;
+            }
+            // free memory
+            free(msg.data);
             return ret;
         }
 
@@ -506,6 +588,13 @@ STOP_LISTENING:
                         return ret;
                     }
                     return DB_FIN;
+                case MSG_SYS_INFO:
+                    /* message system/partitioning info */
+                    ret = handleSysInfoMessage(status);
+                    if (ret != DBERR_OK) {
+                        return ret;
+                    }
+                    break;
                 case MSG_DATASET_INFO:
                     /* message containing dataset info */
                     ret = listenForDataset(status);
@@ -554,7 +643,7 @@ STOP_LISTENING:
                 }
 
                 // do periodic waiting before probing again
-                sleep(LISTENING_INTERVAL);
+                // sleep(LISTENING_INTERVAL);
             }
 STOP_LISTENING:
             return DBERR_OK;

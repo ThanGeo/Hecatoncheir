@@ -2,17 +2,15 @@
 
 namespace setup
 {
-    DB_STATUS setupSystem(int argc, char* argv[]) {
-        SystemOptionsT sysOps;
-        
+    DB_STATUS setupSystem(int argc, char* argv[]) {        
         // parse
-        DB_STATUS ret = parser::parse(argc, argv, sysOps);
+        DB_STATUS ret = parser::parse(argc, argv);
         if (ret != DBERR_OK) {
             return ret;
         }
 
         // configure
-        ret = configure::createConfiguration(sysOps);
+        ret = configure::createConfiguration();
         if (ret != DBERR_OK) {
             return ret;
         }

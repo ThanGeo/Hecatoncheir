@@ -5,6 +5,7 @@ namespace comm
     namespace recv
     {
         DB_STATUS receiveResponse(int sourceRank, int sourceTag, MPI_Comm &comm, MPI_Status &status) {
+            // check tag validity
             if (sourceTag != MSG_ACK && sourceTag != MSG_NACK) {
                 logger::log_error(DBERR_INVALID_PARAMETER, "Response tag must by either ACK or NACK. Tag:", sourceTag);
                 return DBERR_INVALID_PARAMETER;

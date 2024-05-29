@@ -68,6 +68,8 @@ typedef enum DB_STATUS {
     DBERR_INVALID_DATATYPE = DBBASE + 4000,
     DBERR_INVALID_FILETYPE = DBBASE + 4001,
     DBERR_UNSUPPORTED_DATATYPE_COMBINATION = DBBASE + 4002,
+    DBERR_MISSING_DATASET_INFO = DBBASE + 4003,
+    DBERR_MISSING_PATH = DBBASE + 4004,
 
     // partitioning
     DBERR_INVALID_PARTITION = DBBASE + 5000,
@@ -201,6 +203,7 @@ typedef enum ActionType {
 
 typedef enum PartitioningType {
     PARTITIONING_ROUND_ROBIN,
+    PARTITIONING_PREFIX_BASED,
 } PartitioningTypeE;
 
 typedef struct PartitioningInfo {

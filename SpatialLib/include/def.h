@@ -88,7 +88,6 @@ namespace spatial_lib
         std::string nickname;
         // map: recID -> vector data (polygon, linestring etc.)
         std::unordered_map<uint, spatial_lib::VectorDataT> vectorData;
-        // double xMinGlobal, yMinGlobal, xMaxGlobal, yMaxGlobal;  // global bounds based on dataset bounds
         DataspaceInfoT dataspaceInfo;
         /**
          * Approximations
