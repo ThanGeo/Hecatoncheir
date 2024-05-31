@@ -16,7 +16,7 @@ namespace comm
         DB_STATUS receiveInstructionMessage(int sourceRank, int sourceTag, MPI_Comm &comm, MPI_Status &status);
         
         /**
-         * @brief receives a single message pack of type T
+         * @brief receives a single PROBED message pack of type T (info stored in status)
          * the msgPack MPI datatype parameter must already be set (constructor handles that)
          * the msgPack data buffer is allocated by this function. The caller is responsible for freeing this memory
          * 

@@ -2,6 +2,12 @@
 
 namespace comm 
 {
+    static int getBatchObjectCountFromMessage(SerializedMsgT<char> &msg) {
+        int objectCount = -1;
+        memcpy(&objectCount, msg.data, sizeof(int));
+        return objectCount;
+    }
+
     /**
      * @brief probes for a message in the given communicator with the specified parameters.
      * if it exists, its info is stored in the status parameters.
@@ -28,33 +34,93 @@ namespace comm
         return DBERR_OK;
     }
 
-    /**
-     * @brief receives and forwards a message from source to dest
-     * 
-     * @param sourceRank 
-     * @param sourceTag 
-     * @param sourceComm 
-     * @param destRank 
-     * @param destComm 
-     * @return DB_STATUS 
-     */
-    static DB_STATUS forwardInstructionMessage(int sourceRank, int sourceTag, MPI_Comm sourceComm, int destRank, MPI_Comm destComm) {
-        MPI_Status status;
-        // receive instruction
-        DB_STATUS ret = recv::receiveInstructionMessage(sourceRank, sourceTag, sourceComm, status);
-        if (ret != DBERR_OK) {
-            logger::log_error(DBERR_COMM_RECV, "Failed forwarding instruction");
-            return DBERR_COMM_RECV;
-        }
-        // send it
-        ret = send::sendInstructionMessage(destRank, status.MPI_TAG, destComm);
-        if (ret != DBERR_OK) {
-            logger::log_error(DBERR_COMM_SEND, "Failed forwarding instruction");
-            return DBERR_COMM_SEND;
+    namespace forward
+    {
+
+        /**
+         * @brief receives and forwards a message from source to dest
+         * 
+         * @param sourceRank 
+         * @param sourceTag 
+         * @param sourceComm 
+         * @param destRank 
+         * @param destComm 
+         * @return DB_STATUS 
+         */
+        static DB_STATUS forwardInstructionMessage(int sourceRank, int sourceTag, MPI_Comm sourceComm, int destRank, MPI_Comm destComm) {
+            MPI_Status status;
+            // receive instruction
+            DB_STATUS ret = recv::receiveInstructionMessage(sourceRank, sourceTag, sourceComm, status);
+            if (ret != DBERR_OK) {
+                logger::log_error(DBERR_COMM_RECV, "Failed forwarding instruction");
+                return DBERR_COMM_RECV;
+            }
+            // send it
+            ret = send::sendInstructionMessage(destRank, status.MPI_TAG, destComm);
+            if (ret != DBERR_OK) {
+                logger::log_error(DBERR_COMM_SEND, "Failed forwarding instruction");
+                return DBERR_COMM_SEND;
+            }
+
+            return DBERR_OK;
         }
 
-        return DBERR_OK;
+        /**
+         * @brief Forwards a serialized batch message received through sourceComm to destrank, through destComm
+         * The message has to be already probed (info stored in status)
+         * 
+         * @param status 
+         * @return DB_STATUS 
+         */
+        static DB_STATUS forwardBatchMessage(MPI_Comm sourceComm, int destRank, MPI_Comm destComm, MPI_Status &status, int &continueListening) {
+            DB_STATUS ret = DBERR_OK;
+            SerializedMsgT<char> msg(MPI_CHAR);
+            // receive batch message
+            ret = recv::receiveMessage(status, msg.type, sourceComm, msg);
+            if (ret != DBERR_OK) {
+                logger::log_error(ret, "Failed pulling serialized message");
+                return ret;
+            }
+            
+            // send the packs to the agent
+            ret = send::sendMessage(msg, destRank, status.MPI_TAG, destComm);
+            if (ret != DBERR_OK) {
+                logger::log_error(ret, "Forwarding geometry batch failed");
+                return ret;
+            }
+            // get batch object count
+            int objectCount = getBatchObjectCountFromMessage(msg);
+            if (objectCount == 0) {
+                continueListening = 0;
+            }
+            // free memory
+            free(msg.data);
+            return ret;
+        }
+
+        static DB_STATUS forwardSysInfoMessage(MPI_Comm sourceComm, int destRank, MPI_Comm destComm, MPI_Status &status) {
+            SerializedMsgT<char> msg(MPI_CHAR);
+            // receive the message
+            DB_STATUS ret = recv::receiveMessage(status, msg.type, sourceComm, msg);
+            if (ret != DBERR_OK) {
+                return ret;
+            }
+            // forward to local agent
+            ret = send::sendMessage(msg, destRank, status.MPI_TAG, destComm);
+            if (ret != DBERR_OK) {
+                return ret;
+            }
+            // unpack info and store (since it may be useful to this controller as well)
+            ret = unpack::unpackSystemInfo(msg);
+            if (ret != DBERR_OK) {
+                return ret;
+            }
+            // free memory
+            free(msg.data);
+            return ret;
+        }
     }
+
 
     namespace agent
     {
@@ -403,57 +469,6 @@ STOP_LISTENING:
             return ret;
         }
 
-        DB_STATUS forwardInstructionToAgent(MPI_Status status) {
-            int messageTag = status.MPI_TAG;
-            // receive instruction msg
-            DB_STATUS ret = recv::receiveInstructionMessage(status.MPI_SOURCE, messageTag, g_global_comm, status);
-            if (ret != DBERR_OK) {
-                logger::log_error(ret, "Failed forwarding instruction with tag", messageTag, "to agent");
-                return ret;
-            }
-            // send it to agent
-            ret = sendInstructionToAgent(messageTag);
-            if (ret != DBERR_OK) {
-                logger::log_error(ret, "Failed forwarding instruction with tag", messageTag, "to agent");
-                return ret;
-            }
-            return DBERR_OK;
-        }
-
-        /**
-         * @brief Forwards a serialized batch message to the agent
-         * 
-         * @param status 
-         * @return DB_STATUS 
-         */
-        static DB_STATUS forwardSerializedMessageToAgent(MPI_Status status, int &continueListening) {
-            DB_STATUS ret = DBERR_OK;
-            int tag = status.MPI_TAG;
-            SerializedMsgT<char> msg(MPI_CHAR);
-            // receive batch message
-            ret = recv::receiveMessage(status, msg.type, g_global_comm, msg);
-            if (ret != DBERR_OK) {
-                logger::log_error(ret, "Failed pulling serialized message");
-                return ret;
-            }
-            
-            // send the packs to the agent
-            ret = send::sendMessage(msg, AGENT_RANK, status.MPI_TAG, g_local_comm);
-            if (ret != DBERR_OK) {
-                logger::log_error(ret, "Forwarding geometry batch failed");
-                return ret;
-            }
-            // get batch object count
-            int objectCount;
-            memcpy(&objectCount, msg.data, sizeof(int));
-            if (objectCount == 0) {
-                continueListening = 0;
-            }
-            // free memory
-            free(msg.data);
-            return ret;
-        }
-
         /**
          * @brief Pulls and forwards a dataset info message to the local agent
          * 
@@ -482,12 +497,12 @@ STOP_LISTENING:
 
         static DB_STATUS listenForDataset(MPI_Status status) {
             // forward dataset info to agent
+            int listen = 1;
             DB_STATUS ret = forwardDatasetInfoToAgent(status);
             if (ret != DBERR_OK) {
                 return ret;
             }
             // next, listen for the infoPacks and coordPacks explicitly
-            int listen = 1;
             while(listen) {
                 // proble blockingly
                 ret = probeBlocking(g_host_rank, MPI_ANY_TAG, g_global_comm, status);
@@ -508,10 +523,12 @@ STOP_LISTENING:
                     case MSG_BATCH_LINESTRING:
                     case MSG_BATCH_POLYGON:
                         /* batch geometry message */
-                        ret = forwardSerializedMessageToAgent(status, listen);
+                        ret = forward::forwardBatchMessage(g_global_comm, AGENT_RANK, g_local_comm, status, listen);
                         if (ret != DBERR_OK) {
                             return ret;
                         } 
+                        // check batch size
+
                         break;
                     default:
                         logger::log_error(DBERR_COMM_WRONG_MESSAGE_ORDER, "After the dataset info pack, only batch messages are expected");
@@ -539,28 +556,6 @@ STOP_LISTENING:
             return ret;
         }
 
-        static DB_STATUS handleSysInfoMessage(MPI_Status status) {
-            SerializedMsgT<char> msg(MPI_CHAR);
-            // receive the message
-            DB_STATUS ret = recv::receiveMessage(status, msg.type, g_global_comm, msg);
-            if (ret != DBERR_OK) {
-                return ret;
-            }
-            // forward to local agent
-            ret = send::sendMessage(msg, AGENT_RANK, status.MPI_TAG, g_local_comm);
-            if (ret != DBERR_OK) {
-                return ret;
-            }
-            // unpack info and store (since it may be useful to this controller as well)
-            ret = unpack::unpackSystemInfo(msg);
-            if (ret != DBERR_OK) {
-                return ret;
-            }
-            // free memory
-            free(msg.data);
-            return ret;
-        }
-
         /**
          * @brief pulls incoming message sent by the host controller 
          * (the one probed last, whose info is stored in the status parameter)
@@ -576,21 +571,21 @@ STOP_LISTENING:
             switch (status.MPI_TAG) {
                 case MSG_INSTR_INIT:
                     /* initialize */
-                    ret = comm::controller::forwardInstructionToAgent(status);
+                    ret = forward::forwardInstructionMessage(g_host_rank, status.MPI_TAG, g_global_comm, AGENT_RANK, g_local_comm);
                     if (ret != DBERR_OK) {
                         return ret;
                     }
                     break;
                 case MSG_INSTR_FIN:
                     /* terminate */
-                    ret = comm::controller::forwardInstructionToAgent(status);
+                    ret = forward::forwardInstructionMessage(g_host_rank, status.MPI_TAG, g_global_comm, AGENT_RANK, g_local_comm);
                     if (ret != DBERR_OK) {
                         return ret;
                     }
                     return DB_FIN;
                 case MSG_SYS_INFO:
                     /* message system/partitioning info */
-                    ret = handleSysInfoMessage(status);
+                    ret = forward::forwardSysInfoMessage(g_global_comm, AGENT_RANK, g_local_comm, status);
                     if (ret != DBERR_OK) {
                         return ret;
                     }
