@@ -200,8 +200,8 @@ namespace comm
                     case MSG_BATCH_POLYGON:
                         /* batch geometry message */
                         ret = pullSerializedMessageAndHandle(status, listen);
-                            goto STOP_LISTENING;
                         if (ret != DBERR_OK) {
+                            goto STOP_LISTENING;
                         }  
                         break;
                     default:
