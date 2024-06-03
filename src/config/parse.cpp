@@ -118,15 +118,17 @@ namespace parser
         }
 
         if (datasetStmt->datasetCount > 0) {
-            if (datasetStmt->filetypeR != "BINARY") {
-                logger::log_error(DBERR_INVALID_PARAMETER, "Unkown file type of dataset R:", datasetStmt->filetypeR);
-                return DBERR_INVALID_PARAMETER;
+            spatial_lib::FileTypeE fileTypeR = spatial_lib::fileTypeTextToInt(datasetStmt->filetypeR);
+            if (fileTypeR == spatial_lib::FT_INVALID) {
+                logger::log_error(DBERR_INVALID_FILETYPE, "Unkown file type of dataset R:", datasetStmt->filetypeR);
+                return DBERR_INVALID_FILETYPE;
             }
 
             if (datasetStmt->datasetCount > 1) {
-                if (datasetStmt->filetypeS != "BINARY") {
-                    logger::log_error(DBERR_INVALID_PARAMETER, "Unkown file type of dataset S:", datasetStmt->filetypeS);
-                    return DBERR_INVALID_PARAMETER;
+                spatial_lib::FileTypeE fileTypeS = spatial_lib::fileTypeTextToInt(datasetStmt->filetypeS);
+                if (fileTypeS == spatial_lib::FT_INVALID) {
+                    logger::log_error(DBERR_INVALID_FILETYPE, "Unkown file type of dataset S:", datasetStmt->filetypeS);
+                    return DBERR_INVALID_FILETYPE;
                 }
             }
         }

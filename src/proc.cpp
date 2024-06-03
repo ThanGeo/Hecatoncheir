@@ -26,6 +26,14 @@ namespace proc
         // cleanup
         MPI_Info_free(&info);
         free(error_codes);
+
+        // sanity check
+        if (HOST_RANK != AGENT_RANK) {
+            // this will never happen unless somebody did a malakia
+            logger::log_error(DBERR_INVALID_PARAMETER, "Host node rank and every agent's rank must match");
+            return DBERR_INVALID_PARAMETER;
+        }
+
         return DBERR_OK;
     }
 

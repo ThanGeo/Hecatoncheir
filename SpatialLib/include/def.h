@@ -12,6 +12,7 @@
 namespace spatial_lib
 {
     typedef enum FileType {
+        FT_INVALID,
         FT_BINARY,
         FT_CSV,
         FT_WKT,

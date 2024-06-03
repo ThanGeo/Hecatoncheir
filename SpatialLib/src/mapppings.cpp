@@ -31,4 +31,12 @@ namespace spatial_lib
 
         return DT_INVALID;
     }
+
+    FileTypeE fileTypeTextToInt(std::string val) {
+        if (val.compare("BINARY") == 0) return spatial_lib::FT_BINARY;
+        else if (val.compare("CSV") == 0) return spatial_lib::FT_CSV;
+        else if (val.compare("WKT") == 0) return spatial_lib::FT_WKT;
+
+        return FT_INVALID;
+    }
 }
