@@ -48,6 +48,8 @@ typedef enum DB_STATUS {
     DBERR_FEATURE_UNSUPPORTED = DBBASE + 1004,
     DBERR_MALLOC_FAILED = DBBASE + 1005,
     DBERR_BATCH_FAILED = DBBASE + 1006,
+    DBERR_DISK_WRITE_FAILED = DBBASE + 1007,
+    DBERR_DISK_READ_FAILED = DBBASE + 1008,
 
     // comm
     DBERR_COMM_RECV = DBBASE + 2000,
@@ -232,26 +234,19 @@ typedef struct Action {
 
 typedef struct DatasetInfo {
     int numberOfDatasets;
-    std::vector<spatial_lib::DatasetT> datasets;
+    std::unordered_map<std::string,spatial_lib::DatasetT> datasets;
     spatial_lib::DataspaceInfoT dataspaceInfo;
     
-    /**
-     * @brief Returns a pointer to the requested dataset object.
-     * R is 0, S is 1
-     * 
-     * @param idx 
-     * @return spatial_lib::DatasetT* 
-     */
-    spatial_lib::DatasetT* getDatasetByIdx(int idx) {
-        if (idx >= numberOfDatasets) {
-            logger::log_error(DBERR_INVALID_PARAMETER, "Cant retrieve dataset in position", idx, "Total datasets:",numberOfDatasets);
+    spatial_lib::DatasetT* getDatasetByNickname(std::string &nickname) {
+        auto it = datasets.find(nickname);
+        if (it == datasets.end()) {
             return nullptr;
-        }
-        return &datasets[idx];
+        }        
+        return &it->second;
     }
 
     void addDataset(spatial_lib::DatasetT dataset) {
-        datasets.emplace_back(dataset);
+        datasets.insert(std::make_pair(dataset.nickname,dataset));
         numberOfDatasets++;
     }
 

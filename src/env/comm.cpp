@@ -166,23 +166,36 @@ namespace comm
             return ret;
         }
 
-        static DB_STATUS deserializeBatchMessageAndStore(char *buffer, int bufferSize, int &continueListening) {
+        static DB_STATUS deserializeBatchMessageAndStore(char *buffer, int bufferSize, FILE* outFile, spatial_lib::DatasetT *dataset, int &continueListening) {
+            DB_STATUS ret = DBERR_OK;
             GeometryBatchT batch;
             // deserialize
             batch.deserialize(buffer, bufferSize);
 
             if (batch.objectCount > 0) {
                 // do stuff
-                logger::log_success("Received batch with", batch.objectCount, "objects");
+                // logger::log_success("Received batch with", batch.objectCount, "objects");
+                ret = storage::writer::appendBatchToDatasetPartitionFile(outFile, &batch, dataset);
+                if (ret != DBERR_OK) {
+                    logger::log_error(DBERR_DISK_WRITE_FAILED, "Failed when writing batch to partition file");
+                    return DBERR_DISK_WRITE_FAILED;
+                }
             } else {
                 // empty batch, set flag to stop listening for this dataset
                 continueListening = 0;
+                // and write total objects in the begining of the binary file
+                ret = storage::writer::updateObjectCountInPartitionFile(outFile, dataset->totalObjects);
+                logger::log_success("Saved", dataset->totalObjects,"total objects.");
+                if (ret != DBERR_OK) {
+                    logger::log_error(DBERR_DISK_WRITE_FAILED, "Failed when updating partition file object count");
+                    return DBERR_DISK_WRITE_FAILED;
+                }
             }
 
-            return DBERR_OK;
+            return ret;
         }
 
-        static DB_STATUS pullSerializedMessageAndHandle(MPI_Status status, int &continueListening) {
+        static DB_STATUS pullSerializedMessageAndHandle(MPI_Status status, FILE* outFile, spatial_lib::DatasetT *dataset, int &continueListening) {
             int tag = status.MPI_TAG;
             SerializedMsgT<char> msg(MPI_CHAR);
             // receive the message
@@ -197,7 +210,7 @@ namespace comm
                 case MSG_BATCH_POINT:
                 case MSG_BATCH_LINESTRING:
                 case MSG_BATCH_POLYGON:
-                    ret = deserializeBatchMessageAndStore(msg.data, msg.count, continueListening);
+                    ret = deserializeBatchMessageAndStore(msg.data, msg.count, outFile, dataset, continueListening);
                     if (ret != DBERR_OK) {
                         return ret;
                     }
@@ -211,7 +224,7 @@ namespace comm
             return ret;
         }
 
-        static DB_STATUS createPartitionedDatasetFromMessage(SerializedMsgT<char> &datasetInfoMsg) {
+        static DB_STATUS createPartitionedDatasetFromMessage(SerializedMsgT<char> &datasetInfoMsg, spatial_lib::DatasetT **datasetPtr) {
             spatial_lib::DatasetT dataset;
             // deserialize message
             dataset.deserialize(datasetInfoMsg.data, datasetInfoMsg.count);
@@ -222,10 +235,14 @@ namespace comm
             }
             // store in local g_config
             g_config.datasetInfo.addDataset(dataset);
+            // return pointer to dataset
+            (*datasetPtr) = g_config.datasetInfo.getDatasetByNickname(dataset.nickname);
             return DBERR_OK;
         }
 
         static DB_STATUS listenForDataset(MPI_Status status) {
+            spatial_lib::DatasetT *dataset;
+            FILE* outFile;
             SerializedMsgT<char> datasetInfoMsg(MPI_CHAR);
             int listen = 1;
 
@@ -236,13 +253,18 @@ namespace comm
                 goto STOP_LISTENING;
             }
             // create dataset from the received message
-            ret = createPartitionedDatasetFromMessage(datasetInfoMsg);
+            ret = createPartitionedDatasetFromMessage(datasetInfoMsg, &dataset);
             if (ret != DBERR_OK) {
                 logger::log_error(ret, "Failed creating the dataset from the dataset info message");
                 goto STOP_LISTENING;
             }
             // free memory
             free(datasetInfoMsg.data);
+
+            // open file to write the dataset to and write a dummy value for the total polygon count
+            // which will be corrected when finished
+            outFile = fopen(dataset->path.c_str(), "wb");
+            fwrite(&dataset->totalObjects, sizeof(int), 1, outFile);
 
             // listen for dataset batches until an empty batch arrives
             while(listen) {
@@ -265,7 +287,7 @@ namespace comm
                     case MSG_BATCH_LINESTRING:
                     case MSG_BATCH_POLYGON:
                         /* batch geometry message */
-                        ret = pullSerializedMessageAndHandle(status, listen);
+                        ret = pullSerializedMessageAndHandle(status, outFile, dataset, listen);
                         if (ret != DBERR_OK) {
                             goto STOP_LISTENING;
                         }  
@@ -278,6 +300,9 @@ namespace comm
             }
             
 STOP_LISTENING:
+            if (outFile == NULL) {
+                fclose(outFile);
+            }
             if (ret == DBERR_OK) {
                 // send ACK back that all data for this dataset has been received and processed successfully
                 ret = send::sendResponse(PARENT_RANK, MSG_ACK, g_local_comm);

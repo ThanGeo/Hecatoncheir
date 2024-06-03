@@ -90,6 +90,7 @@ namespace spatial_lib
         // map: recID -> vector data (polygon, linestring etc.)
         std::unordered_map<uint, spatial_lib::VectorDataT> vectorData;
         DataspaceInfoT dataspaceInfo;
+        int totalObjects = 0;
         /**
          * Approximations
         */

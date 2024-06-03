@@ -40,8 +40,8 @@ static DB_STATUS performActions() {
     for(int i=0;i <g_config.actions.size(); i++) {
         switch(g_config.actions.at(i).type) {
             case ACTION_PERFORM_PARTITIONING:
-                for (int i=0; i<g_config.datasetInfo.numberOfDatasets; i++) {
-                    ret = partitioning::partitionDataset(g_config.datasetInfo.getDatasetByIdx(i));
+                for (auto &it: g_config.datasetInfo.datasets) {
+                    ret = partitioning::partitionDataset(g_config.datasetInfo.getDatasetByNickname(it.second.nickname));
                     if (ret != DBERR_OK) {
                         return ret;
                     }
