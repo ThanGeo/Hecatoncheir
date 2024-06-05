@@ -67,6 +67,10 @@ namespace parser
         int partitionsPerDimension = system_config_pt.get<int>("Partitioning.partitionsPerDimension");
         std::string assignmentFuncStr = system_config_pt.get<std::string>("Partitioning.assignmentFunc");
         int batchSize = system_config_pt.get<int>("Partitioning.batchSize");
+        std::string dataDirPath = system_config_pt.get<std::string>("Partitioning.path");
+
+        // set node directory paths
+        g_config.dirPaths.setNodeDataDirectories(dataDirPath);
 
         // partitioning type
         auto it = partitioningTypeStrToIntMap.find(partitioningTypeStr);
@@ -284,27 +288,8 @@ namespace parser
         char c;
         SettingsStatementT settingsStmt;
 
-        // check If config files exist
-        if (!verifyFileExists(g_config.dirPaths.configFilePath)) {
-            logger::log_error(DBERR_MISSING_FILE, "Configuration file 'config.ini' missing from Database directory.");
-            return DBERR_MISSING_FILE;
-        }
-        if (!verifyFileExists(g_config.dirPaths.datasetsConfigPath)) {
-            logger::log_error(DBERR_MISSING_FILE, "Configuration file 'datasets.ini' missing from Database directory.");
-            return DBERR_MISSING_FILE;
-        }
-        // parse configuration files
-        boost::property_tree::ini_parser::read_ini(g_config.dirPaths.configFilePath, system_config_pt);
-        boost::property_tree::ini_parser::read_ini(g_config.dirPaths.datasetsConfigPath, dataset_config_pt);
-
-        // setup options
-        DB_STATUS ret = loadSetupOptions(settingsStmt.sysOpsStmt);
-        if (ret != DBERR_OK) {
-            return ret;
-        }
-
         // after config file has been loaded, parse cmd arguments and overwrite any selected options
-        while ((c = getopt(argc, argv, "d:t:sm:pcf:q:R:S:ev:z?")) != -1)
+        while ((c = getopt(argc, argv, "d:t:sm:pc:f:q:R:S:ev:z?")) != -1)
         {
             switch (c)
             {
@@ -312,6 +297,9 @@ namespace parser
                 //     // Query Type
                 //     queryStmt.queryType = std::string(optarg);
                 //     break;
+                case 'c':
+                    settingsStmt.configFilePath = std::string(optarg);
+                    break;
                 case 'd':
                     settingsStmt.sysOpsStmt.setupType = std::string(optarg);
                     break;
@@ -336,6 +324,29 @@ namespace parser
                     exit(-1);
                     break;
             }
+        }
+
+        // check If config files exist
+        if (!verifyFileExists(settingsStmt.configFilePath)) {
+            logger::log_error(DBERR_MISSING_FILE, "Configuration file missing from Database directory. Path:", settingsStmt.configFilePath);
+            return DBERR_MISSING_FILE;
+        } else {
+            // set config file
+            g_config.dirPaths.configFilePath = settingsStmt.configFilePath;
+        }
+        if (!verifyFileExists(g_config.dirPaths.datasetsConfigPath)) {
+            logger::log_error(DBERR_MISSING_FILE, "Configuration file 'datasets.ini' missing from Database directory.");
+            return DBERR_MISSING_FILE;
+        }
+
+        // parse configuration files
+        boost::property_tree::ini_parser::read_ini(g_config.dirPaths.configFilePath, system_config_pt);
+        boost::property_tree::ini_parser::read_ini(g_config.dirPaths.datasetsConfigPath, dataset_config_pt);
+
+        // setup options
+        DB_STATUS ret = loadSetupOptions(settingsStmt.sysOpsStmt);
+        if (ret != DBERR_OK) {
+            return ret;
         }
 
         // verify setup (TODO)

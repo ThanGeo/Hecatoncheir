@@ -190,11 +190,17 @@ namespace logger
 }
 
 typedef struct DirectoryPaths {
-    const std::string configFilePath = "../config.ini";
+    std::string configFilePath = "../config.ini";
     const std::string datasetsConfigPath = "../datasets.ini";
-    const std::string dataPath = "../data/";
-    const std::string partitionsPath = "../data/partitions/";
-    const std::string approximationPath = "../data/approximations/";
+    std::string dataPath = "../data/";
+    std::string partitionsPath = "../data/partitions/";
+    std::string approximationPath = "../data/approximations/";
+
+    void setNodeDataDirectories(std::string &dataPath) {
+        this->dataPath = dataPath;
+        this->partitionsPath = dataPath + "partitions/";
+        this->approximationPath = dataPath + "approximations/";
+    }
 } DirectoryPathsT;
 
 typedef enum ActionType {

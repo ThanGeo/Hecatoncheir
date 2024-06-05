@@ -92,7 +92,7 @@ int main(int argc, char* argv[]) {
             hostTerminate();
             goto EXIT_SAFELY;
         }
-
+        
         // perform the user-requested actions in order
         ret = performActions();
         if (ret != DBERR_OK) {

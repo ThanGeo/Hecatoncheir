@@ -39,6 +39,7 @@ typedef struct SystemOptionsStatement {
 } SystemOptionsStatementT;
 
 typedef struct SettingsStatement {
+    std::string configFilePath;
     ActionsStatementT actionsStmt;
     QueryStatementT queryStmt;
     SystemOptionsStatementT sysOpsStmt;

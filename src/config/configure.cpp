@@ -33,6 +33,7 @@ namespace configure
             // if dataset config directory doesn't exist, create
             ret = mkdir(g_config.dirPaths.dataPath.c_str(), 0777);
             if (ret) {
+                logger::log_error(DBERR_CREATE_DIR, "Error creating node data directory. Path:", g_config.dirPaths.dataPath);
                 return DBERR_CREATE_DIR;
             }
         }
@@ -41,6 +42,7 @@ namespace configure
             // if dataset config directory doesn't exist, create
             ret = mkdir(g_config.dirPaths.partitionsPath.c_str(), 0777);
             if (ret) {
+                logger::log_error(DBERR_CREATE_DIR, "Error creating partitioned data directory");
                 return DBERR_CREATE_DIR;
             }
         }
@@ -49,6 +51,7 @@ namespace configure
             // if dataset config directory doesn't exist, create
             ret = mkdir(g_config.dirPaths.approximationPath.c_str(), 0777);
             if (ret) {
+                logger::log_error(DBERR_CREATE_DIR, "Error creating approximations data directory");
                 return DBERR_CREATE_DIR;
             }
         }
