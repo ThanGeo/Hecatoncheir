@@ -260,10 +260,14 @@ namespace comm
             }
             // free memory
             free(datasetInfoMsg.data);
-
+            
             // open file to write the dataset to and write a dummy value for the total polygon count
             // which will be corrected when finished
             outFile = fopen(dataset->path.c_str(), "wb");
+            if (outFile == NULL) {
+                logger::log_error(DBERR_MISSING_FILE, "Couldnt open dataset file:", dataset->path);
+                return DBERR_MISSING_FILE;
+            }
             fwrite(&dataset->totalObjects, sizeof(int), 1, outFile);
 
             // listen for dataset batches until an empty batch arrives

@@ -12,24 +12,33 @@ namespace configure
             logger::log_error(DBERR_MPI_INIT_FAILED, "Init MPI failed.");
             return DBERR_MPI_INIT_FAILED;
         }
-        mpi_ret = MPI_Comm_size(g_global_comm, &wsize);
-        if (mpi_ret != MPI_SUCCESS) {
-            logger::log_error(DBERR_MPI_INIT_FAILED, "Init comm size failed.");
-            return DBERR_MPI_INIT_FAILED;
-        }
+        // process rank
         mpi_ret = MPI_Comm_rank(g_global_comm, &rank);
         if (mpi_ret != MPI_SUCCESS) {
             logger::log_error(DBERR_MPI_INIT_FAILED, "Init comm rank failed.");
             return DBERR_MPI_INIT_FAILED;
         }
-        g_world_size = wsize;
         g_node_rank = rank;
+        // get parent process intercomm (must be null) (todo: move to initMPI)
+        MPI_Comm_get_parent(&g_local_comm);
+        if (g_local_comm != MPI_COMM_NULL) {
+            // logger::log_error(DBERR_PROC_INIT_FAILED, "Controllers must be parentless");
+            // return DBERR_PROC_INIT_FAILED;
+        }
+        g_parent_original_rank = PARENTLESS_RANK;
+        // world size
+        mpi_ret = MPI_Comm_size(g_global_comm, &wsize);
+        if (mpi_ret != MPI_SUCCESS) {
+            logger::log_error(DBERR_MPI_INIT_FAILED, "Init comm size failed.");
+            return DBERR_MPI_INIT_FAILED;
+        }
+        g_world_size = wsize;
         return DBERR_OK;
     }
 
     DB_STATUS verifySystemDirectories() {
         int ret;
-        if (!verifyDirectoryExists(g_config.dirPaths.dataPath) ) {
+        if (!verifyDirectory(g_config.dirPaths.dataPath) ) {
             // if dataset config directory doesn't exist, create
             ret = mkdir(g_config.dirPaths.dataPath.c_str(), 0777);
             if (ret) {
@@ -38,7 +47,7 @@ namespace configure
             }
         }
 
-        if (!verifyDirectoryExists(g_config.dirPaths.partitionsPath) ) {
+        if (!verifyDirectory(g_config.dirPaths.partitionsPath) ) {
             // if dataset config directory doesn't exist, create
             ret = mkdir(g_config.dirPaths.partitionsPath.c_str(), 0777);
             if (ret) {
@@ -47,7 +56,7 @@ namespace configure
             }
         }
 
-        if (!verifyDirectoryExists(g_config.dirPaths.approximationPath) ) {
+        if (!verifyDirectory(g_config.dirPaths.approximationPath) ) {
             // if dataset config directory doesn't exist, create
             ret = mkdir(g_config.dirPaths.approximationPath.c_str(), 0777);
             if (ret) {
@@ -69,8 +78,8 @@ namespace configure
                 return ret;
             }
         }
-        // local machine or not, the host needs to create/verify directories in current machine
-        ret = verifySystemDirectories();
+        // send init instruction to local agent
+        ret = comm::send::sendInstructionMessage(AGENT_RANK, MSG_INSTR_INIT, g_local_comm);
         if (ret != DBERR_OK) {
             return ret;
         }

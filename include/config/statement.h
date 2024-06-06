@@ -35,7 +35,7 @@ typedef struct QueryStatement {
 typedef struct SystemOptionsStatement {
     std::string setupType = "";
     std::string nodefilePath = "";
-    uint nodeCount;
+    int nodeCount = -1;
 } SystemOptionsStatementT;
 
 typedef struct SettingsStatement {

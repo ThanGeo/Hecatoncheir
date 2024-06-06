@@ -122,27 +122,43 @@ namespace parser
         }
 
         if (datasetStmt->datasetCount > 0) {
+            // R dataset
+            // file type
             spatial_lib::FileTypeE fileTypeR = spatial_lib::fileTypeTextToInt(datasetStmt->filetypeR);
             if (fileTypeR == spatial_lib::FT_INVALID) {
                 logger::log_error(DBERR_INVALID_FILETYPE, "Unkown file type of dataset R:", datasetStmt->filetypeR);
                 return DBERR_INVALID_FILETYPE;
             }
 
+            // verify dataset R path + offset
+            if (!verifyFilepath(datasetStmt->datasetPathR)) {
+                logger::log_error(DBERR_MISSING_FILE, "Dataset R invalid path:", datasetStmt->datasetPathR);
+                return DBERR_MISSING_FILE;
+            }
+
             if (datasetStmt->datasetCount > 1) {
+                // S dataset
+                // file type
                 spatial_lib::FileTypeE fileTypeS = spatial_lib::fileTypeTextToInt(datasetStmt->filetypeS);
                 if (fileTypeS == spatial_lib::FT_INVALID) {
                     logger::log_error(DBERR_INVALID_FILETYPE, "Unkown file type of dataset S:", datasetStmt->filetypeS);
                     return DBERR_INVALID_FILETYPE;
                 }
+                // verify dataset S path + offset
+                if (!verifyFilepath(datasetStmt->datasetPathS)) {
+                    logger::log_error(DBERR_MISSING_FILE, "Dataset S invalid path:", datasetStmt->datasetPathS);
+                    return DBERR_MISSING_FILE;
+                }
             }
         }
+
 
         return DBERR_OK;
     }
 
     static DB_STATUS parseDatasetOptions(DatasetStatementT *datasetStmt) {
         // check if datasets.ini file exists
-        if (!verifyFileExists(g_config.dirPaths.datasetsConfigPath)) {
+        if (!verifyFilepath(g_config.dirPaths.datasetsConfigPath)) {
             logger::log_error(DBERR_MISSING_FILE, "Dataset configuration file 'dataset.ini' missing from Database directory.");
             return DBERR_MISSING_FILE;
         }
@@ -274,12 +290,19 @@ namespace parser
     }
 
     /**
-     * @brief parse system related options from config file
+     * @brief parse system related options from config file. 
+     * Sets only those that haven't been specified by the user arguments
     */
     static DB_STATUS loadSetupOptions(SystemOptionsStatementT &sysOpsStmt) {
-        sysOpsStmt.setupType = system_config_pt.get<std::string>("Environment.type");
-        sysOpsStmt.nodefilePath = system_config_pt.get<std::string>("Environment.nodefilePath");
-        sysOpsStmt.nodeCount = system_config_pt.get<int>("Environment.nodeCount");
+        if (sysOpsStmt.setupType == "") {
+            sysOpsStmt.setupType = system_config_pt.get<std::string>("Environment.type");
+        }
+        if (sysOpsStmt.nodefilePath == "") {
+            sysOpsStmt.nodefilePath = system_config_pt.get<std::string>("Environment.nodefilePath");
+        }
+        if (sysOpsStmt.nodeCount == -1) {
+            sysOpsStmt.nodeCount = system_config_pt.get<int>("Environment.nodeCount");
+        }
 
         return DBERR_OK;
     }
@@ -289,7 +312,7 @@ namespace parser
         SettingsStatementT settingsStmt;
 
         // after config file has been loaded, parse cmd arguments and overwrite any selected options
-        while ((c = getopt(argc, argv, "d:t:sm:pc:f:q:R:S:ev:z?")) != -1)
+        while ((c = getopt(argc, argv, "t:sm:pc:f:q:R:S:ev:z?")) != -1)
         {
             switch (c)
             {
@@ -298,10 +321,8 @@ namespace parser
                 //     queryStmt.queryType = std::string(optarg);
                 //     break;
                 case 'c':
+                    // user selected a configuration file
                     settingsStmt.configFilePath = std::string(optarg);
-                    break;
-                case 'd':
-                    settingsStmt.sysOpsStmt.setupType = std::string(optarg);
                     break;
                 case 'R':
                     // Dataset R path
@@ -314,27 +335,28 @@ namespace parser
                     settingsStmt.datasetStmt.datasetCount++;
                     break;
                 case 't':
-                    settingsStmt.sysOpsStmt.setupType = (SystemSetupTypeE) atoi(optarg);
+                    // system type: LOCAL (1 machine) or CLUSTER (many machines)
+                    settingsStmt.sysOpsStmt.setupType = std::string(optarg);
                     break;
                 case 'p':
+                    // perform the partitioning of the input datasets
                     settingsStmt.actionsStmt.performPartitioning = true;
                     break;
                 default:
                     logger::log_error(DBERR_UNKNOWN_ARGUMENT, "Unkown cmd argument.");
-                    exit(-1);
-                    break;
+                    return DBERR_UNKNOWN_ARGUMENT;
             }
         }
 
         // check If config files exist
-        if (!verifyFileExists(settingsStmt.configFilePath)) {
+        if (!verifyFilepath(settingsStmt.configFilePath)) {
             logger::log_error(DBERR_MISSING_FILE, "Configuration file missing from Database directory. Path:", settingsStmt.configFilePath);
             return DBERR_MISSING_FILE;
         } else {
             // set config file
             g_config.dirPaths.configFilePath = settingsStmt.configFilePath;
         }
-        if (!verifyFileExists(g_config.dirPaths.datasetsConfigPath)) {
+        if (!verifyFilepath(g_config.dirPaths.datasetsConfigPath)) {
             logger::log_error(DBERR_MISSING_FILE, "Configuration file 'datasets.ini' missing from Database directory.");
             return DBERR_MISSING_FILE;
         }
@@ -343,7 +365,7 @@ namespace parser
         boost::property_tree::ini_parser::read_ini(g_config.dirPaths.configFilePath, system_config_pt);
         boost::property_tree::ini_parser::read_ini(g_config.dirPaths.datasetsConfigPath, dataset_config_pt);
 
-        // setup options
+        // load setup options
         DB_STATUS ret = loadSetupOptions(settingsStmt.sysOpsStmt);
         if (ret != DBERR_OK) {
             return ret;

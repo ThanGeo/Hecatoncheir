@@ -7,8 +7,8 @@
 
 #include <mpi.h>
 
-bool verifyFileExists(std::string filePath);
-bool verifyDirectoryExists(std::string directoryPath);
+bool verifyFilepath(std::string filePath);
+bool verifyDirectory(std::string directoryPath);
 std::string getDatasetNameFromPath(std::string &datasetPath);
 
 namespace mpi_timer

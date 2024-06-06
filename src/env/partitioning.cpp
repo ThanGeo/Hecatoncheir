@@ -253,6 +253,10 @@ namespace partitioning
 
         // open dataset file stream
         FILE* pFile = fopen(datasetPath.c_str(), "rb");
+        if (pFile == NULL) {
+            logger::log_error(DBERR_MISSING_FILE, "Couldnt open binary dataset file:", datasetPath);
+            return DBERR_MISSING_FILE;
+        }
 
         //first read the total polygon count of the dataset
         fread(&polygonCount, sizeof(int), 1, pFile);

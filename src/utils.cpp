@@ -1,6 +1,6 @@
 #include "utils.h"
 
-bool verifyFileExists(std::string filePath) {
+bool verifyFilepath(std::string filePath) {
     if (FILE *file = fopen(filePath.c_str(), "r")) {
         fclose(file);
         return true;
@@ -8,7 +8,7 @@ bool verifyFileExists(std::string filePath) {
     return false;
 }
 
-bool verifyDirectoryExists(std::string directoryPath) {
+bool verifyDirectory(std::string directoryPath) {
     //check if APRIL dirs exists
     DIR* dir = opendir(directoryPath.c_str());
     if(dir) {

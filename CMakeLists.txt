@@ -72,6 +72,8 @@ add_library(${PROJECT_NAME} ${ProjectType} ${SrcFiles})
 set(Boost_USE_STATIC_LIBS ON)
 find_package(Boost 1.50 COMPONENTS REQUIRED)
 if(Boost_FOUND)
+    add_definitions("-DBOOST_ALLOW_DEPRECATED_HEADERS")
+    add_definitions("-DBOOST_BIND_GLOBAL_PLACEHOLDERS")
     include_directories(${Boost_INCLUDE_DIRS})
 endif()
 

@@ -62,16 +62,6 @@ int main(int argc, char* argv[]) {
     if (ret != DBERR_OK) {
         goto EXIT_SAFELY;
     }
-       
-    // get parent process intercomm (must be null)
-    MPI_Comm_get_parent(&g_local_comm);
-    if (g_local_comm != MPI_COMM_NULL) {
-        logger::log_error(DBERR_PROC_INIT_FAILED, "Controllers must be parentless");
-        goto EXIT_SAFELY;
-    }
-    g_parent_original_rank = PARENTLESS_RANK;
-    // logger::log_success("Initialized successfully");
-
     
     // print cpu
     // logger::log_task("Runs on cpu", sched_getcpu());

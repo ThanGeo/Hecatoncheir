@@ -25,11 +25,13 @@ add_definitions(-w)
 # find boost
 find_package(Boost 1.50 REQUIRED COMPONENTS)
 if(Boost_FOUND)
-    include_directories(${Boost_INCLUDE_DIRS})
+  add_definitions("-DBOOST_ALLOW_DEPRECATED_HEADERS")
+  add_definitions("-DBOOST_BIND_GLOBAL_PLACEHOLDERS")
+  include_directories(${Boost_INCLUDE_DIRS})
 endif()
 
 if(MPI_FOUND)
-    include_directories(SYSTEM ${MPI_INCLUDE_PATH})
+  include_directories(SYSTEM ${MPI_INCLUDE_PATH})
 endif()
 
 include_directories(include)
