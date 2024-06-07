@@ -2,3 +2,5 @@ build/
 data/
 .vscode/
 log.txt
+hostfile
+run.sh
