@@ -171,6 +171,10 @@ namespace spatial_lib
             position += sizeof(double);
             memcpy(&dataspaceInfo.yMaxGlobal, buffer + position, sizeof(double));
             position += sizeof(double);
+
+            if (position == bufferSize) {
+                // all is well
+            }
         }
     }DatasetT;
 

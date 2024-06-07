@@ -259,7 +259,10 @@ namespace partitioning
         }
 
         //first read the total polygon count of the dataset
-        fread(&polygonCount, sizeof(int), 1, pFile);
+        size_t elementsRead = fread(&polygonCount, sizeof(int), 1, pFile);
+        if (elementsRead != 1) {
+            return DBERR_DISK_READ_FAILED;
+        }
 
         // initialize batches
         std::unordered_map<int,GeometryBatchT> batchMap;
@@ -272,7 +275,10 @@ namespace partitioning
         int intBuf[2];
         for(int i=0; i<polygonCount; i++){
             //read the polygon id and vertex count
-            fread(&intBuf, sizeof(int), 2, pFile);
+            elementsRead = fread(&intBuf, sizeof(int), 2, pFile);
+            if (elementsRead != 2) {
+                return DBERR_DISK_READ_FAILED;
+            }
             recID = intBuf[0];
             vertexCount = intBuf[1];
 
@@ -283,7 +289,10 @@ namespace partitioning
 
             // read the points
             std::vector<double> coords(vertexCount*2);
-            fread(&coordLoadSpace, sizeof(double), vertexCount*2, pFile);
+            elementsRead = fread(&coordLoadSpace, sizeof(double), vertexCount*2, pFile);
+            if (elementsRead != vertexCount*2) {
+                return DBERR_DISK_READ_FAILED;
+            }
             // compute MBR and store
             for (int j=0; j<vertexCount; j+=2) {
                 xMin = std::min(xMin, coordLoadSpace[j]);

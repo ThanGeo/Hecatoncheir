@@ -40,9 +40,7 @@ namespace comm
     {
         namespace recv 
         {
-            DB_STATUS receiveInstruction(int sourceRank, int tag, MPI_Comm &comm) {
-                
-            }
+            
         }
     }
 }

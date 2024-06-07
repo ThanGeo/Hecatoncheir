@@ -46,7 +46,7 @@ typedef enum MsgType {
     MSG_ERR = MSG_ERR_BEGIN,
 
     MSG_ERR_END,
-};
+}MsgTypeE;
 
 inline std::unordered_map<MPI_Datatype, std::string> g_MPI_Datatype_map = {{MPI_INT, "MPI_INT"},
                                                                     {MPI_DOUBLE, "MPI_DOUBLE"},
