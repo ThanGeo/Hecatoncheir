@@ -10,6 +10,7 @@
 #include "env/pack.h"
 #include "storage/write.h"
 #include "storage/utils.h"
+#include "APRIL/generate.h"
 
 #include <omp.h>
 

@@ -17,7 +17,7 @@ if(NOT TARGET SpatialLib)
 endif()
 
 set(SrcFiles
-  src/controller.cpp
+  src/query.cpp
   src/storage.cpp
   src/join.cpp
   src/utils.cpp

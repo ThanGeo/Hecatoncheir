@@ -32,10 +32,10 @@ if(NOT TARGET Rasterizer)
     add_subdirectory(Rasterizer)
 endif()
 
-include_directories(APRIL)
-if(NOT TARGET APRIL)
-    add_subdirectory(APRIL)
-endif()
+# include_directories(APRIL)
+# if(NOT TARGET APRIL)
+#     add_subdirectory(APRIL)
+# endif()
 
 # include_directories(TwoLayerFilter)
 # if(NOT TARGET TwoLayerFilter)
@@ -61,6 +61,9 @@ set(SrcFiles
     src/config/setup.cpp
     src/config/parse.cpp
     src/config/configure.cpp
+    src/config/statement.cpp
+
+    src/APRIL/generate.cpp
 )
 
 # supress warnings
@@ -92,8 +95,8 @@ target_link_libraries(agent ${MPI_C_LIBRARIES})
 target_link_libraries(controller ${PROJECT_NAME})
 target_link_libraries(controller ${Boost_LIBRARIES})
 target_link_libraries(controller ${MPI_C_LIBRARIES})
-target_link_libraries(agent APRIL)
-target_link_libraries(controller APRIL)
+# target_link_libraries(agent APRIL)
+# target_link_libraries(controller APRIL)
 # target_link_libraries(main TwoLayerFilter)
 target_link_libraries(agent SpatialLib)
 target_link_libraries(controller SpatialLib)

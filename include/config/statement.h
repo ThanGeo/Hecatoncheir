@@ -2,11 +2,12 @@
 #define D_CONFIG_STATEMENT
 
 #include "def.h"
+#include "SpatialLib.h"
 
 
 typedef struct ActionsStatement {
     bool performPartitioning = false;
-    bool createAPRIL = false;
+    std::vector<std::string> createApproximations;
     bool performVerification = false;
 }ActionsStatementT;
 
@@ -45,5 +46,14 @@ typedef struct SettingsStatement {
     SystemOptionsStatementT sysOpsStmt;
     DatasetStatementT datasetStmt;
 } SettingsStatementT;
+
+namespace statement
+{
+    DB_STATUS getPartitioningType(std::string &typeStr, PartitioningTypeE &type);
+
+    DB_STATUS getFiletype(std::string &filetypeStr, spatial_lib::FileTypeE &filetype);
+
+    DB_STATUS getCreateApproximationAction(std::string &approximationStr, ActionTypeE &actionType);
+}
 
 #endif

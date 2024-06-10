@@ -7,6 +7,7 @@
 namespace storage
 {
     DB_STATUS generatePartitionFilePath(spatial_lib::DatasetT &dataset);
+    DB_STATUS generateApproximationFilePath(spatial_lib::DatasetT &dataset);
 }
 
 

@@ -20,11 +20,6 @@
 
 namespace parser
 {
-    extern std::unordered_map<std::string, PartitioningTypeE> partitioningTypeStrToIntMap;
-    extern std::unordered_map<std::string, spatial_lib::FileTypeE> fileTypeStrToIntMap;
-
-    
-
     /**
      * @brief Load config options and parse any cmd arguments.
      * @return fills the sysOps object with data

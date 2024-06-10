@@ -47,11 +47,12 @@ namespace rasterizerlib
 
     extern configT g_config;
     
-    void setDataspace(double xMin, double yMin, double xMax, double yMax);
+    int setDataspace(double xMin, double yMin, double xMax, double yMax);
     
     polygon2d createPolygon(std::vector<spatial_lib::PointT> &vertices);
+    polygon2d createPolygon(double* coords, int vertexCount);
 
-    void init(double xMin, double yMin, double xMax, double yMax);
+    int init(double xMin, double yMin, double xMax, double yMax);
 
     void log_err(std::string errorText);
 

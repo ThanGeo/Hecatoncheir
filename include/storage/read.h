@@ -6,7 +6,13 @@
 
 namespace storage
 {
-    
+    namespace reader
+    {
+        namespace partitionFile
+        {
+            DB_STATUS readNextObjectForRasterization(FILE* pFile, int &recID, int &partitionID, rasterizerlib::polygon2d &rasterizerPolygon);
+        }
+    }
 }
 
 

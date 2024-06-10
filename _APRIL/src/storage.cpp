@@ -26,7 +26,7 @@ namespace APRIL
     }
 
     void loadAPRILfromDisk(spatial_lib::DatasetT &dataset) {
-        long fileSize;
+        size_t fileSize;
         uint8_t* buffer;
         size_t result;
         int sectionID;
@@ -46,7 +46,7 @@ namespace APRIL
         if (result != fileSize) {fputs ("Reading error",stderr); exit (3);}
         //init read indices
         unsigned long bufferIndex = 0;
-        unsigned long loadIndex;
+        unsigned long loadIndex = 0;
 
         //read total polygons
         memcpy(&totalPolygons, &buffer[bufferIndex], sizeof(uint));
@@ -105,7 +105,7 @@ namespace APRIL
         if (result != fileSize) {fputs ("Reading error",stderr); exit (3);}
         //init read indices
         bufferIndex = 0;
-        loadIndex;
+        loadIndex = 0;
 
         //read total polygons
         memcpy(&totalPolygons, &buffer[bufferIndex], sizeof(uint));

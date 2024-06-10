@@ -143,11 +143,8 @@ namespace spatial_lib
             position += sizeof(double);
             memcpy(localBuffer + position, &dataspaceInfo.yMaxGlobal, sizeof(double));
             position += sizeof(double);
-
-
             // set and return
             (*buffer) = localBuffer;
-
             return bufferSize;
         }
 
@@ -162,6 +159,7 @@ namespace spatial_lib
             memcpy(&nicknameLength, buffer + position, sizeof(int));
             position += sizeof(int);
             nickname.assign(buffer + position, nicknameLength);
+            position += nicknameLength * sizeof(char);
             // dataset dataspace MBR
             memcpy(&dataspaceInfo.xMinGlobal, buffer + position, sizeof(double));
             position += sizeof(double);

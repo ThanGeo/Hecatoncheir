@@ -1,4 +1,4 @@
-    #ifndef APRIL_CONTROLLER_H
+#ifndef APRIL_CONTROLLER_H
 #define APRIL_CONTROLLER_H
 
 #include "SpatialLib.h"
@@ -43,12 +43,6 @@ namespace APRIL
          */
         void IntermediateFilterEntrypoint(uint idR, uint idS);
     }
-
-    namespace _optimized
-    {
-
-    }
-
 
 }
 

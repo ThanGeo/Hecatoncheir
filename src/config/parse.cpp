@@ -2,10 +2,7 @@
 
 namespace parser
 {
-    std::unordered_map<std::string, PartitioningTypeE> partitioningTypeStrToIntMap = {{"RR",PARTITIONING_ROUND_ROBIN}};
-    std::unordered_map<std::string, spatial_lib::FileTypeE> fileTypeStrToIntMap = {{"BINARY",spatial_lib::FT_BINARY},
-                                                                                    {"CSV",spatial_lib::FT_CSV},
-                                                                                    {"WKT",spatial_lib::FT_WKT},};
+
 
     // property tree var
     static boost::property_tree::ptree system_config_pt;
@@ -20,6 +17,36 @@ namespace parser
         return -1;
     }
 
+    static DB_STATUS loadAPRILconfig() {
+        ApproximationInfoT approxInfo(spatial_lib::AT_APRIL);
+
+        int N = system_config_pt.get<int>("APRIL.N");
+        if (N < 10 || N > 16) {
+            logger::log_error(DBERR_INVALID_PARAMETER, "APRIL granularity must be in range [10,16]. N:", N);
+            return DBERR_INVALID_PARAMETER;
+        }
+        approxInfo.aprilConfig.setN(N);
+        
+        int compression = system_config_pt.get<int>("APRIL.compression");
+        if (compression != 0 && compression != 1) {
+            logger::log_error(DBERR_INVALID_PARAMETER, "APRIL compression must be set to either 0 (disabled) or 1 (enabled). compression:", compression);
+            return DBERR_INVALID_PARAMETER;
+        }
+        approxInfo.aprilConfig.compression = compression;
+
+        int partitions = system_config_pt.get<int>("APRIL.partitions");
+        if (partitions < 1 || partitions > 32) {
+            logger::log_error(DBERR_INVALID_PARAMETER, "APRIL partitions must be in range [1,32]. partitions:", partitions);
+            return DBERR_INVALID_PARAMETER;
+        }
+        approxInfo.aprilConfig.partitions = partitions;
+
+        // set to global config
+        g_config.approximationInfo = approxInfo;
+
+        return DBERR_OK;
+    }
+
     /**
      * @brief parses the selected actions and puts them in proper order inside the configuration
      * 
@@ -27,15 +54,26 @@ namespace parser
      * @return DB_STATUS 
      */
     static DB_STATUS parseActions(ActionsStatementT *actionsStmt) {
+        DB_STATUS ret = DBERR_OK;
         // partitioning always first
         if (actionsStmt->performPartitioning) {
             ActionT action(ACTION_PERFORM_PARTITIONING);
             g_config.actions.emplace_back(action);
         }
-        // approximation
-        if (actionsStmt->createAPRIL) {
-            ActionT action(ACTION_CREATE_APRIL);
+        // approximations
+        ActionTypeE action;
+        for (int i=0; i<actionsStmt->createApproximations.size(); i++) {
+            ret = statement::getCreateApproximationAction(actionsStmt->createApproximations.at(i), action);
+            if (ret != DBERR_OK) {
+                return ret;
+            }
             g_config.actions.emplace_back(action);
+            // load APRIL configuration from configuration file
+            ret = loadAPRILconfig();
+            if (ret != DBERR_OK) {
+                logger::log_error(DBERR_CONFIG_FILE, "Failed to load APRIL config from system configuration file");
+                return DBERR_CONFIG_FILE;
+            }
         }
 
         // verification always last
@@ -73,12 +111,11 @@ namespace parser
         g_config.dirPaths.setNodeDataDirectories(dataDirPath);
 
         // partitioning type
-        auto it = partitioningTypeStrToIntMap.find(partitioningTypeStr);
-        if(it == partitioningTypeStrToIntMap.end()) {
-            logger::log_error(DBERR_INVALID_PARAMETER, "Unkown partitioning type in config file. Type:", partitioningTypeStr);
-            return DBERR_INVALID_PARAMETER;
+        DB_STATUS ret = statement::getPartitioningType(partitioningTypeStr, g_config.partitioningInfo.type);
+        if (ret != DBERR_OK) {
+            logger::log_error(ret, "Unkown partitioning type in config file");
+            return ret;
         }
-        g_config.partitioningInfo.type = it->second;
 
         // partitions per dimension
         if (partitionsPerDimension < g_world_size) {
@@ -312,7 +349,7 @@ namespace parser
         SettingsStatementT settingsStmt;
 
         // after config file has been loaded, parse cmd arguments and overwrite any selected options
-        while ((c = getopt(argc, argv, "t:sm:pc:f:q:R:S:ev:z?")) != -1)
+        while ((c = getopt(argc, argv, "a:t:sm:pc:f:q:R:S:ev:z?")) != -1)
         {
             switch (c)
             {
@@ -321,7 +358,7 @@ namespace parser
                 //     queryStmt.queryType = std::string(optarg);
                 //     break;
                 case 'c':
-                    // user selected a configuration file
+                    // user configuration file
                     settingsStmt.configFilePath = std::string(optarg);
                     break;
                 case 'R':
@@ -341,6 +378,10 @@ namespace parser
                 case 'p':
                     // perform the partitioning of the input datasets
                     settingsStmt.actionsStmt.performPartitioning = true;
+                    break;
+                case 'a':
+                    // order the nodes to create the selected approximation for the input datasets
+                    settingsStmt.actionsStmt.createApproximations.emplace_back(std::string(optarg));
                     break;
                 default:
                     logger::log_error(DBERR_UNKNOWN_ARGUMENT, "Unkown cmd argument.");

@@ -2,8 +2,6 @@
 
 namespace partitioning
 {
-    // load space
-    double coordLoadSpace[1000000];
 
     void printPartitionAssignment() {
         for (int j=0; j<g_config.partitioningInfo.partitionsPerDimension; j++) {
@@ -108,7 +106,7 @@ namespace partitioning
         if (ret != DBERR_OK) {
             return ret;
         }
-        // todo calculate how many threads to spawn based on total object count
+        // todo: calculate how many threads to spawn based on total object count
         int polygonCount;
         // open file
         std::ifstream fin(datasetPath);
@@ -167,7 +165,7 @@ namespace partitioning
                 std::getline(ss, token, ',');
                 recID = std::stoi(token);
                 // Read the coords x,y
-                int vertexNum = 0;
+                vertexCount = 0;
                 std::vector<double> coords;
                 while (std::getline(ss, token, ',')) {
                     std::stringstream coordStream(token);
@@ -184,7 +182,7 @@ namespace partitioning
                     yMin = std::min(yMin, y);
                     xMax = std::max(xMax, x);
                     yMax = std::max(yMax, y);
-                    vertexNum += 1;
+                    vertexCount += 1;
                 }
                 // create serializable object
                 GeometryT geometry(recID, 0, vertexCount, coords);
@@ -249,6 +247,9 @@ namespace partitioning
         int vertexCount;
         double x,y;
         double xMin, yMin, xMax, yMax;
+        // static load space
+        double coordLoadSpace[1000000];
+        
         DB_STATUS ret = DBERR_OK;
 
         // open dataset file stream

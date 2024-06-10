@@ -30,12 +30,19 @@ namespace pack
             std::cout << std::endl;
         }
     }
+    
+    /*
+     * packs april info into a serialized message 
+     */
+    DB_STATUS packAPRILInfo(spatial_lib::AprilConfigT &aprilConfig, SerializedMsgT<int> &aprilInfoMsg);
 }
 
 namespace unpack
 {   
 
     DB_STATUS unpackSystemInfo(SerializedMsgT<char> &sysInfoMsg);
+
+    DB_STATUS unpackAPRILInfo(SerializedMsgT<int> &aprilInfoMsg);
 }
 
 #endif 

@@ -34,6 +34,30 @@ static void hostTerminate() {
     
 }
 
+static DB_STATUS initAPRILCreation() {
+    SerializedMsgT<int> aprilInfoMsg(MPI_INT);
+    // pack the APRIL info
+    DB_STATUS ret = pack::packAPRILInfo(g_config.approximationInfo.aprilConfig, aprilInfoMsg);
+    if (ret != DBERR_OK) {
+        logger::log_error(ret, "Failed to pack APRIL info");
+        return ret;
+    }
+    // send to workers
+    ret = comm::broadcast::broadcastMessage(aprilInfoMsg, MSG_APRIL_CREATE);
+    if (ret != DBERR_OK) {
+        logger::log_error(ret, "Failed to broadcast APRIL info");
+        return ret;
+    }
+    // send to local agent
+    ret = comm::send::sendMessage(aprilInfoMsg, AGENT_RANK, MSG_APRIL_CREATE, g_local_comm);
+    if (ret != DBERR_OK) {
+        logger::log_error(ret, "Failed to send APRIL info to agent");
+        return ret;
+    }
+
+    return ret;
+}
+
 static DB_STATUS performActions() {
     DB_STATUS ret = DBERR_OK;
     // perform the user-requested actions in order
@@ -45,6 +69,13 @@ static DB_STATUS performActions() {
                     if (ret != DBERR_OK) {
                         return ret;
                     }
+                }
+                break;
+            case ACTION_CREATE_APRIL:
+                // initialize APRIL creation
+                ret = initAPRILCreation();
+                if (ret != DBERR_OK) {
+                    return ret;
                 }
                 break;
             default:

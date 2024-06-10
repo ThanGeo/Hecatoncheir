@@ -114,12 +114,11 @@ namespace configure
             R.dataspaceInfo = g_config.datasetInfo.dataspaceInfo;
             R.dataType = datasetStmt->datatypeR;
 
-            auto it = parser::fileTypeStrToIntMap.find(datasetStmt->filetypeR);
-            if (it == parser::fileTypeStrToIntMap.end()) {
-                logger::log_error(DBERR_INVALID_FILETYPE, "Unknown filetype for dataset", datasetStmt->datasetNicknameR, ":", datasetStmt->filetypeR);
+            DB_STATUS ret = statement::getFiletype(datasetStmt->filetypeR, R.fileType);
+            if (ret != DBERR_OK) {
+                logger::log_error(DBERR_INVALID_FILETYPE, "Unknown filetype for dataset", datasetStmt->datasetNicknameR);
                 return DBERR_INVALID_FILETYPE;
             }
-            R.fileType = it->second;
 
             R.path = datasetStmt->datasetPathR;
             R.nickname = datasetStmt->datasetNicknameR;
@@ -134,12 +133,11 @@ namespace configure
                 S.dataspaceInfo = g_config.datasetInfo.dataspaceInfo;
                 S.dataType = datasetStmt->datatypeS;
 
-                auto it = parser::fileTypeStrToIntMap.find(datasetStmt->filetypeS);
-                if (it == parser::fileTypeStrToIntMap.end()) {
-                    logger::log_error(DBERR_INVALID_FILETYPE, "Unknown filetype for dataset", datasetStmt->datasetNicknameS, ":", datasetStmt->filetypeS);
+                ret = statement::getFiletype(datasetStmt->filetypeS, S.fileType);
+                if (ret != DBERR_OK) {
+                    logger::log_error(DBERR_INVALID_FILETYPE, "Unknown filetype for dataset", datasetStmt->datasetNicknameS);
                     return DBERR_INVALID_FILETYPE;
                 }
-                S.fileType = it->second;
 
                 S.path = datasetStmt->datasetPathS;
                 S.nickname = datasetStmt->datasetNicknameS;

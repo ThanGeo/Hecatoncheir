@@ -50,6 +50,7 @@ typedef enum DB_STATUS {
     DBERR_BATCH_FAILED = DBBASE + 1006,
     DBERR_DISK_WRITE_FAILED = DBBASE + 1007,
     DBERR_DISK_READ_FAILED = DBBASE + 1008,
+    DBERR_CONFIG_FILE = DBBASE + 1009,
 
     // comm
     DBERR_COMM_RECV = DBBASE + 2000,
@@ -256,7 +257,31 @@ typedef struct DatasetInfo {
         numberOfDatasets++;
     }
 
+    void updateDataspace() {
+        for (auto &it: datasets) {
+            dataspaceInfo.xMinGlobal = std::min(dataspaceInfo.xMinGlobal, it.second.dataspaceInfo.xMinGlobal);
+            dataspaceInfo.yMinGlobal = std::min(dataspaceInfo.yMinGlobal, it.second.dataspaceInfo.yMinGlobal);
+            dataspaceInfo.xMaxGlobal = std::max(dataspaceInfo.xMaxGlobal, it.second.dataspaceInfo.xMaxGlobal);
+            dataspaceInfo.yMaxGlobal = std::max(dataspaceInfo.yMaxGlobal, it.second.dataspaceInfo.yMaxGlobal);
+        }
+        dataspaceInfo.xExtent = dataspaceInfo.xMaxGlobal - dataspaceInfo.xMinGlobal;
+        dataspaceInfo.yExtent = dataspaceInfo.yMaxGlobal - dataspaceInfo.yMinGlobal;
+    }
+
 } DatasetInfoT;
+
+typedef struct ApproximationInfo {
+    spatial_lib::ApproximationTypeE type;   // sets which of the following fields will be used
+    spatial_lib::AprilConfigT aprilConfig;  
+    
+    ApproximationInfo() {
+        this->type = spatial_lib::AT_NONE;
+    }
+
+    ApproximationInfo(spatial_lib::ApproximationTypeE type) {
+        this->type = type;
+    }
+} ApproximationInfoT;
 
 typedef struct Config {
     DirectoryPathsT dirPaths;
@@ -264,6 +289,7 @@ typedef struct Config {
     std::vector<ActionT> actions;
     PartitioningInfoT partitioningInfo;
     DatasetInfoT datasetInfo;
+    ApproximationInfoT approximationInfo;
 } ConfigT;
 
 /**

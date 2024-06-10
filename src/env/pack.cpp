@@ -33,6 +33,27 @@ namespace pack
 
         return DBERR_OK;
     }
+
+
+    DB_STATUS packAPRILInfo(spatial_lib::AprilConfigT &aprilConfig, SerializedMsgT<int> &aprilInfoMsg) {
+        aprilInfoMsg.count = 0;
+        aprilInfoMsg.count += 3;     // N, compression, partitions
+
+        // allocate space
+        (aprilInfoMsg.data) = (int*) malloc(aprilInfoMsg.count * sizeof(int));
+        if (aprilInfoMsg.data == NULL) {
+            // malloc failed
+            logger::log_error(DBERR_MALLOC_FAILED, "Malloc for april info failed");
+            return DBERR_MALLOC_FAILED;
+        }
+
+        // put objects in buffer
+        aprilInfoMsg.data[0] = aprilConfig.getN();
+        aprilInfoMsg.data[1] = aprilConfig.compression;
+        aprilInfoMsg.data[2] = aprilConfig.partitions;
+
+        return DBERR_OK;
+    }
 }
 
 namespace unpack
@@ -56,6 +77,26 @@ namespace unpack
         std::string datapath(localBuffer, localBuffer + length);
         localBuffer += length * sizeof(char);
         g_config.dirPaths.setNodeDataDirectories(datapath);
+
+        return DBERR_OK;
+    }
+
+    DB_STATUS unpackAPRILInfo(SerializedMsgT<int> &aprilInfoMsg) {
+        // N
+        int N = aprilInfoMsg.data[0];
+        g_config.approximationInfo.aprilConfig.setN(N);
+        // compression
+        g_config.approximationInfo.aprilConfig.compression = aprilInfoMsg.data[1];
+        // partitions
+        g_config.approximationInfo.aprilConfig.partitions = aprilInfoMsg.data[2];
+        // set type
+        g_config.approximationInfo.type = spatial_lib::AT_APRIL;
+        for (auto& it: g_config.datasetInfo.datasets) {
+            it.second.approxType = spatial_lib::AT_APRIL;
+            it.second.aprilConfig.setN(N);
+            it.second.aprilConfig.compression = g_config.approximationInfo.aprilConfig.compression;
+            it.second.aprilConfig.partitions = g_config.approximationInfo.aprilConfig.partitions;
+        }
 
         return DBERR_OK;
     }

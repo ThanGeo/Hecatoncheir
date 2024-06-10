@@ -76,6 +76,11 @@ namespace spatial_lib
      */
     typedef struct Point {
         double x,y;
+        Point() {}
+        Point(double x, double y) {
+            this->x = x;
+            this->y = y;
+        }
     } PointT;
 
     typedef struct Mbr {
@@ -84,8 +89,10 @@ namespace spatial_lib
     }MbrT;
 
     typedef struct Polygon {
-        uint recID;
-        std::vector<PointT> vertices;
+        int recID;
+        int partitionID;
+        int vertexCount;
+        bg_polygon polygon;
     } PolygonT;
 
     typedef struct VectorData {
@@ -141,17 +148,28 @@ namespace spatial_lib
 
     // APRIL configuration
     typedef struct AprilConfig {
-        // Hilbert curve order
-        int N;
-        // cells per dimension in Hilbert grid: 2^N
-        uint cellsPerDim;
-        // compression enabled, disabled
-        bool compression;
-        // how many partitions in the data space
-        int partitions;
-        // APRIL data file paths
-        std::string ALL_intervals_path;
-        std::string FULL_intervals_path;
+        private:
+            // Hilbert curve order
+            int N;
+            // cells per dimension in Hilbert grid: 2^N
+            uint cellsPerDim;
+        public:
+            // compression enabled, disabled
+            bool compression;
+            // how many partitions in the data space
+            int partitions;
+            // APRIL data file paths
+            std::string ALL_intervals_path;
+            std::string FULL_intervals_path;
+
+        void setN(int N) {
+            this->N = N;
+            this->cellsPerDim = pow(2,N);
+        }
+
+        int getN() {
+            return N;
+        }
     } AprilConfigT;
 
     // types of possible relationships between interval lists (IL)

@@ -119,6 +119,24 @@ namespace comm
             free(msg.data);
             return ret;
         }
+
+        static DB_STATUS forwardAPRILInfoMessage(MPI_Comm sourceComm, int destRank, MPI_Comm destComm, MPI_Status &status) {
+            SerializedMsgT<int> msg(MPI_INT);
+            // receive the message
+            DB_STATUS ret = recv::receiveMessage(status, msg.type, sourceComm, msg);
+            if (ret != DBERR_OK) {
+                return ret;
+            }
+            // forward to local agent
+            ret = send::sendMessage(msg, destRank, status.MPI_TAG, destComm);
+            if (ret != DBERR_OK) {
+                return ret;
+            }
+            
+            // free memory
+            free(msg.data);
+            return ret;
+        }
     }
 
 
@@ -237,6 +255,10 @@ namespace comm
             g_config.datasetInfo.addDataset(dataset);
             // return pointer to dataset
             (*datasetPtr) = g_config.datasetInfo.getDatasetByNickname(dataset.nickname);
+
+            // update gconfig dataspace to enclose both dataspaces
+            g_config.datasetInfo.updateDataspace();
+
             return DBERR_OK;
         }
 
@@ -343,6 +365,32 @@ STOP_LISTENING:
             return ret;
         }
 
+        static DB_STATUS handleAPRILInfoMessage(MPI_Status status) {
+            SerializedMsgT<int> msg(MPI_INT);
+            // receive the message
+            DB_STATUS ret = recv::receiveMessage(status, msg.type, g_local_comm, msg);
+            if (ret != DBERR_OK) {
+                return ret;
+            }
+            // unpack info and store
+            ret = unpack::unpackAPRILInfo(msg);
+            if (ret != DBERR_OK) {
+                return ret;
+            }
+            // free memory
+            free(msg.data);
+
+            // create the APRIL approximations for the dataset(s)
+            for (auto& it: g_config.datasetInfo.datasets) {
+                ret = APRIL::generate(it.second);
+                if (ret != DBERR_OK) {
+                    logger::log_error(ret, "Failed to generate APRIL for dataset", it.second.nickname);
+                    return ret;
+                }
+            }
+            return ret;
+        }
+
         /**
          * @brief pulls incoming message sent by the local controller 
          * (the one probed last, whose info is stored in the status parameter)
@@ -369,6 +417,13 @@ STOP_LISTENING:
                 case MSG_DATASET_INFO:
                     /* dataset partitioning */
                     ret = listenForDataset(status);
+                    if (ret != DBERR_OK) {
+                        return ret;
+                    }
+                    break;
+                case MSG_APRIL_CREATE:
+                    /* APRIL info message */
+                    ret = handleAPRILInfoMessage(status);
                     if (ret != DBERR_OK) {
                         return ret;
                     }
@@ -626,6 +681,13 @@ STOP_LISTENING:
                         return ret;
                     }
                     break;
+                case MSG_APRIL_CREATE:
+                    /* create APRIL for the selected datasets, parameters are contained in the message */
+                    ret = forward::forwardAPRILInfoMessage(g_global_comm, AGENT_RANK, g_local_comm, status);
+                    if (ret != DBERR_OK) {
+                        return ret;
+                    }
+                    break;
                 case MSG_BATCH_POINT:
                 case MSG_BATCH_LINESTRING:
                 case MSG_BATCH_POLYGON:
@@ -672,6 +734,10 @@ STOP_LISTENING:
 STOP_LISTENING:
             return DBERR_OK;
         }
+
+        /**
+         * Host controller only
+         */
 
         DB_STATUS gatherResponses() {
             DB_STATUS ret = DBERR_OK;

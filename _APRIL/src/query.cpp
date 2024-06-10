@@ -1,4 +1,4 @@
-#include "controller.h"
+#include "query.h"
 
 namespace APRIL
 {
@@ -282,7 +282,7 @@ namespace APRIL
                 // get common sections
                 std::vector<uint> commonSections = spatial_lib::getCommonSectionIDsOfObjects(g_query->R, g_query->S, idR, idS);
                 // for each common section
-                int iFilterResult;
+                int iFilterResult = -1;
                 for (auto &sectionID : commonSections) {
                     // fetch the APRIL of R and S for this section
                     spatial_lib::AprilDataT* aprilR = spatial_lib::getAprilDataBySectionAndObjectIDs(g_query->R, sectionID, idR);
@@ -298,20 +298,6 @@ namespace APRIL
                         case spatial_lib::TR_INTERSECT:
                             // result
                             spatial_lib::countTopologyRelationResult(iFilterResult);
-
-                            // if(iFilterResult == spatial_lib::TR_INTERSECT){
-                            //     // printf("%u,%u\n", idR, idS);
-                            //     std::pair<uint,uint> vertexCounts = spatial_lib::getVertexCountsOfPair(idR,idS);
-                            //     if(vertexCounts.first > 2000 && vertexCounts.second > 2000) {
-                            //         printf("polygons %u,%u vertex counts %u,%u\n", idR, idS, vertexCounts.first, vertexCounts.second);
-                            //     }
-                            // }
-
-                            // if (idR == 220594 && idS == 357429) {
-                            // if (idR == 206434 && idS == 9173759) {
-                            //     printf("Time passed evaluating pair %u,%u: %f seconds\n", idR, idS, spatial_lib::time::getElapsedTime(temp_timer));
-                            //     printf("A/F intervals: %u/%u and %u/%u\n", aprilR->numIntervalsALL, aprilR->numIntervalsFULL, aprilS->numIntervalsALL, aprilS->numIntervalsFULL);
-                            // }
 
                             // time
                             spatial_lib::g_queryOutput.iFilterTime += spatial_lib::time::getElapsedTime(spatial_lib::time::g_timer.iFilterTimer);
@@ -350,16 +336,13 @@ namespace APRIL
                 spatial_lib::g_queryOutput.refinementTime += spatial_lib::time::getElapsedTime(spatial_lib::time::g_timer.refTimer);
                 // count the result
                 spatial_lib::countTopologyRelationResult(relation);
-                // if(relation == spatial_lib::TR_INTERSECT){
-                //     printf("%u,%u\n", idR, idS);
-                // }
             }
 
             static void specializedTopologySinRContainment(uint idR, uint idS) {
                 // get common sections
                 std::vector<uint> commonSections = spatial_lib::getCommonSectionIDsOfObjects(g_query->R, g_query->S, idR, idS);
                 // for each common section
-                int iFilterResult;
+                int iFilterResult = -1;
                 for (auto &sectionID : commonSections) {
                     // fetch the APRIL of R and S for this section
                     spatial_lib::AprilDataT* aprilR = spatial_lib::getAprilDataBySectionAndObjectIDs(g_query->R, sectionID, idR);
@@ -389,7 +372,7 @@ namespace APRIL
                 // count refinement candidate
                 spatial_lib::countAPRILResult(spatial_lib::INCONCLUSIVE);
 
-                int relation;
+                int relation = -1;
                 // switch based on result
                 switch(iFilterResult) {            
                     // inconclusive, do selective refinement
@@ -983,5 +966,4 @@ namespace APRIL
             }
         }
     }
-
 }
