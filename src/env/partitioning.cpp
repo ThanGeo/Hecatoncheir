@@ -1,4 +1,5 @@
 #include "env/partitioning.h"
+#include <bitset>
 
 namespace partitioning
 {
@@ -70,29 +71,40 @@ namespace partitioning
         if (ret != DBERR_OK) {
             return ret;
         }
+        // set
+        geometry.setPartitionIDs(partitionIDs);
 
-        // add to buffers for the batch
+        // find which nodes need to receive this geometry
+        std::vector<bool> bitVector(g_world_size, false);
+        // get receiving worker ranks
         for (auto partitionIT = partitionIDs.begin(); partitionIT != partitionIDs.end(); partitionIT++) {
-            // set partitionID
-            geometry.setPartitionID(*partitionIT);
-            // get node rank responsible
+            // get node rank
             int nodeRank = g_config.partitioningInfo.getNodeRankForPartitionID(*partitionIT);
-            // add geometry to batch
-            auto it = batchMap.find(nodeRank);
-            if (it == batchMap.end()) {
-                logger::log_error(DBERR_INVALID_PARAMETER, "Error fetching batch for node", nodeRank);
-                return DBERR_INVALID_PARAMETER;
-            }
-            GeometryBatchT *batch = &it->second;
-            batch->addGeometryToBatch(geometry);
-            // if batch is full, send and reset
-            if (batch->objectCount >= batch->maxObjectCount) {
-                ret = comm::controller::serializeAndSendGeometryBatch(batch);
-                if (ret != DBERR_OK) {
-                    return ret;
+            bitVector[nodeRank] = true;
+        }
+        // add to nodes' batches
+        for (int nodeRank=0; nodeRank<bitVector.size(); nodeRank++) {
+            if (bitVector.at(nodeRank)) {
+                // if it has been marked
+
+                // add geometry to batch
+                auto it = batchMap.find(nodeRank);
+                if (it == batchMap.end()) {
+                    logger::log_error(DBERR_INVALID_PARAMETER, "Error fetching batch for node", nodeRank);
+                    return DBERR_INVALID_PARAMETER;
                 }
-                // reset
-                batch->clear();
+                GeometryBatchT *batch = &it->second;
+                batch->addGeometryToBatch(geometry);
+                // if batch is full, send and reset
+                if (batch->objectCount >= batch->maxObjectCount) {
+                    ret = comm::controller::serializeAndSendGeometryBatch(batch);
+                    if (ret != DBERR_OK) {
+                        return ret;
+                    }
+                    // reset
+                    batch->clear();
+                }
+
             }
         }
         return ret;
@@ -185,7 +197,7 @@ namespace partitioning
                     vertexCount += 1;
                 }
                 // create serializable object
-                GeometryT geometry(recID, 0, vertexCount, coords);
+                GeometryT geometry(recID, vertexCount, coords);
                 // assign to appropriate batches
                 local_ret = assignGeometryToBatches(geometry, xMin, yMin, xMax, yMax, batchMap);
                 if (ret != DBERR_OK) {
@@ -306,7 +318,7 @@ namespace partitioning
             }
 
             // create serializable object
-            GeometryT geometry(recID, 0, vertexCount, coords);
+            GeometryT geometry(recID, vertexCount, coords);
 
             // assign to appropriate batches
             ret = assignGeometryToBatches(geometry, xMin, yMin, xMax, yMax, batchMap);

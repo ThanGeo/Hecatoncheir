@@ -8,7 +8,8 @@ namespace storage
             // store each geometry
             for(auto &it: batch->geometries) {
                 fwrite(&it.recID, sizeof(int), 1, outFile);
-                fwrite(&it.partitionID, sizeof(int), 1, outFile);
+                fwrite(&it.partitionCount, sizeof(int), 1, outFile);
+                fwrite(it.partitionIDs.data(), sizeof(int), it.partitionCount, outFile);
                 fwrite(&it.vertexCount, sizeof(int), 1, outFile);
                 fwrite(it.coords.data(), sizeof(double), it.coords.size(), outFile);
             }

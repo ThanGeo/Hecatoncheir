@@ -72,19 +72,29 @@ struct SerializedMsgT {
 
 typedef struct Geometry {
     int recID;
-    int partitionID;
+    int partitionCount;
+    std::vector<int> partitionIDs;
     int vertexCount;
     std::vector<double> coords;
 
-    Geometry(int recID, int partitionID, int vertexCount, std::vector<double> &coords) {
+    Geometry(int recID, int vertexCount, std::vector<double> &coords) {
         this->recID = recID;
-        this->partitionID = partitionID;
         this->vertexCount = vertexCount;
         this->coords = coords;
     }
 
-    void setPartitionID(int partitionID) {
-        this->partitionID = partitionID;
+    Geometry(int recID, std::vector<int> &partitionIDs, int vertexCount, std::vector<double> &coords) {
+        this->recID = recID;
+        this->partitionIDs = partitionIDs;
+        this->partitionCount = partitionIDs.size(); 
+        this->vertexCount = vertexCount;
+        this->coords = coords;
+    }
+
+
+    void setPartitionIDs(std::vector<int> &ids) {
+        this->partitionIDs = ids;
+        this->partitionCount = ids.size();
     }
 
 } GeometryT;
@@ -116,10 +126,13 @@ typedef struct GeometryBatch {
     int calculateBufferSize() {
         int size = 0;
         size += sizeof(int);                        // objectCount
-        size += 3 * objectCount * sizeof(int);      // objectCount * (rec ID,partition ID,vertex count)
         
         for (auto &it: geometries) {
-            size += it.vertexCount * 2 * sizeof(double);
+            size += sizeof(it.recID);
+            size += sizeof(int);    // partition count
+            size += it.partitionIDs.size() * sizeof(int); // partition ids
+            size += sizeof(it.vertexCount); // vertex count
+            size += it.vertexCount * 2 * sizeof(double);    // vertices
         }
         
         return size;
@@ -149,8 +162,10 @@ typedef struct GeometryBatch {
         for (auto &it : geometries) {
             *reinterpret_cast<int*>(localBuffer) = it.recID;
             localBuffer += sizeof(int);
-            *reinterpret_cast<int*>(localBuffer) = it.partitionID;
+            *reinterpret_cast<int*>(localBuffer) = it.partitionCount;
             localBuffer += sizeof(int);
+            std::memcpy(localBuffer, it.partitionIDs.data(), it.partitionIDs.size() * sizeof(int));
+            localBuffer += it.partitionIDs.size() * sizeof(int);
             *reinterpret_cast<int*>(localBuffer) = it.vertexCount;
             localBuffer += sizeof(int);
             std::memcpy(localBuffer, it.coords.data(), it.vertexCount * 2 * sizeof(double));
@@ -166,7 +181,7 @@ typedef struct GeometryBatch {
      * @param buffer 
      */
     void deserialize(const char *buffer, int bufferSize) {
-        int recID, partitionID, vertexCount;
+        int recID, vertexCount, partitionCount;
         const char *localBuffer = buffer;
 
         // get object count
@@ -176,15 +191,25 @@ typedef struct GeometryBatch {
         // extend reserve space
         geometries.reserve(geometries.size() + objectCount);
 
+        // deserialize fields for each object in the batch
         for (int i=0; i<objectCount; i++) {
-            // deserialize fields
+            // rec id
             recID = *reinterpret_cast<const int*>(localBuffer);
             localBuffer += sizeof(int);
-            partitionID = *reinterpret_cast<const int*>(localBuffer);
+            // partition count
+            partitionCount = *reinterpret_cast<const int*>(localBuffer);
             localBuffer += sizeof(int);
+            // partitions ids
+            std::vector<int> partitionIDs(partitionCount);
+            const int* partitionPtr = reinterpret_cast<const int*>(localBuffer);
+            for (size_t j = 0; j < partitionCount; ++j) {
+                partitionIDs[j] = partitionPtr[j];
+            }
+            localBuffer += partitionCount * sizeof(int);
+            // vertex count
             vertexCount = *reinterpret_cast<const int*>(localBuffer);
             localBuffer += sizeof(int);
-
+            // vertices
             std::vector<double> coords(vertexCount * 2);
             const double* vertexDataPtr = reinterpret_cast<const double*>(localBuffer);
             for (size_t j = 0; j < vertexCount * 2; ++j) {
@@ -193,7 +218,7 @@ typedef struct GeometryBatch {
             localBuffer += vertexCount * 2 * sizeof(double);
             
             // add to batch
-            GeometryT geometry(recID, partitionID, vertexCount, coords);
+            GeometryT geometry(recID, partitionIDs, vertexCount, coords);
             this->addGeometryToBatch(geometry);
         }
     }
