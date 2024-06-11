@@ -140,7 +140,7 @@ namespace spatial_lib
     // APRIL data
     typedef struct AprilData {
         // APRIL data
-        uint numIntervalsALL;
+        uint numIntervalsALL = 0;
         std::vector<uint> intervalsALL;
         uint numIntervalsFULL = 0;
         std::vector<uint> intervalsFULL;

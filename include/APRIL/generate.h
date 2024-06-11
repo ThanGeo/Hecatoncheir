@@ -4,6 +4,7 @@
 #include "def.h"
 #include "Rasterizer.h"
 #include "storage/read.h"
+#include "APRIL/storage.h"
 
 namespace APRIL
 {

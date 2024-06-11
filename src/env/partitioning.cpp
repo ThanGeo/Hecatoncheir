@@ -252,129 +252,6 @@ namespace partitioning
         return ret;
     }
 
-    static DB_STATUS loadBinaryDatasetAndPartition(std::string &datasetPath) {
-        int polygonCount;
-        int recID;
-        int partitionID;
-        int vertexCount;
-        double x,y;
-        double xMin, yMin, xMax, yMax;
-        // static load space
-        double coordLoadSpace[1000000];
-        
-        DB_STATUS ret = DBERR_OK;
-
-        // open dataset file stream
-        FILE* pFile = fopen(datasetPath.c_str(), "rb");
-        if (pFile == NULL) {
-            logger::log_error(DBERR_MISSING_FILE, "Couldnt open binary dataset file:", datasetPath);
-            return DBERR_MISSING_FILE;
-        }
-
-        //first read the total polygon count of the dataset
-        size_t elementsRead = fread(&polygonCount, sizeof(int), 1, pFile);
-        if (elementsRead != 1) {
-            return DBERR_DISK_READ_FAILED;
-        }
-
-        // initialize batches
-        std::unordered_map<int,GeometryBatchT> batchMap;
-        ret = initializeBatchMap(batchMap);
-        if (ret != DBERR_OK) {
-            return ret;
-        }
-
-        //read polygons
-        int intBuf[2];
-        for(int i=0; i<polygonCount; i++){
-            //read the polygon id and vertex count
-            elementsRead = fread(&intBuf, sizeof(int), 2, pFile);
-            if (elementsRead != 2) {
-                return DBERR_DISK_READ_FAILED;
-            }
-            recID = intBuf[0];
-            vertexCount = intBuf[1];
-
-            xMin = std::numeric_limits<int>::max();
-            yMin = std::numeric_limits<int>::max();
-            xMax = -std::numeric_limits<int>::max();
-            yMax = -std::numeric_limits<int>::max();
-
-            // read the points
-            std::vector<double> coords(vertexCount*2);
-            elementsRead = fread(&coordLoadSpace, sizeof(double), vertexCount*2, pFile);
-            if (elementsRead != vertexCount*2) {
-                return DBERR_DISK_READ_FAILED;
-            }
-            // compute MBR and store
-            for (int j=0; j<vertexCount; j+=2) {
-                xMin = std::min(xMin, coordLoadSpace[j]);
-                yMin = std::min(yMin, coordLoadSpace[j+1]);
-                xMax = std::max(xMax, coordLoadSpace[j]);
-                yMax = std::max(yMax, coordLoadSpace[j+1]);
-
-                coords[j] = coordLoadSpace[j];
-                coords[j+1] = coordLoadSpace[j+1];
-            }
-
-            // create serializable object
-            GeometryT geometry(recID, vertexCount, coords);
-
-            // assign to appropriate batches
-            ret = assignGeometryToBatches(geometry, xMin, yMin, xMax, yMax, batchMap);
-            if (ret != DBERR_OK) {
-                goto CLOSE_AND_RETURN;
-            }
-        }
-
-        // send any remaining batches
-        for (int i=0; i<g_world_size; i++) {
-            // fetch batch
-            auto it = batchMap.find(i);
-            if (it == batchMap.end()) {
-                logger::log_error(DBERR_INVALID_PARAMETER, "Error fetching batch for node", i);
-                ret = DBERR_INVALID_PARAMETER;
-                goto CLOSE_AND_RETURN;
-            }
-            GeometryBatchT *batch = &it->second;
-            ret = comm::controller::serializeAndSendGeometryBatch(batch);
-            if (ret != DBERR_OK) {
-                goto CLOSE_AND_RETURN;
-            }
-            // send also an empty pack to signify the end of the partitioning for this dataset
-            if (batch->objectCount > 0) {     
-                // reset and send empty (final message)
-                batch->clear();
-                ret = comm::controller::serializeAndSendGeometryBatch(batch);
-                if (ret != DBERR_OK) {
-                    goto CLOSE_AND_RETURN;
-                }
-            }
-        }
-
-CLOSE_AND_RETURN:
-        fclose(pFile);
-        return ret;
-    }
-
-    static DB_STATUS performPartitioningBinary(spatial_lib::DatasetT *dataset) {
-        DB_STATUS ret = DBERR_OK;  
-
-        // first, broadcast the dataset info message
-        ret = comm::controller::broadcastDatasetInfo(dataset);
-        if (ret != DBERR_OK) {
-            return ret;
-        }
-       
-        // load data and partition
-        ret = loadBinaryDatasetAndPartition(dataset->path);
-        if (ret != DBERR_OK) {
-            return ret;
-        }
-
-        return ret;
-    }
-
     static DB_STATUS performPartitioningCSV(spatial_lib::DatasetT *dataset) {
          DB_STATUS ret = DBERR_OK;  
 
@@ -396,18 +273,11 @@ CLOSE_AND_RETURN:
     DB_STATUS partitionDataset(spatial_lib::DatasetT *dataset) {
         double startTime;
         DB_STATUS ret;
+        logger::log_task("Partitioning dataset", dataset->nickname);
         // time
         startTime = mpi_timer::markTime();
         switch (dataset->fileType) {
             // perform the partitioning
-            case spatial_lib::FT_BINARY:
-                // binary dataset
-                ret = performPartitioningBinary(dataset);
-                if (ret != DBERR_OK) {
-                    logger::log_error(DBERR_PARTITIONING_FAILED, "Partitioning failed for dataset", dataset->nickname);
-                    return ret;
-                }
-                break;
             case spatial_lib::FT_CSV:
                 // csv dataset
                 ret = performPartitioningCSV(dataset);
@@ -416,6 +286,7 @@ CLOSE_AND_RETURN:
                     return ret;
                 }
                 break;
+            case spatial_lib::FT_BINARY:
             case spatial_lib::FT_WKT:
             default:
                 logger::log_error(DBERR_FEATURE_UNSUPPORTED, "Unsupported file type:", dataset->fileType);

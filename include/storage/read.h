@@ -10,7 +10,7 @@ namespace storage
     {
         namespace partitionFile
         {
-            DB_STATUS readNextObjectForRasterization(FILE* pFile, int &recID, int &partitionID, rasterizerlib::polygon2d &rasterizerPolygon);
+            DB_STATUS readNextObjectForRasterization(FILE* pFile, int &recID, std::vector<int> &partitionIDs, rasterizerlib::polygon2d &rasterizerPolygon);
         }
     }
 }

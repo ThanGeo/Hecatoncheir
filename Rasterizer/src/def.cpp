@@ -108,5 +108,33 @@ namespace rasterizerlib
 
         return polygon;
     }
+
+    polygon2d createPolygon(std::vector<double> &coords) {
+        polygon2d polygon;
+        if (coords.size() < 3) {
+            log_err("Polygon needs at least 3 points");
+            return polygon;
+        }
+        
+        polygon.vertices.reserve(coords.size());
+       
+        polygon.mbr.minPoint.x = std::numeric_limits<int>::max();
+		polygon.mbr.minPoint.y = std::numeric_limits<int>::max();
+		polygon.mbr.maxPoint.x = -std::numeric_limits<int>::max();
+		polygon.mbr.maxPoint.y = -std::numeric_limits<int>::max();
+
+        for (int i=0; i<coords.size(); i+=2) {
+            polygon.vertices.emplace_back(coords[i], coords[i+1]);
+            polygon.bgPolygon.outer().push_back(bg_point_xy(coords[i], coords[i+1]));
+            polygon.mbr.minPoint.x = std::min(polygon.mbr.minPoint.x, coords[i]);
+            polygon.mbr.minPoint.y = std::min(polygon.mbr.minPoint.y, coords[i+1]);
+            polygon.mbr.maxPoint.x = std::max(polygon.mbr.maxPoint.x, coords[i]);
+            polygon.mbr.maxPoint.y = std::max(polygon.mbr.maxPoint.y, coords[i+1]);
+        }
+
+        boost::geometry::correct(polygon.bgPolygon);
+
+        return polygon;
+    }
 }
 

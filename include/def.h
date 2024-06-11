@@ -77,6 +77,9 @@ typedef enum DB_STATUS {
     // partitioning
     DBERR_INVALID_PARTITION = DBBASE + 5000,
     DBERR_PARTITIONING_FAILED = DBBASE + 5001,
+
+    // APRIL
+    DBERR_APRIL_CREATE = DBBASE + 6000,
 } DB_STATUS;
 
 namespace logger

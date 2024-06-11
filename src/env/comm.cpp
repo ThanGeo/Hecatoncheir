@@ -34,6 +34,31 @@ namespace comm
         return DBERR_OK;
     }
 
+    /**
+     * Waits for a response from the AGENT (ACK or NACK)
+     * When it comes, it forwards it to the host controller.
+     */
+    static DB_STATUS waitForResponse() {
+        MPI_Status status;
+        // wait for response by the agent that all is well for the APRIL creation
+        DB_STATUS ret = probeBlocking(AGENT_RANK, MPI_ANY_TAG, g_local_comm, status);
+        if (ret != DBERR_OK) {
+            return ret;
+        }
+        // receive response from agent
+        ret = recv::receiveResponse(AGENT_RANK, status.MPI_TAG, g_local_comm, status);
+        if (ret != DBERR_OK) {
+            return ret;
+        }
+        // forward response to host controller
+        ret = send::sendResponse(g_host_rank, status.MPI_TAG, g_global_comm);
+        if (ret != DBERR_OK) {
+            logger::log_error(ret, "Forwarding response to host controller failed");
+            return ret;
+        }
+        return ret;
+    }    
+
     namespace forward
     {
 
@@ -132,9 +157,13 @@ namespace comm
             if (ret != DBERR_OK) {
                 return ret;
             }
-            
             // free memory
             free(msg.data);
+            // wait for response by the agent that all is well for the APRIL creation
+            ret = waitForResponse();
+            if (ret != DBERR_OK) {
+                return ret;
+            }
             return ret;
         }
     }
@@ -201,7 +230,7 @@ namespace comm
             } else {
                 // empty batch, set flag to stop listening for this dataset
                 continueListening = 0;
-                // and write total objects in the begining of the binary file
+                // and write total objects in the begining of the partitioned file
                 ret = storage::writer::updateObjectCountInPartitionFile(outFile, dataset->totalObjects);
                 logger::log_success("Saved", dataset->totalObjects,"total objects.");
                 if (ret != DBERR_OK) {
@@ -385,8 +414,23 @@ STOP_LISTENING:
                 ret = APRIL::generate(it.second);
                 if (ret != DBERR_OK) {
                     logger::log_error(ret, "Failed to generate APRIL for dataset", it.second.nickname);
+                }
+            }
+            if (ret == DBERR_OK) {
+                // send ACK back that all data for this dataset has been received and processed successfully
+                ret = send::sendResponse(PARENT_RANK, MSG_ACK, g_local_comm);
+                if (ret != DBERR_OK) {
+                    logger::log_error(ret, "Send ACK failed.");
+                }
+            } else {
+                // there was an error, send NACK and propagate error code locally
+                DB_STATUS errorCode = ret;
+                ret = send::sendResponse(PARENT_RANK, MSG_NACK, g_local_comm);
+                if (ret != DBERR_OK) {
+                    logger::log_error(ret, "Send NACK failed.");
                     return ret;
                 }
+                return errorCode;
             }
             return ret;
         }
@@ -466,6 +510,7 @@ STOP_LISTENING:
 
     namespace controller
     {
+        
         DB_STATUS serializeAndSendGeometryBatch(GeometryBatchT* batch) {
             DB_STATUS ret = DBERR_OK;
             SerializedMsgT<char> msg(MPI_CHAR);
@@ -621,19 +666,8 @@ STOP_LISTENING:
             }
 
             // wait for response by the agent that all is well for this dataset partitioning
-            ret = probeBlocking(AGENT_RANK, MPI_ANY_TAG, g_local_comm, status);
+            ret = waitForResponse();
             if (ret != DBERR_OK) {
-                return ret;
-            }
-            // receive response from agent
-            ret = recv::receiveResponse(AGENT_RANK, status.MPI_TAG, g_local_comm, status);
-            if (ret != DBERR_OK) {
-                return ret;
-            }
-            // forward response to host controller
-            ret = send::sendResponse(g_host_rank, status.MPI_TAG, g_global_comm);
-            if (ret != DBERR_OK) {
-                logger::log_error(ret, "Forwarding response to host controller failed");
                 return ret;
             }
             // todo: maybe do something on nack?

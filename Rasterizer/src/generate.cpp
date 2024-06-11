@@ -8,8 +8,9 @@ namespace rasterizerlib
     spatial_lib::AprilDataT generate(polygon2d polygon, GenerateTypeE generateType) {
         // safety checks
         if (!g_config.lib_init) {
+            spatial_lib::AprilDataT aprilData;
             log_err("lib not initialized");
-            exit(-1);
+            return aprilData;
         }
         // if(!checkIfPolygonIsInsideDataspace(polygon)){
         //     log_err("Polygon is not copletely inside the pre-defined data space");
@@ -40,7 +41,8 @@ namespace rasterizerlib
         } else {
             // unknown generate type
             log_err("Unknown generate type.");
-            exit(-1);
+            spatial_lib::AprilDataT aprilData;
+            return aprilData;
         }
     }
 

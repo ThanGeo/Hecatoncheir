@@ -55,6 +55,18 @@ static DB_STATUS initAPRILCreation() {
         return ret;
     }
 
+    logger::log_task("Creating APRIL for the loaded datasets...");
+    // measure response time
+    double startTime;
+    startTime = mpi_timer::markTime();
+    // wait for response by workers+agent that all is ok
+    ret = comm::controller::gatherResponses();
+    if (ret != DBERR_OK) {
+        return ret;
+    }
+    logger::log_success("APRIL creation finished in", mpi_timer::getElapsedTime(startTime), "seconds.");
+
+
     return ret;
 }
 

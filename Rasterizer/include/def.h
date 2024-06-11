@@ -51,6 +51,7 @@ namespace rasterizerlib
     
     polygon2d createPolygon(std::vector<spatial_lib::PointT> &vertices);
     polygon2d createPolygon(double* coords, int vertexCount);
+    polygon2d createPolygon(std::vector<double> &coords);
 
     int init(double xMin, double yMin, double xMax, double yMax);
 

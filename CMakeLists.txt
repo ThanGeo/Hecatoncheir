@@ -64,6 +64,7 @@ set(SrcFiles
     src/config/statement.cpp
 
     src/APRIL/generate.cpp
+    src/APRIL/storage.cpp
 )
 
 # supress warnings
