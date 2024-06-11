@@ -1,21 +1,25 @@
 #! /bin/bash
 
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+NC='\033[0m'
+
 # default case (local, 4 processes)
 systype='local'
 # check input
 if [ "$#" -eq 0 ]; then
   # default case (local)
-  echo "building default systype: local"
+  echo "building using default build type: local"
 elif [ "$#" -eq 1 ]; then
   # specified type
   systype=$1
   if [[ "$systype" != "local" && "$systype" != "cluster" ]]; then
-    echo "Error: Invalid keyword '$systype'. Allowed keywords are 'local' and 'cluster'."
+    echo -e "${RED}Error${NC}: Invalid build type '$systype'. Supported types: [local,cluster]"
     exit 1
   fi
 else
   # wrong
-  echo "Error, too many arguments. Usage: '$0' for default or '$0 <type>' where type=[local,cluster]"
+  echo -e "${RED}Error${NC}: too many arguments. Usage: '$0' for default or '$0 <type>' where type=[local,cluster]"
   exit 1
 fi
 
@@ -38,8 +42,8 @@ if [ "$systype" = "cluster" ]; then
   SOURCE_DIR=$( cd "$(dirname "${BASH_SOURCE[0]}")" ; pwd -P )
   # directory where the code should be placed on each node
   DEST_DIR="$SOURCE_DIR"
-  echo "Host directory: " $SOURCE_DIR
-  echo "Node directory: " $DEST_DIR
+  echo -e "-- ${GREEN}Host directory: ${NC}" $SOURCE_DIR
+  echo -e "-- ${GREEN}Host directory: ${NC}" $DEST_DIR
   # make the same directory in the nodes (if it does not exist)
   for node in "${NODES[@]}"; do
     ssh "$node" "mkdir -p '$SOURCE_DIR'"
@@ -49,6 +53,7 @@ if [ "$systype" = "cluster" ]; then
     local node=$1
     rsync -q -avz -e "ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no" --delete $SOURCE_DIR/ ${node}:${DEST_DIR}/
   }
+  echo "-- Syncing code across machines..."
   # sync for each node and append to hostfile
   hostfile="hostfile"
   echo "# node specification" > $hostfile
@@ -58,7 +63,7 @@ if [ "$systype" = "cluster" ]; then
     # append to hostfile
     echo "$node:1" >> $hostfile
   done
-  echo "Code sync across machines complete."
+  echo -e "-- ${GREEN}Code sync across machines complete.${NC}"
 fi
 
 # set execution parameters
@@ -85,4 +90,4 @@ echo -e "echo \"Number of nodes: \$numnodes\"" >> $runscript
 echo -e "cd build\nmpirun.mpich -np \$numnodes $hostfile ./controller -t $type -c $configfilepath \$args" >> $runscript
 echo -e "cd .." >> $runscript
 chmod +x $runscript
-echo "Generated program script: '$runscript'"
+echo -e "-- ${GREEN}Generated program script: ${NC} $runscript"
