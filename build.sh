@@ -90,4 +90,4 @@ echo -e "echo \"Number of nodes: \$numnodes\"" >> $runscript
 echo -e "cd build\nmpirun.mpich -np \$numnodes $hostfile ./controller -t $type -c $configfilepath \$args" >> $runscript
 echo -e "cd .." >> $runscript
 chmod +x $runscript
-echo -e "-- ${GREEN}Generated program script: ${NC} $runscript"
+echo -e "-- ${GREEN}Generated program script:${NC} $runscript"

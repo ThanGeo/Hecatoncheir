@@ -76,6 +76,15 @@ namespace spatial_lib
     typedef struct DataspaceInfo {
         double xMinGlobal, yMinGlobal, xMaxGlobal, yMaxGlobal;  // global bounds based on dataset bounds
         double xExtent, yExtent;
+
+        void clear() {
+            xMinGlobal = 0;
+            yMinGlobal = 0;
+            xMaxGlobal = 0;
+            yMaxGlobal = 0;
+            xExtent = 0;
+            yExtent = 0;
+        }
     } DataspaceInfoT;
 
     typedef struct Dataset{
@@ -88,7 +97,7 @@ namespace spatial_lib
         // as given by arguments and specified by datasets.ini config file
         std::string nickname;
         // map: recID -> vector data (polygon, linestring etc.)
-        std::unordered_map<uint, spatial_lib::VectorDataT> vectorData;
+        // std::unordered_map<uint, spatial_lib::VectorDataT> vectorData;
         DataspaceInfoT dataspaceInfo;
         int totalObjects = 0;
         /**
@@ -113,6 +122,9 @@ namespace spatial_lib
             return size;
         }
 
+        /**
+         * serialize dataset info (only specific stuff)
+         */
         int serialize(char **buffer) {
             int position = 0;
             // calculate size

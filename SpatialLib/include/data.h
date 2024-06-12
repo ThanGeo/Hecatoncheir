@@ -62,14 +62,33 @@ namespace spatial_lib
         DT_INVALID,
         DT_POINT,
         DT_LINESTRING,
+        DT_RECTANGLE,
         DT_POLYGON,
     } DataTypeE;
 
     // query data type combinations
-    typedef enum DatasetTypeCombination {
-        POLYGON_POLYGON,
-        POLYGON_LINESTRING,
-    }DatasetTypeCombinationE;
+    typedef enum DatatypeCombination {
+        // invalid
+        DC_INVALID_COMBINATION,
+        // heterogenous
+        DC_POINT_LINESTRING,
+        DC_POINT_RECTANGLE,
+        DC_POINT_POLYGON,
+        DC_RECTANGLE_POINT,
+        DC_RECTANGLE_LINESTRING,
+        DC_RECTANGLE_POLYGON,
+        DC_LINESTRING_POINT,
+        DC_LINESTRING_RECTANGLE,
+        DC_LINESTRING_POLYGON,
+        DC_POLYGON_POINT,
+        DC_POLYGON_LINESTRING,
+        DC_POLYGON_RECTANGLE,
+        //homogenous
+        DC_POINT_POINT,
+        DC_LINESTRING_LINESTRING,
+        DC_RECTANGLE_RECTANGLE,
+        DC_POLYGON_POLYGON,
+    }DatatypeCombinationE;
 
     /**
      * spatial data structs

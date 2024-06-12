@@ -5,13 +5,19 @@
 
 namespace spatial_lib 
 {
-    std::string queryTypeIntToText(int val);
+    namespace mapping
+    {
+        std::string queryTypeIntToText(int val);
+        int queryTypeStrToInt(std::string &str);
 
-    std::string dataTypeIntToText(DataTypeE val);
+        std::string dataTypeIntToText(DataTypeE val);
 
-    DataTypeE dataTypeTextToInt(std::string val);
+        DataTypeE dataTypeTextToInt(std::string str);
 
-    FileTypeE fileTypeTextToInt(std::string val);
+        FileTypeE fileTypeTextToInt(std::string str);
+
+        std::string datatypeCombinationIntToStr(DatatypeCombinationE val);
+    }
     
 }
 

@@ -80,6 +80,9 @@ typedef enum DB_STATUS {
 
     // APRIL
     DBERR_APRIL_CREATE = DBBASE + 6000,
+
+    // query
+    DBERR_QUERY_INVALID_INPUT = DBBASE + 7000,
 } DB_STATUS;
 
 namespace logger
@@ -243,7 +246,13 @@ typedef struct Action {
 } ActionT;
 
 typedef struct DatasetInfo {
+    private:
+    spatial_lib::DatasetT* R;
+    spatial_lib::DatasetT* S;
     int numberOfDatasets;
+    spatial_lib::DatatypeCombinationE datatypeCombination = spatial_lib::DC_INVALID_COMBINATION;
+
+    public:
     std::unordered_map<std::string,spatial_lib::DatasetT> datasets;
     spatial_lib::DataspaceInfoT dataspaceInfo;
     
@@ -255,8 +264,105 @@ typedef struct DatasetInfo {
         return &it->second;
     }
 
-    void addDataset(spatial_lib::DatasetT dataset) {
-        datasets.insert(std::make_pair(dataset.nickname,dataset));
+    int getNumberOfDatasets() {
+        return numberOfDatasets;
+    }
+
+    void clear() {
+        numberOfDatasets = 0;
+        R = nullptr;
+        S = nullptr;
+        datasets.clear();
+        dataspaceInfo.clear();
+        datatypeCombination = spatial_lib::DC_INVALID_COMBINATION;
+    }
+
+    spatial_lib::DatasetT* getDatasetR() {
+        return R;
+    }
+
+    spatial_lib::DatasetT* getDatasetS() {
+        return S;
+    }
+
+    spatial_lib::DatatypeCombinationE getDatatypeCombination() {
+        return datatypeCombination;
+    }
+
+    void setDatatypeCombination() {
+        // R is points
+        if (getDatasetR()->dataType == spatial_lib::DT_POINT) {
+            if (getDatasetS()->dataType == spatial_lib::DT_POINT) {
+                datatypeCombination = spatial_lib::DC_POINT_POINT;
+            }
+            if (getDatasetS()->dataType == spatial_lib::DT_LINESTRING) {
+                datatypeCombination = spatial_lib::DC_POINT_LINESTRING;
+            }
+            if (getDatasetS()->dataType == spatial_lib::DT_RECTANGLE) {
+                datatypeCombination = spatial_lib::DC_POINT_RECTANGLE;
+            }
+            if (getDatasetS()->dataType == spatial_lib::DT_POLYGON) {
+                datatypeCombination = spatial_lib::DC_POINT_POLYGON;
+            }
+        }
+        // R is linestrings
+        if (getDatasetR()->dataType == spatial_lib::DT_LINESTRING) {
+            if (getDatasetS()->dataType == spatial_lib::DT_POINT) {
+                datatypeCombination = spatial_lib::DC_LINESTRING_POINT;
+            }
+            if (getDatasetS()->dataType == spatial_lib::DT_LINESTRING) {
+                datatypeCombination = spatial_lib::DC_LINESTRING_LINESTRING;
+            }
+            if (getDatasetS()->dataType == spatial_lib::DT_RECTANGLE) {
+                datatypeCombination = spatial_lib::DC_LINESTRING_RECTANGLE;
+            }
+            if (getDatasetS()->dataType == spatial_lib::DT_POLYGON) {
+                datatypeCombination = spatial_lib::DC_LINESTRING_POLYGON;
+            }
+        }
+        // R is rectangles
+        if (getDatasetR()->dataType == spatial_lib::DT_RECTANGLE) {
+            if (getDatasetS()->dataType == spatial_lib::DT_POINT) {
+                datatypeCombination = spatial_lib::DC_RECTANGLE_POINT;
+            }
+            if (getDatasetS()->dataType == spatial_lib::DT_LINESTRING) {
+                datatypeCombination = spatial_lib::DC_RECTANGLE_LINESTRING;
+            }
+            if (getDatasetS()->dataType == spatial_lib::DT_RECTANGLE) {
+                datatypeCombination = spatial_lib::DC_RECTANGLE_RECTANGLE;
+            }
+            if (getDatasetS()->dataType == spatial_lib::DT_POLYGON) {
+                datatypeCombination = spatial_lib::DC_RECTANGLE_POLYGON;
+            }
+        }
+        // R is polygons
+        if (getDatasetR()->dataType == spatial_lib::DT_POLYGON) {
+            if (getDatasetS()->dataType == spatial_lib::DT_POINT) {
+                datatypeCombination = spatial_lib::DC_POLYGON_POINT;
+            }
+            if (getDatasetS()->dataType == spatial_lib::DT_LINESTRING) {
+                datatypeCombination = spatial_lib::DC_POLYGON_LINESTRING;
+            }
+            if (getDatasetS()->dataType == spatial_lib::DT_RECTANGLE) {
+                datatypeCombination = spatial_lib::DC_POLYGON_RECTANGLE;
+            }
+            if (getDatasetS()->dataType == spatial_lib::DT_POLYGON) {
+                datatypeCombination = spatial_lib::DC_POLYGON_POLYGON;
+            }
+        }
+    }
+
+    void addDataset(spatial_lib::DatasetT &dataset) {
+        datasets.insert(std::make_pair(dataset.nickname, dataset));
+        if (numberOfDatasets < 1) {
+            // R is being added
+            R = &datasets.find(dataset.nickname)->second;
+        } else {
+            // S is being added
+            S = &datasets.find(dataset.nickname)->second;
+            // set the datatypecombination
+            setDatatypeCombination();
+        }
         numberOfDatasets++;
     }
 
@@ -270,7 +376,6 @@ typedef struct DatasetInfo {
         dataspaceInfo.xExtent = dataspaceInfo.xMaxGlobal - dataspaceInfo.xMinGlobal;
         dataspaceInfo.yExtent = dataspaceInfo.yMaxGlobal - dataspaceInfo.yMinGlobal;
     }
-
 } DatasetInfoT;
 
 typedef struct ApproximationInfo {

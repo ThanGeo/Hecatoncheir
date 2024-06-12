@@ -17,7 +17,7 @@ typedef struct DatasetStatement {
     std::string datasetNicknameR = "", datasetNicknameS = "";
     std::string offsetMapPathR = "", offsetMapPathS = "";
     std::string filetypeR,filetypeS;
-    int datasetTypeCombination = -1;
+    int DatatypeCombination = -1;
     int datasetCount = 0;
     spatial_lib::DataTypeE datatypeR, datatypeS;
     bool boundsSet = false;
@@ -25,9 +25,8 @@ typedef struct DatasetStatement {
 } DatasetStatementT;
 
 typedef struct QueryStatement {
-    /* TODO */
     std::string queryType = "";
-    int datasetTypeCombination = -1;
+    int DatatypeCombination = -1;
     int datasetCount = 0;
     spatial_lib::DataTypeE datatypeR, datatypeS;
     bool boundsSet = false;

@@ -2,8 +2,6 @@
 
 namespace parser
 {
-
-
     // property tree var
     static boost::property_tree::ptree system_config_pt;
     static boost::property_tree::ptree dataset_config_pt;
@@ -15,6 +13,63 @@ namespace parser
             return SYS_CLUSTER;
         }
         return -1;
+    }
+
+    static DB_STATUS verifyDatatypeCombinationForQueryType(int queryType) {
+        // get number of datasets
+        int numberOfDatasets = g_config.datasetInfo.getNumberOfDatasets();
+        // get dataset data types combination
+        spatial_lib::DatatypeCombinationE datatypeCombination = g_config.datasetInfo.getDatatypeCombination();
+        if (datatypeCombination == spatial_lib::DC_INVALID_COMBINATION) {
+            logger::log_error(DBERR_UNSUPPORTED_DATATYPE_COMBINATION, "Unsupported data type combination:", datatypeCombination);
+            return DBERR_UNSUPPORTED_DATATYPE_COMBINATION;
+        }
+
+        switch (queryType) {
+            // range query
+            case spatial_lib::Q_RANGE:
+                // requires dataset R to be queries and dataset S to be data
+                if (numberOfDatasets != 2) {
+                    logger::log_error(DBERR_QUERY_INVALID_INPUT, "Range query requires two datasets as input: R for the queries, S for the data to be queried.");
+                    return DBERR_QUERY_INVALID_INPUT;
+                }
+                // queries must be polygon or rectangle
+                if (g_config.datasetInfo.getDatasetR()->dataType != spatial_lib::DT_RECTANGLE && g_config.datasetInfo.getDatasetR()->dataType != spatial_lib::DT_POLYGON) {
+                    logger::log_error(DBERR_QUERY_INVALID_INPUT, "Query dataset (R) must contain either RECTANGLE or POLYGON objects");
+                    return DBERR_QUERY_INVALID_INPUT;
+                }
+                // currently supported queries
+                switch (datatypeCombination) {
+                    default:
+                        logger::log_error(DBERR_UNSUPPORTED_DATATYPE_COMBINATION, "Datatype combination", spatial_lib::mapping::datatypeCombinationIntToStr(datatypeCombination), " for Range queries currently unsupported");
+                        return DBERR_UNSUPPORTED_DATATYPE_COMBINATION;
+                }
+                
+                break;
+            // joins with topological predicate
+            case spatial_lib::Q_FIND_RELATION:
+            case spatial_lib::Q_INTERSECT:
+            case spatial_lib::Q_INSIDE:
+            case spatial_lib::Q_CONTAINS:
+            case spatial_lib::Q_COVERED_BY:
+            case spatial_lib::Q_COVERS:
+            case spatial_lib::Q_DISJOINT:
+            case spatial_lib::Q_EQUAL:
+            case spatial_lib::Q_MEET:
+                // require two datasets
+                if (numberOfDatasets != 2) {
+                    logger::log_error(DBERR_QUERY_INVALID_INPUT, "Joins require two datasets as input.");
+                    return DBERR_QUERY_INVALID_INPUT;
+                }
+                // datatype combination support
+                if (datatypeCombination != spatial_lib::DC_POLYGON_POLYGON) {
+                    logger::log_error(DBERR_UNSUPPORTED_DATATYPE_COMBINATION, "Currently only polygon-polygon joins are supported. Input:", spatial_lib::mapping::datatypeCombinationIntToStr(datatypeCombination));
+                    return DBERR_UNSUPPORTED_DATATYPE_COMBINATION;
+                }
+                break;
+        }
+
+        return DBERR_OK;
     }
 
     static DB_STATUS loadAPRILconfig() {
@@ -161,7 +216,7 @@ namespace parser
         if (datasetStmt->datasetCount > 0) {
             // R dataset
             // file type
-            spatial_lib::FileTypeE fileTypeR = spatial_lib::fileTypeTextToInt(datasetStmt->filetypeR);
+            spatial_lib::FileTypeE fileTypeR = spatial_lib::mapping::fileTypeTextToInt(datasetStmt->filetypeR);
             if (fileTypeR == spatial_lib::FT_INVALID) {
                 logger::log_error(DBERR_INVALID_FILETYPE, "Unkown file type of dataset R:", datasetStmt->filetypeR);
                 return DBERR_INVALID_FILETYPE;
@@ -176,7 +231,7 @@ namespace parser
             if (datasetStmt->datasetCount > 1) {
                 // S dataset
                 // file type
-                spatial_lib::FileTypeE fileTypeS = spatial_lib::fileTypeTextToInt(datasetStmt->filetypeS);
+                spatial_lib::FileTypeE fileTypeS = spatial_lib::mapping::fileTypeTextToInt(datasetStmt->filetypeS);
                 if (fileTypeS == spatial_lib::FT_INVALID) {
                     logger::log_error(DBERR_INVALID_FILETYPE, "Unkown file type of dataset S:", datasetStmt->filetypeS);
                     return DBERR_INVALID_FILETYPE;
@@ -204,7 +259,7 @@ namespace parser
         if (datasetStmt->datasetNicknameR != "") {
             datasetStmt->datasetPathR = dataset_config_pt.get<std::string>(datasetStmt->datasetNicknameR+".path");
             // dataset data type
-            spatial_lib::DataTypeE datatypeR = spatial_lib::dataTypeTextToInt(dataset_config_pt.get<std::string>(datasetStmt->datasetNicknameR+".datatype"));
+            spatial_lib::DataTypeE datatypeR = spatial_lib::mapping::dataTypeTextToInt(dataset_config_pt.get<std::string>(datasetStmt->datasetNicknameR+".datatype"));
             if (datatypeR == spatial_lib::DT_INVALID) {
                 logger::log_error(DBERR_INVALID_DATATYPE, "Unknown data type for dataset R.");
                 return DBERR_INVALID_DATATYPE;
@@ -225,7 +280,7 @@ namespace parser
         if (datasetStmt->datasetNicknameS != "") {
             datasetStmt->datasetPathS = dataset_config_pt.get<std::string>(datasetStmt->datasetNicknameS+".path");
             // dataset data type
-            spatial_lib::DataTypeE datatypeS = spatial_lib::dataTypeTextToInt(dataset_config_pt.get<std::string>(datasetStmt->datasetNicknameS+".datatype"));
+            spatial_lib::DataTypeE datatypeS = spatial_lib::mapping::dataTypeTextToInt(dataset_config_pt.get<std::string>(datasetStmt->datasetNicknameS+".datatype"));
             if (datatypeS == spatial_lib::DT_INVALID) {
                 logger::log_error(DBERR_INVALID_DATATYPE, "Unknown data type for dataset S.");
                 return DBERR_INVALID_DATATYPE;
@@ -247,7 +302,7 @@ namespace parser
         // datatype combination
         if (datasetStmt->datasetCount == 2) {
             if(datasetStmt->datatypeR == spatial_lib::DT_POLYGON && datasetStmt->datatypeS == spatial_lib::DT_POLYGON) {
-                datasetStmt->datasetTypeCombination = spatial_lib::POLYGON_POLYGON;
+                datasetStmt->DatatypeCombination = spatial_lib::DC_POLYGON_POLYGON;
             } else {
                 logger::log_error(DBERR_UNSUPPORTED_DATATYPE_COMBINATION, "Dataset data type combination not yet supported.");
                 return DBERR_UNSUPPORTED_DATATYPE_COMBINATION;
@@ -307,6 +362,25 @@ namespace parser
         return DBERR_OK;
     }
 
+    static DB_STATUS parseQueryOptions(QueryStatementT *queryStmt) {
+        if (queryStmt->queryType == "") {
+            // no query was selected
+            return DBERR_OK;
+        }
+        // get query type int
+        int queryType = spatial_lib::mapping::queryTypeStrToInt(queryStmt->queryType);
+        if (queryType == -1) {
+            return DBERR_INVALID_PARAMETER;
+        }
+        // verify query validity with input datasets
+        DB_STATUS ret = verifyDatatypeCombinationForQueryType(queryType);
+        if (ret != DBERR_OK) {
+            return ret;
+        }
+        
+        return DBERR_OK;    
+    }
+
     /**
      * @brief passes the configuration on to the sysOps return object
     */
@@ -353,10 +427,10 @@ namespace parser
         {
             switch (c)
             {
-                // case 'q':
-                //     // Query Type
-                //     queryStmt.queryType = std::string(optarg);
-                //     break;
+                case 'q':
+                    // Query Type
+                    settingsStmt.queryStmt.queryType = std::string(optarg);
+                    break;
                 case 'c':
                     // user configuration file
                     settingsStmt.configFilePath = std::string(optarg);
@@ -433,6 +507,10 @@ namespace parser
         }
 
         // parse query options
+        ret = parseQueryOptions(&settingsStmt.queryStmt);
+        if (ret != DBERR_OK) {
+            return ret;
+        }
 
         // parse actions
         ret = parseActions(&settingsStmt.actionsStmt);

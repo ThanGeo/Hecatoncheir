@@ -97,7 +97,7 @@ namespace configure
     DB_STATUS setDatasetInfo(DatasetStatementT* datasetStmt) {
         if (datasetStmt->datasetCount == 0) {
             // no datasets
-            g_config.datasetInfo.numberOfDatasets = 0;
+            g_config.datasetInfo.clear();
             return DBERR_OK;
         } else {
             // at least one dataset
