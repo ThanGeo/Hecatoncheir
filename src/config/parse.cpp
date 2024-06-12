@@ -131,6 +131,9 @@ namespace parser
             }
         }
 
+        // queries
+        
+
         // verification always last
         if (actionsStmt->performVerification) {
             ActionT action(ACTION_PERFORM_VERIFICATION);
@@ -377,6 +380,9 @@ namespace parser
         if (ret != DBERR_OK) {
             return ret;
         }
+
+        // set to configuration
+        g_config.queryInfo.type = (spatial_lib::QueryTypeE) queryType;
         
         return DBERR_OK;    
     }
@@ -485,8 +491,6 @@ namespace parser
         if (ret != DBERR_OK) {
             return ret;
         }
-
-        // verify setup (TODO)
 
         // set configuration options
         ret = parseConfigurationOptions(settingsStmt.sysOpsStmt);

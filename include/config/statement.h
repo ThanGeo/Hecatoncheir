@@ -26,10 +26,6 @@ typedef struct DatasetStatement {
 
 typedef struct QueryStatement {
     std::string queryType = "";
-    int DatatypeCombination = -1;
-    int datasetCount = 0;
-    spatial_lib::DataTypeE datatypeR, datatypeS;
-    bool boundsSet = false;
 }QueryStatementT;
 
 typedef struct SystemOptionsStatement {

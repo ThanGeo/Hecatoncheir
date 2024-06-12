@@ -391,6 +391,13 @@ typedef struct ApproximationInfo {
     }
 } ApproximationInfoT;
 
+typedef struct QueryInfo {
+    spatial_lib::QueryTypeE type;
+    bool MBRFilter = true;
+    bool IntermediateFilter = true;
+    bool Refinement = true;
+} QueryInfoT;
+
 typedef struct Config {
     DirectoryPathsT dirPaths;
     SystemOptionsT options;
@@ -398,6 +405,7 @@ typedef struct Config {
     PartitioningInfoT partitioningInfo;
     DatasetInfoT datasetInfo;
     ApproximationInfoT approximationInfo;
+    QueryInfoT queryInfo;
 } ConfigT;
 
 /**
