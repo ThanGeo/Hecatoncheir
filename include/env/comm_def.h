@@ -12,7 +12,7 @@ typedef enum NodeType {
 } NodeTypeE;
 
 /* message types (used as MPI_TAG) */
-#define MSG_BASE 100000
+#define MSG_BASE 0
 typedef enum MsgType {
     /* BASE */
     MSG_ACK = MSG_BASE,
@@ -21,23 +21,23 @@ typedef enum MsgType {
     /* INSTRUCTIONS */
     MSG_INSTR_BEGIN = MSG_BASE + 2000,
     MSG_INSTR_FIN = MSG_INSTR_BEGIN,
+    MSG_INSTR_PARTITIONING_INIT = MSG_BASE + 2001,
     
     MSG_INSTR_END,
 
     /* SETUP */
     MSG_SYS_INFO = MSG_BASE + 3000,
 
-    /* DATA */
-    MSG_DATASET_INFO = MSG_BASE + 4000,
-
-    MSG_DATATYPE_BEGIN = MSG_BASE + 4001,
-    MSG_SINGLE_POINT = MSG_DATATYPE_BEGIN,
+    /* BATCHES */
+    MSG_BATCH_BEGIN = MSG_BASE + 4000,
+    MSG_DATASET_INFO = MSG_BATCH_BEGIN,
+    MSG_SINGLE_POINT = MSG_BASE + 4001,
     MSG_SINGLE_LINESTRING = MSG_BASE + 4002,
     MSG_SINGLE_POLYGON = MSG_BASE + 4003,
     MSG_BATCH_POINT = MSG_BASE + 4004,
     MSG_BATCH_LINESTRING = MSG_BASE + 4005,
     MSG_BATCH_POLYGON = MSG_BASE + 4006,
-
+    
     MSG_DATATYPE_END,
 
     /* APPROXIMATIONS */
@@ -48,6 +48,10 @@ typedef enum MsgType {
 
     /* QUERY */
     MSG_QUERY_INIT = MSG_BASE + 6000,
+
+    /* DATA */
+    MSG_LOAD_DATASETS = MSG_BASE + 7000,
+    MSG_UNLOAD_DATASETS = MSG_BASE + 7001,
     
     /* ERRORS */
     MSG_ERR_BEGIN = MSG_BASE + 10000,

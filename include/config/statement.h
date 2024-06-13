@@ -9,6 +9,7 @@ typedef struct ActionsStatement {
     bool performPartitioning = false;
     std::vector<std::string> createApproximations;
     bool performVerification = false;
+    bool loadDatasets = false;
 }ActionsStatementT;
 
 typedef struct DatasetStatement {

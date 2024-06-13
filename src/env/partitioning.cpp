@@ -253,15 +253,21 @@ namespace partitioning
     }
 
     static DB_STATUS performPartitioningCSV(spatial_lib::DatasetT *dataset) {
-         DB_STATUS ret = DBERR_OK;  
+        DB_STATUS ret = DBERR_OK;  
 
-        // first, broadcast the dataset info message
+        // first, issue the partitioning instruction
+        ret = comm::broadcast::broadcastInstructionMessage(MSG_INSTR_PARTITIONING_INIT);
+        if (ret != DBERR_OK) {
+            return ret;
+        }
+        
+        // then, broadcast the dataset info message
         ret = comm::controller::broadcastDatasetInfo(dataset);
         if (ret != DBERR_OK) {
             return ret;
         }
        
-        // load data and partition
+        // finally, load data and partition to workers
         ret = loadCSVDatasetAndPartition(dataset->path);
         if (ret != DBERR_OK) {
             return ret;

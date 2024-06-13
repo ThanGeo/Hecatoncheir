@@ -213,6 +213,7 @@ typedef struct DirectoryPaths {
 
 typedef enum ActionType {
     ACTION_NONE,
+    ACTION_LOAD_DATASETS,
     ACTION_PERFORM_PARTITIONING,
     ACTION_CREATE_APRIL,
     ACTION_PERFORM_VERIFICATION,

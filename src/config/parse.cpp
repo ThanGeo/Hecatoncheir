@@ -110,9 +110,14 @@ namespace parser
      */
     static DB_STATUS parseActions(ActionsStatementT *actionsStmt) {
         DB_STATUS ret = DBERR_OK;
-        // partitioning always first
+        // partitioning always before issuing the load datasets action
         if (actionsStmt->performPartitioning) {
             ActionT action(ACTION_PERFORM_PARTITIONING);
+            g_config.actions.emplace_back(action);
+        }
+        // load datasets action
+        if (actionsStmt->loadDatasets) {
+            ActionT action(ACTION_LOAD_DATASETS);
             g_config.actions.emplace_back(action);
         }
         // approximations
@@ -130,19 +135,16 @@ namespace parser
                 return DBERR_CONFIG_FILE;
             }
         }
-
         // queries
         if (g_config.queryInfo.type != spatial_lib::Q_NONE) {
             ActionT action(ACTION_QUERY);
             g_config.actions.emplace_back(action);
         }
-
-        // verification always last
+        // verification always last (todo)
         if (actionsStmt->performVerification) {
             ActionT action(ACTION_PERFORM_VERIFICATION);
             g_config.actions.emplace_back(action);
         }
-
         return DBERR_OK;
     }
 
@@ -457,11 +459,13 @@ namespace parser
                     // Dataset R path
                     settingsStmt.datasetStmt.datasetNicknameR = std::string(optarg);
                     settingsStmt.datasetStmt.datasetCount++;
+                    settingsStmt.actionsStmt.loadDatasets = true;
                     break;
                 case 'S':
                     // Dataset S path
                     settingsStmt.datasetStmt.datasetNicknameS = std::string(optarg);
                     settingsStmt.datasetStmt.datasetCount++;
+                    settingsStmt.actionsStmt.loadDatasets = true;
                     break;
                 case 't':
                     // system type: LOCAL (1 machine) or CLUSTER (many machines)

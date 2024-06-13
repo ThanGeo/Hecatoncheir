@@ -7,7 +7,8 @@ namespace storage
 {
     namespace writer
     {
-        DB_STATUS appendBatchToDatasetPartitionFile(FILE* outFile, GeometryBatchT* batch, spatial_lib::DatasetT* dataset);
+        DB_STATUS appendDatasetInfoToPartitionFile(FILE* outFile, spatial_lib::DatasetT* dataset);
+        DB_STATUS appendBatchToPartitionFile(FILE* outFile, GeometryBatchT* batch, spatial_lib::DatasetT* dataset);
 
         DB_STATUS updateObjectCountInPartitionFile(FILE* outFile, int objectCount);
     }

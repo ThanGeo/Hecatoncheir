@@ -81,6 +81,13 @@ namespace comm
                             #pragma omp cancel for
                             ret = local_ret;
                         } 
+                    } else {
+                        // send to local agent
+                        ret = comm::send::sendMessage(msg, AGENT_RANK, tag, g_local_comm);
+                        if (local_ret != DBERR_OK) {
+                            #pragma omp cancel for
+                            ret = local_ret;
+                        }
                     }
                 }
             }

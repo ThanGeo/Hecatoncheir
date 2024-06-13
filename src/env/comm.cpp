@@ -121,6 +121,28 @@ namespace comm
             return DBERR_OK;
         }
 
+        static DB_STATUS forwardLoadDatasetsMessage(MPI_Comm sourceComm, int destRank, MPI_Comm destComm, MPI_Status &status) {
+            SerializedMsgT<char> msg(MPI_CHAR);
+            // receive the message
+            DB_STATUS ret = recv::receiveMessage(status, msg.type, sourceComm, msg);
+            if (ret != DBERR_OK) {
+                return ret;
+            }
+            // forward to local agent
+            ret = send::sendMessage(msg, destRank, status.MPI_TAG, destComm);
+            if (ret != DBERR_OK) {
+                return ret;
+            }
+            // free memory
+            free(msg.data);
+            // wait for response by the agent that system init went ok
+            ret = waitForResponse();
+            if (ret != DBERR_OK) {
+                return ret;
+            }
+            return ret;
+        }
+
         /**
          * @brief Forwards a serialized batch message received through sourceComm to destrank, through destComm
          * The message has to be already probed (info stored in status)
@@ -229,31 +251,6 @@ namespace comm
 
     namespace agent
     {
-        
-
-        /**
-         * @brief pulls the probed instruction message and based on its tag, performs the requested instruction
-         * 
-         * @param status 
-         * @return DB_STATUS 
-         */
-        static DB_STATUS pullInstructionAndPerform(MPI_Status &status) {
-            // receive the instruction message
-            DB_STATUS ret = recv::receiveInstructionMessage(PARENT_RANK, status.MPI_TAG, g_local_comm, status);
-            if (ret != DBERR_OK) {
-                return ret;
-            }
-            // perform the corresponding instruction
-            switch (status.MPI_TAG) {
-                case MSG_INSTR_FIN:
-                    return DB_FIN;
-                default:
-                    logger::log_error(DBERR_COMM_UNKNOWN_INSTR, "Unknown instruction");
-                    return DBERR_COMM_UNKNOWN_INSTR;
-            }
-            return ret;
-        }
-
         static DB_STATUS deserializeBatchMessageAndStore(char *buffer, int bufferSize, FILE* outFile, spatial_lib::DatasetT *dataset, int &continueListening) {
             DB_STATUS ret = DBERR_OK;
             GeometryBatchT batch;
@@ -263,7 +260,7 @@ namespace comm
             if (batch.objectCount > 0) {
                 // do stuff
                 // logger::log_success("Received batch with", batch.objectCount, "objects");
-                ret = storage::writer::appendBatchToDatasetPartitionFile(outFile, &batch, dataset);
+                ret = storage::writer::appendBatchToPartitionFile(outFile, &batch, dataset);
                 if (ret != DBERR_OK) {
                     logger::log_error(DBERR_DISK_WRITE_FAILED, "Failed when writing batch to partition file");
                     return DBERR_DISK_WRITE_FAILED;
@@ -332,14 +329,24 @@ namespace comm
             return DBERR_OK;
         }
 
-        static DB_STATUS listenForDataset(MPI_Status status) {
+        static DB_STATUS listenForDatasetPartitioning(MPI_Status status) {
             spatial_lib::DatasetT *dataset;
             FILE* outFile;
             SerializedMsgT<char> datasetInfoMsg(MPI_CHAR);
             int listen = 1;
 
+            // proble blockingly for the dataset info
+            DB_STATUS ret = probeBlocking(PARENT_RANK, MPI_ANY_TAG, g_local_comm, status);
+            if (ret != DBERR_OK) {
+                return ret;
+            }
+            // verify that it is the proper message
+            if (status.MPI_TAG != MSG_DATASET_INFO) {
+                logger::log_error(DBERR_COMM_WRONG_MESSAGE_ORDER, "Partitioning: Expected dataset info message but received message with tag", status.MPI_TAG);
+                return DBERR_COMM_WRONG_MESSAGE_ORDER;
+            }
             // retrieve dataset info pack
-            DB_STATUS ret = recv::receiveMessage(status, datasetInfoMsg.type, g_local_comm, datasetInfoMsg);
+            ret = recv::receiveMessage(status, datasetInfoMsg.type, g_local_comm, datasetInfoMsg);
             if (ret != DBERR_OK) {
                 logger::log_error(ret, "Failed pulling the dataset info message");
                 goto STOP_LISTENING;
@@ -353,13 +360,21 @@ namespace comm
             // free memory
             free(datasetInfoMsg.data);
             
-            // open file to write the dataset to and write a dummy value for the total polygon count
-            // which will be corrected when finished
+            // open the partition data file
             outFile = fopen(dataset->path.c_str(), "wb");
             if (outFile == NULL) {
                 logger::log_error(DBERR_MISSING_FILE, "Couldnt open dataset file:", dataset->path);
                 return DBERR_MISSING_FILE;
             }
+
+            // write the dataset info to the partition file
+            ret = storage::writer::appendDatasetInfoToPartitionFile(outFile, dataset);
+            if (ret != DBERR_OK) {
+                logger::log_error(ret, "Failed while writing the dataset info to the partition file");
+                goto STOP_LISTENING;
+            }
+
+            // write a dummy value for the total polygon count, which will be corrected when the batches are finished
             fwrite(&dataset->totalObjects, sizeof(int), 1, outFile);
 
             // listen for dataset batches until an empty batch arrives
@@ -389,7 +404,7 @@ namespace comm
                         }  
                         break;
                     default:
-                        logger::log_error(DBERR_COMM_WRONG_MESSAGE_ORDER, "After the dataset info pack, only geometry packs are expected");
+                        logger::log_error(DBERR_COMM_WRONG_MESSAGE_ORDER, "After the dataset info pack, only geometry packs are expected. Received message with tag", status.MPI_TAG);
                         ret = DBERR_COMM_WRONG_MESSAGE_ORDER;
                         goto STOP_LISTENING;
                 }
@@ -414,6 +429,36 @@ STOP_LISTENING:
                     return ret;
                 }
                 return errorCode;
+            }
+            return ret;
+        }
+
+        /**
+         * @brief pulls the probed instruction message and based on its tag, performs the requested instruction
+         * 
+         * @param status 
+         * @return DB_STATUS 
+         */
+        static DB_STATUS pullInstructionAndPerform(MPI_Status &status) {
+            // receive the instruction message
+            DB_STATUS ret = recv::receiveInstructionMessage(PARENT_RANK, status.MPI_TAG, g_local_comm, status);
+            if (ret != DBERR_OK) {
+                return ret;
+            }
+            // perform the corresponding instruction
+            switch (status.MPI_TAG) {
+                case MSG_INSTR_FIN:
+                    return DB_FIN;
+                case MSG_INSTR_PARTITIONING_INIT:
+                    /* begin dataset partitioning */
+                    ret = listenForDatasetPartitioning(status);
+                    if (ret != DBERR_OK) {
+                        return ret;
+                    }
+                    break;
+                default:
+                    logger::log_error(DBERR_COMM_UNKNOWN_INSTR, "Unknown instruction");
+                    return DBERR_COMM_UNKNOWN_INSTR;
             }
             return ret;
         }
@@ -524,6 +569,48 @@ STOP_LISTENING:
             return ret;
         }
 
+        static DB_STATUS handleLoadDatasetsMessage(MPI_Status status) {
+            SerializedMsgT<char> msg(MPI_CHAR);
+            std::vector<std::string> nicknames;
+            // receive the message
+            DB_STATUS ret = recv::receiveMessage(status, msg.type, g_local_comm, msg);
+            if (ret != DBERR_OK) {
+                goto EXIT_SAFELY;
+            }
+
+            // unpack info and store
+            ret = unpack::unpackDatasetsNicknames(msg, nicknames);
+            if (ret != DBERR_OK) {
+                goto EXIT_SAFELY;
+            }
+            // free memory
+            free(msg.data);
+            
+            // todo: load
+
+            
+EXIT_SAFELY:
+            // respond
+            if (ret == DBERR_OK) {
+                // send ACK back that all data for this dataset has been received and processed successfully
+                ret = send::sendResponse(PARENT_RANK, MSG_ACK, g_local_comm);
+                if (ret != DBERR_OK) {
+                    logger::log_error(ret, "Send ACK failed.");
+                }
+            } else {
+                // there was an error, send NACK and propagate error code locally
+                DB_STATUS errorCode = ret;
+                ret = send::sendResponse(PARENT_RANK, MSG_NACK, g_local_comm);
+                if (ret != DBERR_OK) {
+                    logger::log_error(ret, "Send NACK failed.");
+                    return ret;
+                }
+                return errorCode;
+            }
+
+            return ret;
+        }
+
         /**
          * @brief pulls incoming message sent by the local controller 
          * (the one probed last, whose info is stored in the status parameter)
@@ -547,13 +634,6 @@ STOP_LISTENING:
                         return ret;
                     }
                     break;
-                case MSG_DATASET_INFO:
-                    /* dataset partitioning */
-                    ret = listenForDataset(status);
-                    if (ret != DBERR_OK) {
-                        return ret;
-                    }
-                    break;
                 case MSG_APRIL_CREATE:
                     /* APRIL info message */
                     ret = handleAPRILInfoMessage(status);
@@ -568,15 +648,16 @@ STOP_LISTENING:
                         return ret;
                     }
                     break;
-                case MSG_BATCH_POINT:
-                case MSG_BATCH_LINESTRING:
-                case MSG_BATCH_POLYGON:
-                    /* geometry messages must follow the dataset info message (handled in listenForDataset()) */
-                    logger::log_error(DBERR_COMM_WRONG_MESSAGE_ORDER, "Batch messages must follow a dataset info pack", status.MPI_TAG);
-                    return DBERR_COMM_WRONG_MESSAGE_ORDER;
+                case MSG_LOAD_DATASETS:
+                    /* load datasets */
+                    ret = handleLoadDatasetsMessage(status);
+                    if (ret != DBERR_OK) {
+                        return ret;
+                    }
+                    break;
                 default:
-                    logger::log_error(DBERR_COMM_UNKNOWN_INSTR, "Unknown instruction type with tag", status.MPI_TAG);
-                    return DBERR_COMM_UNKNOWN_INSTR;
+                    logger::log_error(DBERR_COMM_WRONG_MESSAGE_ORDER, "Didn't expect message with tag", status.MPI_TAG);
+                    return DBERR_COMM_WRONG_MESSAGE_ORDER;
             }
             return ret;
         }
@@ -639,18 +720,12 @@ STOP_LISTENING:
                 return DBERR_MALLOC_FAILED;
             }
 
-            // send the pack
+            // broadcast the pack
             DB_STATUS ret = broadcast::broadcastMessage(msgPack, MSG_DATASET_INFO);
             if (ret != DBERR_OK) {
                 logger::log_error(ret, "Failed to broadcast dataset info");
                 return ret;
             }
-
-            // send it to the local agent
-            ret = send::sendDatasetInfoMessage(msgPack, AGENT_RANK, MSG_DATASET_INFO, g_local_comm);
-            if (ret != DBERR_OK) {
-                return ret;
-            } 
 
             // free
             free(msgPack.data);
@@ -720,10 +795,20 @@ STOP_LISTENING:
             return ret;
         }
 
-        static DB_STATUS listenForDataset(MPI_Status status) {
+        static DB_STATUS listenForDatasetPartitioning(MPI_Status status) {
+            // proble blockingly for the dataset info
+            DB_STATUS ret = probeBlocking(g_host_rank, MPI_ANY_TAG, g_global_comm, status);
+            if (ret != DBERR_OK) {
+                return ret;
+            }
+            // verify that it is the proper message
+            if (status.MPI_TAG != MSG_DATASET_INFO) {
+                logger::log_error(DBERR_COMM_WRONG_MESSAGE_ORDER, "Partitioning: Expected dataset info message but received message with tag", status.MPI_TAG);
+                return DBERR_COMM_WRONG_MESSAGE_ORDER;
+            }
             // forward dataset info to agent
             int listen = 1;
-            DB_STATUS ret = forwardDatasetInfoToAgent(status);
+            ret = forwardDatasetInfoToAgent(status);
             if (ret != DBERR_OK) {
                 return ret;
             }
@@ -791,15 +876,27 @@ STOP_LISTENING:
                     }
                     return DB_FIN;
                 case MSG_SYS_INFO:
-                    /* message system/partitioning info */
+                    /* message system info */
                     ret = forward::forwardSysInfoMessage(g_global_comm, AGENT_RANK, g_local_comm, status);
                     if (ret != DBERR_OK) {
                         return ret;
                     }
                     break;
-                case MSG_DATASET_INFO:
-                    /* message containing dataset info */
-                    ret = listenForDataset(status);
+                case MSG_INSTR_PARTITIONING_INIT:
+                    /* init partitioning */
+                    ret = forward::forwardInstructionMessage(g_host_rank, status.MPI_TAG, g_global_comm, AGENT_RANK, g_local_comm);
+                    if (ret != DBERR_OK) {
+                        return ret;
+                    }
+                    // start listening for partitioning messages
+                    ret = listenForDatasetPartitioning(status);
+                    if (ret != DBERR_OK) {
+                        return ret;
+                    }
+                    break;
+                case MSG_LOAD_DATASETS:
+                    /* load datasets */
+                    ret = forward::forwardLoadDatasetsMessage(g_global_comm, AGENT_RANK, g_local_comm, status);
                     if (ret != DBERR_OK) {
                         return ret;
                     }
@@ -817,14 +914,9 @@ STOP_LISTENING:
                         return ret;
                     }  
                     break;
-                case MSG_BATCH_POINT:
-                case MSG_BATCH_LINESTRING:
-                case MSG_BATCH_POLYGON:
-                    logger::log_error(DBERR_COMM_WRONG_MESSAGE_ORDER, "Geometry packs must follow a dataset info pack", status.MPI_TAG);
-                    return DBERR_COMM_WRONG_MESSAGE_ORDER;    // change to error codes to stop agent from working after errors
                 default:
                     // unkown instruction
-                    logger::log_error(DBERR_COMM_UNKNOWN_INSTR, "Controller failed with unknown instruction");
+                    logger::log_error(DBERR_COMM_WRONG_MESSAGE_ORDER, "Didn't expect message with tag", status.MPI_TAG);
                     return DBERR_COMM_UNKNOWN_INSTR;
             }
 

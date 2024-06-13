@@ -15,13 +15,6 @@ static DB_STATUS terminateAllWorkers() {
         return ret;
     }
 
-    // perform the instruction locally as well
-    ret = comm::controller::sendInstructionToAgent(MSG_INSTR_FIN);
-    if (ret != DBERR_OK) {
-        logger::log_error(ret, "Sending to local children failed");
-        return ret;
-    }
-
     return DBERR_OK;
 }
 
@@ -77,16 +70,10 @@ static DB_STATUS initQueryExecution() {
         logger::log_error(ret, "Failed to pack query info");
         return ret;
     }
-    // send to workers
+    // broadcast message
     ret = comm::broadcast::broadcastMessage(queryInfoMsg, MSG_QUERY_INIT);
     if (ret != DBERR_OK) {
         logger::log_error(ret, "Failed to broadcast query info");
-        return ret;
-    }
-    // send to local agent
-    ret = comm::send::sendMessage(queryInfoMsg, AGENT_RANK, MSG_QUERY_INIT, g_local_comm);
-    if (ret != DBERR_OK) {
-        logger::log_error(ret, "Failed to send query info to agent");
         return ret;
     }
 
@@ -104,6 +91,32 @@ static DB_STATUS initQueryExecution() {
     return DBERR_OK;
 }
 
+static DB_STATUS initLoadDatasets() {
+    // send load instruction + dataset info
+    DB_STATUS ret = DBERR_OK;
+    // pack nicknames
+    SerializedMsgT<char> msg(MPI_CHAR);
+    ret = pack::packDatasetsNicknames(msg);
+    if (ret != DBERR_OK) {
+        return ret;
+    }
+
+    // broadcast message
+    ret = comm::broadcast::broadcastMessage(msg, MSG_LOAD_DATASETS);
+    if (ret != DBERR_OK) {
+        logger::log_error(ret, "Failed to broadcast query info");
+        return ret;
+    }
+
+    // wait for responses by workers+agent that all is ok
+    ret = comm::controller::host::gatherResponses();
+    if (ret != DBERR_OK) {
+        return ret;
+    }
+
+    return ret;
+}
+
 static DB_STATUS performActions() {
     DB_STATUS ret = DBERR_OK;
     // perform the user-requested actions in order
@@ -115,6 +128,13 @@ static DB_STATUS performActions() {
                     if (ret != DBERR_OK) {
                         return ret;
                     }
+                }
+                break;
+            case ACTION_LOAD_DATASETS:
+                /* instruct workers to load the datasets (MBRs + APRIL)*/
+                ret = initLoadDatasets();
+                if (ret != DBERR_OK) {
+                    return ret;
                 }
                 break;
             case ACTION_CREATE_APRIL:

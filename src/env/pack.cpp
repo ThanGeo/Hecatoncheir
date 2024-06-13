@@ -86,6 +86,53 @@ namespace pack
 
         return DBERR_OK;
     }
+
+    DB_STATUS packDatasetsNicknames(SerializedMsgT<char> &msg) {
+        std::string nicknameR = "";
+        std::string nicknameS = "";
+        msg.count = 0;
+
+        // get dataset R
+        spatial_lib::DatasetT* R = g_config.datasetInfo.getDatasetR();
+        if (R == nullptr) {
+            return DBERR_OK;
+        }
+        // count for buffer size
+        msg.count += sizeof(int) + R->nickname.length() * sizeof(int);
+        // keep nickname
+        nicknameR = R->nickname;
+        // get dataset S
+        spatial_lib::DatasetT* S = g_config.datasetInfo.getDatasetS();
+        if (S != nullptr) {
+            // count for buffer size
+            msg.count += sizeof(int) + S->nickname.length() * sizeof(int);
+            // keep nickname
+            nicknameS = S->nickname;
+        }
+        // allocate space
+        (msg.data) = (char*) malloc(msg.count * sizeof(char));
+        if (msg.data == NULL) {
+            // malloc failed
+            logger::log_error(DBERR_MALLOC_FAILED, "Malloc for pack system info failed");
+            return DBERR_MALLOC_FAILED;
+        }
+        
+        char* localBuffer = msg.data;
+        // store in buffer
+        *reinterpret_cast<int*>(localBuffer) = nicknameR.length();
+        localBuffer += sizeof(int);
+        std::memcpy(localBuffer, nicknameR.data(), nicknameR.length() * sizeof(char));
+        localBuffer += nicknameR.length() * sizeof(char);
+
+        *reinterpret_cast<int*>(localBuffer) = nicknameS.length();
+        localBuffer += sizeof(int);
+        if (nicknameS.length() > 0) {
+            std::memcpy(localBuffer, nicknameS.data(), nicknameS.length() * sizeof(char));
+            localBuffer += nicknameS.length() * sizeof(char);
+        }
+
+        return DBERR_OK;
+    }
 }
 
 namespace unpack
@@ -146,6 +193,29 @@ namespace unpack
         g_config.queryInfo.IntermediateFilter = queryInfoMsg.data[2];
         g_config.queryInfo.Refinement = queryInfoMsg.data[3];
         
+        return DBERR_OK;
+    }
+
+    DB_STATUS unpackDatasetsNicknames(SerializedMsgT<char> &msg, std::vector<std::string> &nicknames) {
+        char *localBuffer = msg.data;
+        int length;
+        // R
+        length = *reinterpret_cast<const int*>(localBuffer);
+        localBuffer += sizeof(int);
+        std::string nickname(localBuffer, localBuffer + length);
+        localBuffer += length * sizeof(char);
+        // append
+        nicknames.emplace_back(nickname);
+        // S
+        length = *reinterpret_cast<const int*>(localBuffer);
+        localBuffer += sizeof(int);
+        if (length > 0) {
+            std::string nickname(localBuffer, localBuffer + length);
+            localBuffer += length * sizeof(char);
+            // append
+            nicknames.emplace_back(nickname);
+        }
+
         return DBERR_OK;
     }
 }

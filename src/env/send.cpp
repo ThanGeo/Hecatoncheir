@@ -60,12 +60,19 @@ namespace comm
                 #pragma omp for
                 for(int i=0; i<g_world_size; i++) {
                     if (i != g_host_rank) {
-                        // printf("Broadcasting to controller %d\n", i);
+                        // send to workers
                         local_ret = send::sendInstructionMessage(i, tag, g_global_comm);
                         if (local_ret != DBERR_OK) {
                             #pragma omp cancel for
                             ret = local_ret;
                         } 
+                    } else {
+                        // send to local agent
+                        local_ret = send::sendInstructionMessage(AGENT_RANK, tag, g_local_comm);
+                        if (local_ret != DBERR_OK) {
+                            #pragma omp cancel for
+                            ret = local_ret;
+                        }
                     }
                 }
             }

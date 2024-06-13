@@ -40,6 +40,12 @@ namespace pack
      * packs query info into a serialized message
      */
     DB_STATUS packQueryInfo(QueryInfoT &queryInfo, SerializedMsgT<int> &queryInfoMsg);
+
+    /**
+     * packs the loaded dataset nicknames into a serialized message 
+     * (both R and S, or only R if there's no S)
+     */
+    DB_STATUS packDatasetsNicknames(SerializedMsgT<char> &msg);
 }
 
 namespace unpack
@@ -50,6 +56,8 @@ namespace unpack
     DB_STATUS unpackAPRILInfo(SerializedMsgT<int> &aprilInfoMsg);
 
     DB_STATUS unpackQueryInfo(SerializedMsgT<int> &queryInfoMsg);
+
+    DB_STATUS unpackDatasetsNicknames(SerializedMsgT<char> &msg, std::vector<std::string> &nicknames);
 }
 
 #endif 
