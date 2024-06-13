@@ -116,8 +116,8 @@ namespace parser
             g_config.actions.emplace_back(action);
         }
         // approximations
-        ActionTypeE action;
         for (int i=0; i<actionsStmt->createApproximations.size(); i++) {
+            ActionT action;
             ret = statement::getCreateApproximationAction(actionsStmt->createApproximations.at(i), action);
             if (ret != DBERR_OK) {
                 return ret;
@@ -132,7 +132,10 @@ namespace parser
         }
 
         // queries
-        
+        if (g_config.queryInfo.type != spatial_lib::Q_NONE) {
+            ActionT action(ACTION_QUERY);
+            g_config.actions.emplace_back(action);
+        }
 
         // verification always last
         if (actionsStmt->performVerification) {
@@ -391,9 +394,35 @@ namespace parser
      * @brief passes the configuration on to the sysOps return object
     */
     static DB_STATUS parseConfigurationOptions(SystemOptionsStatementT &sysOpsStmt) {
+        // if not set by user, parse from config file
+        if (sysOpsStmt.setupType == "") {
+            sysOpsStmt.setupType = system_config_pt.get<std::string>("Environment.type");
+        }
+        if (sysOpsStmt.nodefilePath == "") {
+            sysOpsStmt.nodefilePath = system_config_pt.get<std::string>("Environment.nodefilePath");
+        }
+        if (sysOpsStmt.nodeCount == -1) {
+            sysOpsStmt.nodeCount = system_config_pt.get<int>("Environment.nodeCount");
+        }
+        // load pipeline configuration
+        g_config.queryInfo.MBRFilter = system_config_pt.get<int>("Pipeline.MBRFilter");
+        if (g_config.queryInfo.MBRFilter != 0 && g_config.queryInfo.MBRFilter != 1) {
+            logger::log_error(DBERR_CONFIG_FILE, "MBRFilter setting in configuration file must be 0 or 1");
+            return DBERR_CONFIG_FILE;
+        }
+        g_config.queryInfo.IntermediateFilter = system_config_pt.get<int>("Pipeline.IFilter");
+        if (g_config.queryInfo.MBRFilter != 0 && g_config.queryInfo.MBRFilter != 1) {
+            logger::log_error(DBERR_CONFIG_FILE, "IFilter setting in configuration file must be 0 or 1");
+            return DBERR_CONFIG_FILE;
+        }
+        g_config.queryInfo.Refinement = system_config_pt.get<int>("Pipeline.Refinement");
+        if (g_config.queryInfo.MBRFilter != 0 && g_config.queryInfo.MBRFilter != 1) {
+            logger::log_error(DBERR_CONFIG_FILE, "Refinement setting in configuration file must be 0 or 1");
+            return DBERR_CONFIG_FILE;
+        }
+        // set to configuration
         g_config.options.nodeCount = sysOpsStmt.nodeCount;
         g_config.options.nodefilePath = sysOpsStmt.nodefilePath;
-
         if (sysOpsStmt.setupType != "") {
             // user specified system type, overwrite the loaded type from config.ini
             int setupType = systemSetupTypeStrToInt(sysOpsStmt.setupType);
@@ -406,27 +435,10 @@ namespace parser
         return DBERR_OK;
     }
 
-    /**
-     * @brief parse system related options from config file. 
-     * Sets only those that haven't been specified by the user arguments
-    */
-    static DB_STATUS loadSetupOptions(SystemOptionsStatementT &sysOpsStmt) {
-        if (sysOpsStmt.setupType == "") {
-            sysOpsStmt.setupType = system_config_pt.get<std::string>("Environment.type");
-        }
-        if (sysOpsStmt.nodefilePath == "") {
-            sysOpsStmt.nodefilePath = system_config_pt.get<std::string>("Environment.nodefilePath");
-        }
-        if (sysOpsStmt.nodeCount == -1) {
-            sysOpsStmt.nodeCount = system_config_pt.get<int>("Environment.nodeCount");
-        }
-
-        return DBERR_OK;
-    }
-
     DB_STATUS parse(int argc, char *argv[]) {
         char c;
         SettingsStatementT settingsStmt;
+        DB_STATUS ret = DBERR_OK;
 
         // after config file has been loaded, parse cmd arguments and overwrite any selected options
         while ((c = getopt(argc, argv, "a:t:sm:pc:f:q:R:S:ev:z?")) != -1)
@@ -486,37 +498,31 @@ namespace parser
         boost::property_tree::ini_parser::read_ini(g_config.dirPaths.configFilePath, system_config_pt);
         boost::property_tree::ini_parser::read_ini(g_config.dirPaths.datasetsConfigPath, dataset_config_pt);
 
-        // load setup options
-        DB_STATUS ret = loadSetupOptions(settingsStmt.sysOpsStmt);
-        if (ret != DBERR_OK) {
-            return ret;
-        }
-
-        // set configuration options
+        // configuration options
         ret = parseConfigurationOptions(settingsStmt.sysOpsStmt);
         if (ret != DBERR_OK) {
             return ret;
         }
 
-        // parse partitioning options
+        // partitioning options
         ret = parsePartitioningOptions();
         if (ret != DBERR_OK) {
             return ret;
         }
 
-        // parse dataset options
+        // dataset options
         ret = parseDatasetOptions(&settingsStmt.datasetStmt);
         if (ret != DBERR_OK) {
             return ret;
         }
 
-        // parse query options
+        // query options
         ret = parseQueryOptions(&settingsStmt.queryStmt);
         if (ret != DBERR_OK) {
             return ret;
         }
 
-        // parse actions
+        // actions
         ret = parseActions(&settingsStmt.actionsStmt);
         if (ret != DBERR_OK) {
             return ret;

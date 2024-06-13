@@ -66,8 +66,20 @@ namespace comm
          * @return DB_STATUS 
          */
         DB_STATUS listen();
+        
+        
+        namespace host
+        {
+            /**
+             * gather responses (ACK/NACK) from workers and local agent
+             */
+            DB_STATUS gatherResponses();
 
-        DB_STATUS gatherResponses();
+            /**
+             * gather results by workers and local agent
+             */
+            DB_STATUS gatherResults();
+        }
     }
 
     

@@ -32,6 +32,7 @@ int main(int argc, char* argv[]) {
     // printf("Agent with parent %d and rank %d runs on cpu %d\n", g_parent_original_rank, g_node_rank, sched_getcpu());
     ret = comm::agent::listen();
     if (ret != DBERR_OK) {
+        logger::log_error(ret, "Interrupted");
         goto EXIT_SAFELY;
     }
 EXIT_SAFELY:

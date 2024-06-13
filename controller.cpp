@@ -60,14 +60,48 @@ static DB_STATUS initAPRILCreation() {
     double startTime;
     startTime = mpi_timer::markTime();
     // wait for response by workers+agent that all is ok
-    ret = comm::controller::gatherResponses();
+    ret = comm::controller::host::gatherResponses();
     if (ret != DBERR_OK) {
         return ret;
     }
     logger::log_success("APRIL creation finished in", mpi_timer::getElapsedTime(startTime), "seconds.");
 
-
     return ret;
+}
+
+static DB_STATUS initQueryExecution() {
+    SerializedMsgT<int> queryInfoMsg(MPI_INT);
+    // pack the APRIL info
+    DB_STATUS ret = pack::packQueryInfo(g_config.queryInfo, queryInfoMsg);
+    if (ret != DBERR_OK) {
+        logger::log_error(ret, "Failed to pack query info");
+        return ret;
+    }
+    // send to workers
+    ret = comm::broadcast::broadcastMessage(queryInfoMsg, MSG_QUERY_INIT);
+    if (ret != DBERR_OK) {
+        logger::log_error(ret, "Failed to broadcast query info");
+        return ret;
+    }
+    // send to local agent
+    ret = comm::send::sendMessage(queryInfoMsg, AGENT_RANK, MSG_QUERY_INIT, g_local_comm);
+    if (ret != DBERR_OK) {
+        logger::log_error(ret, "Failed to send query info to agent");
+        return ret;
+    }
+
+    logger::log_task("Processing query", spatial_lib::mapping::queryTypeIntToStr(g_config.queryInfo.type),"on datasets", g_config.datasetInfo.getDatasetR()->nickname, "-", g_config.datasetInfo.getDatasetS()->nickname);
+    // measure response time
+    double startTime;
+    startTime = mpi_timer::markTime();
+    // wait for results by workers+agent
+    ret = comm::controller::host::gatherResults();
+    if (ret != DBERR_OK) {
+        return ret;
+    }
+    logger::log_success("APRIL creation finished in", mpi_timer::getElapsedTime(startTime), "seconds.");
+
+    return DBERR_OK;
 }
 
 static DB_STATUS performActions() {
@@ -86,6 +120,13 @@ static DB_STATUS performActions() {
             case ACTION_CREATE_APRIL:
                 // initialize APRIL creation
                 ret = initAPRILCreation();
+                if (ret != DBERR_OK) {
+                    return ret;
+                }
+                break;
+            case ACTION_QUERY:
+                // send query info and begin evaluating
+                ret = initQueryExecution();
                 if (ret != DBERR_OK) {
                     return ret;
                 }
@@ -140,6 +181,7 @@ int main(int argc, char* argv[]) {
         // printf("Controller %d listening...\n", g_node_rank);
         ret = comm::controller::listen();
         if (ret != DBERR_OK) {
+            logger::log_error(ret, "Interrupted");
             goto EXIT_SAFELY;
         }
     }

@@ -48,7 +48,7 @@ namespace statement
 
     DB_STATUS getFiletype(std::string &filetypeStr, spatial_lib::FileTypeE &filetype);
 
-    DB_STATUS getCreateApproximationAction(std::string &approximationStr, ActionTypeE &actionType);
+    DB_STATUS getCreateApproximationAction(std::string &approximationStr, ActionT &actionType);
 }
 
 #endif

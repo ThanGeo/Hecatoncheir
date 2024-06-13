@@ -35,6 +35,11 @@ namespace pack
      * packs april info into a serialized message 
      */
     DB_STATUS packAPRILInfo(spatial_lib::AprilConfigT &aprilConfig, SerializedMsgT<int> &aprilInfoMsg);
+
+    /**
+     * packs query info into a serialized message
+     */
+    DB_STATUS packQueryInfo(QueryInfoT &queryInfo, SerializedMsgT<int> &queryInfoMsg);
 }
 
 namespace unpack
@@ -43,6 +48,8 @@ namespace unpack
     DB_STATUS unpackSystemInfo(SerializedMsgT<char> &sysInfoMsg);
 
     DB_STATUS unpackAPRILInfo(SerializedMsgT<int> &aprilInfoMsg);
+
+    DB_STATUS unpackQueryInfo(SerializedMsgT<int> &queryInfoMsg);
 }
 
 #endif 

@@ -56,8 +56,39 @@ namespace comm
             logger::log_error(ret, "Forwarding response to host controller failed");
             return ret;
         }
+        // check response, if its NACK then terminate
+        if (status.MPI_TAG == MSG_NACK) {
+            logger::log_error(DBERR_COMM_RECEIVED_NACK, "Received NACK by agent");
+            return DBERR_COMM_RECEIVED_NACK;
+        }
         return ret;
     }    
+
+    /**
+     * Waits for the results of the query that is being processed
+     * When they come, forward them to the host controller.
+     */
+    static DB_STATUS waitForResults() {
+        MPI_Status status;
+        // wait for results by the agent
+        DB_STATUS ret = probeBlocking(AGENT_RANK, MPI_ANY_TAG, g_local_comm, status);
+        if (ret != DBERR_OK) {
+            return ret;
+        }
+        // todo
+        // // receive results from agent
+        // ret = recv::receiveResponse(AGENT_RANK, status.MPI_TAG, g_local_comm, status);
+        // if (ret != DBERR_OK) {
+        //     return ret;
+        // }
+        // // forward results to host controller
+        // ret = send::sendResponse(g_host_rank, status.MPI_TAG, g_global_comm);
+        // if (ret != DBERR_OK) {
+        //     logger::log_error(ret, "Forwarding response to host controller failed");
+        //     return ret;
+        // }
+        return ret;
+    }
 
     namespace forward
     {
@@ -142,6 +173,11 @@ namespace comm
             }
             // free memory
             free(msg.data);
+            // wait for response by the agent that system init went ok
+            ret = waitForResponse();
+            if (ret != DBERR_OK) {
+                return ret;
+            }
             return ret;
         }
 
@@ -166,26 +202,34 @@ namespace comm
             }
             return ret;
         }
+
+        static DB_STATUS forwardQueryInfoMessage(MPI_Comm sourceComm, int destRank, MPI_Comm destComm, MPI_Status &status) {
+            SerializedMsgT<int> msg(MPI_INT);
+            // receive the message
+            DB_STATUS ret = recv::receiveMessage(status, msg.type, sourceComm, msg);
+            if (ret != DBERR_OK) {
+                return ret;
+            }
+            // forward to local agent
+            ret = send::sendMessage(msg, destRank, status.MPI_TAG, destComm);
+            if (ret != DBERR_OK) {
+                return ret;
+            }
+            // free memory
+            free(msg.data);
+            // wait for the results by the agent 
+            ret = waitForResults();
+            if (ret != DBERR_OK) {
+                return ret;
+            }
+            return ret;
+        }
     }
 
 
     namespace agent
     {
-        /**
-         * @brief performs the init system instruction
-         * 
-         * @return DB_STATUS 
-         */
-        static DB_STATUS performInitInstruction() {
-            // verify local directories
-            DB_STATUS ret = configure::verifySystemDirectories();
-            if (ret != DBERR_OK) {
-                // error
-                logger::log_error(ret, "Failed while verifying system directories.");
-                return ret ;
-            }
-            return ret;
-        }
+        
 
         /**
          * @brief pulls the probed instruction message and based on its tag, performs the requested instruction
@@ -201,9 +245,6 @@ namespace comm
             }
             // perform the corresponding instruction
             switch (status.MPI_TAG) {
-                case MSG_INSTR_INIT:
-                    ret = performInitInstruction();
-                    break;
                 case MSG_INSTR_FIN:
                     return DB_FIN;
                 default:
@@ -389,8 +430,33 @@ STOP_LISTENING:
             if (ret != DBERR_OK) {
                 return ret;
             }
+            // verify local directories
+            ret = configure::verifySystemDirectories();
+            if (ret != DBERR_OK) {
+                // error
+                logger::log_error(ret, "Failed while verifying system directories.");
+                return ret ;
+            }
             // free memory
             free(msg.data);
+            // send response
+            if (ret == DBERR_OK) {
+                // send ACK 
+                ret = send::sendResponse(PARENT_RANK, MSG_ACK, g_local_comm);
+                if (ret != DBERR_OK) {
+                    logger::log_error(ret, "Send ACK failed.");
+                }
+            } else {
+                // there was an error, send NACK and propagate error code locally
+                DB_STATUS errorCode = ret;
+                ret = send::sendResponse(PARENT_RANK, MSG_NACK, g_local_comm);
+                if (ret != DBERR_OK) {
+                    logger::log_error(ret, "Send NACK failed.");
+                    return ret;
+                }
+                logger::log_error(ret, "Handling system info message failed");
+                return errorCode;
+            }
             return ret;
         }
 
@@ -435,6 +501,29 @@ STOP_LISTENING:
             return ret;
         }
 
+        static DB_STATUS handleQueryInfoMessage(MPI_Status status) {
+            SerializedMsgT<int> msg(MPI_INT);
+            // receive the message
+            DB_STATUS ret = recv::receiveMessage(status, msg.type, g_local_comm, msg);
+            if (ret != DBERR_OK) {
+                return ret;
+            }
+            // unpack info and store
+            ret = unpack::unpackQueryInfo(msg);
+            if (ret != DBERR_OK) {
+                return ret;
+            }
+            // free memory
+            free(msg.data);
+            
+            // execute
+            
+
+            // respond with ACK
+
+            return ret;
+        }
+
         /**
          * @brief pulls incoming message sent by the local controller 
          * (the one probed last, whose info is stored in the status parameter)
@@ -468,6 +557,13 @@ STOP_LISTENING:
                 case MSG_APRIL_CREATE:
                     /* APRIL info message */
                     ret = handleAPRILInfoMessage(status);
+                    if (ret != DBERR_OK) {
+                        return ret;
+                    }
+                    break;
+                case MSG_QUERY_INIT:
+                    /* query info */
+                    ret = handleQueryInfoMessage(status);
                     if (ret != DBERR_OK) {
                         return ret;
                     }
@@ -687,13 +783,6 @@ STOP_LISTENING:
             
             // check message tag
             switch (status.MPI_TAG) {
-                case MSG_INSTR_INIT:
-                    /* initialize */
-                    ret = forward::forwardInstructionMessage(g_host_rank, status.MPI_TAG, g_global_comm, AGENT_RANK, g_local_comm);
-                    if (ret != DBERR_OK) {
-                        return ret;
-                    }
-                    break;
                 case MSG_INSTR_FIN:
                     /* terminate */
                     ret = forward::forwardInstructionMessage(g_host_rank, status.MPI_TAG, g_global_comm, AGENT_RANK, g_local_comm);
@@ -722,6 +811,12 @@ STOP_LISTENING:
                         return ret;
                     }
                     break;
+                case MSG_QUERY_INIT:
+                    ret = forward::forwardQueryInfoMessage(g_global_comm, AGENT_RANK, g_local_comm, status);
+                    if (ret != DBERR_OK) {
+                        return ret;
+                    }  
+                    break;
                 case MSG_BATCH_POINT:
                 case MSG_BATCH_LINESTRING:
                 case MSG_BATCH_POLYGON:
@@ -729,7 +824,7 @@ STOP_LISTENING:
                     return DBERR_COMM_WRONG_MESSAGE_ORDER;    // change to error codes to stop agent from working after errors
                 default:
                     // unkown instruction
-                    logger::log_error(DBERR_COMM_UNKNOWN_INSTR, "Controller failed with unkown instruction");
+                    logger::log_error(DBERR_COMM_UNKNOWN_INSTR, "Controller failed with unknown instruction");
                     return DBERR_COMM_UNKNOWN_INSTR;
             }
 
@@ -769,59 +864,111 @@ STOP_LISTENING:
             return DBERR_OK;
         }
 
+
         /**
          * Host controller only
          */
+        namespace host
+        {
 
-        DB_STATUS gatherResponses() {
-            DB_STATUS ret = DBERR_OK;
+            
+            DB_STATUS gatherResponses() {
+                DB_STATUS ret = DBERR_OK;
 
-            // use threads to parallelize gathering of responses
-            #pragma omp parallel num_threads(g_world_size)
-            {
-                DB_STATUS local_ret = DBERR_OK;
-                int messageFound;
-                MPI_Status status;
-                int tid = omp_get_thread_num();
+                // use threads to parallelize gathering of responses
+                #pragma omp parallel num_threads(g_world_size)
+                {
+                    DB_STATUS local_ret = DBERR_OK;
+                    int messageFound;
+                    MPI_Status status;
+                    int tid = omp_get_thread_num();
 
-                // probe for responses
-                if (tid == 0) {
-                    // wait for agent's response
-                    local_ret = probeBlocking(AGENT_RANK, MPI_ANY_TAG, g_local_comm, status);
-                    if (local_ret != DBERR_OK) {
-                        #pragma omp cancel parallel
-                        ret = local_ret;
+                    // probe for responses
+                    if (tid == 0) {
+                        // wait for agent's response
+                        local_ret = probeBlocking(AGENT_RANK, MPI_ANY_TAG, g_local_comm, status);
+                        if (local_ret != DBERR_OK) {
+                            #pragma omp cancel parallel
+                            ret = local_ret;
+                        }
+                        // receive response
+                        local_ret = recv::receiveResponse(status.MPI_SOURCE, status.MPI_TAG, g_local_comm, status);
+                        if (local_ret != DBERR_OK) {
+                            #pragma omp cancel parallel
+                            ret = local_ret;
+                        }
+                    } else {
+                        // wait for workers' responses (each thread with id X receives from worker with rank X)
+                        local_ret = probeBlocking(tid, MPI_ANY_TAG, g_global_comm, status);
+                        if (local_ret != DBERR_OK) {
+                            #pragma omp cancel parallel
+                            ret = local_ret;
+                        }
+                        // receive response
+                        local_ret = recv::receiveResponse(status.MPI_SOURCE, status.MPI_TAG, g_global_comm, status);
+                        if (local_ret != DBERR_OK) {
+                            #pragma omp cancel parallel
+                            ret = local_ret;
+                        }
                     }
-                    // receive response
-                    local_ret = recv::receiveResponse(status.MPI_SOURCE, status.MPI_TAG, g_local_comm, status);
-                    if (local_ret != DBERR_OK) {
+
+                    // check response
+                    if (status.MPI_TAG != MSG_ACK) {
                         #pragma omp cancel parallel
-                        ret = local_ret;
-                    }
-                } else {
-                    // wait for workers' responses (each thread with id X receives from worker with rank X)
-                    local_ret = probeBlocking(tid, MPI_ANY_TAG, g_global_comm, status);
-                    if (local_ret != DBERR_OK) {
-                        #pragma omp cancel parallel
-                        ret = local_ret;
-                    }
-                    // receive response
-                    local_ret = recv::receiveResponse(status.MPI_SOURCE, status.MPI_TAG, g_global_comm, status);
-                    if (local_ret != DBERR_OK) {
-                        #pragma omp cancel parallel
-                        ret = local_ret;
+                        logger::log_error(DBERR_PARTITIONING_FAILED, "Node", status.MPI_SOURCE, "finished with error");
+                        ret = DBERR_PARTITIONING_FAILED;
                     }
                 }
 
-                // check response
-                if (status.MPI_TAG != MSG_ACK) {
-                    #pragma omp cancel parallel
-                    logger::log_error(DBERR_PARTITIONING_FAILED, "Node", status.MPI_SOURCE, "did not finish partitioning successfully");
-                    ret = DBERR_PARTITIONING_FAILED;
-                }
+                return ret;
             }
 
-            return ret;
+            DB_STATUS gatherResults() {
+                DB_STATUS ret = DBERR_OK;
+
+                // use threads to parallelize gathering of results
+                #pragma omp parallel num_threads(g_world_size)
+                {
+                    DB_STATUS local_ret = DBERR_OK;
+                    int messageFound;
+                    MPI_Status status;
+                    int tid = omp_get_thread_num();
+
+                    // probe for results
+                    if (tid == 0) {
+                        // wait for agent's results
+                        local_ret = probeBlocking(AGENT_RANK, MPI_ANY_TAG, g_local_comm, status);
+                        if (local_ret != DBERR_OK) {
+                            #pragma omp cancel parallel
+                            ret = local_ret;
+                        }
+                        // receive results
+                        local_ret = recv::receiveResponse(status.MPI_SOURCE, status.MPI_TAG, g_local_comm, status);
+                        if (local_ret != DBERR_OK) {
+                            #pragma omp cancel parallel
+                            ret = local_ret;
+                        }
+                    } else {
+                        // wait for workers' results (each thread with id X receives from worker with rank X)
+                        local_ret = probeBlocking(tid, MPI_ANY_TAG, g_global_comm, status);
+                        if (local_ret != DBERR_OK) {
+                            #pragma omp cancel parallel
+                            ret = local_ret;
+                        }
+                        // receive results
+                        local_ret = recv::receiveResponse(status.MPI_SOURCE, status.MPI_TAG, g_global_comm, status);
+                        if (local_ret != DBERR_OK) {
+                            #pragma omp cancel parallel
+                            ret = local_ret;
+                        }
+                    }
+                    
+                    // todo: do some reduction for the results of each thread
+                }
+
+                return ret;
+            }
         }
+
     }
 }

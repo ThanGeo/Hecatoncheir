@@ -64,28 +64,20 @@ namespace configure
                 return DBERR_CREATE_DIR;
             }
         }
-
         return DBERR_OK;
     }
 
     DB_STATUS createConfiguration() {
         DB_STATUS ret = DBERR_OK;
-        // in a cluster, each node is responsible to verify its own directories.
-        if (g_config.options.setupType == SYS_CLUSTER) {
-            // broadcaste init instruction
-            ret = comm::broadcast::broadcastInstructionMessage(MSG_INSTR_INIT);
-            if (ret != DBERR_OK) {
-                return ret;
-            }
-        }
-        // send init instruction to local agent
-        ret = comm::send::sendInstructionMessage(AGENT_RANK, MSG_INSTR_INIT, g_local_comm);
+
+        // broadcast system info
+        ret = comm::controller::broadcastSysInfo();
         if (ret != DBERR_OK) {
             return ret;
         }
 
-        // broadcast system info
-        ret = comm::controller::broadcastSysInfo();
+        // wait for response by workers+agent that all is ok
+        ret = comm::controller::host::gatherResponses();
         if (ret != DBERR_OK) {
             return ret;
         }

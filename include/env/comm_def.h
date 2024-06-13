@@ -20,9 +20,8 @@ typedef enum MsgType {
     
     /* INSTRUCTIONS */
     MSG_INSTR_BEGIN = MSG_BASE + 2000,
-    MSG_INSTR_INIT = MSG_INSTR_BEGIN,
+    MSG_INSTR_FIN = MSG_INSTR_BEGIN,
     
-    MSG_INSTR_FIN = MSG_BASE + 2001,
     MSG_INSTR_END,
 
     /* SETUP */
@@ -46,6 +45,9 @@ typedef enum MsgType {
     MSG_APRIL_CREATE = MSG_APPROXIMATION_BEGIN,
 
     MSG_APPROXIMATION_END,
+
+    /* QUERY */
+    MSG_QUERY_INIT = MSG_BASE + 6000,
     
     /* ERRORS */
     MSG_ERR_BEGIN = MSG_BASE + 10000,

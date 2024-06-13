@@ -46,6 +46,7 @@ namespace spatial_lib
     // global query output variable
     extern QueryOutputT g_queryOutput;
     typedef enum QueryType{
+        Q_NONE, // no query
         Q_RANGE,
         Q_INTERSECT,
         Q_INSIDE,
@@ -96,8 +97,7 @@ namespace spatial_lib
         std::string datasetName;
         // as given by arguments and specified by datasets.ini config file
         std::string nickname;
-        // map: recID -> vector data (polygon, linestring etc.)
-        // std::unordered_map<uint, spatial_lib::VectorDataT> vectorData;
+        
         DataspaceInfoT dataspaceInfo;
         int totalObjects = 0;
         /**

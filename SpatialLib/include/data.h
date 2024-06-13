@@ -90,34 +90,6 @@ namespace spatial_lib
         DC_POLYGON_POLYGON,
     }DatatypeCombinationE;
 
-    /**
-     * spatial data structs
-     */
-    typedef struct Point {
-        double x,y;
-        Point() {}
-        Point(double x, double y) {
-            this->x = x;
-            this->y = y;
-        }
-    } PointT;
-
-    typedef struct Mbr {
-        PointT minPoint;
-        PointT maxPoint;
-    }MbrT;
-
-    typedef struct Polygon {
-        int recID;
-        int partitionID;
-        int vertexCount;
-        bg_polygon polygon;
-    } PolygonT;
-
-    typedef struct VectorData {
-        DataTypeE type;
-        void* data;
-    } VectorDataT;
 
     // spatial approximations
     typedef enum ApproximationType{
@@ -142,19 +114,9 @@ namespace spatial_lib
     } IntermediateFilterTypeE;
 
     typedef enum MBRFilterType {
-        MF_STANDARD,
-        MF_OPTIMIZED,
-        MF_SCALABILITY,
+        MF_INTERSECTION,
+        MF_TOPOLOGY,
     } MBRFilterTypeE;
-
-    typedef enum PipelineSetting {
-        P_ST2,
-        P_ST3,
-        P_OP2,
-        P_OP3,
-        P_SCALABILITY,
-        P_OTF,
-    } PipelineSettingE;
 
     // APRIL data
     typedef struct AprilData {
@@ -164,6 +126,35 @@ namespace spatial_lib
         uint numIntervalsFULL = 0;
         std::vector<uint> intervalsFULL;
     }AprilDataT;
+
+    /**
+     * spatial data structs
+     */
+    typedef struct Point {
+        double x,y;
+        Point() {}
+        Point(double x, double y) {
+            this->x = x;
+            this->y = y;
+        }
+    } PointT;
+
+    typedef struct Mbr {
+        PointT minPoint;
+        PointT maxPoint;
+    }MbrT;
+
+    /**
+     * main struct to hold a polygon's info in memory
+     */
+    typedef struct Polygon {
+        int recID;
+        std::vector<int> partitionIDs;
+        MbrT mbr;
+        bg_polygon boostPolygon;
+        AprilDataT aprilData;
+    } PolygonT;
+
 
     // APRIL configuration
     typedef struct AprilConfig {

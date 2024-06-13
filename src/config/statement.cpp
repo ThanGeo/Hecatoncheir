@@ -26,9 +26,9 @@ namespace statement
         return DBERR_OK;
     }
 
-    DB_STATUS getCreateApproximationAction(std::string &approximationStr, ActionTypeE &actionType) {
+    DB_STATUS getCreateApproximationAction(std::string &approximationStr, ActionT &action) {
         if (approximationStr == "APRIL") {
-            actionType = ACTION_CREATE_APRIL;
+            action.type = ACTION_CREATE_APRIL;
         } else {
             // unknown type
             logger::log_error(DBERR_UNKNOWN_ARGUMENT, "Unknown type of create approximation request:", approximationStr);

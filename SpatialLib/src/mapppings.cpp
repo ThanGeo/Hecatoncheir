@@ -4,7 +4,7 @@ namespace spatial_lib
 {
     namespace mapping
     {
-        std::string queryTypeIntToText(int val){
+        std::string queryTypeIntToStr(int val){
             switch(val) {
                 case spatial_lib::Q_INTERSECT: return "intersect";
                 case spatial_lib::Q_INSIDE: return "inside";
@@ -45,7 +45,7 @@ namespace spatial_lib
             }
         }
 
-        std::string dataTypeIntToText(DataTypeE val){
+        std::string dataTypeIntToStr(DataTypeE val){
             switch(val) {
                 case spatial_lib::DT_POLYGON: return "POLYGON";
                 case spatial_lib::DT_RECTANGLE: return "RECTANGLE";

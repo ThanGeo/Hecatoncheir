@@ -7,7 +7,8 @@ namespace pack
         sysInfoMsg.count += sizeof(SystemSetupTypeE);     // cluster or local
         sysInfoMsg.count += sizeof(int);                  // partitions per dimension
         sysInfoMsg.count += sizeof(int);                  // partitioning type
-        sysInfoMsg.count += sizeof(int) + g_config.dirPaths.dataPath.length() * sizeof(char);   // data path length + string
+        sysInfoMsg.count += sizeof(int) + g_config.dirPaths.dataPath.length() * sizeof(char);   // data directory path length + string
+        sysInfoMsg.count += 3 * sizeof(int);              // MBRFilter, IFilter, Refinement
         
         // allocate space
         (sysInfoMsg.data) = (char*) malloc(sysInfoMsg.count * sizeof(char));
@@ -22,14 +23,24 @@ namespace pack
         // put objects in buffer
         *reinterpret_cast<SystemSetupTypeE*>(localBuffer) = g_config.options.setupType;
         localBuffer += sizeof(SystemSetupTypeE);
+
         *reinterpret_cast<int*>(localBuffer) = g_config.partitioningInfo.partitionsPerDimension;
         localBuffer += sizeof(int);
+
         *reinterpret_cast<PartitioningTypeE*>(localBuffer) = g_config.partitioningInfo.type;
         localBuffer += sizeof(PartitioningTypeE);
+
         *reinterpret_cast<int*>(localBuffer) = g_config.dirPaths.dataPath.length();
         localBuffer += sizeof(int);
         std::memcpy(localBuffer, g_config.dirPaths.dataPath.data(), g_config.dirPaths.dataPath.length() * sizeof(char));
         localBuffer += g_config.dirPaths.dataPath.length() * sizeof(char);
+
+        *reinterpret_cast<int*>(localBuffer) = g_config.queryInfo.MBRFilter;
+        localBuffer += sizeof(int);
+        *reinterpret_cast<int*>(localBuffer) = g_config.queryInfo.IntermediateFilter;
+        localBuffer += sizeof(int);
+        *reinterpret_cast<int*>(localBuffer) = g_config.queryInfo.Refinement;
+        localBuffer += sizeof(int);
 
         return DBERR_OK;
     }
@@ -51,6 +62,27 @@ namespace pack
         aprilInfoMsg.data[0] = aprilConfig.getN();
         aprilInfoMsg.data[1] = aprilConfig.compression;
         aprilInfoMsg.data[2] = aprilConfig.partitions;
+
+        return DBERR_OK;
+    }
+
+    DB_STATUS packQueryInfo(QueryInfoT &queryInfo, SerializedMsgT<int> &queryInfoMsg) {
+        queryInfoMsg.count = 0;
+        queryInfoMsg.count += 4;    // query type, MBR, intermediatefilter, refinement
+
+        // allocate space
+        (queryInfoMsg.data) = (int*) malloc(queryInfoMsg.count * sizeof(int));
+        if (queryInfoMsg.data == NULL) {
+            // malloc failed
+            logger::log_error(DBERR_MALLOC_FAILED, "Malloc for query info failed");
+            return DBERR_MALLOC_FAILED;
+        }
+
+        // put objects in buffer
+        queryInfoMsg.data[0] = queryInfo.type;
+        queryInfoMsg.data[1] = queryInfo.MBRFilter;
+        queryInfoMsg.data[2] = queryInfo.IntermediateFilter;
+        queryInfoMsg.data[3] = queryInfo.Refinement;
 
         return DBERR_OK;
     }
@@ -77,6 +109,13 @@ namespace unpack
         std::string datapath(localBuffer, localBuffer + length);
         localBuffer += length * sizeof(char);
         g_config.dirPaths.setNodeDataDirectories(datapath);
+        // pipeline
+        g_config.queryInfo.MBRFilter = *reinterpret_cast<const int*>(localBuffer);
+        localBuffer += sizeof(int);
+        g_config.queryInfo.IntermediateFilter = *reinterpret_cast<const int*>(localBuffer);
+        localBuffer += sizeof(int);
+        g_config.queryInfo.Refinement = *reinterpret_cast<const int*>(localBuffer);
+        localBuffer += sizeof(int);
 
         return DBERR_OK;
     }
@@ -98,6 +137,15 @@ namespace unpack
             it.second.aprilConfig.partitions = g_config.approximationInfo.aprilConfig.partitions;
         }
 
+        return DBERR_OK;
+    }
+
+    DB_STATUS unpackQueryInfo(SerializedMsgT<int> &queryInfoMsg) {
+        g_config.queryInfo.type = (spatial_lib::QueryTypeE) queryInfoMsg.data[0];
+        g_config.queryInfo.MBRFilter = queryInfoMsg.data[1];
+        g_config.queryInfo.IntermediateFilter = queryInfoMsg.data[2];
+        g_config.queryInfo.Refinement = queryInfoMsg.data[3];
+        
         return DBERR_OK;
     }
 }

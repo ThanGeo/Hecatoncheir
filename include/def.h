@@ -62,6 +62,7 @@ typedef enum DB_STATUS {
     DBERR_COMM_INVALID_MSG_TAG = DBBASE + 2006,
     DBERR_COMM_WRONG_MESSAGE_ORDER = DBBASE + 2007,
     DBERR_COMM_PROBE_FAILED = DBBASE + 2008,
+    DBERR_COMM_RECEIVED_NACK = DBBASE + 2009,
     
     // processes/mpi
     DBERR_MPI_INIT_FAILED = DBBASE + 3000,
@@ -211,9 +212,11 @@ typedef struct DirectoryPaths {
 } DirectoryPathsT;
 
 typedef enum ActionType {
+    ACTION_NONE,
     ACTION_PERFORM_PARTITIONING,
     ACTION_CREATE_APRIL,
     ACTION_PERFORM_VERIFICATION,
+    ACTION_QUERY,
 } ActionTypeE;
 
 typedef enum PartitioningType {
@@ -238,6 +241,10 @@ typedef struct PartitioningInfo {
 
 typedef struct Action {
     ActionTypeE type;
+
+    Action(){
+        this->type = ACTION_NONE;
+    }
 
     Action(ActionTypeE type) {
         this->type = type;
@@ -392,10 +399,10 @@ typedef struct ApproximationInfo {
 } ApproximationInfoT;
 
 typedef struct QueryInfo {
-    spatial_lib::QueryTypeE type;
-    bool MBRFilter = true;
-    bool IntermediateFilter = true;
-    bool Refinement = true;
+    spatial_lib::QueryTypeE type = spatial_lib::Q_NONE;
+    int MBRFilter = 1;
+    int IntermediateFilter = 1;
+    int Refinement = 1;
 } QueryInfoT;
 
 typedef struct Config {
