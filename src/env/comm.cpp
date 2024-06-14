@@ -309,8 +309,7 @@ namespace comm
             return ret;
         }
 
-        static DB_STATUS createPartitionedDatasetFromMessage(SerializedMsgT<char> &datasetInfoMsg, spatial_lib::DatasetT **datasetPtr) {
-            spatial_lib::DatasetT dataset;
+        static DB_STATUS generateDatasetFromMessage(SerializedMsgT<char> &datasetInfoMsg, spatial_lib::DatasetT &dataset) {
             // deserialize message
             dataset.deserialize(datasetInfoMsg.data, datasetInfoMsg.count);
             // generate partition filepath
@@ -319,18 +318,18 @@ namespace comm
                 return ret;
             }
             // store in local g_config
-            g_config.datasetInfo.addDataset(dataset);
+            // g_config.datasetInfo.addDataset(dataset);
             // return pointer to dataset
-            (*datasetPtr) = g_config.datasetInfo.getDatasetByNickname(dataset.nickname);
+            // (*datasetPtr) = g_config.datasetInfo.getDatasetByNickname(dataset.nickname);
 
             // update gconfig dataspace to enclose both dataspaces
-            g_config.datasetInfo.updateDataspace();
+            // g_config.datasetInfo.updateDataspace();
 
             return DBERR_OK;
         }
 
         static DB_STATUS listenForDatasetPartitioning(MPI_Status status) {
-            spatial_lib::DatasetT *dataset;
+            spatial_lib::DatasetT dataset;
             FILE* outFile;
             SerializedMsgT<char> datasetInfoMsg(MPI_CHAR);
             int listen = 1;
@@ -352,7 +351,7 @@ namespace comm
                 goto STOP_LISTENING;
             }
             // create dataset from the received message
-            ret = createPartitionedDatasetFromMessage(datasetInfoMsg, &dataset);
+            ret = generateDatasetFromMessage(datasetInfoMsg, dataset);
             if (ret != DBERR_OK) {
                 logger::log_error(ret, "Failed creating the dataset from the dataset info message");
                 goto STOP_LISTENING;
@@ -361,21 +360,21 @@ namespace comm
             free(datasetInfoMsg.data);
             
             // open the partition data file
-            outFile = fopen(dataset->path.c_str(), "wb");
+            outFile = fopen(dataset.path.c_str(), "wb");
             if (outFile == NULL) {
-                logger::log_error(DBERR_MISSING_FILE, "Couldnt open dataset file:", dataset->path);
+                logger::log_error(DBERR_MISSING_FILE, "Couldnt open dataset file:", dataset.path);
                 return DBERR_MISSING_FILE;
             }
 
             // write the dataset info to the partition file
-            ret = storage::writer::appendDatasetInfoToPartitionFile(outFile, dataset);
+            ret = storage::writer::appendDatasetInfoToPartitionFile(outFile, &dataset);
             if (ret != DBERR_OK) {
                 logger::log_error(ret, "Failed while writing the dataset info to the partition file");
                 goto STOP_LISTENING;
             }
 
             // write a dummy value for the total polygon count, which will be corrected when the batches are finished
-            fwrite(&dataset->totalObjects, sizeof(int), 1, outFile);
+            fwrite(&dataset.totalObjects, sizeof(int), 1, outFile);
 
             // listen for dataset batches until an empty batch arrives
             while(listen) {
@@ -398,7 +397,7 @@ namespace comm
                     case MSG_BATCH_LINESTRING:
                     case MSG_BATCH_POLYGON:
                         /* batch geometry message */
-                        ret = pullSerializedMessageAndHandle(status, outFile, dataset, listen);
+                        ret = pullSerializedMessageAndHandle(status, outFile, &dataset, listen);
                         if (ret != DBERR_OK) {
                             goto STOP_LISTENING;
                         }  
@@ -411,9 +410,11 @@ namespace comm
             }
             
 STOP_LISTENING:
+            // close partition file
             if (outFile == NULL) {
                 fclose(outFile);
             }
+            // respond
             if (ret == DBERR_OK) {
                 // send ACK back that all data for this dataset has been received and processed successfully
                 ret = send::sendResponse(PARENT_RANK, MSG_ACK, g_local_comm);
@@ -587,6 +588,7 @@ STOP_LISTENING:
             free(msg.data);
             
             // todo: load
+            
 
             
 EXIT_SAFELY:

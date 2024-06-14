@@ -64,7 +64,7 @@ namespace partitioning
      * @param batchMap 
      * @return DB_STATUS 
      */
-    static DB_STATUS assignGeometryToBatches(GeometryT &geometry, double geoXmin, double geoYmin, double geoXmax, double geoYmax, std::unordered_map<int,GeometryBatchT> &batchMap) {
+    static DB_STATUS assignGeometryToBatches(GeometryT &geometry, double geoXmin, double geoYmin, double geoXmax, double geoYmax, std::unordered_map<int,GeometryBatchT> &batchMap, int &batchesSent) {
         // find partition IDs
         std::vector<int> partitionIDs;
         DB_STATUS ret = partitioning::getPartitionsForMBR(geoXmin, geoYmin, geoXmax, geoYmax, partitionIDs);
@@ -103,6 +103,8 @@ namespace partitioning
                     }
                     // reset
                     batch->clear();
+                    // count batch 
+                    batchesSent += 1;
                 }
 
             }
@@ -118,8 +120,6 @@ namespace partitioning
         if (ret != DBERR_OK) {
             return ret;
         }
-        // todo: calculate how many threads to spawn based on total object count
-        int polygonCount;
         // open file
         std::ifstream fin(datasetPath);
         if (!fin.is_open()) {
@@ -127,14 +127,18 @@ namespace partitioning
             return DBERR_MISSING_FILE;
         }
         std::string line;
-        // read total objects (first line)
+        // read total objects (first line of file)
         std::getline(fin, line);
         fin.close();
-        polygonCount = stoi(line);
+        int polygonCount = stoi(line);
+        // spawn as many threads as possible
         int availableProcessors = omp_get_num_procs();
+        // count how many batches have been sent in total
+        int batchesSent = 0;
         
         // spawn all available threads (processors)
-        #pragma omp parallel firstprivate(batchMap, line, polygonCount) num_threads(availableProcessors)
+        // todo: maybe this is not optimal
+        #pragma omp parallel firstprivate(batchMap, line, polygonCount) num_threads(availableProcessors) reduction(+:batchesSent)
         {
             int recID;
             int partitionID;
@@ -199,7 +203,7 @@ namespace partitioning
                 // create serializable object
                 GeometryT geometry(recID, vertexCount, coords);
                 // assign to appropriate batches
-                local_ret = assignGeometryToBatches(geometry, xMin, yMin, xMax, yMax, batchMap);
+                local_ret = assignGeometryToBatches(geometry, xMin, yMin, xMax, yMax, batchMap, batchesSent);
                 if (ret != DBERR_OK) {
                     #pragma omp cancel parallel
                     ret = local_ret;
@@ -228,6 +232,8 @@ namespace partitioning
                     }
                     // empty the batch
                     batch->clear();
+                    // count the batch
+                    batchesSent += 1;
                 }
             }
             // close file
@@ -248,6 +254,8 @@ namespace partitioning
                 return ret;
             }
         }
+
+        logger::log_success("Sent", batchesSent, "non-empty batches.");
 
         return ret;
     }
