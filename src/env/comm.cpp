@@ -317,14 +317,6 @@ namespace comm
             if (ret != DBERR_OK) {
                 return ret;
             }
-            // store in local g_config
-            // g_config.datasetInfo.addDataset(dataset);
-            // return pointer to dataset
-            // (*datasetPtr) = g_config.datasetInfo.getDatasetByNickname(dataset.nickname);
-
-            // update gconfig dataspace to enclose both dataspaces
-            // g_config.datasetInfo.updateDataspace();
-
             return DBERR_OK;
         }
 
@@ -333,6 +325,7 @@ namespace comm
             FILE* outFile;
             SerializedMsgT<char> datasetInfoMsg(MPI_CHAR);
             int listen = 1;
+            int dummy = -1;
 
             // proble blockingly for the dataset info
             DB_STATUS ret = probeBlocking(PARENT_RANK, MPI_ANY_TAG, g_local_comm, status);
@@ -360,11 +353,16 @@ namespace comm
             free(datasetInfoMsg.data);
             
             // open the partition data file
-            outFile = fopen(dataset.path.c_str(), "wb");
+            outFile = fopen(dataset.path.c_str(), "wb+");
             if (outFile == NULL) {
                 logger::log_error(DBERR_MISSING_FILE, "Couldnt open dataset file:", dataset.path);
                 return DBERR_MISSING_FILE;
             }
+
+            // write a dummy value for the total polygon count in the very begining of the file
+            // it will be corrected when the batches are finished
+            
+            fwrite(&dummy, sizeof(int), 1, outFile);
 
             // write the dataset info to the partition file
             ret = storage::writer::appendDatasetInfoToPartitionFile(outFile, &dataset);
@@ -372,9 +370,6 @@ namespace comm
                 logger::log_error(ret, "Failed while writing the dataset info to the partition file");
                 goto STOP_LISTENING;
             }
-
-            // write a dummy value for the total polygon count, which will be corrected when the batches are finished
-            fwrite(&dataset.totalObjects, sizeof(int), 1, outFile);
 
             // listen for dataset batches until an empty batch arrives
             while(listen) {
@@ -587,8 +582,29 @@ STOP_LISTENING:
             // free memory
             free(msg.data);
             
-            // todo: load
-            
+            // load data and create the dataset objects to store
+            for (int i=0; i<nicknames.size(); i++) {
+                spatial_lib::DatasetT dataset;
+                dataset.nickname = nicknames[i];
+                // generate partition file path from dataset nickname
+                DB_STATUS ret = storage::generatePartitionFilePath(dataset);
+                if (ret != DBERR_OK) {
+                    return ret;
+                }
+                // load partition file (create MBRs)
+                ret = storage::reader::partitionFile::loadDatasetMBRs(dataset);
+                if (ret != DBERR_OK) {
+                    return ret;
+                }
+                // add to configuration
+                g_config.datasetInfo.addDataset(dataset);
+                logger::log_success("Loaded dataset", dataset.nickname,"with",dataset.totalObjects,"total objects and", dataset.index.size(),"partitions");
+
+
+                // load APRIL
+
+                // add to configuration
+            }
 
             
 EXIT_SAFELY:

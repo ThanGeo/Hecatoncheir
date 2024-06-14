@@ -97,17 +97,54 @@ namespace spatial_lib
         std::string datasetName;
         // as given by arguments and specified by datasets.ini config file
         std::string nickname;
-        
+        // holds the dataset's dataspace info (MBR, extent)
         DataspaceInfoT dataspaceInfo;
+        // vector data
         int totalObjects = 0;
-        /**
-         * Approximations
-        */
+        std::unordered_map<int, PolygonT> polygons;
+        // index
+        std::unordered_map<int, std::vector<PolygonT*>> index;  // todo: maybe store <partitionID, std::vector<recID>> instead
+        /* approximations */ 
         ApproximationTypeE approxType;
         // APRIL
         spatial_lib::AprilConfigT aprilConfig;
         std::unordered_map<uint, SectionT> sectionMap;           // map: k,v = sectionID,(unordered map of k,v = recID,aprilData)
         std::unordered_map<uint,std::vector<uint>> recToSectionIdMap;         // map: k,v = recID,vector<sectionID>: maps recs to sections 
+
+        /**
+         * Methods
+        */
+
+        PolygonT* getPolygonByID(int recID) {
+            auto it = polygons.find(recID);
+            if (it == polygons.end()) {
+                return nullptr;
+            }
+            return &it->second;
+        }
+
+        void addPolygon(PolygonT &polygon) {
+            // insert to map
+            polygons.insert(std::make_pair(polygon.recID, polygon));
+            // increase count
+            totalObjects += 1;
+            // get reference
+            PolygonT* polRef = getPolygonByID(polygon.recID);
+            if (polRef == nullptr) {
+                // definitely an error if this happens
+                return;
+            }
+            // insert reference to partition index
+            for (auto &partitionID: polygon.partitionIDs) {
+                auto it = index.find(partitionID);
+                if (it == index.end()) {
+                    std::vector<PolygonT*> newVec = {polRef};
+                    index.insert(std::make_pair(partitionID, newVec));
+                } else {
+                    it->second.emplace_back(polRef);
+                }
+            }
+        }
 
         // calculate the size needed for the serialization buffer
         int calculateBufferSize() {

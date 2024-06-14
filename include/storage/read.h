@@ -24,14 +24,15 @@ namespace storage
              * @warning it does not load the actual geometry in memory
              */
             DB_STATUS readNextObjectMBR(FILE* pFile, spatial_lib::PolygonT &polygon);
+            
+            /**
+             * @brief loads a dataset's MBRs in-memory, to use in query processing.
+             * Creates the local index based on the objects' partitions
+             */
+            DB_STATUS loadDatasetMBRs(spatial_lib::DatasetT &dataset);
         }
 
 
-        /**
-         * @brief loads a dataset's MBRs and APRIL approximations in-memory, to use in query processing.
-         * Creates the local index based on the objects' partitions
-         */
-        DB_STATUS loadDatasetMBRandAPRIL(spatial_lib::DatasetT &dataset);
     }
 }
 

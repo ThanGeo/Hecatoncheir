@@ -22,7 +22,7 @@ namespace storage
         return DBERR_OK;
     }
 
-    DB_STATUS generateApproximationFilePath(spatial_lib::DatasetT &dataset) {
+    DB_STATUS generateAPRILFilePath(spatial_lib::DatasetT &dataset) {
         if (dataset.nickname == "") {
             logger::log_error(DBERR_MISSING_DATASET_INFO, "Dataset nickname is missing, cannot generate partition filepath");
             return DBERR_MISSING_DATASET_INFO;

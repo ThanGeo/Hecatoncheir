@@ -15,14 +15,14 @@ namespace APRIL
             logger::log_error(DBERR_INVALID_PARAMETER, "Rasterizer init failed");
             return DBERR_INVALID_PARAMETER;
         }
-        // open dataset file stream
+        // open dataset file
         FILE* pFile = fopen(dataset.path.c_str(), "rb");
         if (pFile == NULL) {
-            logger::log_error(DBERR_MISSING_FILE, "Couldnt open partitioned dataset file:", dataset.path);
+            logger::log_error(DBERR_MISSING_FILE, "Could not open partitioned dataset file from path:", dataset.path);
             return DBERR_MISSING_FILE;
         }
         // generate approximation filepaths
-        ret = storage::generateApproximationFilePath(dataset);
+        ret = storage::generateAPRILFilePath(dataset);
         if (ret != DBERR_OK) {
             return ret;
         }
