@@ -94,6 +94,32 @@ namespace comm
     {
 
         /**
+         * @brief forwards a message from the Host controller to the Agent and waits for the agent's response
+         * which will be returned to the host
+         */
+        template <typename T> 
+        static DB_STATUS forwardAndWaitResponse(SerializedMsgT<T> msg, MPI_Status &status) {
+            // receive the message
+            DB_STATUS ret = recv::receiveMessage(status, msg.type, g_global_comm, msg);
+            if (ret != DBERR_OK) {
+                return ret;
+            }
+            // forward to local agent
+            ret = send::sendMessage(msg, AGENT_RANK, status.MPI_TAG, g_local_comm);
+            if (ret != DBERR_OK) {
+                return ret;
+            }
+            // free memory
+            free(msg.data);
+            // wait for response by the agent that system init went ok
+            ret = waitForResponse();
+            if (ret != DBERR_OK) {
+                return ret;
+            }
+            return ret;
+        }
+
+        /**
          * @brief receives and forwards a message from source to dest
          * 
          * @param sourceRank 
@@ -119,28 +145,6 @@ namespace comm
             }
 
             return DBERR_OK;
-        }
-
-        static DB_STATUS forwardLoadDatasetsMessage(MPI_Comm sourceComm, int destRank, MPI_Comm destComm, MPI_Status &status) {
-            SerializedMsgT<char> msg(MPI_CHAR);
-            // receive the message
-            DB_STATUS ret = recv::receiveMessage(status, msg.type, sourceComm, msg);
-            if (ret != DBERR_OK) {
-                return ret;
-            }
-            // forward to local agent
-            ret = send::sendMessage(msg, destRank, status.MPI_TAG, destComm);
-            if (ret != DBERR_OK) {
-                return ret;
-            }
-            // free memory
-            free(msg.data);
-            // wait for response by the agent that system init went ok
-            ret = waitForResponse();
-            if (ret != DBERR_OK) {
-                return ret;
-            }
-            return ret;
         }
 
         /**
@@ -173,33 +177,6 @@ namespace comm
             }
             // free memory
             free(msg.data);
-            return ret;
-        }
-
-        static DB_STATUS forwardSysInfoMessage(MPI_Comm sourceComm, int destRank, MPI_Comm destComm, MPI_Status &status) {
-            SerializedMsgT<char> msg(MPI_CHAR);
-            // receive the message
-            DB_STATUS ret = recv::receiveMessage(status, msg.type, sourceComm, msg);
-            if (ret != DBERR_OK) {
-                return ret;
-            }
-            // forward to local agent
-            ret = send::sendMessage(msg, destRank, status.MPI_TAG, destComm);
-            if (ret != DBERR_OK) {
-                return ret;
-            }
-            // unpack info and store (since it may be useful to this controller as well)
-            ret = unpack::unpackSystemInfo(msg);
-            if (ret != DBERR_OK) {
-                return ret;
-            }
-            // free memory
-            free(msg.data);
-            // wait for response by the agent that system init went ok
-            ret = waitForResponse();
-            if (ret != DBERR_OK) {
-                return ret;
-            }
             return ret;
         }
 
@@ -911,8 +888,6 @@ STOP_LISTENING:
                         if (ret != DBERR_OK) {
                             return ret;
                         } 
-                        // check batch size
-
                         break;
                     default:
                         logger::log_error(DBERR_COMM_WRONG_MESSAGE_ORDER, "After the dataset info pack, only batch messages are expected");
@@ -949,13 +924,6 @@ STOP_LISTENING:
                         return ret;
                     }
                     return DB_FIN;
-                case MSG_SYS_INFO:
-                    /* message system info */
-                    ret = forward::forwardSysInfoMessage(g_global_comm, AGENT_RANK, g_local_comm, status);
-                    if (ret != DBERR_OK) {
-                        return ret;
-                    }
-                    break;
                 case MSG_INSTR_PARTITIONING_INIT:
                     /* init partitioning */
                     ret = forward::forwardInstructionMessage(g_host_rank, status.MPI_TAG, g_global_comm, AGENT_RANK, g_local_comm);
@@ -969,24 +937,30 @@ STOP_LISTENING:
                     }
                     break;
                 case MSG_LOAD_DATASETS:
-                    /* load datasets */
-                    ret = forward::forwardLoadDatasetsMessage(g_global_comm, AGENT_RANK, g_local_comm, status);
-                    if (ret != DBERR_OK) {
-                        return ret;
+                case MSG_SYS_INFO:
+                    /* char messages */
+                    {
+                        SerializedMsgT<char> msg(MPI_CHAR);
+                        ret = forward::forwardAndWaitResponse(msg, status);
+                        if (ret != DBERR_OK) {
+                            return ret;
+                        }
+                        break;
                     }
-                    break;
                 case MSG_LOAD_APRIL:
                 case MSG_APRIL_CREATE:
-                    /**
-                     * create APRIL for the selected datasets OR load APRIL for the loaded datasets 
-                     * parameters are contained in the message
-                     */
-                    ret = forward::forwardAPRILInfoMessage(g_global_comm, AGENT_RANK, g_local_comm, status);
-                    if (ret != DBERR_OK) {
-                        return ret;
+                    /* int messages, wait for response */
+                    {
+                        SerializedMsgT<int> msg;
+                        // ret = forward::forwardAPRILInfoMessage(g_global_comm, AGENT_RANK, g_local_comm, status);
+                        ret = forward::forwardAndWaitResponse(msg, status);
+                        if (ret != DBERR_OK) {
+                            return ret;
+                        }
+                        break;
                     }
-                    break;
                 case MSG_QUERY_INIT:
+                    /* int messages, wait for results */
                     ret = forward::forwardQueryInfoMessage(g_global_comm, AGENT_RANK, g_local_comm, status);
                     if (ret != DBERR_OK) {
                         return ret;

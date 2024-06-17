@@ -76,6 +76,17 @@ struct SerializedMsgT {
     SerializedMsgT(MPI_Datatype type) {
         this->type = type;
     }
+
+    SerializedMsgT() {
+        if constexpr (std::is_same<T,char>::value) {
+            this->type = MPI_CHAR;
+        } else if constexpr (std::is_same<T,int>::value) {
+            this->type = MPI_INT;
+        } else {
+            printf("Error: unknown serialized msg type");
+        }
+    }
+
 }; 
 
 typedef struct Geometry {
