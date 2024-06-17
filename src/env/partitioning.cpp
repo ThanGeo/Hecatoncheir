@@ -287,7 +287,6 @@ namespace partitioning
     DB_STATUS partitionDataset(spatial_lib::DatasetT *dataset) {
         double startTime;
         DB_STATUS ret;
-        logger::log_task("Partitioning dataset", dataset->nickname);
         // time
         startTime = mpi_timer::markTime();
         switch (dataset->fileType) {

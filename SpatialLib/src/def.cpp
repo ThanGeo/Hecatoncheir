@@ -62,24 +62,7 @@ namespace spatial_lib
         to->intervalsFULL = from->intervalsFULL;
     }
 
-    void addAprilDataToApproximationDataMap(DatasetT &dataset, uint sectionID, uint recID, AprilDataT* aprilData) {
-        // AprilDataT copyAprilData;
-
-        // deepCopyAprilData(aprilData, &copyAprilData);
-        
-        // store april data
-        dataset.sectionMap[sectionID].aprilData.insert(std::make_pair(recID, *aprilData));
-        // store mapping recID -> sectionID
-        auto it = dataset.recToSectionIdMap.find(recID);
-        if (it != dataset.recToSectionIdMap.end()) {
-            // exists
-            it->second.emplace_back(sectionID);
-        } else {
-            // doesnt exist, new entry
-            std::vector<uint> sectionIDs = {sectionID};
-            dataset.recToSectionIdMap.insert(std::make_pair(recID, sectionIDs));
-        }
-    }
+    
 
     void addObjectToSectionMap(DatasetT &dataset, uint sectionID, uint recID) {
         // store mapping recID -> sectionID

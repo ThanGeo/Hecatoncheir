@@ -95,29 +95,20 @@ namespace storage
                 return DBERR_OK;
             }
 
-            DB_STATUS loadDatasetMBRs(spatial_lib::DatasetT &dataset) {
+            DB_STATUS loadDatasetInfo(FILE* pFile, spatial_lib::DatasetT &dataset) {
                 DB_STATUS ret = DBERR_OK;
-                int polygonCount = 0;
-                int length = 0;
-                // open partition file
-                FILE* pFile = fopen(dataset.path.c_str(), "rb");
-                if (pFile == NULL) {
-                    logger::log_error(DBERR_MISSING_FILE, "Could not open partitioned dataset file from path:", dataset.path);
-                    return DBERR_MISSING_FILE;
-                }
+                int length;
                 // polygon count
-                size_t elementsRead = fread(&polygonCount, sizeof(int), 1, pFile);
+                size_t elementsRead = fread(&dataset.totalObjects, sizeof(int), 1, pFile);
                 if (elementsRead != 1) {
                     logger::log_error(DBERR_DISK_READ_FAILED, "Couldn't read the polygon count");
-                    ret = DBERR_DISK_READ_FAILED;
-                    goto CLOSE_AND_EXIT;
+                    return DBERR_DISK_READ_FAILED;
                 }
                 // read data type
                 elementsRead = fread(&dataset.dataType, sizeof(spatial_lib::DataTypeE), 1, pFile);
                 if (elementsRead != 1) {
                     logger::log_error(DBERR_DISK_READ_FAILED, "Couldn't read the dataset's datatype");
-                    ret = DBERR_DISK_READ_FAILED;
-                    goto CLOSE_AND_EXIT;
+                    return DBERR_DISK_READ_FAILED;
                 }
                 // read nickname length + string
                 elementsRead = 0;
@@ -125,8 +116,7 @@ namespace storage
                 elementsRead += fread(dataset.nickname.data(), length * sizeof(char), length, pFile);
                 if (elementsRead != length + 1) {
                     logger::log_error(DBERR_DISK_READ_FAILED, "Couldn't read the dataset's nickname");
-                    ret = DBERR_DISK_READ_FAILED;
-                    goto CLOSE_AND_EXIT;
+                    return DBERR_DISK_READ_FAILED;
                 }
                 // dataspace MBR
                 elementsRead = 0;
@@ -136,15 +126,34 @@ namespace storage
                 elementsRead += fread(&dataset.dataspaceInfo.yMaxGlobal, sizeof(double), 1, pFile);
                 if (elementsRead != 4) {
                     logger::log_error(DBERR_DISK_READ_FAILED, "Couldn't read the dataset's dataspace MBR");
-                    ret = DBERR_DISK_READ_FAILED;
+                    return DBERR_DISK_READ_FAILED;
+                }
+                // logger::log_success("loaded dataset info:", dataset.totalObjects, dataset.dataType, dataset.nickname, dataset.dataspaceInfo.xMinGlobal, dataset.dataspaceInfo.yMinGlobal, dataset.dataspaceInfo.xMaxGlobal, dataset.dataspaceInfo.yMaxGlobal);
+                return ret;
+            }
+
+            DB_STATUS loadDatasetMBRs(spatial_lib::DatasetT &dataset) {
+                DB_STATUS ret = DBERR_OK;
+                int length = 0;
+                // open partition file
+                FILE* pFile = fopen(dataset.path.c_str(), "rb");
+                if (pFile == NULL) {
+                    logger::log_error(DBERR_MISSING_FILE, "Could not open partitioned dataset file from path:", dataset.path);
+                    return DBERR_MISSING_FILE;
+                }
+                // dataset info
+                ret = loadDatasetInfo(pFile, dataset);
+                if (ret != DBERR_OK) {
+                    logger::log_error(ret, "Failed to load dataset info");
                     goto CLOSE_AND_EXIT;
                 }
                 // read MBRs
-                for (int i=0; i<polygonCount; i++) {
+                for (int i=0; i<dataset.totalObjects; i++) {
                     spatial_lib::PolygonT polygon;
                     // read next polygon
                     ret = readNextObjectMBR(pFile, polygon);
                     if (ret != DBERR_OK) {
+                        logger::log_error(ret, "Failed to read MBR for object number", i, "of", dataset.totalObjects);
                         goto CLOSE_AND_EXIT;
                     }
                     // store in dataset

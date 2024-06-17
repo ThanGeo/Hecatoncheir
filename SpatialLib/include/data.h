@@ -160,14 +160,14 @@ namespace spatial_lib
     typedef struct AprilConfig {
         private:
             // Hilbert curve order
-            int N;
+            int N = 16;
             // cells per dimension in Hilbert grid: 2^N
-            uint cellsPerDim;
+            uint cellsPerDim = pow(2,16);
         public:
             // compression enabled, disabled
-            bool compression;
-            // how many partitions in the data space
-            int partitions;
+            bool compression = 0;
+            // how many partitions (sections) in the data space
+            int partitions = 1;
             // APRIL data file paths
             std::string ALL_intervals_path;
             std::string FULL_intervals_path;

@@ -52,6 +52,8 @@ typedef enum MsgType {
     /* DATA */
     MSG_LOAD_DATASETS = MSG_BASE + 7000,
     MSG_UNLOAD_DATASETS = MSG_BASE + 7001,
+    MSG_LOAD_APRIL = MSG_BASE + 7003,
+    MSG_UNLOAD_APRIL = MSG_BASE + 7004,
     
     /* ERRORS */
     MSG_ERR_BEGIN = MSG_BASE + 10000,

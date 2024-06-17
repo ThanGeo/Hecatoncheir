@@ -19,7 +19,7 @@ namespace configure
             return DBERR_MPI_INIT_FAILED;
         }
         g_node_rank = rank;
-        // get parent process intercomm (must be null) (todo: move to initMPI)
+        // get parent process intercomm (must be null)
         MPI_Comm_get_parent(&g_local_comm);
         if (g_local_comm != MPI_COMM_NULL) {
             // logger::log_error(DBERR_PROC_INIT_FAILED, "Controllers must be parentless");

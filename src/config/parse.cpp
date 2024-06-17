@@ -135,6 +135,11 @@ namespace parser
                 return DBERR_CONFIG_FILE;
             }
         }
+        // load approximations (after any creation and after the datasets have been loaded)
+        if (actionsStmt->loadDatasets) {
+            ActionT action(ACTION_LOAD_APRIL);
+            g_config.actions.emplace_back(action);
+        }
         // queries
         if (g_config.queryInfo.type != spatial_lib::Q_NONE) {
             ActionT action(ACTION_QUERY);

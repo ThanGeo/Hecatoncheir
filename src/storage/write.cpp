@@ -36,7 +36,7 @@ namespace storage
             return DBERR_OK;
         }
 
-        DB_STATUS updateObjectCountInPartitionFile(FILE* outFile, int objectCount) {
+        DB_STATUS updateObjectCountInFile(FILE* outFile, int objectCount) {
             // go to the begining place in the file
             fseek(outFile, 0, SEEK_SET);
             size_t elementsWritten = fwrite(&objectCount, sizeof(objectCount), 1, outFile);

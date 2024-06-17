@@ -30,6 +30,12 @@ namespace storage
              * Creates the local index based on the objects' partitions
              */
             DB_STATUS loadDatasetMBRs(spatial_lib::DatasetT &dataset);
+
+            /**
+             * loads dataset info from the partition file. The pfile pos must be in the begining
+             * loads: polygonCount, dataset nickname, dataspace MBR
+             */
+            DB_STATUS loadDatasetInfo(FILE* pFile, spatial_lib::DatasetT &dataset);
         }
 
 

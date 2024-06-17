@@ -5,10 +5,11 @@ namespace APRIL
 
     DB_STATUS generate(spatial_lib::DatasetT &dataset) {
         DB_STATUS ret = DBERR_OK;
-        int polygonCount = 0, recID, vertexCount;
+        int recID, vertexCount;
         std::vector<int> partitionIDs;
         double xMin, yMin, xMax, yMax;
         double coordLoadSpace[1000000];
+        int objectsInFullFile = 0;
         // init rasterizer environment
         int rasterizerRet = rasterizerlib::init(dataset.dataspaceInfo.xMinGlobal, dataset.dataspaceInfo.yMinGlobal, dataset.dataspaceInfo.xMaxGlobal, dataset.dataspaceInfo.yMaxGlobal);
         if (!rasterizerRet) {
@@ -38,18 +39,18 @@ namespace APRIL
             return DBERR_MISSING_FILE;
         }
 
-        //first read the total polygon count of the dataset
-        size_t elementsRead = fread(&polygonCount, sizeof(int), 1, pFile);
-        if (elementsRead != 1) {
-            ret = DBERR_DISK_READ_FAILED;
+        // next read the dataset info
+        ret = storage::reader::partitionFile::loadDatasetInfo(pFile, dataset);
+        if (ret != DBERR_OK) {
             goto CLOSE_AND_EXIT;
         }
+
         // write dummy value for polygon count. 
-        // will replace with the actual value in the end
-        fwrite(&polygonCount, sizeof(int), 1, pFileALL);
-        fwrite(&polygonCount, sizeof(int), 1, pFileFULL);
+        fwrite(&dataset.totalObjects, sizeof(int), 1, pFileALL);
+        // will replace with the actual value in the end, because some objects may not have FULL intervals
+        fwrite(&dataset.totalObjects, sizeof(int), 1, pFileFULL);
         //read polygons
-        for(int i=0; i<polygonCount; i++){
+        for(int i=0; i<dataset.totalObjects; i++){
             rasterizerlib::polygon2d rasterizerPolygon;
             // get next object to rasterize
             ret = storage::reader::partitionFile::readNextObjectForRasterization(pFile, recID, partitionIDs, rasterizerPolygon);
@@ -71,6 +72,16 @@ namespace APRIL
                 logger::log_error(ret, "Failed while saving APRIL on disk");
                 goto CLOSE_AND_EXIT;
             }
+            // count objects
+            if (aprilData.numIntervalsFULL > 0) {
+                objectsInFullFile += 1;
+            }
+        }
+        // update value 
+        ret = storage::writer::updateObjectCountInFile(pFileFULL, objectsInFullFile);
+        if (ret != DBERR_OK) {
+            logger::log_error(ret, "Couldn't update object count value in FULL intervals file");
+            goto CLOSE_AND_EXIT;
         }
 CLOSE_AND_EXIT:
         fclose(pFile);

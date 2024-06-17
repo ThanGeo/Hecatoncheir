@@ -216,9 +216,11 @@ typedef enum ActionType {
     ACTION_LOAD_DATASETS,
     ACTION_PERFORM_PARTITIONING,
     ACTION_CREATE_APRIL,
+    ACTION_LOAD_APRIL,
     ACTION_PERFORM_VERIFICATION,
     ACTION_QUERY,
 } ActionTypeE;
+std::string actionIntToStr(ActionTypeE action);
 
 typedef enum PartitioningType {
     PARTITIONING_ROUND_ROBIN,

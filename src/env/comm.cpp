@@ -269,7 +269,7 @@ namespace comm
                 // empty batch, set flag to stop listening for this dataset
                 continueListening = 0;
                 // and write total objects in the begining of the partitioned file
-                ret = storage::writer::updateObjectCountInPartitionFile(outFile, dataset->totalObjects);
+                ret = storage::writer::updateObjectCountInFile(outFile, dataset->totalObjects);
                 logger::log_success("Saved", dataset->totalObjects,"total objects.");
                 if (ret != DBERR_OK) {
                     logger::log_error(DBERR_DISK_WRITE_FAILED, "Failed when updating partition file object count");
@@ -589,24 +589,73 @@ STOP_LISTENING:
                 // generate partition file path from dataset nickname
                 DB_STATUS ret = storage::generatePartitionFilePath(dataset);
                 if (ret != DBERR_OK) {
-                    return ret;
+                    goto EXIT_SAFELY;
                 }
                 // load partition file (create MBRs)
                 ret = storage::reader::partitionFile::loadDatasetMBRs(dataset);
                 if (ret != DBERR_OK) {
-                    return ret;
+                    logger::log_error(DBERR_DISK_READ_FAILED, "Failed loading partition file MBRs");
+                    goto EXIT_SAFELY;
                 }
+
                 // add to configuration
                 g_config.datasetInfo.addDataset(dataset);
                 logger::log_success("Loaded dataset", dataset.nickname,"with",dataset.totalObjects,"total objects and", dataset.index.size(),"partitions");
-
-
-                // load APRIL
-
-                // add to configuration
+            }
+EXIT_SAFELY:
+            // respond
+            if (ret == DBERR_OK) {
+                // send ACK back that all data for this dataset has been received and processed successfully
+                ret = send::sendResponse(PARENT_RANK, MSG_ACK, g_local_comm);
+                if (ret != DBERR_OK) {
+                    logger::log_error(ret, "Send ACK failed.");
+                }
+            } else {
+                // there was an error, send NACK and propagate error code locally
+                DB_STATUS errorCode = ret;
+                ret = send::sendResponse(PARENT_RANK, MSG_NACK, g_local_comm);
+                if (ret != DBERR_OK) {
+                    logger::log_error(ret, "Send NACK failed.");
+                    return ret;
+                }
+                return errorCode;
             }
 
+            return ret;
+        }
+
+        static DB_STATUS handleLoadAPRILMessage(MPI_Status status) {
+            SerializedMsgT<int> msg(MPI_INT);
+            // receive the message
+            DB_STATUS ret = recv::receiveMessage(status, msg.type, g_local_comm, msg);
+            if (ret != DBERR_OK) {
+                goto EXIT_SAFELY;
+            }
+            // unpack info and store
+            ret = unpack::unpackAPRILInfo(msg);
+            if (ret != DBERR_OK) {
+                goto EXIT_SAFELY;
+            }
+            // free memory
+            free(msg.data);
             
+            // load APRIL for each dataset
+            for (auto &it: g_config.datasetInfo.datasets) {
+                // logger::log_task("APRIL info: N =", dataset.aprilConfig.getN(), "compression = ", dataset.aprilConfig.compression, "partitions = ", dataset.aprilConfig.partitions);
+                // set approximation type for dataset
+                it.second.approxType = spatial_lib::AT_APRIL;
+                // generate APRIL filepaths
+                ret = storage::generateAPRILFilePath(it.second);
+                if (ret != DBERR_OK) {
+                    goto EXIT_SAFELY;
+                }
+                // load
+                ret = APRIL::reader::loadAPRIL(it.second);
+                if (ret != DBERR_OK) {
+                    logger::log_error(DBERR_DISK_READ_FAILED, "Failed loading APRIL");
+                    goto EXIT_SAFELY;
+                }
+            }
 EXIT_SAFELY:
             // respond
             if (ret == DBERR_OK) {
@@ -669,6 +718,13 @@ EXIT_SAFELY:
                 case MSG_LOAD_DATASETS:
                     /* load datasets */
                     ret = handleLoadDatasetsMessage(status);
+                    if (ret != DBERR_OK) {
+                        return ret;
+                    }
+                    break;
+                case MSG_LOAD_APRIL:
+                    /* load datasets */
+                    ret = handleLoadAPRILMessage(status);
                     if (ret != DBERR_OK) {
                         return ret;
                     }
@@ -919,8 +975,12 @@ STOP_LISTENING:
                         return ret;
                     }
                     break;
+                case MSG_LOAD_APRIL:
                 case MSG_APRIL_CREATE:
-                    /* create APRIL for the selected datasets, parameters are contained in the message */
+                    /**
+                     * create APRIL for the selected datasets OR load APRIL for the loaded datasets 
+                     * parameters are contained in the message
+                     */
                     ret = forward::forwardAPRILInfoMessage(g_global_comm, AGENT_RANK, g_local_comm, status);
                     if (ret != DBERR_OK) {
                         return ret;

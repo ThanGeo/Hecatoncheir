@@ -108,7 +108,7 @@ namespace spatial_lib
         ApproximationTypeE approxType;
         // APRIL
         spatial_lib::AprilConfigT aprilConfig;
-        std::unordered_map<uint, SectionT> sectionMap;           // map: k,v = sectionID,(unordered map of k,v = recID,aprilData)
+        std::unordered_map<uint, SectionT> sectionMap;                        // map: k,v = sectionID,(unordered map of k,v = recID,aprilData)
         std::unordered_map<uint,std::vector<uint>> recToSectionIdMap;         // map: k,v = recID,vector<sectionID>: maps recs to sections 
 
         /**
@@ -126,8 +126,6 @@ namespace spatial_lib
         void addPolygon(PolygonT &polygon) {
             // insert to map
             polygons.insert(std::make_pair(polygon.recID, polygon));
-            // increase count
-            totalObjects += 1;
             // get reference
             PolygonT* polRef = getPolygonByID(polygon.recID);
             if (polRef == nullptr) {
@@ -223,6 +221,60 @@ namespace spatial_lib
                 // all is well
             }
         }
+
+        // APRIL
+        void addAprilDataToApproximationDataMap(const uint sectionID, const uint recID, const AprilDataT &aprilData) {
+            // store april data
+            this->sectionMap[sectionID].aprilData.insert(std::make_pair(recID, aprilData));
+            // store mapping recID -> sectionID
+            auto it = this->recToSectionIdMap.find(recID);
+            if (it != this->recToSectionIdMap.end()) {
+                // exists
+                it->second.emplace_back(sectionID);
+            } else {
+                // doesnt exist, new entry
+                std::vector<uint> sectionIDs = {sectionID};
+                this->recToSectionIdMap.insert(std::make_pair(recID, sectionIDs));
+            }
+        }
+
+        void addObjectToSectionMap(const uint sectionID, const uint recID) {
+            AprilDataT aprilData;
+            this->sectionMap[sectionID].aprilData.insert(std::make_pair(recID, aprilData));
+            // store mapping recID -> sectionID
+            auto it = this->recToSectionIdMap.find(recID);
+            if (it != this->recToSectionIdMap.end()) {
+                // exists
+                it->second.emplace_back(sectionID);
+            } else {
+                // doesnt exist, new entry
+                std::vector<uint> sectionIDs = {sectionID};
+                this->recToSectionIdMap.insert(std::make_pair(recID, sectionIDs));
+            }
+        }
+
+        void addIntervalsToAprilData(const uint sectionID, const uint recID, const int numIntervals, const std::vector<uint> &intervals, const bool ALL) {
+            // retrieve section
+            auto secIT = this->sectionMap.find(sectionID);
+            if (secIT == this->sectionMap.end()) {
+                printf("Error: could not find section ID %d in dataset section map\n", sectionID);
+                return;
+            }
+            // retrieve object
+            auto it = secIT->second.aprilData.find(recID);
+            if (it == secIT->second.aprilData.end()) {
+                printf("Error: could not find rec ID %d in section map\n", recID);
+                return;
+            }
+            // replace intervals in april data
+            if (ALL) {
+                it->second.numIntervalsALL = numIntervals;
+                it->second.intervalsALL = intervals;
+            } else {
+                it->second.numIntervalsFULL = numIntervals;
+                it->second.intervalsFULL = intervals;
+            }
+        }
     }DatasetT;
 
     typedef struct Query{
@@ -240,8 +292,6 @@ namespace spatial_lib
     void countAPRILResult(int result);
     void countResult();
     void countTopologyRelationResult(int relation);
-
-    void addAprilDataToApproximationDataMap(DatasetT &dataset, uint sectionID, uint recID, AprilDataT* aprilData);
 
     void addObjectToSectionMap(DatasetT &dataset, uint sectionID, uint recID);
     /**

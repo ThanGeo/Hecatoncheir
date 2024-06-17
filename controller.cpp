@@ -41,14 +41,6 @@ static DB_STATUS initAPRILCreation() {
         logger::log_error(ret, "Failed to broadcast APRIL info");
         return ret;
     }
-    // send to local agent
-    ret = comm::send::sendMessage(aprilInfoMsg, AGENT_RANK, MSG_APRIL_CREATE, g_local_comm);
-    if (ret != DBERR_OK) {
-        logger::log_error(ret, "Failed to send APRIL info to agent");
-        return ret;
-    }
-
-    logger::log_task("Creating APRIL for the loaded datasets...");
     // measure response time
     double startTime;
     startTime = mpi_timer::markTime();
@@ -86,7 +78,7 @@ static DB_STATUS initQueryExecution() {
     if (ret != DBERR_OK) {
         return ret;
     }
-    logger::log_success("APRIL creation finished in", mpi_timer::getElapsedTime(startTime), "seconds.");
+    logger::log_success("Query evaluted in", mpi_timer::getElapsedTime(startTime), "seconds.");
 
     return DBERR_OK;
 }
@@ -117,10 +109,33 @@ static DB_STATUS initLoadDatasets() {
     return ret;
 }
 
+static DB_STATUS initLoadAPRIL() {
+    SerializedMsgT<int> aprilInfoMsg(MPI_INT);
+    // pack the APRIL info
+    DB_STATUS ret = pack::packAPRILInfo(g_config.approximationInfo.aprilConfig, aprilInfoMsg);
+    if (ret != DBERR_OK) {
+        logger::log_error(ret, "Failed to pack APRIL info");
+        return ret;
+    }
+    // send to workers
+    ret = comm::broadcast::broadcastMessage(aprilInfoMsg, MSG_LOAD_APRIL);
+    if (ret != DBERR_OK) {
+        logger::log_error(ret, "Failed to broadcast APRIL info");
+        return ret;
+    }
+    // wait for responses by workers+agent that all is ok
+    ret = comm::controller::host::gatherResponses();
+    if (ret != DBERR_OK) {
+        return ret;
+    }
+    return ret;
+}
+
 static DB_STATUS performActions() {
     DB_STATUS ret = DBERR_OK;
     // perform the user-requested actions in order
     for(int i=0;i <g_config.actions.size(); i++) {
+        logger::log_task("Performing action:", actionIntToStr(g_config.actions.at(i).type));
         switch(g_config.actions.at(i).type) {
             case ACTION_PERFORM_PARTITIONING:
                 for (auto &it: g_config.datasetInfo.datasets) {
@@ -131,8 +146,15 @@ static DB_STATUS performActions() {
                 }
                 break;
             case ACTION_LOAD_DATASETS:
-                /* instruct workers to load the datasets (MBRs + APRIL)*/
+                /* instruct workers to load the datasets (MBRs)*/
                 ret = initLoadDatasets();
+                if (ret != DBERR_OK) {
+                    return ret;
+                }
+                break;
+            case ACTION_LOAD_APRIL:
+                /* instruct workers to load the APRIL*/
+                ret = initLoadAPRIL();
                 if (ret != DBERR_OK) {
                     return ret;
                 }
@@ -154,7 +176,6 @@ static DB_STATUS performActions() {
             default:
                 logger::log_error(DBERR_INVALID_PARAMETER, "Unknown action. Type:",g_config.actions.at(i).type);
                 return ret;
-                break;
         }
     }
     return DBERR_OK;

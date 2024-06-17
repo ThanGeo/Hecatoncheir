@@ -9,6 +9,11 @@ namespace APRIL
     {
         DB_STATUS saveAPRIL(FILE* pFileALL, FILE* pFileFULL, uint recID, uint sectionID, spatial_lib::AprilDataT* aprilData);
     }
+
+    namespace reader
+    {
+        DB_STATUS loadAPRIL(spatial_lib::DatasetT &dataset);
+    }
 }
 
 #endif
