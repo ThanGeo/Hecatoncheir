@@ -23,7 +23,7 @@ namespace partitioning
      * @param partitionIDs 
      * @return DB_STATUS 
      */
-    DB_STATUS getPartitionsForMBR(double xMin, double yMin, double xMax, double yMax, std::vector<int> &partitionIDs);
+    DB_STATUS getPartitionsForMBR(double xMin, double yMin, double xMax, double yMax, std::vector<int> &partitionIDs, std::vector<spatial_lib::TwoLayerClassE> &twoLayerClasses);
 }
 
 #endif

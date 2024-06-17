@@ -7,7 +7,8 @@ namespace storage
 
         namespace partitionFile
         {
-            DB_STATUS readNextObjectForRasterization(FILE* pFile, int &recID, std::vector<int> &partitionIDs, rasterizerlib::polygon2d &rasterizerPolygon) {
+            DB_STATUS readNextObjectForRasterization(FILE* pFile, int &recID, rasterizerlib::polygon2d &rasterizerPolygon) {
+                std::vector<int> partitions;
                 int intBuf[2];
                 // read recID and partition count
                 size_t elementsRead = fread(&intBuf, sizeof(int), 2, pFile);
@@ -20,9 +21,9 @@ namespace storage
                 // partitionCount
                 int partitionCount = intBuf[1];
                 // read partition IDs
-                partitionIDs.resize(partitionCount);
-                elementsRead = fread(partitionIDs.data(), sizeof(int), partitionCount, pFile);
-                if (elementsRead != partitionCount) {
+                partitions.resize(partitionCount*2);
+                elementsRead = fread(partitions.data(), sizeof(int), partitionCount*2, pFile);
+                if (elementsRead != partitionCount*2) {
                     logger::log_error(DBERR_DISK_READ_FAILED, "Couldn't read the partition IDs");
                     return DBERR_DISK_READ_FAILED;
                 }
@@ -59,12 +60,17 @@ namespace storage
                 polygon.recID = intBuf[0];
                 // partitionCount
                 int partitionCount = intBuf[1];
-                // read partition IDs
-                polygon.partitionIDs.resize(partitionCount);
-                elementsRead = fread(polygon.partitionIDs.data(), sizeof(int), partitionCount, pFile);
-                if (elementsRead != partitionCount) {
+                // read partitions data
+                std::vector<int> partitionVector;
+                partitionVector.resize(partitionCount * 2);
+                elementsRead = fread(partitionVector.data(), sizeof(int), partitionCount * 2, pFile);
+                if (elementsRead != partitionCount * 2) {
                     logger::log_error(DBERR_DISK_READ_FAILED, "Couldn't read the partition IDs");
                     return DBERR_DISK_READ_FAILED;
+                }
+                // store partitions data
+                for (int i=0; i<partitionCount * 2; i+=2) {
+                    polygon.partitions.insert(std::make_pair(partitionVector.at(i), partitionVector.at(i+1)));
                 }
                 // read vertex count
                 elementsRead = fread(&intBuf, sizeof(int), 1, pFile);
@@ -97,6 +103,7 @@ namespace storage
 
             DB_STATUS loadDatasetInfo(FILE* pFile, spatial_lib::DatasetT &dataset) {
                 DB_STATUS ret = DBERR_OK;
+                double xMin, yMin, xMax, yMax;
                 int length;
                 // polygon count
                 size_t elementsRead = fread(&dataset.totalObjects, sizeof(int), 1, pFile);
@@ -120,14 +127,15 @@ namespace storage
                 }
                 // dataspace MBR
                 elementsRead = 0;
-                elementsRead += fread(&dataset.dataspaceInfo.xMinGlobal, sizeof(double), 1, pFile);
-                elementsRead += fread(&dataset.dataspaceInfo.yMinGlobal, sizeof(double), 1, pFile);
-                elementsRead += fread(&dataset.dataspaceInfo.xMaxGlobal, sizeof(double), 1, pFile);
-                elementsRead += fread(&dataset.dataspaceInfo.yMaxGlobal, sizeof(double), 1, pFile);
+                elementsRead += fread(&xMin, sizeof(double), 1, pFile);
+                elementsRead += fread(&yMin, sizeof(double), 1, pFile);
+                elementsRead += fread(&xMax, sizeof(double), 1, pFile);
+                elementsRead += fread(&yMax, sizeof(double), 1, pFile);
                 if (elementsRead != 4) {
                     logger::log_error(DBERR_DISK_READ_FAILED, "Couldn't read the dataset's dataspace MBR");
                     return DBERR_DISK_READ_FAILED;
                 }
+                dataset.dataspaceInfo.set(xMin, yMin, xMax, yMax);
                 // logger::log_success("loaded dataset info:", dataset.totalObjects, dataset.dataType, dataset.nickname, dataset.dataspaceInfo.xMinGlobal, dataset.dataspaceInfo.yMinGlobal, dataset.dataspaceInfo.xMaxGlobal, dataset.dataspaceInfo.yMaxGlobal);
                 return ret;
             }

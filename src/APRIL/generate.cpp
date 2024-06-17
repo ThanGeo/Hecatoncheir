@@ -6,7 +6,6 @@ namespace APRIL
     DB_STATUS generate(spatial_lib::DatasetT &dataset) {
         DB_STATUS ret = DBERR_OK;
         int recID, vertexCount;
-        std::vector<int> partitionIDs;
         double xMin, yMin, xMax, yMax;
         double coordLoadSpace[1000000];
         int objectsInFullFile = 0;
@@ -53,7 +52,7 @@ namespace APRIL
         for(int i=0; i<dataset.totalObjects; i++){
             rasterizerlib::polygon2d rasterizerPolygon;
             // get next object to rasterize
-            ret = storage::reader::partitionFile::readNextObjectForRasterization(pFile, recID, partitionIDs, rasterizerPolygon);
+            ret = storage::reader::partitionFile::readNextObjectForRasterization(pFile, recID, rasterizerPolygon);
             if (ret != DBERR_OK) {
                 logger::log_error(ret, "Failed while reading polygon number",i,"from partition file");
                 goto CLOSE_AND_EXIT;

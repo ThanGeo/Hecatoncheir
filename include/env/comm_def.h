@@ -92,7 +92,7 @@ struct SerializedMsgT {
 typedef struct Geometry {
     int recID;
     int partitionCount;
-    std::vector<int> partitionIDs;
+    std::vector<int> partitions;    // tuples of <partition ID, twolayer class>
     int vertexCount;
     std::vector<double> coords;
 
@@ -102,17 +102,20 @@ typedef struct Geometry {
         this->coords = coords;
     }
 
-    Geometry(int recID, std::vector<int> &partitionIDs, int vertexCount, std::vector<double> &coords) {
+    Geometry(int recID, std::vector<int> &partitions, int vertexCount, std::vector<double> &coords) {
         this->recID = recID;
-        this->partitionIDs = partitionIDs;
-        this->partitionCount = partitionIDs.size(); 
+        this->partitions = partitions;
+        this->partitionCount = partitions.size() / 2; 
         this->vertexCount = vertexCount;
         this->coords = coords;
     }
 
 
-    void setPartitionIDs(std::vector<int> &ids) {
-        this->partitionIDs = ids;
+    void setPartitions(std::vector<int> &ids, std::vector<spatial_lib::TwoLayerClassE> &classes) {
+        for (int i=0; i<ids.size(); i++) {
+            partitions.emplace_back(ids.at(i));
+            partitions.emplace_back(classes.at(i));
+        }
         this->partitionCount = ids.size();
     }
 
@@ -149,7 +152,7 @@ typedef struct GeometryBatch {
         for (auto &it: geometries) {
             size += sizeof(it.recID);
             size += sizeof(int);    // partition count
-            size += it.partitionIDs.size() * sizeof(int); // partition ids
+            size += it.partitions.size() * 2 * sizeof(int); // partitions id + class
             size += sizeof(it.vertexCount); // vertex count
             size += it.vertexCount * 2 * sizeof(double);    // vertices
         }
@@ -183,8 +186,8 @@ typedef struct GeometryBatch {
             localBuffer += sizeof(int);
             *reinterpret_cast<int*>(localBuffer) = it.partitionCount;
             localBuffer += sizeof(int);
-            std::memcpy(localBuffer, it.partitionIDs.data(), it.partitionIDs.size() * sizeof(int));
-            localBuffer += it.partitionIDs.size() * sizeof(int);
+            std::memcpy(localBuffer, it.partitions.data(), it.partitionCount * 2 * sizeof(int));
+            localBuffer += it.partitionCount * 2 * sizeof(int);
             *reinterpret_cast<int*>(localBuffer) = it.vertexCount;
             localBuffer += sizeof(int);
             std::memcpy(localBuffer, it.coords.data(), it.vertexCount * 2 * sizeof(double));
@@ -218,26 +221,26 @@ typedef struct GeometryBatch {
             // partition count
             partitionCount = *reinterpret_cast<const int*>(localBuffer);
             localBuffer += sizeof(int);
-            // partitions ids
-            std::vector<int> partitionIDs(partitionCount);
+            // partitions
+            std::vector<int> partitions(partitionCount * 2);
             const int* partitionPtr = reinterpret_cast<const int*>(localBuffer);
-            for (size_t j = 0; j < partitionCount; ++j) {
-                partitionIDs[j] = partitionPtr[j];
+            for (size_t j = 0; j < partitionCount*2; j++) {
+                partitions[j] = partitionPtr[j];
             }
-            localBuffer += partitionCount * sizeof(int);
+            localBuffer += partitionCount * 2 * sizeof(int);
             // vertex count
             vertexCount = *reinterpret_cast<const int*>(localBuffer);
             localBuffer += sizeof(int);
             // vertices
             std::vector<double> coords(vertexCount * 2);
             const double* vertexDataPtr = reinterpret_cast<const double*>(localBuffer);
-            for (size_t j = 0; j < vertexCount * 2; ++j) {
+            for (size_t j = 0; j < vertexCount * 2; j++) {
                 coords[j] = vertexDataPtr[j];
             }
             localBuffer += vertexCount * 2 * sizeof(double);
             
             // add to batch
-            GeometryT geometry(recID, partitionIDs, vertexCount, coords);
+            GeometryT geometry(recID, partitions, vertexCount, coords);
             this->addGeometryToBatch(geometry);
         }
     }

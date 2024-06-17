@@ -13,20 +13,55 @@ namespace partitioning
         }
     }
     
-    DB_STATUS getPartitionsForMBR(double xMin, double yMin, double xMax, double yMax, std::vector<int> &partitionIDs){
+    DB_STATUS getPartitionsForMBR(double xMin, double yMin, double xMax, double yMax, std::vector<int> &partitionIDs, std::vector<spatial_lib::TwoLayerClassE> &twoLayerClasses){
         int minPartitionX = (xMin - g_config.datasetInfo.dataspaceInfo.xMinGlobal) / (g_config.datasetInfo.dataspaceInfo.xExtent / g_config.partitioningInfo.partitionsPerDimension);
         int minPartitionY = (yMin - g_config.datasetInfo.dataspaceInfo.yMinGlobal) / (g_config.datasetInfo.dataspaceInfo.yExtent / g_config.partitioningInfo.partitionsPerDimension);
         int maxPartitionX = (xMax - g_config.datasetInfo.dataspaceInfo.xMinGlobal) / (g_config.datasetInfo.dataspaceInfo.xExtent / g_config.partitioningInfo.partitionsPerDimension);
         int maxPartitionY = (yMax - g_config.datasetInfo.dataspaceInfo.yMinGlobal) / (g_config.datasetInfo.dataspaceInfo.yExtent / g_config.partitioningInfo.partitionsPerDimension);
+        
+        int startPartitionID = g_config.partitioningInfo.getCellID(minPartitionX, minPartitionY);
+        int lastPartitionID = g_config.partitioningInfo.getCellID(maxPartitionX, maxPartitionY);
+        if (startPartitionID < 0 || startPartitionID > g_config.partitioningInfo.partitionsPerDimension*g_config.partitioningInfo.partitionsPerDimension -1) {
+            logger::log_error(DBERR_INVALID_PARTITION, "Start partition ID calculated wrong");
+            return DBERR_INVALID_PARTITION;
+        }
+        if (lastPartitionID < 0 || lastPartitionID > g_config.partitioningInfo.partitionsPerDimension*g_config.partitioningInfo.partitionsPerDimension -1) {
+            logger::log_error(DBERR_INVALID_PARTITION, "Last partition ID calculated wrong");
+            return DBERR_INVALID_PARTITION;
+        }
+
+        if (startPartitionID == lastPartitionID) {
+            // class A only
+            twoLayerClasses.emplace_back(spatial_lib::CLASS_A);
+            partitionIDs.emplace_back(startPartitionID);
+            return DBERR_OK;
+        }
+        // class A
+        twoLayerClasses.emplace_back(spatial_lib::CLASS_A);
+        partitionIDs.emplace_back(startPartitionID);
+        // loop overlapping partitions
         for (int i=minPartitionX; i<=maxPartitionX; i++) {
-            for (int j=minPartitionY; j<=maxPartitionY; j++) {
-                int partitionID = g_config.partitioningInfo.getCellID(i, j);
-                if (partitionID < 0) {
-                    logger::log_error(DBERR_INVALID_PARTITION, "Partition id calculated to be less than zero");
+            if (i != minPartitionX) {
+                int partitionID = g_config.partitioningInfo.getCellID(i, minPartitionY);
+                if (partitionID < 0 || partitionID > g_config.partitioningInfo.partitionsPerDimension*g_config.partitioningInfo.partitionsPerDimension -1) {
+                    logger::log_error(DBERR_INVALID_PARTITION, "Partition ID calculated wrong");
                     return DBERR_INVALID_PARTITION;
                 }
-                if (partitionID > g_config.partitioningInfo.partitionsPerDimension*g_config.partitioningInfo.partitionsPerDimension -1) {
-                    logger::log_error(DBERR_INVALID_PARTITION, "Partition id calculated to be larger than numberOfPartitions^2 -1");
+                partitionIDs.emplace_back(startPartitionID);
+                // class C
+                twoLayerClasses.emplace_back(spatial_lib::CLASS_C);
+            }
+            for (int j=minPartitionY+1; j<=maxPartitionY; j++) {
+                if (i == minPartitionX) {
+                    // class B
+                    twoLayerClasses.emplace_back(spatial_lib::CLASS_B);
+                } else {
+                    // class D
+                    twoLayerClasses.emplace_back(spatial_lib::CLASS_D);
+                }
+                int partitionID = g_config.partitioningInfo.getCellID(i, j);
+                if (partitionID < 0 || partitionID > g_config.partitioningInfo.partitionsPerDimension*g_config.partitioningInfo.partitionsPerDimension -1) {
+                    logger::log_error(DBERR_INVALID_PARTITION, "Partition ID calculated wrong");
                     return DBERR_INVALID_PARTITION;
                 }
                 partitionIDs.emplace_back(partitionID);
@@ -65,15 +100,15 @@ namespace partitioning
      * @return DB_STATUS 
      */
     static DB_STATUS assignGeometryToBatches(GeometryT &geometry, double geoXmin, double geoYmin, double geoXmax, double geoYmax, std::unordered_map<int,GeometryBatchT> &batchMap, int &batchesSent) {
-        // find partition IDs
+        // find partition IDs and the class of the geometry in each partition
         std::vector<int> partitionIDs;
-        DB_STATUS ret = partitioning::getPartitionsForMBR(geoXmin, geoYmin, geoXmax, geoYmax, partitionIDs);
+        std::vector<spatial_lib::TwoLayerClassE> twoLayerClasses;
+        DB_STATUS ret = partitioning::getPartitionsForMBR(geoXmin, geoYmin, geoXmax, geoYmax, partitionIDs, twoLayerClasses);
         if (ret != DBERR_OK) {
             return ret;
         }
-        // set
-        geometry.setPartitionIDs(partitionIDs);
-
+        // set partitions to object
+        geometry.setPartitions(partitionIDs, twoLayerClasses);
         // find which nodes need to receive this geometry
         std::vector<bool> bitVector(g_world_size, false);
         // get receiving worker ranks

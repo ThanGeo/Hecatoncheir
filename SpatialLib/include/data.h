@@ -149,7 +149,7 @@ namespace spatial_lib
      */
     typedef struct Polygon {
         int recID;
-        std::vector<int> partitionIDs;
+        std::unordered_map<int, int> partitions;
         MbrT mbr;
         bg_polygon boostPolygon;
         AprilDataT aprilData;

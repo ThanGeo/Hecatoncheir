@@ -14,7 +14,7 @@ namespace storage
              * @brief reads the next object from an opened partition file and returns the rasterizer polygon object, that will be used in the rasterizer library
              *  to create april
              */
-            DB_STATUS readNextObjectForRasterization(FILE* pFile, int &recID, std::vector<int> &partitionIDs, rasterizerlib::polygon2d &rasterizerPolygon);
+            DB_STATUS readNextObjectForRasterization(FILE* pFile, int &recID, rasterizerlib::polygon2d &rasterizerPolygon);
 
             /**
              * @brief reads the next object from an opened partition file and fills the polygon struct with the following information:

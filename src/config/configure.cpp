@@ -122,7 +122,7 @@ namespace configure
             if (datasetStmt->datasetCount == 2) {
                 spatial_lib::DatasetT S;
                 // build dataset S objects
-                S.dataspaceInfo = g_config.datasetInfo.dataspaceInfo;
+                S.dataspaceInfo = g_config.datasetInfo.dataspaceInfo;   //todo: this does not look good
                 S.dataType = datasetStmt->datatypeS;
 
                 ret = statement::getFiletype(datasetStmt->filetypeS, S.fileType);

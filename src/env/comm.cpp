@@ -575,9 +575,16 @@ STOP_LISTENING:
                     goto EXIT_SAFELY;
                 }
 
+                // setup two layer filter
+                ret = twolayer::setup(dataset);
+                if (ret != DBERR_OK) {
+                    logger::log_error(DBERR_DISK_READ_FAILED, "Two layer setup failed");
+                    goto EXIT_SAFELY;
+                }
+
                 // add to configuration
                 g_config.datasetInfo.addDataset(dataset);
-                logger::log_success("Loaded dataset", dataset.nickname,"with",dataset.totalObjects,"total objects and", dataset.index.size(),"partitions");
+                // logger::log_success("Loaded dataset", dataset.nickname,"with",dataset.totalObjects,"total objects and", dataset.index.size(),"partitions");
             }
 EXIT_SAFELY:
             // respond

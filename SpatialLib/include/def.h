@@ -76,7 +76,17 @@ namespace spatial_lib
 
     typedef struct DataspaceInfo {
         double xMinGlobal, yMinGlobal, xMaxGlobal, yMaxGlobal;  // global bounds based on dataset bounds
-        double xExtent, yExtent;
+        double xExtent, yExtent, maxExtent;
+
+        void set(double xMinGlobal, double yMinGlobal, double xMaxGlobal, double yMaxGlobal) {
+            this->xMinGlobal = xMinGlobal;
+            this->yMinGlobal = yMinGlobal;
+            this->xMaxGlobal = xMaxGlobal;
+            this->yMaxGlobal = yMaxGlobal;
+            this->xExtent = this->xMaxGlobal - this->xMinGlobal;
+            this->yExtent = this->yMaxGlobal - this->yMinGlobal;
+            this->maxExtent = std::max(this->xExtent, this->yExtent);
+        }
 
         void clear() {
             xMinGlobal = 0;
@@ -87,6 +97,25 @@ namespace spatial_lib
             yExtent = 0;
         }
     } DataspaceInfoT;
+
+    typedef struct TwoLayerIndex {
+        // key = partitionID, value = vector of polygon references
+        std::unordered_map<int,std::vector<PolygonT*>> classA;
+        std::unordered_map<int,std::vector<PolygonT*>> classB;
+        std::unordered_map<int,std::vector<PolygonT*>> classC;
+        std::unordered_map<int,std::vector<PolygonT*>> classD;
+
+        void assignPolygonToClasses(int partitionID, PolygonT* polygon) {
+            
+        }
+    } TwoLayerIndexT;
+
+    typedef enum TwoLayerClass {
+        CLASS_A,
+        CLASS_B,
+        CLASS_C,
+        CLASS_D,
+    } TwoLayerClassE;
 
     typedef struct Dataset{
         DataTypeE dataType;
@@ -104,6 +133,8 @@ namespace spatial_lib
         std::unordered_map<int, PolygonT> polygons;
         // index
         std::unordered_map<int, std::vector<PolygonT*>> index;  // todo: maybe store <partitionID, std::vector<recID>> instead
+        // two layer
+        TwoLayerIndexT twoLayerIndex;
         /* approximations */ 
         ApproximationTypeE approxType;
         // APRIL
@@ -114,6 +145,15 @@ namespace spatial_lib
         /**
          * Methods
         */
+
+        void normalizeMBRs() {
+            for (auto &it: polygons) {
+                it.second.mbr.minPoint.x = (it.second.mbr.minPoint.x - dataspaceInfo.xMinGlobal) / dataspaceInfo.maxExtent;
+                it.second.mbr.minPoint.y = (it.second.mbr.minPoint.y - dataspaceInfo.yMinGlobal) / dataspaceInfo.maxExtent;
+                it.second.mbr.maxPoint.x = (it.second.mbr.maxPoint.x - dataspaceInfo.xMinGlobal) / dataspaceInfo.maxExtent;
+                it.second.mbr.maxPoint.y = (it.second.mbr.maxPoint.y - dataspaceInfo.yMinGlobal) / dataspaceInfo.maxExtent;
+            }
+        }
 
         PolygonT* getPolygonByID(int recID) {
             auto it = polygons.find(recID);
@@ -133,7 +173,8 @@ namespace spatial_lib
                 return;
             }
             // insert reference to partition index
-            for (auto &partitionID: polygon.partitionIDs) {
+            for (auto &partitionIT: polygon.partitions) {
+                int partitionID = partitionIT.second;
                 auto it = index.find(partitionID);
                 if (it == index.end()) {
                     std::vector<PolygonT*> newVec = {polRef};
@@ -142,6 +183,8 @@ namespace spatial_lib
                     it->second.emplace_back(polRef);
                 }
             }
+            // assign to classes for two layer
+            
         }
 
         // calculate the size needed for the serialization buffer
@@ -198,6 +241,7 @@ namespace spatial_lib
         void deserialize(const char *buffer, int bufferSize) {
             int nicknameLength;
             int position = 0;
+            double xMin, yMin, xMax, yMax;
             
             // dataset data type
             memcpy(&dataType, buffer + position, sizeof(DataTypeE));
@@ -208,14 +252,16 @@ namespace spatial_lib
             nickname.assign(buffer + position, nicknameLength);
             position += nicknameLength * sizeof(char);
             // dataset dataspace MBR
-            memcpy(&dataspaceInfo.xMinGlobal, buffer + position, sizeof(double));
+            memcpy(&xMin, buffer + position, sizeof(double));
             position += sizeof(double);
-            memcpy(&dataspaceInfo.yMinGlobal, buffer + position, sizeof(double));
+            memcpy(&yMin, buffer + position, sizeof(double));
             position += sizeof(double);
-            memcpy(&dataspaceInfo.xMaxGlobal, buffer + position, sizeof(double));
+            memcpy(&xMax, buffer + position, sizeof(double));
             position += sizeof(double);
-            memcpy(&dataspaceInfo.yMaxGlobal, buffer + position, sizeof(double));
+            memcpy(&yMax, buffer + position, sizeof(double));
             position += sizeof(double);
+            // set
+            dataspaceInfo.set(xMin, yMin, xMax, yMax);
 
             if (position == bufferSize) {
                 // all is well
