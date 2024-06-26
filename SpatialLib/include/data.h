@@ -149,6 +149,7 @@ namespace spatial_lib
      */
     typedef struct Polygon {
         int recID;
+        // partitionID -> class type of object in this partition
         std::unordered_map<int, int> partitions;
         MbrT mbr;
         bg_polygon boostPolygon;

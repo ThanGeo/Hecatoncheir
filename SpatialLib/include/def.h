@@ -98,24 +98,31 @@ namespace spatial_lib
         }
     } DataspaceInfoT;
 
-    typedef struct TwoLayerIndex {
-        // key = partitionID, value = vector of polygon references
-        std::unordered_map<int,std::vector<PolygonT*>> classA;
-        std::unordered_map<int,std::vector<PolygonT*>> classB;
-        std::unordered_map<int,std::vector<PolygonT*>> classC;
-        std::unordered_map<int,std::vector<PolygonT*>> classD;
-
-        void assignPolygonToClasses(PolygonT* polygon) {
-            
-        }
-    } TwoLayerIndexT;
-
     typedef enum TwoLayerClass {
         CLASS_A,
         CLASS_B,
         CLASS_C,
         CLASS_D,
     } TwoLayerClassE;
+
+    typedef struct TwoLayerContainer {
+        std::unordered_map<TwoLayerClassE, std::vector<PolygonT*>> classIndex;
+
+        std::vector<PolygonT*>* getOrCreateContainerClassContents(TwoLayerClassE classType);
+        void createClassEntry(TwoLayerClassE classType);
+    } TwoLayerContainerT;
+
+    typedef struct TwoLayerIndex {
+        
+        std::unordered_map<int, TwoLayerContainerT> partitionIndex;
+
+        void addObject(int partitionID, TwoLayerClassE classType, PolygonT* polRef);
+
+        TwoLayerContainerT* getOrCreatePartition(int partitionID);
+        void createPartitionEntry(int partitionID);
+
+    } TwoLayerIndexT;
+
 
     typedef struct Dataset{
         DataTypeE dataType;
@@ -146,182 +153,31 @@ namespace spatial_lib
          * Methods
         */
 
-        void normalizeMBRs() {
-            for (auto &it: polygons) {
-                it.second.mbr.minPoint.x = (it.second.mbr.minPoint.x - dataspaceInfo.xMinGlobal) / dataspaceInfo.maxExtent;
-                it.second.mbr.minPoint.y = (it.second.mbr.minPoint.y - dataspaceInfo.yMinGlobal) / dataspaceInfo.maxExtent;
-                it.second.mbr.maxPoint.x = (it.second.mbr.maxPoint.x - dataspaceInfo.xMinGlobal) / dataspaceInfo.maxExtent;
-                it.second.mbr.maxPoint.y = (it.second.mbr.maxPoint.y - dataspaceInfo.yMinGlobal) / dataspaceInfo.maxExtent;
-            }
-        }
-
-        PolygonT* getPolygonByID(int recID) {
-            auto it = polygons.find(recID);
-            if (it == polygons.end()) {
-                return nullptr;
-            }
-            return &it->second;
-        }
-
-        void addPolygon(PolygonT &polygon) {
-            // insert to map
-            polygons.insert(std::make_pair(polygon.recID, polygon));
-            // get reference
-            PolygonT* polRef = getPolygonByID(polygon.recID);
-            if (polRef == nullptr) {
-                // definitely an error if this happens
-                return;
-            }
-            // insert reference to partition index
-            for (auto &partitionIT: polygon.partitions) {
-                int partitionID = partitionIT.second;
-                auto it = index.find(partitionID);
-                if (it == index.end()) {
-                    std::vector<PolygonT*> newVec = {polRef};
-                    index.insert(std::make_pair(partitionID, newVec));
-                } else {
-                    it->second.emplace_back(polRef);
-                }
-            }
-            // assign to classes for two layer
-            twoLayerIndex.assignPolygonToClasses(polRef);
-            
-        }
-
+        // normalizes the MBRs based on the dataspace info bounds
+        void normalizeMBRs();
+        /**
+         * returns a reference to the polygon object of the given id
+         */
+        PolygonT* getPolygonByID(int recID);
+        /**
+         * adds a polygon to all related data structures.
+         */
+        void addPolygon(PolygonT &polygon);
         // calculate the size needed for the serialization buffer
-        int calculateBufferSize() {
-            int size = 0;
-            // dataset data type
-            size += sizeof(DataTypeE);
-            // dataset nickname: length + string
-            size += sizeof(int) + (nickname.length() * sizeof(char));     
-            // dataset's dataspace info (MBR)
-            size += 4 * sizeof(double);
-            
-            return size;
-        }
-
+        int calculateBufferSize();
         /**
          * serialize dataset info (only specific stuff)
          */
-        int serialize(char **buffer) {
-            int position = 0;
-            // calculate size
-            int bufferSize = calculateBufferSize();
-            // allocate space
-            char* localBuffer = (char*) malloc(bufferSize * sizeof(char));
-
-            if (localBuffer == NULL) {
-                // malloc failed
-                return -1;
-            }
-
-            // add datatype
-            memcpy(localBuffer + position, &dataType, sizeof(DataTypeE));
-            position += sizeof(DataTypeE);
-            // add dataset nickname length + string
-            int nicknameLength = nickname.length();
-            memcpy(localBuffer + position, &nicknameLength, sizeof(int));
-            position += sizeof(int);
-            memcpy(localBuffer + position, nickname.data(), nicknameLength);
-            position += nicknameLength * sizeof(char);
-            // add dataset's dataspace MBR
-            memcpy(localBuffer + position, &dataspaceInfo.xMinGlobal, sizeof(double));
-            position += sizeof(double);
-            memcpy(localBuffer + position, &dataspaceInfo.yMinGlobal, sizeof(double));
-            position += sizeof(double);
-            memcpy(localBuffer + position, &dataspaceInfo.xMaxGlobal, sizeof(double));
-            position += sizeof(double);
-            memcpy(localBuffer + position, &dataspaceInfo.yMaxGlobal, sizeof(double));
-            position += sizeof(double);
-            // set and return
-            (*buffer) = localBuffer;
-            return bufferSize;
-        }
-
-        void deserialize(const char *buffer, int bufferSize) {
-            int nicknameLength;
-            int position = 0;
-            double xMin, yMin, xMax, yMax;
-            
-            // dataset data type
-            memcpy(&dataType, buffer + position, sizeof(DataTypeE));
-            position += sizeof(DataTypeE);
-            // dataset nickname length + string
-            memcpy(&nicknameLength, buffer + position, sizeof(int));
-            position += sizeof(int);
-            nickname.assign(buffer + position, nicknameLength);
-            position += nicknameLength * sizeof(char);
-            // dataset dataspace MBR
-            memcpy(&xMin, buffer + position, sizeof(double));
-            position += sizeof(double);
-            memcpy(&yMin, buffer + position, sizeof(double));
-            position += sizeof(double);
-            memcpy(&xMax, buffer + position, sizeof(double));
-            position += sizeof(double);
-            memcpy(&yMax, buffer + position, sizeof(double));
-            position += sizeof(double);
-            // set
-            dataspaceInfo.set(xMin, yMin, xMax, yMax);
-
-            if (position == bufferSize) {
-                // all is well
-            }
-        }
-
+        int serialize(char **buffer);
+        /**
+         * deserializes a serialized buffer that contains the dataset info, 
+         * into this Dataset object
+         */
+        void deserialize(const char *buffer, int bufferSize);
         // APRIL
-        void addAprilDataToApproximationDataMap(const uint sectionID, const uint recID, const AprilDataT &aprilData) {
-            // store april data
-            this->sectionMap[sectionID].aprilData.insert(std::make_pair(recID, aprilData));
-            // store mapping recID -> sectionID
-            auto it = this->recToSectionIdMap.find(recID);
-            if (it != this->recToSectionIdMap.end()) {
-                // exists
-                it->second.emplace_back(sectionID);
-            } else {
-                // doesnt exist, new entry
-                std::vector<uint> sectionIDs = {sectionID};
-                this->recToSectionIdMap.insert(std::make_pair(recID, sectionIDs));
-            }
-        }
-
-        void addObjectToSectionMap(const uint sectionID, const uint recID) {
-            AprilDataT aprilData;
-            this->sectionMap[sectionID].aprilData.insert(std::make_pair(recID, aprilData));
-            // store mapping recID -> sectionID
-            auto it = this->recToSectionIdMap.find(recID);
-            if (it != this->recToSectionIdMap.end()) {
-                // exists
-                it->second.emplace_back(sectionID);
-            } else {
-                // doesnt exist, new entry
-                std::vector<uint> sectionIDs = {sectionID};
-                this->recToSectionIdMap.insert(std::make_pair(recID, sectionIDs));
-            }
-        }
-
-        void addIntervalsToAprilData(const uint sectionID, const uint recID, const int numIntervals, const std::vector<uint> &intervals, const bool ALL) {
-            // retrieve section
-            auto secIT = this->sectionMap.find(sectionID);
-            if (secIT == this->sectionMap.end()) {
-                printf("Error: could not find section ID %d in dataset section map\n", sectionID);
-                return;
-            }
-            // retrieve object
-            auto it = secIT->second.aprilData.find(recID);
-            if (it == secIT->second.aprilData.end()) {
-                printf("Error: could not find rec ID %d in section map\n", recID);
-                return;
-            }
-            // replace intervals in april data
-            if (ALL) {
-                it->second.numIntervalsALL = numIntervals;
-                it->second.intervalsALL = intervals;
-            } else {
-                it->second.numIntervalsFULL = numIntervals;
-                it->second.intervalsFULL = intervals;
-            }
-        }
+        void addAprilDataToApproximationDataMap(const uint sectionID, const uint recID, const AprilDataT &aprilData);
+        void addObjectToSectionMap(const uint sectionID, const uint recID);
+        void addIntervalsToAprilData(const uint sectionID, const uint recID, const int numIntervals, const std::vector<uint> &intervals, const bool ALL);
     }DatasetT;
 
     typedef struct Query{

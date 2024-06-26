@@ -107,6 +107,12 @@ namespace partitioning
         if (ret != DBERR_OK) {
             return ret;
         }
+        // if (geometry.recID == 3) {
+        //     logger::log_task("Object",3,"has",partitionIDs.size(),"partitions:");
+        //     for(int i=0; i<partitionIDs.size(); i++) {
+        //         logger::log_task("id:",partitionIDs.at(i),"class:",twoLayerClasses.at(i));
+        //     }
+        // }
         // set partitions to object
         geometry.setPartitions(partitionIDs, twoLayerClasses);
         // find which nodes need to receive this geometry
