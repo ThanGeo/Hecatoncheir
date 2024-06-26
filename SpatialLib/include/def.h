@@ -105,7 +105,7 @@ namespace spatial_lib
         std::unordered_map<int,std::vector<PolygonT*>> classC;
         std::unordered_map<int,std::vector<PolygonT*>> classD;
 
-        void assignPolygonToClasses(int partitionID, PolygonT* polygon) {
+        void assignPolygonToClasses(PolygonT* polygon) {
             
         }
     } TwoLayerIndexT;
@@ -184,6 +184,7 @@ namespace spatial_lib
                 }
             }
             // assign to classes for two layer
+            twoLayerIndex.assignPolygonToClasses(polRef);
             
         }
 

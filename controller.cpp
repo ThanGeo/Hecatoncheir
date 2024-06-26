@@ -135,7 +135,7 @@ static DB_STATUS performActions() {
     DB_STATUS ret = DBERR_OK;
     // perform the user-requested actions in order
     for(int i=0;i <g_config.actions.size(); i++) {
-        logger::log_task("Performing action:", actionIntToStr(g_config.actions.at(i).type));
+        logger::log_task("*** Action:", actionIntToStr(g_config.actions.at(i).type));
         switch(g_config.actions.at(i).type) {
             case ACTION_PERFORM_PARTITIONING:
                 for (auto &it: g_config.datasetInfo.datasets) {

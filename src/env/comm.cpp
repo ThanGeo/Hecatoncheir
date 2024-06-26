@@ -537,7 +537,7 @@ STOP_LISTENING:
             // execute
             
 
-            // respond with ACK
+            // respond with result
 
             return ret;
         }
@@ -666,8 +666,6 @@ EXIT_SAFELY:
          * @brief pulls incoming message sent by the local controller 
          * (the one probed last, whose info is stored in the status parameter)
          * Based on the tag of the message, it performs the corresponding request.
-         * @param status 
-         * @return DB_STATUS 
          */
         static DB_STATUS pullIncoming(MPI_Status status) {
             DB_STATUS ret = DBERR_OK;
@@ -692,13 +690,6 @@ EXIT_SAFELY:
                         return ret;
                     }
                     break;
-                case MSG_QUERY_INIT:
-                    /* query info */
-                    ret = handleQueryInfoMessage(status);
-                    if (ret != DBERR_OK) {
-                        return ret;
-                    }
-                    break;
                 case MSG_LOAD_DATASETS:
                     /* load datasets */
                     ret = handleLoadDatasetsMessage(status);
@@ -709,6 +700,13 @@ EXIT_SAFELY:
                 case MSG_LOAD_APRIL:
                     /* load datasets */
                     ret = handleLoadAPRILMessage(status);
+                    if (ret != DBERR_OK) {
+                        return ret;
+                    }
+                    break;
+                case MSG_QUERY_INIT:
+                    /* query info */
+                    ret = handleQueryInfoMessage(status);
                     if (ret != DBERR_OK) {
                         return ret;
                     }

@@ -383,6 +383,7 @@ namespace parser
         // get query type int
         int queryType = spatial_lib::mapping::queryTypeStrToInt(queryStmt->queryType);
         if (queryType == -1) {
+            logger::log_error(DBERR_INVALID_PARAMETER, "Invalid query type:", queryStmt->queryType);
             return DBERR_INVALID_PARAMETER;
         }
         // verify query validity with input datasets
