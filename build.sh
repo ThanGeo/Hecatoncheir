@@ -51,7 +51,7 @@ if [ "$systype" = "cluster" ]; then
   # sync fynction
   sync_code() {
     local node=$1
-    rsync -q -avz -e "ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no" --delete $SOURCE_DIR/ ${node}:${DEST_DIR}/
+    rsync -q -avz -e "ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no" --delete --exclude="data/" $SOURCE_DIR/ ${node}:${DEST_DIR}/
   }
   echo "-- Syncing code across machines..."
   # sync for each node and append to hostfile

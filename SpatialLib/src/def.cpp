@@ -198,8 +198,10 @@ namespace spatial_lib
         printf("\n");
     }
 
+    
+
     void TwoLayerContainer::createClassEntry(TwoLayerClassE classType) {
-        std::vector<PolygonT*> vec;
+        std::vector<PolygonT> vec;
         auto it = classIndex.find(classType);
         if (it == classIndex.end()) {
             classIndex.insert(std::make_pair(classType, vec));
@@ -208,14 +210,23 @@ namespace spatial_lib
         }
     }
 
-    std::vector<PolygonT*>* TwoLayerContainer::getOrCreateContainerClassContents(TwoLayerClassE classType) {
+    std::vector<PolygonT>* TwoLayerContainer::getOrCreateContainerClassContents(TwoLayerClassE classType) {
         auto it = classIndex.find(classType);
         if (it == classIndex.end()) {
             // does not exist, create
             createClassEntry(classType);
             // return its reference
-            std::vector<PolygonT*>* ref = &classIndex.find(classType)->second;
-            return ref;
+            return &classIndex.find(classType)->second;
+        }
+        // exists
+        return &it->second;
+    }
+
+    std::vector<PolygonT>* TwoLayerContainer::getContainerClassContents(TwoLayerClassE classType) {
+        auto it = classIndex.find(classType);
+        if (it == classIndex.end()) {
+            // does not exist
+            return nullptr;
         }
         // exists
         return &it->second;
@@ -244,58 +255,65 @@ namespace spatial_lib
         return &it->second;
     }
 
-    void TwoLayerIndex::addObject(int partitionID, TwoLayerClassE classType, PolygonT* polRef) {
+    TwoLayerContainerT* TwoLayerIndex::getPartition(int partitionID) {
+        auto it = partitionIndex.find(partitionID);
+        if (it == partitionIndex.end()) {
+            // does not exist
+            return nullptr;
+        } 
+        // exists
+        return &it->second;
+    }
+
+    void TwoLayerIndex::addObject(int partitionID, TwoLayerClassE classType, PolygonT &pol) {
         // get or create new partition entry
         TwoLayerContainerT* partition = getOrCreatePartition(partitionID);
         
         // get or create new class entry of this class type, for this partition
-        std::vector<PolygonT*>* classObjects = partition->getOrCreateContainerClassContents(classType);
+        std::vector<PolygonT>* classObjects = partition->getOrCreateContainerClassContents(classType);
         
+        // printf("Adding polygon %d with MBR: (%f,%f),(%f,%f)\n", polRef->recID, polRef->mbr.minPoint.x, polRef->mbr.minPoint.y, polRef->mbr.maxPoint.x, polRef->mbr.maxPoint.y);
+
         // add object
-        classObjects->emplace_back(polRef);
+        classObjects->emplace_back(pol);
     }
 
-    void Dataset::normalizeMBRs() {
-        for (auto &it: polygons) {
-            it.second.mbr.minPoint.x = (it.second.mbr.minPoint.x - dataspaceInfo.xMinGlobal) / dataspaceInfo.maxExtent;
-            it.second.mbr.minPoint.y = (it.second.mbr.minPoint.y - dataspaceInfo.yMinGlobal) / dataspaceInfo.maxExtent;
-            it.second.mbr.maxPoint.x = (it.second.mbr.maxPoint.x - dataspaceInfo.xMinGlobal) / dataspaceInfo.maxExtent;
-            it.second.mbr.maxPoint.y = (it.second.mbr.maxPoint.y - dataspaceInfo.yMinGlobal) / dataspaceInfo.maxExtent;
+
+    bool compareByY(const PolygonT &a, const PolygonT &b) {
+        return a.mbr.minPoint.y < b.mbr.minPoint.y;
+    }
+
+    void TwoLayerIndex::sortPartitionsOnY() {
+        for (auto &it: partitionIndex) {
+            // sort A
+            std::vector<PolygonT>* objectsA = it.second.getContainerClassContents(CLASS_A);
+            if (objectsA != nullptr) {
+                std::sort(objectsA->begin(), objectsA->end(), compareByY);
+            }
+            // sort C
+            std::vector<PolygonT>* objectsC = it.second.getContainerClassContents(CLASS_C);
+            if (objectsC != nullptr) {
+                std::sort(objectsC->begin(), objectsC->end(), compareByY);
+            }
         }
     }
 
-    PolygonT* Dataset::getPolygonByID(int recID) {
-        auto it = polygons.find(recID);
-        if (it == polygons.end()) {
-            return nullptr;
-        }
-        return &it->second;
-    }
+    // PolygonT* Dataset::getPolygonByID(int recID) {
+    //     auto it = polygons.find(recID);
+    //     if (it == polygons.end()) {
+    //         return nullptr;
+    //     }
+    //     return &it->second;
+    // }
 
     void Dataset::addPolygon(PolygonT &polygon) {
-        // insert to map
-        polygons.insert(std::make_pair(polygon.recID, polygon));
-        // get reference
-        PolygonT* polRef = getPolygonByID(polygon.recID);
-        if (polRef == nullptr) {
-            // definitely an error if this happens
-            return;
-        }
         // insert reference to partition index
         for (auto &partitionIT: polygon.partitions) {
             int partitionID = partitionIT.first;
             TwoLayerClassE classType = (TwoLayerClassE) partitionIT.second;
-            auto it = index.find(partitionID);
-            if (it == index.end()) {
-                std::vector<PolygonT*> newVec = {polRef};
-                index.insert(std::make_pair(partitionID, newVec));
-            } else {
-                it->second.emplace_back(polRef);
-            }
             // add to twolayer index
-            twoLayerIndex.addObject(partitionID, classType, polRef);
+            this->twoLayerIndex.addObject(partitionID, classType, polygon);
         }
-        
     }
 
     // calculate the size needed for the serialization buffer

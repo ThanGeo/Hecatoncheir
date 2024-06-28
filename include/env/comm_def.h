@@ -48,6 +48,7 @@ typedef enum MsgType {
 
     /* QUERY */
     MSG_QUERY_INIT = MSG_BASE + 6000,
+    MSG_QUERY_RESULT = MSG_BASE + 6001,
 
     /* DATA */
     MSG_LOAD_DATASETS = MSG_BASE + 7000,
@@ -109,7 +110,6 @@ typedef struct Geometry {
         this->vertexCount = vertexCount;
         this->coords = coords;
     }
-
 
     void setPartitions(std::vector<int> &ids, std::vector<spatial_lib::TwoLayerClassE> &classes) {
         for (int i=0; i<ids.size(); i++) {

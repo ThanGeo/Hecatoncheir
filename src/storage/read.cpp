@@ -68,7 +68,7 @@ namespace storage
                     logger::log_error(DBERR_DISK_READ_FAILED, "Couldn't read the partition IDs");
                     return DBERR_DISK_READ_FAILED;
                 }
-                // store partitions data
+                // store partitions info
                 for (int i=0; i<partitionCount * 2; i+=2) {
                     polygon.partitions.insert(std::make_pair(partitionVector.at(i), partitionVector.at(i+1)));
                 }
@@ -165,8 +165,12 @@ namespace storage
                         goto CLOSE_AND_EXIT;
                     }
                     // store in dataset
+                    // logger::log_task("Storing polygon", polygon.recID, "with MBR", polygon.mbr.minPoint.x, polygon.mbr.minPoint.y, polygon.mbr.maxPoint.x, polygon.mbr.maxPoint.y);
                     dataset.addPolygon(polygon);
                 }
+                // sort two layer
+                dataset.twoLayerIndex.sortPartitionsOnY();
+                // logger::log_success("Loaded data for", dataset.twoLayerIndex.partitionIndex.size(), "partitions");
 CLOSE_AND_EXIT:
                 fclose(pFile);
                 return ret;

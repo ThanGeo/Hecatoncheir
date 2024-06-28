@@ -69,7 +69,7 @@ namespace configure
 
     DB_STATUS createConfiguration() {
         DB_STATUS ret = DBERR_OK;
-
+        logger::log_task("*** Action: SETUP SYSTEM");
         // broadcast system info
         ret = comm::controller::broadcastSysInfo();
         if (ret != DBERR_OK) {

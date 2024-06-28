@@ -19,6 +19,20 @@ namespace comm
             return DBERR_OK;
         }
 
+        DB_STATUS receiveResult(unsigned long long &result, int sourceRank, int sourceTag, MPI_Comm &comm, MPI_Status &status) {
+            // check tag validity
+            if (sourceTag != MSG_QUERY_RESULT) {
+                logger::log_error(DBERR_COMM_INVALID_MSG_TAG, "Inappropriate result message tag. Current tag:", sourceTag);
+                return DBERR_COMM_INVALID_MSG_TAG;
+            }
+            // receive response
+            int mpi_ret = MPI_Recv(&result, 1, MPI_UNSIGNED_LONG_LONG, sourceRank, sourceTag, comm, &status);
+            if (mpi_ret != MPI_SUCCESS) {
+                logger::log_error(DBERR_COMM_RECV, "Failed to receive query result message with tag ", sourceTag);
+                return DBERR_COMM_RECV;
+            }
+            return DBERR_OK;
+        }
 
         DB_STATUS receiveInstructionMessage(int sourceRank, int sourceTag, MPI_Comm &comm, MPI_Status &status) {
             // check tag validity

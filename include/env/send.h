@@ -12,30 +12,28 @@ namespace comm
         /**
          * @brief sends a response that is either ACK or NACK
          * 
-         * @param destRank 
-         * @param tag 
-         * @param comm 
-         * @return DB_STATUS 
          */
         DB_STATUS sendResponse(int destRank, int tag, MPI_Comm &comm);
+
+        /**
+         * @brief sends a message containing a query result
+         */
+        DB_STATUS sendResult(unsigned long long result, int destRank, int tag, MPI_Comm &comm);
         
         /**
          * sends an instruction message to one specific node with destRank.
         */
         DB_STATUS sendInstructionMessage(int destRank, int tag, MPI_Comm &comm);
-
+        
+        /**
+         * sends a message containing a dataset's info (must be already correctly serialized in the input parameter)
+         */
         DB_STATUS sendDatasetInfoMessage(SerializedMsgT<char> &datasetInfoMsg, int destRank, int tag, MPI_Comm &comm);
         
 
         /**
          * @brief sends a serialized message to destrank with tag through comm
          * 
-         * @tparam T 
-         * @param msg 
-         * @param destRank 
-         * @param tag 
-         * @param comm 
-         * @return DB_STATUS 
          */
         template <typename T>
         DB_STATUS sendMessage(SerializedMsgT<T> &msg, int destRank, int tag, MPI_Comm &comm) {

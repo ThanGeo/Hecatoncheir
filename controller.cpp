@@ -69,7 +69,7 @@ static DB_STATUS initQueryExecution() {
         return ret;
     }
 
-    logger::log_task("Processing query", spatial_lib::mapping::queryTypeIntToStr(g_config.queryInfo.type),"on datasets", g_config.datasetInfo.getDatasetR()->nickname, "-", g_config.datasetInfo.getDatasetS()->nickname);
+    logger::log_task("Processing query '", spatial_lib::mapping::queryTypeIntToStr(g_config.queryInfo.type),"' on datasets", g_config.datasetInfo.getDatasetR()->nickname, "-", g_config.datasetInfo.getDatasetS()->nickname);
     // measure response time
     double startTime;
     startTime = mpi_timer::markTime();

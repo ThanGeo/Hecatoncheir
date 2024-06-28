@@ -106,20 +106,23 @@ namespace spatial_lib
     } TwoLayerClassE;
 
     typedef struct TwoLayerContainer {
-        std::unordered_map<TwoLayerClassE, std::vector<PolygonT*>> classIndex;
+        std::unordered_map<TwoLayerClassE, std::vector<PolygonT>> classIndex;
 
-        std::vector<PolygonT*>* getOrCreateContainerClassContents(TwoLayerClassE classType);
+        std::vector<PolygonT>* getOrCreateContainerClassContents(TwoLayerClassE classType);
+        std::vector<PolygonT>* getContainerClassContents(TwoLayerClassE classType);
         void createClassEntry(TwoLayerClassE classType);
+        
     } TwoLayerContainerT;
 
     typedef struct TwoLayerIndex {
-        
         std::unordered_map<int, TwoLayerContainerT> partitionIndex;
-
-        void addObject(int partitionID, TwoLayerClassE classType, PolygonT* polRef);
-
+        // methods
+        /** @brief add an object reference to the partition with partitionID, with the specified classType */
+        void addObject(int partitionID, TwoLayerClassE classType, PolygonT &polRef);
         TwoLayerContainerT* getOrCreatePartition(int partitionID);
+        TwoLayerContainerT* getPartition(int partitionID);
         void createPartitionEntry(int partitionID);
+        void sortPartitionsOnY();
 
     } TwoLayerIndexT;
 
@@ -135,11 +138,8 @@ namespace spatial_lib
         std::string nickname;
         // holds the dataset's dataspace info (MBR, extent)
         DataspaceInfoT dataspaceInfo;
-        // vector data
+        // unique object count
         int totalObjects = 0;
-        std::unordered_map<int, PolygonT> polygons;
-        // index
-        std::unordered_map<int, std::vector<PolygonT*>> index;  // todo: maybe store <partitionID, std::vector<recID>> instead
         // two layer
         TwoLayerIndexT twoLayerIndex;
         /* approximations */ 
@@ -153,12 +153,10 @@ namespace spatial_lib
          * Methods
         */
 
-        // normalizes the MBRs based on the dataspace info bounds
-        void normalizeMBRs();
         /**
          * returns a reference to the polygon object of the given id
          */
-        PolygonT* getPolygonByID(int recID);
+        // PolygonT* getPolygonByID(int recID);
         /**
          * adds a polygon to all related data structures.
          */

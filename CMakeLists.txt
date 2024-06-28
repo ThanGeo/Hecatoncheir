@@ -65,8 +65,8 @@ set(SrcFiles
 
     src/APRIL/generate.cpp
     src/APRIL/storage.cpp
-
-    src/TwoLayer/init.cpp
+    
+    src/TwoLayer/query.cpp
 )
 
 # supress warnings

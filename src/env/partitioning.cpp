@@ -47,7 +47,7 @@ namespace partitioning
                     logger::log_error(DBERR_INVALID_PARTITION, "Partition ID calculated wrong");
                     return DBERR_INVALID_PARTITION;
                 }
-                partitionIDs.emplace_back(startPartitionID);
+                partitionIDs.emplace_back(partitionID);
                 // class C
                 twoLayerClasses.emplace_back(spatial_lib::CLASS_C);
             }
@@ -107,12 +107,6 @@ namespace partitioning
         if (ret != DBERR_OK) {
             return ret;
         }
-        // if (geometry.recID == 3) {
-        //     logger::log_task("Object",3,"has",partitionIDs.size(),"partitions:");
-        //     for(int i=0; i<partitionIDs.size(); i++) {
-        //         logger::log_task("id:",partitionIDs.at(i),"class:",twoLayerClasses.at(i));
-        //     }
-        // }
         // set partitions to object
         geometry.setPartitions(partitionIDs, twoLayerClasses);
         // find which nodes need to receive this geometry
@@ -127,7 +121,6 @@ namespace partitioning
         for (int nodeRank=0; nodeRank<bitVector.size(); nodeRank++) {
             if (bitVector.at(nodeRank)) {
                 // if it has been marked
-
                 // add geometry to batch
                 auto it = batchMap.find(nodeRank);
                 if (it == batchMap.end()) {
@@ -135,7 +128,29 @@ namespace partitioning
                     return DBERR_INVALID_PARAMETER;
                 }
                 GeometryBatchT *batch = &it->second;
-                batch->addGeometryToBatch(geometry);
+
+                // make a copy of the geometry, to adjust the partitions specifically for this node
+                // remove any partitions that are irrelevant to this noderank
+                GeometryT geometryCopy = geometry;
+                for(auto it = geometryCopy.partitions.begin(); it != geometryCopy.partitions.end();) {
+                    int assignedNodeRank = g_config.partitioningInfo.getNodeRankForPartitionID(*it);
+                    if (assignedNodeRank != nodeRank) {
+                        it = geometryCopy.partitions.erase(it);
+                        it = geometryCopy.partitions.erase(it);
+                        geometryCopy.partitionCount--;
+                    } else {
+                        it += 2;
+                    }
+                }
+                // if (geometryCopy.recID == 17095) {
+                //     logger::log_task("  After:", geometryCopy.partitionCount);
+                //     for(int j=0; j<geometryCopy.partitions.size(); j+=2) {
+                //         logger::log_task("id:", geometryCopy.partitions.at(j), "class:", geometryCopy.partitions.at(j+1));
+                //     }
+                // }
+
+                // add moddified geometry to this batch
+                batch->addGeometryToBatch(geometryCopy);
                 // if batch is full, send and reset
                 if (batch->objectCount >= batch->maxObjectCount) {
                     ret = comm::controller::serializeAndSendGeometryBatch(batch);
@@ -172,6 +187,7 @@ namespace partitioning
         std::getline(fin, line);
         fin.close();
         int polygonCount = stoi(line);
+        logger::log_task("Partitioning", polygonCount, "objects...");
         // spawn as many threads as possible
         int availableProcessors = omp_get_num_procs();
         // count how many batches have been sent in total

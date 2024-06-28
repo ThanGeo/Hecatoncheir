@@ -7,7 +7,15 @@ namespace comm
 {
     namespace recv
     {
+        /**
+         * receives a response message
+         */
         DB_STATUS receiveResponse(int sourceRank, int sourceTag, MPI_Comm &comm, MPI_Status &status);
+
+        /**
+         * receives a result message
+         */
+        DB_STATUS receiveResult(unsigned long long &result, int sourceRank, int sourceTag, MPI_Comm &comm, MPI_Status &status);
 
         /**
          * @brief receive an instruction message from sourceRank with tag.
