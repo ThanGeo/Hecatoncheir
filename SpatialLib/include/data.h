@@ -154,6 +154,8 @@ namespace spatial_lib
         MbrT mbr;
         bg_polygon boostPolygon;
         AprilDataT aprilData;
+
+        void printMBR();
     } PolygonT;
 
 

@@ -5,10 +5,15 @@ namespace twolayer
 {   
     namespace intersection_with_intermediate_forwarding
     {
+        static void forwardPair(int idR, int idS) {
+            // printf("%d,%d\n", idR, idS);
+
+        }
+
         static inline unsigned long long internal_sweepRollY_1(std::vector<spatial_lib::PolygonT>::iterator &rec, std::vector<spatial_lib::PolygonT>::iterator &firstFS, std::vector<spatial_lib::PolygonT>::iterator &lastFS, int flag) {
             unsigned long long result = 0;
             auto pivot = firstFS;
-            while ((pivot < lastFS) && (rec->mbr.maxPoint.y >= pivot->mbr.minPoint.y)) {
+            while ((pivot < lastFS) && (rec->mbr.maxPoint.y >= pivot->mbr.minPoint.y)) {               
                 // disjoint, skip
                 if ((rec->mbr.minPoint.x > pivot->mbr.maxPoint.x) || (rec->mbr.maxPoint.x < pivot->mbr.minPoint.x)) {
                     pivot++;
@@ -16,12 +21,12 @@ namespace twolayer
                 }
                 if (flag) {
                     // pivot is R, rec is S
-
                     // todo: forward pair
+                    forwardPair(pivot->recID, rec->recID);
                 } else {
                     // rec is R, pivot is S
-
                     // todo: forward pair
+                    forwardPair(rec->recID, pivot->recID);
                 }
 
                 result++;
@@ -34,19 +39,19 @@ namespace twolayer
             unsigned long long result = 0;
             auto pivot = firstFS;
 
-            while ((pivot < lastFS) && (rec->mbr.maxPoint.y >= pivot->mbr.minPoint.y)) {
+            while ((pivot < lastFS) && (rec->mbr.maxPoint.y >= pivot->mbr.minPoint.y)) {               
                 if ((rec->mbr.minPoint.x > pivot->mbr.maxPoint.x) || (rec->mbr.maxPoint.x < pivot->mbr.minPoint.x)) {
                     pivot++;
                     continue;
                 }
                 if (flag) {
                     // pivot is R, rec is S
-
                     // todo: forward pair
+                    forwardPair(pivot->recID, rec->recID);
                 } else {
                     // rec is R, pivot is S
-
                     // todo: forward pair
+                    forwardPair(rec->recID, pivot->recID);
                 }
                 result++;
                 pivot++;
@@ -56,10 +61,11 @@ namespace twolayer
         }
 
         inline unsigned long long internal_sweepRollY_3_1(std::vector<spatial_lib::PolygonT>::iterator &rec, std::vector<spatial_lib::PolygonT>::iterator &firstFS, std::vector<spatial_lib::PolygonT>::iterator &lastFS, int flag) {
+            // printf("internal_sweepRollY_3_1\n");
             unsigned long long result = 0;
             auto pivot = firstFS;
 
-            while ((pivot < lastFS) && (rec->mbr.maxPoint.y >= pivot->mbr.minPoint.y)) {        
+            while ((pivot < lastFS) && (rec->mbr.maxPoint.y >= pivot->mbr.minPoint.y)) {                
                 if (rec->mbr.minPoint.x > pivot->mbr.maxPoint.x) {
                     pivot++;
                     continue;
@@ -68,12 +74,12 @@ namespace twolayer
                 // forward pair
                 if (flag) {
                     // pivot is R, rec is S
-
                     // todo: forward pair
+                    forwardPair(pivot->recID, rec->recID);
                 } else {
                     // rec is R, pivot is S
-
                     // todo: forward pair
+                    forwardPair(rec->recID, pivot->recID);
                 }
                 result++;
                 pivot++;
@@ -87,19 +93,18 @@ namespace twolayer
             auto pivot = firstFS;
 
             while ((pivot < lastFS) && (rec->mbr.maxPoint.y >= pivot->mbr.minPoint.y)) {       
-                if (pivot->mbr.maxPoint.x > rec->mbr.minPoint.x) {
+                if (pivot->mbr.minPoint.x > rec->mbr.maxPoint.x) {
                     pivot++;
                     continue;
                 }
-                
                 if (flag) {
                     // pivot is R, rec is S
-
                     // todo: forward pair
+                    forwardPair(pivot->recID, rec->recID);
                 } else {
                     // rec is R, pivot is S
-
                     // todo: forward pair
+                    forwardPair(rec->recID, pivot->recID);
                 }
                 result++;
                 pivot++;
@@ -111,19 +116,19 @@ namespace twolayer
         static inline unsigned long long internal_sweepRollY_4(std::vector<spatial_lib::PolygonT>::iterator &rec, std::vector<spatial_lib::PolygonT>::iterator &firstFS, std::vector<spatial_lib::PolygonT>::iterator &lastFS, int flag) {
             unsigned long long result = 0;
             auto pivot = firstFS;
-            while ((pivot < lastFS) && (rec->mbr.maxPoint.y >= pivot->mbr.minPoint.y)) {       
+            while ((pivot < lastFS) && (rec->mbr.maxPoint.y >= pivot->mbr.minPoint.y)) {                       
                 if (rec->mbr.minPoint.x > pivot->mbr.maxPoint.x) {
                     pivot++;
                     continue;
                 }
                 if (flag) {
                     // pivot is R, rec is S
-
                     // todo: forward pair
+                    forwardPair(pivot->recID, rec->recID);
                 } else {
                     // rec is R, pivot is S
-
                     // todo: forward pair
+                    forwardPair(rec->recID, pivot->recID);
                 }
                 result++;
                 pivot++;
@@ -135,7 +140,7 @@ namespace twolayer
         static inline unsigned long long internal_sweepRollY_5(std::vector<spatial_lib::PolygonT>::iterator &rec, std::vector<spatial_lib::PolygonT>::iterator &firstFS, std::vector<spatial_lib::PolygonT>::iterator &lastFS, int flag) {
             unsigned long long result = 0;
             auto pivot = firstFS;
-            while ((pivot < lastFS) && (rec->mbr.maxPoint.y >= pivot->mbr.minPoint.y)) {
+            while ((pivot < lastFS) && (rec->mbr.maxPoint.y >= pivot->mbr.minPoint.y)) {                
                 if (rec->mbr.maxPoint.x < pivot->mbr.minPoint.x) {
                     pivot++;
                     continue;
@@ -143,15 +148,16 @@ namespace twolayer
                 // forward pair
                 if (flag) {
                     // pivot is R, rec is S
-
                     // todo: forward pair
+                    forwardPair(pivot->recID, rec->recID);
                 } else {
                     // rec is R, pivot is S
-
                     // todo: forward pair
+                    forwardPair(rec->recID, pivot->recID);
                 }
                 result++;
                 pivot++;
+
             }
 
             return result;
@@ -207,22 +213,19 @@ namespace twolayer
             auto lastR = objectsR->end();
             auto lastS = objectsS->end();
 
-            while ((r < lastR) && (s < lastS))
-            {
-                if (r->mbr.minPoint.y < s->mbr.minPoint.y)
-                {
+            while ((r < lastR) && (s < lastS)) {
+                if (r->mbr.minPoint.y < s->mbr.minPoint.y) {
                     // Run internal loop.
-                    // result += InternalLoop_Rolled_CNT_V3_1_Y_(r, s, lastS, flag^1 );
-                    // todo warning: why is it flag^1?
-                    result += internal_sweepRollY_3_1(r, s, lastS, flag^1);
+                    result += internal_sweepRollY_3_1(r, s, lastS, flag);
                     r++;
                 } else {
                     // Run internal loop.
-                    result += internal_sweepRollY_3_2(s, r, lastR, flag);
+                    // warning: dont remove flag^1, it is required to define which is r and which is s
+                    result += internal_sweepRollY_3_2(s, r, lastR, flag^1);
                     s++;
                 }
             }
-
+            
             return result;
         }
 
@@ -244,8 +247,7 @@ namespace twolayer
             return result;
         }
 
-        inline unsigned long long sweepRollY_5(std::vector<spatial_lib::PolygonT>* objectsR, std::vector<spatial_lib::PolygonT>* objectsS, int flag)
-        {
+        inline unsigned long long sweepRollY_5(std::vector<spatial_lib::PolygonT>* objectsR, std::vector<spatial_lib::PolygonT>* objectsS, int flag) {
             if (objectsR == nullptr || objectsS == nullptr) {
                 return 0;
             }
@@ -280,7 +282,7 @@ namespace twolayer
                     // S_B - R_A
                     result += sweepRollY_2(tlContainerS->getContainerClassContents(spatial_lib::CLASS_B), tlContainerR->getContainerClassContents(spatial_lib::CLASS_A), 1);
                     // R_A - S_C
-                    result += sweepRollY_3(tlContainerR->getContainerClassContents(spatial_lib::CLASS_A), tlContainerS->getContainerClassContents(spatial_lib::CLASS_C), 1);
+                    result += sweepRollY_3(tlContainerR->getContainerClassContents(spatial_lib::CLASS_A), tlContainerS->getContainerClassContents(spatial_lib::CLASS_C), 0);
                     // S_D - R_A
                     result += sweepRollY_5(tlContainerS->getContainerClassContents(spatial_lib::CLASS_D), tlContainerR->getContainerClassContents(spatial_lib::CLASS_A), 1);
                     // R_B - S_A
@@ -288,7 +290,7 @@ namespace twolayer
                     // R_B - S_C
                     result += sweepRollY_4(tlContainerR->getContainerClassContents(spatial_lib::CLASS_B), tlContainerS->getContainerClassContents(spatial_lib::CLASS_C), 0);
                     // S_A - R_C
-                    result += sweepRollY_3(tlContainerS->getContainerClassContents(spatial_lib::CLASS_A), tlContainerR->getContainerClassContents(spatial_lib::CLASS_C), 0);
+                    result += sweepRollY_3(tlContainerS->getContainerClassContents(spatial_lib::CLASS_A), tlContainerR->getContainerClassContents(spatial_lib::CLASS_C), 1);
                     // S_B - R_C
                     result += sweepRollY_4(tlContainerS->getContainerClassContents(spatial_lib::CLASS_B), tlContainerR->getContainerClassContents(spatial_lib::CLASS_C), 1);
                     // R_D - S_A

@@ -100,6 +100,16 @@ namespace partitioning
      * @return DB_STATUS 
      */
     static DB_STATUS assignGeometryToBatches(GeometryT &geometry, double geoXmin, double geoYmin, double geoXmax, double geoYmax, std::unordered_map<int,GeometryBatchT> &batchMap, int &batchesSent) {
+        // if (geometry.recID == 112249 || geometry.recID == 1782639) {
+        //     printf("Polygon %d\n", geometry.recID);
+            
+        //     for (int i=0; i<geometry.coords.size(); i+=2) {
+        //         printf("(%f,%f),", geometry.coords.at(i), geometry.coords.at(i+1));
+        //     }
+        //     printf("\n");
+        // }
+        
+        
         // find partition IDs and the class of the geometry in each partition
         std::vector<int> partitionIDs;
         std::vector<spatial_lib::TwoLayerClassE> twoLayerClasses;
@@ -142,7 +152,7 @@ namespace partitioning
                         it += 2;
                     }
                 }
-                // if (geometryCopy.recID == 17095) {
+                // if (geometryCopy.recID == 112249) {
                 //     logger::log_task("  After:", geometryCopy.partitionCount);
                 //     for(int j=0; j<geometryCopy.partitions.size(); j+=2) {
                 //         logger::log_task("id:", geometryCopy.partitions.at(j), "class:", geometryCopy.partitions.at(j+1));

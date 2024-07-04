@@ -5,11 +5,11 @@ GREEN='\033[0;32m'
 NC='\033[0m'
 
 # default case (local, 4 processes)
-systype='local'
+systype='cluster'
 # check input
 if [ "$#" -eq 0 ]; then
   # default case (local)
-  echo "building using default build type: local"
+  echo "building using default build type: $systype"
 elif [ "$#" -eq 1 ]; then
   # specified type
   systype=$1

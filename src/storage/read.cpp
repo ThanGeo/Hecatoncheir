@@ -71,6 +71,9 @@ namespace storage
                 // store partitions info
                 for (int i=0; i<partitionCount * 2; i+=2) {
                     polygon.partitions.insert(std::make_pair(partitionVector.at(i), partitionVector.at(i+1)));
+                    // if (polygon.recID == 112249 || polygon.recID == 1782639) {
+                    //     logger::log_success("pol", polygon.recID, "partition", partitionVector.at(i), "class", partitionVector.at(i+1));
+                    // }
                 }
                 // read vertex count
                 elementsRead = fread(&intBuf, sizeof(int), 1, pFile);

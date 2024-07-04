@@ -271,6 +271,10 @@ namespace spatial_lib
         
         // get or create new class entry of this class type, for this partition
         std::vector<PolygonT>* classObjects = partition->getOrCreateContainerClassContents(classType);
+
+        // if (pol.recID == 112249 || pol.recID == 1782639 || pol.recID == 110360 || pol.recID == 1781854) {
+        //     printf("vector size for partition %d, class %d: %d\n", partitionID, classType, classObjects->size());
+        // }
         
         // printf("Adding polygon %d with MBR: (%f,%f),(%f,%f)\n", polRef->recID, polRef->mbr.minPoint.x, polRef->mbr.minPoint.y, polRef->mbr.maxPoint.x, polRef->mbr.maxPoint.y);
 
@@ -313,6 +317,11 @@ namespace spatial_lib
             TwoLayerClassE classType = (TwoLayerClassE) partitionIT.second;
             // add to twolayer index
             this->twoLayerIndex.addObject(partitionID, classType, polygon);
+
+            // if (polygon.recID == 112249 || polygon.recID == 1782639) {
+            //     // logger::log_success("pol", polygon.recID, "added to partition", partitionID, "as class", classType);
+            //     printf("Polygon %d added to partition %d as class %d\n", polygon.recID, partitionID, classType);
+            // }
         }
     }
 
