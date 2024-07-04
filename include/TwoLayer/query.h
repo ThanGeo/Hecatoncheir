@@ -2,10 +2,11 @@
 #define D_TWOLAYER_QUERY_H
 
 #include "def.h"
+#include "APRIL/filter.h"
 
 namespace twolayer
 {
-    DB_STATUS processQuery(unsigned long long &result);
+    DB_STATUS processQuery();
 }
 
 

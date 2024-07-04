@@ -41,6 +41,12 @@ namespace spatial_lib
         double refinementTime;
         // on the fly april
         uint rasterizationsDone;
+
+        void reset();
+        void countAPRILresult(int result);
+        void countResult();
+        void countMBRresult();
+        void countTopologyRelationResult(int result);
     } QueryOutputT;
 
     // global query output variable
@@ -176,6 +182,7 @@ namespace spatial_lib
         void addAprilDataToApproximationDataMap(const uint sectionID, const uint recID, const AprilDataT &aprilData);
         void addObjectToSectionMap(const uint sectionID, const uint recID);
         void addIntervalsToAprilData(const uint sectionID, const uint recID, const int numIntervals, const std::vector<uint> &intervals, const bool ALL);
+        AprilDataT* getAprilDataBySectionAndObjectID(uint sectionID, uint recID);
     }DatasetT;
 
     typedef struct Query{
@@ -189,7 +196,6 @@ namespace spatial_lib
     }QueryT;
 
 
-    void resetQueryOutput();
     void countAPRILResult(int result);
     void countResult();
     void countTopologyRelationResult(int relation);
@@ -238,7 +244,7 @@ namespace spatial_lib
      * @return std::vector<uint> 
      * 
      */
-    std::vector<uint> getCommonSectionIDsOfObjects(Dataset &datasetR, Dataset &datasetS, uint idR, uint idS);
+    std::vector<uint> getCommonSectionIDsOfObjects(Dataset *datasetR, Dataset *datasetS, uint idR, uint idS);
 
     /**
      * @brief Get the Section IDs Of an object by ID

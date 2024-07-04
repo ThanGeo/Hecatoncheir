@@ -1,5 +1,5 @@
-#ifndef D_APRIL_GENERATE
-#define D_APRIL_GENERATE
+#ifndef D_APRIL_GENERATE_H
+#define D_APRIL_GENERATE_H
 
 #include "def.h"
 #include "Rasterizer.h"

@@ -563,15 +563,14 @@ STOP_LISTENING:
             // free memory
             free(msg.data);
             // execute
-            unsigned long long result = 0;
-            ret = twolayer::processQuery(result);
+            ret = twolayer::processQuery();
             if (ret != DBERR_OK) {
                 logger::log_error(ret, "Processing query failed.");
                 return ret;
             }
             // send the result to the local controller
-            // logger::log_task("Sending result", result, "with tag:", MSG_QUERY_RESULT);
-            ret = comm::send::sendResult(result, PARENT_RANK, MSG_QUERY_RESULT, g_local_comm);
+            // todo: send result
+            ret = comm::send::sendResult(spatial_lib::g_queryOutput.queryResults, PARENT_RANK, MSG_QUERY_RESULT, g_local_comm);
             if (ret != DBERR_OK) {
                 logger::log_error(ret, "Sending query result failed.");
                 return ret;

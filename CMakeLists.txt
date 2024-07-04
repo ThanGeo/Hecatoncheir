@@ -65,6 +65,8 @@ set(SrcFiles
 
     src/APRIL/generate.cpp
     src/APRIL/storage.cpp
+    src/APRIL/filter.cpp
+    src/APRIL/join.cpp
     
     src/TwoLayer/query.cpp
 )

@@ -84,6 +84,7 @@ typedef enum DB_STATUS {
 
     // query
     DBERR_QUERY_INVALID_INPUT = DBBASE + 7000,
+    DBERR_QUERY_INVALID_TYPE = DBBASE + 7001,
 } DB_STATUS;
 
 namespace logger
@@ -287,11 +288,11 @@ typedef struct DatasetInfo {
         datatypeCombination = spatial_lib::DC_INVALID_COMBINATION;
     }
 
-    spatial_lib::DatasetT* getDatasetR() {
+    inline spatial_lib::DatasetT* getDatasetR() {
         return R;
     }
 
-    spatial_lib::DatasetT* getDatasetS() {
+    inline spatial_lib::DatasetT* getDatasetS() {
         return S;
     }
 

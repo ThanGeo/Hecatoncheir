@@ -4,36 +4,35 @@ namespace spatial_lib
 {
     QueryOutputT g_queryOutput;
 
-    void resetQueryOutput() {
+    void QueryOutput::reset() {
         // result
-        g_queryOutput.queryResults = 0;
+        this->queryResults = 0;
         // topology relations results
-        g_queryOutput.topologyRelationsResultMap.clear();
-        g_queryOutput.topologyRelationsResultMap.insert(std::make_pair(TR_DISJOINT, 0));
-        g_queryOutput.topologyRelationsResultMap.insert(std::make_pair(TR_EQUAL, 0));
-        g_queryOutput.topologyRelationsResultMap.insert(std::make_pair(TR_MEET, 0));
-        g_queryOutput.topologyRelationsResultMap.insert(std::make_pair(TR_CONTAINS, 0));
-        g_queryOutput.topologyRelationsResultMap.insert(std::make_pair(TR_COVERS, 0));
-        g_queryOutput.topologyRelationsResultMap.insert(std::make_pair(TR_COVERED_BY, 0));
-        g_queryOutput.topologyRelationsResultMap.insert(std::make_pair(TR_INSIDE, 0));
-        g_queryOutput.topologyRelationsResultMap.insert(std::make_pair(TR_INTERSECT, 0));
+        this->topologyRelationsResultMap.clear();
+        this->topologyRelationsResultMap.insert(std::make_pair(TR_DISJOINT, 0));
+        this->topologyRelationsResultMap.insert(std::make_pair(TR_EQUAL, 0));
+        this->topologyRelationsResultMap.insert(std::make_pair(TR_MEET, 0));
+        this->topologyRelationsResultMap.insert(std::make_pair(TR_CONTAINS, 0));
+        this->topologyRelationsResultMap.insert(std::make_pair(TR_COVERS, 0));
+        this->topologyRelationsResultMap.insert(std::make_pair(TR_COVERED_BY, 0));
+        this->topologyRelationsResultMap.insert(std::make_pair(TR_INSIDE, 0));
+        this->topologyRelationsResultMap.insert(std::make_pair(TR_INTERSECT, 0));
         // statistics
-        g_queryOutput.postMBRFilterCandidates = 0;
-        g_queryOutput.refinementCandidates = 0;
-        g_queryOutput.trueHits = 0;
-        g_queryOutput.trueNegatives = 0;
+        this->postMBRFilterCandidates = 0;
+        this->refinementCandidates = 0;
+        this->trueHits = 0;
+        this->trueNegatives = 0;
         
         // time
-        g_queryOutput.mbrFilterTime = 0;
-        g_queryOutput.iFilterTime = 0;
-        g_queryOutput.refinementTime = 0;
+        this->mbrFilterTime = 0;
+        this->iFilterTime = 0;
+        this->refinementTime = 0;
 
         // on the fly april
-        g_queryOutput.rasterizationsDone = 0;
-        
+        this->rasterizationsDone = 0;
     }
 
-    void countAPRILResult(int result) {
+    void QueryOutput::countAPRILresult(int result) {
         switch (result) {
             case TRUE_NEGATIVE:
                 g_queryOutput.trueNegatives += 1;
@@ -47,11 +46,15 @@ namespace spatial_lib
         }
     }
 
-    void countResult(){
+    void QueryOutput::countResult(){
         g_queryOutput.queryResults += 1;
     }
 
-    void countTopologyRelationResult(int relation) {
+    void QueryOutput::countMBRresult(){
+        g_queryOutput.postMBRFilterCandidates += 1;
+    }
+
+    void QueryOutput::countTopologyRelationResult(int relation) {
         g_queryOutput.topologyRelationsResultMap[relation] += 1;
     }
     
@@ -88,9 +91,9 @@ namespace spatial_lib
         return nullptr;
     }
 
-    std::vector<uint> getCommonSectionIDsOfObjects(Dataset &datasetR, Dataset &datasetS, uint idR, uint idS) {
-        auto itR = datasetR.recToSectionIdMap.find(idR);
-	    auto itS = datasetS.recToSectionIdMap.find(idS);
+    std::vector<uint> getCommonSectionIDsOfObjects(Dataset *datasetR, Dataset *datasetS, uint idR, uint idS) {
+        auto itR = datasetR->recToSectionIdMap.find(idR);
+	    auto itS = datasetS->recToSectionIdMap.find(idS);
         std::vector<uint> commonSectionIDs;
         set_intersection(itR->second.begin(),itR->second.end(),itS->second.begin(),itS->second.end(),back_inserter(commonSectionIDs));
         return commonSectionIDs;
@@ -457,6 +460,17 @@ namespace spatial_lib
             it->second.numIntervalsFULL = numIntervals;
             it->second.intervalsFULL = intervals;
         }
+    }
+
+    AprilDataT* Dataset::getAprilDataBySectionAndObjectID(uint sectionID, uint recID) {
+        auto sec = this->sectionMap.find(sectionID);
+        if (sec != this->sectionMap.end()){
+            auto obj = sec->second.aprilData.find(recID);
+            if (obj != sec->second.aprilData.end()) {
+                return &(obj->second);
+            }
+        }
+        return nullptr;
     }
 
 }
