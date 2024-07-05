@@ -858,8 +858,8 @@ namespace twolayer
                         return ret;
                     }
                     // test prints
-                    logger::log_success("MBR results:", spatial_lib::g_queryOutput.postMBRFilterCandidates);
-                    logger::log_success("APRIL Result:", (spatial_lib::g_queryOutput.trueHits / (double) spatial_lib::g_queryOutput.postMBRFilterCandidates * 100), (spatial_lib::g_queryOutput.trueNegatives / (double) spatial_lib::g_queryOutput.postMBRFilterCandidates * 100), (spatial_lib::g_queryOutput.refinementCandidates / (double) spatial_lib::g_queryOutput.postMBRFilterCandidates * 100));
+                    // logger::log_success("MBR results:", spatial_lib::g_queryOutput.postMBRFilterCandidates);
+                    // logger::log_success("APRIL Result:", (spatial_lib::g_queryOutput.trueHits / (double) spatial_lib::g_queryOutput.postMBRFilterCandidates * 100), (spatial_lib::g_queryOutput.trueNegatives / (double) spatial_lib::g_queryOutput.postMBRFilterCandidates * 100), (spatial_lib::g_queryOutput.refinementCandidates / (double) spatial_lib::g_queryOutput.postMBRFilterCandidates * 100));
                 } else {
                     // todo: APRIL filter disabled
                 }
@@ -874,15 +874,15 @@ namespace twolayer
                     }
 
                     // test prints
-                    logger::log_success("MBR results:", spatial_lib::g_queryOutput.postMBRFilterCandidates);
-                    logger::log_success("Inconclusive by APRIL:", spatial_lib::g_queryOutput.refinementCandidates);
-                    logger::log_success("Disjoint:", spatial_lib::g_queryOutput.getResultForTopologyRelation(spatial_lib::TR_DISJOINT));
-                    logger::log_success("Inside:", spatial_lib::g_queryOutput.getResultForTopologyRelation(spatial_lib::TR_INSIDE));
-                    logger::log_success("Contains:", spatial_lib::g_queryOutput.getResultForTopologyRelation(spatial_lib::TR_CONTAINS));
-                    logger::log_success("Covers:", spatial_lib::g_queryOutput.getResultForTopologyRelation(spatial_lib::TR_COVERS));
-                    logger::log_success("Covered by:", spatial_lib::g_queryOutput.getResultForTopologyRelation(spatial_lib::TR_COVERED_BY));
-                    logger::log_success("Meet:", spatial_lib::g_queryOutput.getResultForTopologyRelation(spatial_lib::TR_MEET));
-                    logger::log_success("Equal:", spatial_lib::g_queryOutput.getResultForTopologyRelation(spatial_lib::TR_EQUAL));
+                    // logger::log_success("MBR results:", spatial_lib::g_queryOutput.postMBRFilterCandidates);
+                    // logger::log_success("Inconclusive by APRIL:", spatial_lib::g_queryOutput.refinementCandidates);
+                    // logger::log_success("Disjoint:", spatial_lib::g_queryOutput.getResultForTopologyRelation(spatial_lib::TR_DISJOINT));
+                    // logger::log_success("Inside:", spatial_lib::g_queryOutput.getResultForTopologyRelation(spatial_lib::TR_INSIDE));
+                    // logger::log_success("Contains:", spatial_lib::g_queryOutput.getResultForTopologyRelation(spatial_lib::TR_CONTAINS));
+                    // logger::log_success("Covers:", spatial_lib::g_queryOutput.getResultForTopologyRelation(spatial_lib::TR_COVERS));
+                    // logger::log_success("Covered by:", spatial_lib::g_queryOutput.getResultForTopologyRelation(spatial_lib::TR_COVERED_BY));
+                    // logger::log_success("Meet:", spatial_lib::g_queryOutput.getResultForTopologyRelation(spatial_lib::TR_MEET));
+                    // logger::log_success("Equal:", spatial_lib::g_queryOutput.getResultForTopologyRelation(spatial_lib::TR_EQUAL));
 
                 } else {
                     // todo: APRIL filter disabled

@@ -64,61 +64,6 @@ namespace comm
         return ret;
     }    
 
-    /**
-     * Waits for the results of the query that is being processed
-     * When they come, forward them to the host controller.
-     */
-    static DB_STATUS waitForResults() {
-        MPI_Status status;
-        // wait for results by the agent
-        DB_STATUS ret = probeBlocking(AGENT_RANK, MPI_ANY_TAG, g_local_comm, status);
-        if (ret != DBERR_OK) {
-            return ret;
-        }
-        if (status.MPI_TAG == MSG_QUERY_RESULT) {
-            // result returned
-            unsigned long long result = 0;
-            // receive results from agent
-            ret = recv::receiveResult(result, AGENT_RANK, status.MPI_TAG, g_local_comm, status);
-            if (ret != DBERR_OK) {
-                return ret;
-            }
-            // forward results to host controller
-            // logger::log_task("Sending result", result, "with tag:", status.MPI_TAG);
-            ret = send::sendResult(result, g_host_rank, status.MPI_TAG, g_global_comm);
-            if (ret != DBERR_OK) {
-                logger::log_error(ret, "Forwarding result to host controller failed");
-                return ret;
-            }
-        } else if (status.MPI_TAG == MSG_NACK) {
-            // NACK, an error occurred
-            // receive response from agent
-            ret = recv::receiveResponse(AGENT_RANK, status.MPI_TAG, g_local_comm, status);
-            if (ret != DBERR_OK) {
-                return ret;
-            }
-            // forward response to host controller
-            ret = send::sendResponse(g_host_rank, status.MPI_TAG, g_global_comm);
-            if (ret != DBERR_OK) {
-                logger::log_error(ret, "Forwarding response to host controller failed");
-                return ret;
-            }
-            // check response, if its NACK then terminate
-            if (status.MPI_TAG == MSG_NACK) {
-                logger::log_error(DBERR_COMM_RECEIVED_NACK, "Received NACK by agent");
-                return DBERR_COMM_RECEIVED_NACK;
-            }
-        } else {
-            // error, unexpected message, send a NACK to the host 
-            ret = send::sendResponse(g_host_rank, MSG_NACK, g_global_comm);
-            if (ret != DBERR_OK) {
-                logger::log_error(ret, "Sending NACK to host controller failed");
-                return ret;
-            }
-        }
-        return ret;
-    }
-
     namespace forward
     {
 
@@ -227,6 +172,69 @@ namespace comm
             ret = waitForResponse();
             if (ret != DBERR_OK) {
                 return ret;
+            }
+            return ret;
+        }
+
+        static DB_STATUS forwardQueryResultsMessage(MPI_Comm sourceComm, int destRank, MPI_Comm destComm, MPI_Status &status) {
+            SerializedMsgT<int> msg(MPI_INT);
+            // receive the message
+            DB_STATUS ret = recv::receiveMessage(status, msg.type, sourceComm, msg);
+            if (ret != DBERR_OK) {
+                return ret;
+            }
+            // forward
+            ret = send::sendMessage(msg, destRank, status.MPI_TAG, destComm);
+            if (ret != DBERR_OK) {
+                return ret;
+            }
+            // free memory
+            free(msg.data);
+            return ret;
+        }
+
+        /**
+         * Waits for the results of the query that is being processed
+         * When they come, forward them to the host controller.
+         */
+        static DB_STATUS waitForResults() {
+            MPI_Status status;
+            // wait for results by the agent
+            DB_STATUS ret = probeBlocking(AGENT_RANK, MPI_ANY_TAG, g_local_comm, status);
+            if (ret != DBERR_OK) {
+                return ret;
+            }
+            if (status.MPI_TAG == MSG_QUERY_RESULT) {
+                ret = forwardQueryResultsMessage(g_local_comm, g_host_rank, g_global_comm, status);
+                if (ret != DBERR_OK) {
+                    logger::log_error(ret, "Forwarding result to host controller failed");
+                    return ret;
+                }
+            } else if (status.MPI_TAG == MSG_NACK) {
+                // NACK, an error occurred
+                // receive response from agent
+                ret = recv::receiveResponse(AGENT_RANK, status.MPI_TAG, g_local_comm, status);
+                if (ret != DBERR_OK) {
+                    return ret;
+                }
+                // forward response to host controller
+                ret = send::sendResponse(g_host_rank, status.MPI_TAG, g_global_comm);
+                if (ret != DBERR_OK) {
+                    logger::log_error(ret, "Forwarding response to host controller failed");
+                    return ret;
+                }
+                // check response, if its NACK then terminate
+                if (status.MPI_TAG == MSG_NACK) {
+                    logger::log_error(DBERR_COMM_RECEIVED_NACK, "Received NACK by agent");
+                    return DBERR_COMM_RECEIVED_NACK;
+                }
+            } else {
+                // error, unexpected message, send a NACK to the host 
+                ret = send::sendResponse(g_host_rank, MSG_NACK, g_global_comm);
+                if (ret != DBERR_OK) {
+                    logger::log_error(ret, "Sending NACK to host controller failed");
+                    return ret;
+                }
             }
             return ret;
         }
@@ -548,6 +556,23 @@ STOP_LISTENING:
             return ret;
         }
 
+        static DB_STATUS respondWithQueryResults() {
+            // serialize results
+            SerializedMsgT<int> msg(MPI_INT);
+            DB_STATUS ret = pack::packQueryResults(msg);
+            if (ret != DBERR_OK) {
+                logger::log_error(ret, "Serializing query output failed");
+                return ret;
+            }
+            // send to local controller
+            ret = send::sendMessage(msg, PARENT_RANK, MSG_QUERY_RESULT, g_local_comm);
+            if (ret != DBERR_OK) {
+                logger::log_error(ret, "Send query results failed");
+                return ret;
+            }
+            return ret;
+        }
+
         static DB_STATUS handleQueryInfoMessage(MPI_Status status) {
             SerializedMsgT<int> msg(MPI_INT);
             // receive the message
@@ -569,10 +594,9 @@ STOP_LISTENING:
                 return ret;
             }
             // send the result to the local controller
-            // todo: send result
-            ret = comm::send::sendResult(spatial_lib::g_queryOutput.queryResults, PARENT_RANK, MSG_QUERY_RESULT, g_local_comm);
+            ret = respondWithQueryResults();
             if (ret != DBERR_OK) {
-                logger::log_error(ret, "Sending query result failed.");
+                logger::log_error(ret, "Responding with query results failed.");
                 return ret;
             }
             return ret;
@@ -613,40 +637,6 @@ STOP_LISTENING:
 
                 // add to configuration
                 g_config.datasetInfo.addDataset(dataset);
-                // logger::log_success("Loaded dataset", dataset.nickname,"with",dataset.totalObjects,"total objects and", dataset.index.size(),"partitions");
-                // test
-                // if (g_parent_original_rank == 0) {
-                //     spatial_lib::DatasetT* testDatasetR = g_config.datasetInfo.getDatasetR();
-                //     spatial_lib::TwoLayerContainerT* tlContainerR = testDatasetR->twoLayerIndex.getPartition(507736);
-                //     if (tlContainerR != nullptr) {
-                //         logger::log_task("After insertion: R dataset", testDatasetR->nickname, "partition",507736);
-
-                //         std::vector<spatial_lib::PolygonT>* pols = tlContainerR->getContainerClassContents(spatial_lib::CLASS_A);
-                //         for (auto& it: *pols) {
-                //             logger::log_task(it.recID, it.mbr.minPoint.x, it.mbr.minPoint.y, it.mbr.maxPoint.x, it.mbr.maxPoint.y);
-                //         }
-
-                //         // spatial_lib::PolygonT* pol = testDatasetR->getPolygonByID(115053);
-                //         // logger::log_task("pol", pol->recID, "MBR:", pol->mbr.minPoint.x, pol->mbr.minPoint.y, pol->mbr.maxPoint.x, pol->mbr.maxPoint.y);
-
-                //     }
-
-                //     spatial_lib::DatasetT* testDatasetS = g_config.datasetInfo.getDatasetS();
-                //     if (testDatasetS != nullptr) {
-                //         spatial_lib::TwoLayerContainerT* tlContainerS = testDatasetS->twoLayerIndex.getPartition(507736);
-                //         if (tlContainerS != nullptr) {
-                //             logger::log_task("After insertion: S dataset", testDatasetS->nickname, "partition",507736);
-
-                //             std::vector<spatial_lib::PolygonT>* pols = tlContainerS->getContainerClassContents(spatial_lib::CLASS_A);
-                //             for (auto& it: *pols) {
-                //                 logger::log_task(it.recID, it.mbr.minPoint.x, it.mbr.minPoint.y, it.mbr.maxPoint.x, it.mbr.maxPoint.y);
-                //             }
-                //         }
-                //     }
-                // }
-        
-                
-
             }
 EXIT_SAFELY:
             // respond
@@ -1126,18 +1116,66 @@ STOP_LISTENING:
                 return ret;
             }
 
+            static DB_STATUS handleQueryResultMessage(MPI_Status &status, MPI_Comm &comm, spatial_lib::QueryTypeE queryType, spatial_lib::QueryOutputT &queryOutput) {
+                DB_STATUS ret = DBERR_OK;
+                SerializedMsgT<int> msg;
+                // receive the serialized message
+                ret = recv::receiveMessage(status, MPI_INT, comm, msg);
+                if (ret != DBERR_OK) {
+                    logger::log_error(ret, "Error receiving query result message");
+                    return ret;
+                }
+                // unpack
+                ret = unpack::unpackQueryResults(msg, queryType, queryOutput);
+                if (ret != DBERR_OK) {
+                    logger::log_error(ret, "Error unpacking query results message");
+                    return ret;
+                }
+                return ret;
+            }
+
+            void queryResultReductionFunc(spatial_lib::QueryOutputT &in, spatial_lib::QueryOutputT &out) {
+                out.queryResults += in.queryResults;
+                out.postMBRFilterCandidates += in.postMBRFilterCandidates;
+                out.refinementCandidates += in.refinementCandidates;
+                switch (g_config.queryInfo.type) {
+                    case spatial_lib::Q_DISJOINT:
+                    case spatial_lib::Q_INTERSECT:
+                    case spatial_lib::Q_INSIDE:
+                    case spatial_lib::Q_CONTAINS:
+                    case spatial_lib::Q_COVERS:
+                    case spatial_lib::Q_COVERED_BY:
+                    case spatial_lib::Q_MEET:
+                    case spatial_lib::Q_EQUAL:
+                        out.refinementCandidates += in.refinementCandidates;
+                        out.trueHits += in.trueHits;
+                        out.trueNegatives += in.trueNegatives;
+                        break;
+                    case spatial_lib::Q_FIND_RELATION:
+                        for (auto &it : in.topologyRelationsResultMap) {
+                            out.topologyRelationsResultMap[it.first] += it.second;
+                        }
+                        break;
+                }
+            }
+
+            // Declare the reduction
+            #pragma omp declare reduction \
+                (query_output_reduction: spatial_lib::QueryOutputT: queryResultReductionFunc(omp_in, omp_out)) \
+                initializer(omp_priv = spatial_lib::QueryOutput())
+
             DB_STATUS gatherResults() {
                 DB_STATUS ret = DBERR_OK;
                 int threadThatFailed = -1;
-                unsigned long long totalResult = 0;
+                spatial_lib::QueryOutputT queryOutput;
                 // use threads to parallelize gathering of results
-                #pragma omp parallel num_threads(g_world_size) reduction(+:totalResult)
+                #pragma omp parallel num_threads(g_world_size) reduction(query_output_reduction:queryOutput)
                 {
                     DB_STATUS local_ret = DBERR_OK;
                     int messageFound;
                     MPI_Status status;
                     int tid = omp_get_thread_num();
-                    unsigned long long result = 0;
+                    spatial_lib::QueryOutputT localQueryOutput;
 
                     // probe for results
                     if (tid == 0) {
@@ -1148,15 +1186,14 @@ STOP_LISTENING:
                             threadThatFailed = tid;
                             ret = local_ret;
                         }
+                        // todo: check tag?
                         // receive results
-                        local_ret = recv::receiveResult(result, status.MPI_SOURCE, status.MPI_TAG, g_local_comm, status);
+                        local_ret = handleQueryResultMessage(status, g_local_comm, g_config.queryInfo.type, localQueryOutput);
                         if (local_ret != DBERR_OK) {
                             #pragma omp cancel parallel
                             threadThatFailed = tid;
                             ret = local_ret;
                         }
-                        // add result
-                        totalResult += result;
                     } else {
                         // wait for workers' results (each thread with id X receives from worker with rank X)
                         local_ret = probeBlocking(tid, MPI_ANY_TAG, g_global_comm, status);
@@ -1165,24 +1202,46 @@ STOP_LISTENING:
                             threadThatFailed = tid;
                             ret = local_ret;
                         }
+                        // todo: check tag?
                         // receive results
-                        local_ret = recv::receiveResult(result, status.MPI_SOURCE, status.MPI_TAG, g_global_comm, status);
+                        local_ret = handleQueryResultMessage(status, g_global_comm, g_config.queryInfo.type, localQueryOutput);
                         if (local_ret != DBERR_OK) {
                             #pragma omp cancel parallel
                             threadThatFailed = tid;
                             ret = local_ret;
                         }
-                        // add result
-                        totalResult += result;
+                    }
+                    // add localQueryOutput to reduction
+                    queryOutput.queryResults += localQueryOutput.queryResults;
+                    queryOutput.postMBRFilterCandidates += localQueryOutput.postMBRFilterCandidates;
+                    queryOutput.refinementCandidates += localQueryOutput.refinementCandidates;
+                    switch (g_config.queryInfo.type) {
+                        case spatial_lib::Q_DISJOINT:
+                        case spatial_lib::Q_INTERSECT:
+                        case spatial_lib::Q_INSIDE:
+                        case spatial_lib::Q_CONTAINS:
+                        case spatial_lib::Q_COVERS:
+                        case spatial_lib::Q_COVERED_BY:
+                        case spatial_lib::Q_MEET:
+                        case spatial_lib::Q_EQUAL:
+                            queryOutput.trueHits += localQueryOutput.trueHits;
+                            queryOutput.trueNegatives += localQueryOutput.trueNegatives;
+                            queryOutput.refinementCandidates += localQueryOutput.refinementCandidates;
+                            break;
+                        case spatial_lib::Q_FIND_RELATION:
+                            for (auto &it : localQueryOutput.topologyRelationsResultMap) {
+                                queryOutput.topologyRelationsResultMap[it.first] += it.second;
+                            }
+                            break;
                     }
                 }
-
+                // check for errors
                 if (ret != DBERR_OK) {
                     logger::log_error(ret, "Gathering results failed. Thread responsible:", threadThatFailed);
                     return ret;
                 }
-
-                logger::log_success("Query results:", totalResult);
+                // store to the global output and return
+                spatial_lib::g_queryOutput.shallowCopy(queryOutput);
                 return ret;
             }
         }

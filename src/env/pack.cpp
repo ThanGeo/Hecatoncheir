@@ -11,7 +11,7 @@ namespace pack
         sysInfoMsg.count += 3 * sizeof(int);              // MBRFilter, IFilter, Refinement
         
         // allocate space
-        (sysInfoMsg.data) = (char*) malloc(sysInfoMsg.count * sizeof(char));
+        sysInfoMsg.data = (char*) malloc(sysInfoMsg.count * sizeof(char));
         if (sysInfoMsg.data == NULL) {
             // malloc failed
             logger::log_error(DBERR_MALLOC_FAILED, "Malloc for pack system info failed");
@@ -51,7 +51,7 @@ namespace pack
         aprilInfoMsg.count += 3;     // N, compression, partitions
 
         // allocate space
-        (aprilInfoMsg.data) = (int*) malloc(aprilInfoMsg.count * sizeof(int));
+        aprilInfoMsg.data = (int*) malloc(aprilInfoMsg.count * sizeof(int));
         if (aprilInfoMsg.data == NULL) {
             // malloc failed
             logger::log_error(DBERR_MALLOC_FAILED, "Malloc for april info failed");
@@ -71,7 +71,7 @@ namespace pack
         queryInfoMsg.count += 4;    // query type, MBR, intermediatefilter, refinement
 
         // allocate space
-        (queryInfoMsg.data) = (int*) malloc(queryInfoMsg.count * sizeof(int));
+        queryInfoMsg.data = (int*) malloc(queryInfoMsg.count * sizeof(int));
         if (queryInfoMsg.data == NULL) {
             // malloc failed
             logger::log_error(DBERR_MALLOC_FAILED, "Malloc for query info failed");
@@ -110,7 +110,7 @@ namespace pack
             nicknameS = S->nickname;
         }
         // allocate space
-        (msg.data) = (char*) malloc(msg.count * sizeof(char));
+        msg.data = (char*) malloc(msg.count * sizeof(char));
         if (msg.data == NULL) {
             // malloc failed
             logger::log_error(DBERR_MALLOC_FAILED, "Malloc for pack system info failed");
@@ -133,6 +133,65 @@ namespace pack
 
         return DBERR_OK;
     }
+
+    DB_STATUS packQueryResults(SerializedMsgT<int> &msg) {
+        DB_STATUS ret = DBERR_OK;
+        // serialize based on query type
+        switch (g_config.queryInfo.type) {
+            case spatial_lib::Q_DISJOINT:
+            case spatial_lib::Q_INTERSECT:
+            case spatial_lib::Q_INSIDE:
+            case spatial_lib::Q_CONTAINS:
+            case spatial_lib::Q_COVERS:
+            case spatial_lib::Q_COVERED_BY:
+            case spatial_lib::Q_MEET:
+            case spatial_lib::Q_EQUAL:
+                // mbr results, accept, reject, inconclusive, result count
+                msg.count += 5;
+                // allocate space
+                msg.data = (int*) malloc(msg.count * sizeof(int));
+                if (msg.data == NULL) {
+                    // malloc failed
+                    logger::log_error(DBERR_MALLOC_FAILED, "Malloc for query results msg failed");
+                    return DBERR_MALLOC_FAILED;
+                }
+                // put objects in buffer
+                msg.data[0] = spatial_lib::g_queryOutput.queryResults;
+                msg.data[1] = spatial_lib::g_queryOutput.postMBRFilterCandidates;
+                msg.data[2] = spatial_lib::g_queryOutput.trueHits;
+                msg.data[3] = spatial_lib::g_queryOutput.trueNegatives;
+                msg.data[4] = spatial_lib::g_queryOutput.refinementCandidates;
+                break;
+            case spatial_lib::Q_FIND_RELATION:
+                // total results, mbr results, inconclusive, disjoint, intersect, inside, contains, covers, covered by, meet, equal
+                msg.count += 11;
+                // allocate space
+                msg.data = (int*) malloc(msg.count * sizeof(int));
+                if (msg.data == NULL) {
+                    // malloc failed
+                    logger::log_error(DBERR_MALLOC_FAILED, "Malloc for query results msg failed");
+                    return DBERR_MALLOC_FAILED;
+                }
+                // put objects in buffer
+                msg.data[0] = spatial_lib::g_queryOutput.queryResults;
+                msg.data[1] = spatial_lib::g_queryOutput.postMBRFilterCandidates;
+                msg.data[2] = spatial_lib::g_queryOutput.refinementCandidates;
+                msg.data[3] = spatial_lib::g_queryOutput.getResultForTopologyRelation(spatial_lib::TR_DISJOINT);
+                msg.data[4] = spatial_lib::g_queryOutput.getResultForTopologyRelation(spatial_lib::TR_INTERSECT);
+                msg.data[5] = spatial_lib::g_queryOutput.getResultForTopologyRelation(spatial_lib::TR_INSIDE);
+                msg.data[6] = spatial_lib::g_queryOutput.getResultForTopologyRelation(spatial_lib::TR_CONTAINS);
+                msg.data[7] = spatial_lib::g_queryOutput.getResultForTopologyRelation(spatial_lib::TR_COVERS);
+                msg.data[8] = spatial_lib::g_queryOutput.getResultForTopologyRelation(spatial_lib::TR_COVERED_BY);
+                msg.data[9] = spatial_lib::g_queryOutput.getResultForTopologyRelation(spatial_lib::TR_MEET);
+                msg.data[10] = spatial_lib::g_queryOutput.getResultForTopologyRelation(spatial_lib::TR_EQUAL);
+                break;
+            default:
+                logger::log_error(DBERR_QUERY_INVALID_TYPE, "Invalid query type:", g_config.queryInfo.type);
+                return DBERR_QUERY_INVALID_TYPE;
+        }
+        return ret;
+    }
+
 }
 
 namespace unpack
@@ -193,6 +252,41 @@ namespace unpack
         g_config.queryInfo.IntermediateFilter = queryInfoMsg.data[2];
         g_config.queryInfo.Refinement = queryInfoMsg.data[3];
         
+        return DBERR_OK;
+    }
+
+    DB_STATUS unpackQueryResults(SerializedMsgT<int> &queryResultsMsg, spatial_lib::QueryTypeE queryType, spatial_lib::QueryOutputT &queryOutput) {
+        // total results and mbr results is common
+        queryOutput.queryResults = queryResultsMsg.data[0];   
+        queryOutput.postMBRFilterCandidates = queryResultsMsg.data[1];    
+        // unpack based on query type
+        switch (queryType) {
+            case spatial_lib::Q_DISJOINT:
+            case spatial_lib::Q_INTERSECT:
+            case spatial_lib::Q_INSIDE:
+            case spatial_lib::Q_CONTAINS:
+            case spatial_lib::Q_COVERS:
+            case spatial_lib::Q_COVERED_BY:
+            case spatial_lib::Q_MEET:
+            case spatial_lib::Q_EQUAL:
+                // accept, reject, inconclusive, result count
+                queryOutput.trueHits = queryResultsMsg.data[2];
+                queryOutput.trueNegatives = queryResultsMsg.data[3];
+                queryOutput.refinementCandidates = queryResultsMsg.data[4];
+                break;
+            case spatial_lib::Q_FIND_RELATION:
+                // inconclusive, disjoint, intersect, inside, contains, covers, covered by, meet, equal
+                queryOutput.refinementCandidates = queryResultsMsg.data[2];
+                queryOutput.setTopologyRelationResult(spatial_lib::TR_DISJOINT, queryResultsMsg.data[3]);
+                queryOutput.setTopologyRelationResult(spatial_lib::TR_INTERSECT, queryResultsMsg.data[4]);
+                queryOutput.setTopologyRelationResult(spatial_lib::TR_INSIDE, queryResultsMsg.data[5]);
+                queryOutput.setTopologyRelationResult(spatial_lib::TR_CONTAINS, queryResultsMsg.data[6]);
+                queryOutput.setTopologyRelationResult(spatial_lib::TR_COVERS, queryResultsMsg.data[7]);
+                queryOutput.setTopologyRelationResult(spatial_lib::TR_COVERED_BY, queryResultsMsg.data[8]);
+                queryOutput.setTopologyRelationResult(spatial_lib::TR_MEET, queryResultsMsg.data[9]);
+                queryOutput.setTopologyRelationResult(spatial_lib::TR_EQUAL, queryResultsMsg.data[10]);
+                break;
+        }
         return DBERR_OK;
     }
 

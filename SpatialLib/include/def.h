@@ -42,12 +42,20 @@ namespace spatial_lib
         // on the fly april
         uint rasterizationsDone;
 
+        QueryOutput();
+
+
         void reset();
         void countAPRILresult(int result);
         void countResult();
         void countMBRresult();
         void countTopologyRelationResult(int result);
         int getResultForTopologyRelation(TopologyRelationE relation);
+        void setTopologyRelationResult(int relation, int result);
+        /**
+         * @brief copies the contents of the 'other' object into this struct
+         */
+        void shallowCopy(QueryOutput &other);
     } QueryOutputT;
 
     // global query output variable

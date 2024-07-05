@@ -46,6 +46,12 @@ namespace pack
      * (both R and S, or only R if there's no S)
      */
     DB_STATUS packDatasetsNicknames(SerializedMsgT<char> &msg);
+
+    /**
+     * @brief packs the current contents of the query output global variable into a serialized message
+     * based on query type
+     */
+    DB_STATUS packQueryResults(SerializedMsgT<int> &msg);
 }
 
 namespace unpack
@@ -56,6 +62,8 @@ namespace unpack
     DB_STATUS unpackAPRILInfo(SerializedMsgT<int> &aprilInfoMsg);
 
     DB_STATUS unpackQueryInfo(SerializedMsgT<int> &queryInfoMsg);
+
+    DB_STATUS unpackQueryResults(SerializedMsgT<int> &queryResultsMsg, spatial_lib::QueryTypeE queryType, spatial_lib::QueryOutputT &queryOutput);
 
     DB_STATUS unpackDatasetsNicknames(SerializedMsgT<char> &msg, std::vector<std::string> &nicknames);
 }

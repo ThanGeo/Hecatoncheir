@@ -4,6 +4,34 @@ namespace spatial_lib
 {
     QueryOutputT g_queryOutput;
 
+    QueryOutput::QueryOutput() {
+        // result
+        this->queryResults = 0;
+        // topology relations results
+        this->topologyRelationsResultMap.clear();
+        this->topologyRelationsResultMap.insert(std::make_pair(TR_DISJOINT, 0));
+        this->topologyRelationsResultMap.insert(std::make_pair(TR_EQUAL, 0));
+        this->topologyRelationsResultMap.insert(std::make_pair(TR_MEET, 0));
+        this->topologyRelationsResultMap.insert(std::make_pair(TR_CONTAINS, 0));
+        this->topologyRelationsResultMap.insert(std::make_pair(TR_COVERS, 0));
+        this->topologyRelationsResultMap.insert(std::make_pair(TR_COVERED_BY, 0));
+        this->topologyRelationsResultMap.insert(std::make_pair(TR_INSIDE, 0));
+        this->topologyRelationsResultMap.insert(std::make_pair(TR_INTERSECT, 0));
+        // statistics
+        this->postMBRFilterCandidates = 0;
+        this->refinementCandidates = 0;
+        this->trueHits = 0;
+        this->trueNegatives = 0;
+        
+        // time
+        this->mbrFilterTime = 0;
+        this->iFilterTime = 0;
+        this->refinementTime = 0;
+
+        // on the fly april
+        this->rasterizationsDone = 0;
+    }
+
     void QueryOutput::reset() {
         // result
         this->queryResults = 0;
@@ -64,6 +92,40 @@ namespace spatial_lib
             return it->second;
         }
         return -1;
+    }
+
+    void QueryOutput::setTopologyRelationResult(int relation, int result) {
+        auto it = topologyRelationsResultMap.find(relation);
+        if (it != topologyRelationsResultMap.end()) {
+            // exists already, replace
+            it->second = result;
+        } else {
+            // new entry
+            topologyRelationsResultMap.insert(std::make_pair(relation, result));
+        }
+    }
+
+    void QueryOutput::shallowCopy(QueryOutput &other) {
+        // result
+        this->queryResults = other.queryResults;
+        // topology relations results
+        this->topologyRelationsResultMap.clear();
+        for (auto &it: other.topologyRelationsResultMap) {
+            this->topologyRelationsResultMap.insert(std::make_pair(it.first, it.second));
+        }
+        // statistics
+        this->postMBRFilterCandidates = other.postMBRFilterCandidates;
+        this->refinementCandidates = other.refinementCandidates;
+        this->trueHits = other.trueHits;
+        this->trueNegatives = other.trueNegatives;
+        
+        // time
+        this->mbrFilterTime = other.mbrFilterTime;
+        this->iFilterTime = other.iFilterTime;
+        this->refinementTime = other.refinementTime;
+
+        // on the fly april
+        this->rasterizationsDone = other.rasterizationsDone;
     }
     
     static void deepCopyAprilData(AprilDataT* from, AprilDataT* to) {

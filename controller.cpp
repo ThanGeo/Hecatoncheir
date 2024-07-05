@@ -27,6 +27,37 @@ static void hostTerminate() {
     
 }
 
+static void printResults() {
+    // todo: total results should include post refinement + early true hits
+    logger::log_success("Total Results:", spatial_lib::g_queryOutput.queryResults);
+    logger::log_success("  MBR Results:", spatial_lib::g_queryOutput.postMBRFilterCandidates);
+    switch (g_config.queryInfo.type) {
+        case spatial_lib::Q_DISJOINT:
+        case spatial_lib::Q_INTERSECT:
+        case spatial_lib::Q_INSIDE:
+        case spatial_lib::Q_CONTAINS:
+        case spatial_lib::Q_COVERS:
+        case spatial_lib::Q_COVERED_BY:
+        case spatial_lib::Q_MEET:
+        case spatial_lib::Q_EQUAL:
+            logger::log_success("       Accept:", spatial_lib::g_queryOutput.trueHits / (double) spatial_lib::g_queryOutput.postMBRFilterCandidates * 100, "%");
+            logger::log_success("       Reject:", spatial_lib::g_queryOutput.trueNegatives / (double) spatial_lib::g_queryOutput.postMBRFilterCandidates * 100, "%");
+            logger::log_success(" Inconclusive:", spatial_lib::g_queryOutput.refinementCandidates / (double) spatial_lib::g_queryOutput.postMBRFilterCandidates * 100, "%");
+            break;
+        case spatial_lib::Q_FIND_RELATION:
+            logger::log_success(" Inconclusive:", spatial_lib::g_queryOutput.refinementCandidates / (double) spatial_lib::g_queryOutput.postMBRFilterCandidates * 100, "%");
+            logger::log_success("     Disjoint:", spatial_lib::g_queryOutput.topologyRelationsResultMap[spatial_lib::TR_DISJOINT]);
+            logger::log_success("    Intersect:", spatial_lib::g_queryOutput.topologyRelationsResultMap[spatial_lib::TR_INTERSECT]);
+            logger::log_success("       Inside:", spatial_lib::g_queryOutput.topologyRelationsResultMap[spatial_lib::TR_INSIDE]);
+            logger::log_success("     Contains:", spatial_lib::g_queryOutput.topologyRelationsResultMap[spatial_lib::TR_CONTAINS]);
+            logger::log_success("       Covers:", spatial_lib::g_queryOutput.topologyRelationsResultMap[spatial_lib::TR_COVERS]);
+            logger::log_success("   Covered by:", spatial_lib::g_queryOutput.topologyRelationsResultMap[spatial_lib::TR_COVERED_BY]);
+            logger::log_success("         Meet:", spatial_lib::g_queryOutput.topologyRelationsResultMap[spatial_lib::TR_MEET]);
+            logger::log_success("        Equal:", spatial_lib::g_queryOutput.topologyRelationsResultMap[spatial_lib::TR_EQUAL]);
+            break;
+    }
+}
+
 static DB_STATUS initAPRILCreation() {
     SerializedMsgT<int> aprilInfoMsg(MPI_INT);
     // pack the APRIL info
@@ -68,7 +99,8 @@ static DB_STATUS initQueryExecution() {
         logger::log_error(ret, "Failed to broadcast query info");
         return ret;
     }
-
+    // reset query outpyt
+    spatial_lib::g_queryOutput.reset();
     logger::log_task("Processing query '", spatial_lib::mapping::queryTypeIntToStr(g_config.queryInfo.type),"' on datasets", g_config.datasetInfo.getDatasetR()->nickname, "-", g_config.datasetInfo.getDatasetS()->nickname);
     // measure response time
     double startTime;
@@ -79,6 +111,9 @@ static DB_STATUS initQueryExecution() {
         return ret;
     }
     logger::log_success("Query evaluted in", mpi_timer::getElapsedTime(startTime), "seconds.");
+
+    // print results
+    printResults();
 
     return DBERR_OK;
 }
