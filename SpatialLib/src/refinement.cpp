@@ -214,7 +214,7 @@ namespace spatial_lib
         int refinementResult = refineIntersection(&boostPolygonR, &boostPolygonS);
         // count result
         if (refinementResult) {
-            countResult();
+            g_queryOutput.countResult();
         }
     }
 
@@ -226,7 +226,7 @@ namespace spatial_lib
         int refinementResult = refineInside(&boostPolygonR, &boostPolygonS);
         // count result
         if (refinementResult) {
-            countResult();
+            g_queryOutput.countResult();
         }
     }
 
@@ -238,7 +238,7 @@ namespace spatial_lib
         int refinementResult = refineDisjoint(&boostPolygonR, &boostPolygonS);
         // count result
         if (refinementResult) {
-            countResult();
+            g_queryOutput.countResult();
         }
     }
 
@@ -251,7 +251,7 @@ namespace spatial_lib
         int refinementResult = refineEqual(&boostPolygonR, &boostPolygonS);
         // count result
         if (refinementResult) {
-            countResult();
+            g_queryOutput.countResult();
         }
     }
 
@@ -264,7 +264,7 @@ namespace spatial_lib
         int refinementResult = refineMeet(&boostPolygonR, &boostPolygonS);
         // count result
         if (refinementResult) {
-            countResult();
+            g_queryOutput.countResult();
         }
     }
 
@@ -277,7 +277,7 @@ namespace spatial_lib
         int refinementResult = refineContains(&boostPolygonR, &boostPolygonS);
         // count result
         if (refinementResult) {
-            countResult();
+            g_queryOutput.countResult();
         }
     }
 
@@ -290,7 +290,7 @@ namespace spatial_lib
         int refinementResult = refineCovers(&boostPolygonR, &boostPolygonS);
         // count result
         if (refinementResult) {
-            countResult();
+            g_queryOutput.countResult();
         }
     }
 
@@ -303,7 +303,7 @@ namespace spatial_lib
         int refinementResult = refineCoveredBy(&boostPolygonR, &boostPolygonS);
         // count result
         if (refinementResult) {
-            countResult();
+            g_queryOutput.countResult();
         }
     }
 
@@ -329,7 +329,7 @@ namespace spatial_lib
         //     printf("%u,%u refine result: %d\n", idR, idS, refinementResult);
         // }
         // count result
-        countTopologyRelationResult(refinementResult);
+        g_queryOutput.countTopologyRelationResult(refinementResult);
     }
 
     /**
@@ -809,7 +809,7 @@ namespace spatial_lib
         }
 
         // count result
-        countTopologyRelationResult(refinementResult);
+        g_queryOutput.countTopologyRelationResult(refinementResult);
 
         // store time
         g_queryOutput.refinementTime += time::getElapsedTime(time::g_timer.refTimer);

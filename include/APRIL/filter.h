@@ -6,6 +6,14 @@
 
 namespace APRIL
 {
+    namespace topology
+    {
+        /**
+         * @brief Optimized APRIL intermediate filter for 'find topological relation' queries that filters two input objects
+         */
+        DB_STATUS IntermediateFilterEntrypoint(spatial_lib::PolygonT &polR, spatial_lib::PolygonT &polS, spatial_lib::MBRRelationCaseE mbrRelationCase);
+    }
+
     namespace standard
     {
         /**

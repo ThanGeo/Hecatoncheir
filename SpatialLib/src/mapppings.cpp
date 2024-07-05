@@ -96,5 +96,19 @@ namespace spatial_lib
                 default: return "";
             }
         }
+
+        std::string relationIntToStr(int relation) {
+            switch(relation) {
+                case TR_INTERSECT: return "INTERSECT";
+                case TR_CONTAINS: return "CONTAINS";
+                case TR_DISJOINT: return "DISJOINT";
+                case TR_EQUAL: return "EQUAL";
+                case TR_COVERS: return "COVERS";
+                case TR_MEET: return "MEET";
+                case TR_COVERED_BY: return "COVERED BY";
+                case TR_INSIDE: return "INSIDE";
+                default: return "";
+            }
+        }
     }
 }

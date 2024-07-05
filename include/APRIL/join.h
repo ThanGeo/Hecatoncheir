@@ -36,6 +36,34 @@ namespace APRIL
          * @brief joins APRIL approximations for containment (R contains/covers S)
          */
         DB_STATUS containsCoversJoinAPRIL(spatial_lib::AprilDataT *aprilR, spatial_lib::AprilDataT *aprilS, int &result);
+
+
+        namespace topology
+        {
+            /**
+             * @brief joins APRIL approximations for topological relations of the 'R in S' containment type
+             * @returns DB_STATUS value, and sets the relation parameter to the identified relation (or refinement)
+             */
+            DB_STATUS MBRRinSContainmentJoinAPRIL(spatial_lib::AprilDataT *aprilR, spatial_lib::AprilDataT *aprilS, int &relation);
+
+            /**
+             * @brief joins APRIL approximations for topological relations of the 'S in R' containment type
+             * @returns DB_STATUS value, and sets the relation parameter to the identified relation (or refinement)
+             */
+            DB_STATUS MBRSinRContainmentJoinAPRIL(spatial_lib::AprilDataT *aprilR, spatial_lib::AprilDataT *aprilS, int &relation);
+
+            /**
+             * @brief joins APRIL approximations for topological relations when two MBRs are equal
+             * @returns DB_STATUS value, and sets the relation parameter to the identified relation (or refinement)
+             */
+            DB_STATUS MBREqualJoinAPRIL(uint idR, uint idS, spatial_lib::AprilDataT *aprilR, spatial_lib::AprilDataT *aprilS, int &relation);
+
+            /**
+             * @brief joins APRIL approximations for topological relations whose MBRs intersect generally
+             * @returns DB_STATUS value, and sets the relation parameter to the identified relation (or refinement)
+             */
+            DB_STATUS MBRIntersectionJoinAPRIL(spatial_lib::AprilDataT *aprilR, spatial_lib::AprilDataT *aprilS, int &relation);
+        }
     }
 }
 

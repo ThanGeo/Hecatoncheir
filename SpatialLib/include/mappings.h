@@ -17,6 +17,8 @@ namespace spatial_lib
         FileTypeE fileTypeTextToInt(std::string str);
 
         std::string datatypeCombinationIntToStr(DatatypeCombinationE val);
+
+        std::string relationIntToStr(int relation);
     }
     
 }

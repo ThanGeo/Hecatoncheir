@@ -47,6 +47,7 @@ namespace spatial_lib
         void countResult();
         void countMBRresult();
         void countTopologyRelationResult(int result);
+        int getResultForTopologyRelation(TopologyRelationE relation);
     } QueryOutputT;
 
     // global query output variable
@@ -194,11 +195,6 @@ namespace spatial_lib
         // double xMinGlobal, yMinGlobal, xMaxGlobal, yMaxGlobal;  // global bounds based on dataset bounds
         DataspaceInfoT dataspaceInfo;
     }QueryT;
-
-
-    void countAPRILResult(int result);
-    void countResult();
-    void countTopologyRelationResult(int relation);
 
     void addObjectToSectionMap(DatasetT &dataset, uint sectionID, uint recID);
     /**

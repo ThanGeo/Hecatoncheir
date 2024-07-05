@@ -57,6 +57,14 @@ namespace spatial_lib
     void QueryOutput::countTopologyRelationResult(int relation) {
         g_queryOutput.topologyRelationsResultMap[relation] += 1;
     }
+
+    int QueryOutput::getResultForTopologyRelation(TopologyRelationE relation) {
+        auto it = topologyRelationsResultMap.find(relation);
+        if (it != topologyRelationsResultMap.end()) {
+            return it->second;
+        }
+        return -1;
+    }
     
     static void deepCopyAprilData(AprilDataT* from, AprilDataT* to) {
         to->numIntervalsALL = from->numIntervalsALL;
