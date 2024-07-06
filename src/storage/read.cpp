@@ -47,6 +47,62 @@ namespace storage
                 return DBERR_OK;
             }
 
+            DB_STATUS readNextObjectComplete(FILE* pFile, spatial_lib::PolygonT &polygon) {
+                int intBuf[2];
+                // read recID and partition count
+                size_t elementsRead = fread(&intBuf, sizeof(int), 2, pFile);
+                if (elementsRead != 2) {
+                    logger::log_error(DBERR_DISK_READ_FAILED, "Couldn't read the recID + partitionCount");
+                    return DBERR_DISK_READ_FAILED;
+                }
+                // rec ID
+                polygon.recID = intBuf[0];
+                // partitionCount
+                int partitionCount = intBuf[1];
+                // read partitions data
+                std::vector<int> partitionVector;
+                partitionVector.resize(partitionCount * 2);
+                elementsRead = fread(partitionVector.data(), sizeof(int), partitionCount * 2, pFile);
+                if (elementsRead != partitionCount * 2) {
+                    logger::log_error(DBERR_DISK_READ_FAILED, "Couldn't read the partition IDs");
+                    return DBERR_DISK_READ_FAILED;
+                }
+                // store partitions info
+                for (int i=0; i<partitionCount * 2; i+=2) {
+                    polygon.partitions.insert(std::make_pair(partitionVector.at(i), partitionVector.at(i+1)));
+                }
+                // read vertex count
+                elementsRead = fread(&intBuf, sizeof(int), 1, pFile);
+                if (elementsRead != 1) {
+                    logger::log_error(DBERR_DISK_READ_FAILED, "Couldn't read the vertex count");
+                    return DBERR_DISK_READ_FAILED;
+                }
+                int vertexCount = intBuf[0];
+                // read the points
+                std::vector<double> coords(vertexCount*2);
+                elementsRead = fread(coords.data(), sizeof(double), vertexCount*2, pFile);
+                if (elementsRead != vertexCount*2) {
+                    logger::log_error(DBERR_DISK_READ_FAILED, "Couldn't read the vertices");
+                    return DBERR_DISK_READ_FAILED;
+                }
+                // reset mbr
+                polygon.mbr.minPoint.x = std::numeric_limits<int>::max();
+                polygon.mbr.minPoint.y = std::numeric_limits<int>::max();
+                polygon.mbr.maxPoint.x = -std::numeric_limits<int>::max();
+                polygon.mbr.maxPoint.y = -std::numeric_limits<int>::max();
+                for (int i=0; i<coords.size(); i+=2) {
+                    // mbr
+                    polygon.mbr.minPoint.x = std::min(polygon.mbr.minPoint.x, coords[i]);
+                    polygon.mbr.minPoint.y = std::min(polygon.mbr.minPoint.y, coords[i+1]);
+                    polygon.mbr.maxPoint.x = std::max(polygon.mbr.maxPoint.x, coords[i]);
+                    polygon.mbr.maxPoint.y = std::max(polygon.mbr.maxPoint.y, coords[i+1]);
+                    // vector
+                    polygon.boostPolygon.outer().emplace_back(spatial_lib::bg_point_xy(coords[i], coords[i+1]));
+                }
+                // correct
+                boost::geometry::correct(polygon.boostPolygon);
+                return DBERR_OK;
+            }
 
             DB_STATUS readNextObjectMBR(FILE* pFile, spatial_lib::PolygonT &polygon) {
                 int intBuf[2];
@@ -71,9 +127,6 @@ namespace storage
                 // store partitions info
                 for (int i=0; i<partitionCount * 2; i+=2) {
                     polygon.partitions.insert(std::make_pair(partitionVector.at(i), partitionVector.at(i+1)));
-                    // if (polygon.recID == 112249 || polygon.recID == 1782639) {
-                    //     logger::log_success("pol", polygon.recID, "partition", partitionVector.at(i), "class", partitionVector.at(i+1));
-                    // }
                 }
                 // read vertex count
                 elementsRead = fread(&intBuf, sizeof(int), 1, pFile);
@@ -168,12 +221,44 @@ namespace storage
                         goto CLOSE_AND_EXIT;
                     }
                     // store in dataset
-                    // logger::log_task("Storing polygon", polygon.recID, "with MBR", polygon.mbr.minPoint.x, polygon.mbr.minPoint.y, polygon.mbr.maxPoint.x, polygon.mbr.maxPoint.y);
                     dataset.addPolygon(polygon);
                 }
                 // sort two layer
                 dataset.twoLayerIndex.sortPartitionsOnY();
-                // logger::log_success("Loaded data for", dataset.twoLayerIndex.partitionIndex.size(), "partitions");
+CLOSE_AND_EXIT:
+                fclose(pFile);
+                return ret;
+            }
+
+            DB_STATUS loadDatasetComplete(spatial_lib::DatasetT &dataset) {
+                DB_STATUS ret = DBERR_OK;
+                int length = 0;
+                // open partition file
+                FILE* pFile = fopen(dataset.path.c_str(), "rb");
+                if (pFile == NULL) {
+                    logger::log_error(DBERR_MISSING_FILE, "Could not open partitioned dataset file from path:", dataset.path);
+                    return DBERR_MISSING_FILE;
+                }
+                // dataset info
+                ret = loadDatasetInfo(pFile, dataset);
+                if (ret != DBERR_OK) {
+                    logger::log_error(ret, "Failed to load dataset info");
+                    goto CLOSE_AND_EXIT;
+                }
+                // read data (vector and create MBRs as well)
+                for (int i=0; i<dataset.totalObjects; i++) {
+                    spatial_lib::PolygonT polygon;
+                    // read next polygon
+                    ret = readNextObjectComplete(pFile, polygon);
+                    if (ret != DBERR_OK) {
+                        logger::log_error(ret, "Failed to read MBR for object number", i, "of", dataset.totalObjects);
+                        goto CLOSE_AND_EXIT;
+                    }
+                    // store in dataset
+                    dataset.addPolygon(polygon);
+                }
+                // sort two layer
+                dataset.twoLayerIndex.sortPartitionsOnY();
 CLOSE_AND_EXIT:
                 fclose(pFile);
                 return ret;

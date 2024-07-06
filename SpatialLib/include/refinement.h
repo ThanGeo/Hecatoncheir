@@ -17,95 +17,95 @@ namespace spatial_lib
     /**
      * load the geometries and return a pair of their vertex counts.
     */
-    std::pair<uint,uint> getVertexCountsOfPair(uint idR, uint idS);
+    std::pair<uint,uint> getVertexCountsOfPair(PolygonT &polR, PolygonT &polS);
 
     /**
      * Entrypoint function for when there is NO intermediate filter.
      * Intermediate filters forward to refine() function and NOT this one.
     */
-    void refinementEntrypoint(uint idR, uint idS);
+    void refinementEntrypoint(PolygonT &polR, PolygonT &polS);
 
 
     /**
      * loads boost geometries and refines for intersection
     */
-    void refineIntersectionJoin(uint idR, uint idS);
+    void refineIntersectionJoin(PolygonT &polR, PolygonT &polS);
     /**
      * loads boost geometries and refines for inside
     */
-    void refineInsideJoin(uint idR, uint idS);
+    void refineInsideJoin(PolygonT &polR, PolygonT &polS);
 
     /**
      * Loads geometries and refines for topology based on setup configuration.
     */
-    void refineAllRelations(uint idR, uint idS);
+    void refineAllRelations(PolygonT &polR, PolygonT &polS);
 
     /**
      * refinement for the EQUAl topology relation
     */
-    void refineEqualJoin(uint idR, uint idS);
+    void refineEqualJoin(PolygonT &polR, PolygonT &polS);
 
     /**
      * refinement for the DISJOINT topology relation
     */
-    void refineDisjointJoin(uint idR, uint idS);
+    void refineDisjointJoin(PolygonT &polR, PolygonT &polS);
 
     /**
      * refinement for the MEET topology relation
     */
-    void refineMeetJoin(uint idR, uint idS);
+    void refineMeetJoin(PolygonT &polR, PolygonT &polS);
 
     /**
      * refinement for the CONTAINS topology relation
     */
-    void refineContainsJoin(uint idR, uint idS);
+    void refineContainsJoin(PolygonT &polR, PolygonT &polS);
 
     /**
      * refinement for the COVERS topology relation
     */
-    void refineCoversJoin(uint idR, uint idS);
+    void refineCoversJoin(PolygonT &polR, PolygonT &polS);
 
     /**
      * refinement for the COVERED BY topology relation
     */
-    void refineCoveredByJoin(uint idR, uint idS);
+    void refineCoveredByJoin(PolygonT &polR, PolygonT &polS);
 
     /**
      * refinement for the DISJOINT, MEET or INTERSECT topology relations
     */
-    int refineGuaranteedNoContainment(uint idR, uint idS);
+    int refineGuaranteedNoContainment(PolygonT &polR, PolygonT &polS);
 
 
     /**
      * refinement for containment relations and intersect ONLY (Contains, Covers, Covered by, Inside, Intersect)
     */
-    int refineContainmentsOnly(uint idR, uint idS);
+    int refineContainmentsOnly(PolygonT &polR, PolygonT &polS);
 
     /**
      * refine DISJOINT, COVERS, CONTAINS, INTERSECT only
     */
-    int refineContainsPlus(uint idR, uint idS);
+    int refineContainsPlus(PolygonT &polR, PolygonT &polS);
 
 
     /**
      * refine DISJOINT, COVERED BY, INSIDE, INTERSECT only
     */
-    int refineInsidePlus(uint idR, uint idS);
+    int refineInsidePlus(PolygonT &polR, PolygonT &polS);
 
     /**
      * refine for EQUAl for APRIL
      */
-    bool isEqual(uint idR, uint idS);
+    bool isEqual(PolygonT &polR, PolygonT &polS);
 
     /**
      * refine for EQUAl for APRIL
      */
-    bool isMeet(uint idR, uint idS);
+    bool isMeet(PolygonT &polR, PolygonT &polS);
 
     /**
      * refines for ALL relations except EQUAL
     */
-    int refineAllRelationsNoEqual(uint idR, uint idS);
+    int refineAllRelationsNoEqual(PolygonT &polR, PolygonT &polS);
 
 
     /**
@@ -115,7 +115,7 @@ namespace spatial_lib
      * @param idS 
      * @return int 
      */
-    int refineInsideCoveredbyTruehitIntersect(uint idR, uint idS);
+    int refineInsideCoveredbyTruehitIntersect(PolygonT &polR, PolygonT &polS);
 
 
     /**
@@ -125,7 +125,7 @@ namespace spatial_lib
      * @param idS 
      * @return int 
      */
-    int refineDisjointInsideCoveredbyMeetIntersect(uint idR, uint idS);
+    int refineDisjointInsideCoveredbyMeetIntersect(PolygonT &polR, PolygonT &polS);
 
     /**
      * @brief refines for contains/covers but is guaranteed intersection (no disjoint)
@@ -134,7 +134,7 @@ namespace spatial_lib
      * @param idS 
      * @return int 
      */
-    int refineContainsCoversTruehitIntersect(uint idR, uint idS);
+    int refineContainsCoversTruehitIntersect(PolygonT &polR, PolygonT &polS);
 
     /**
      * @brief refines for disjoint, contains, covers, meet and intersect
@@ -143,7 +143,7 @@ namespace spatial_lib
      * @param idS 
      * @return int 
      */
-    int refineDisjointContainsCoversMeetIntersect(uint idR, uint idS);
+    int refineDisjointContainsCoversMeetIntersect(PolygonT &polR, PolygonT &polS);
 
     /**
      * @brief refines for disjoint, meet and intersect
@@ -152,7 +152,7 @@ namespace spatial_lib
      * @param idS 
      * @return int 
      */
-    int refineDisjointMeetIntersect(uint idR, uint idS);
+    int refineDisjointMeetIntersect(PolygonT &polR, PolygonT &polS);
 
 
     /**
@@ -162,7 +162,7 @@ namespace spatial_lib
      * @param idS 
      * @return int 
      */
-    int refineCoversCoveredByTrueHitIntersect(uint idR, uint idS);
+    int refineCoversCoveredByTrueHitIntersect(PolygonT &polR, PolygonT &polS);
 
     /**
      * @brief refines for equal, covers, covered by but is guaranteed intersection (no disjoint)
@@ -171,7 +171,7 @@ namespace spatial_lib
      * @param idS 
      * @return int 
      */
-    int refineEqualCoversCoveredByTrueHitIntersect(uint idR, uint idS);
+    int refineEqualCoversCoveredByTrueHitIntersect(PolygonT &polR, PolygonT &polS);
 
     /**
      * @brief refines for covers but is guaranteed intersection (no disjoint)
@@ -180,7 +180,7 @@ namespace spatial_lib
      * @param idS 
      * @return int 
      */
-    int refineCoversTrueHitIntersect(uint idR, uint idS);
+    int refineCoversTrueHitIntersect(PolygonT &polR, PolygonT &polS);
 
 
     /**
@@ -190,7 +190,7 @@ namespace spatial_lib
      * @param idS 
      * @return int 
      */
-    int refineCoveredbyTrueHitIntersect(uint idR, uint idS);
+    int refineCoveredbyTrueHitIntersect(PolygonT &polR, PolygonT &polS);
 
 
     /**
@@ -203,22 +203,11 @@ namespace spatial_lib
      */
     bg_polygon loadBoostPolygonByIDandFlag(uint id, bool R);
 
-
     /**
      * Entrypoint function for when there is NO intermediate filter.
      * Intermediate filters forward to refine() function and NOT this one.
     */
-    void specializedRefinementEntrypoint(uint idR, uint idS, int relationCase);
-    
-    namespace scalability
-    {
-        /**
-         * Entrypoint function for when there is NO intermediate filter.
-         * Intermediate filters forward to refine() function and NOT this one.
-        */
-        void specializedRefinementEntrypoint(uint idR, uint idS, int relationCase);
-    }
-
+    void specializedRefinementEntrypoint(PolygonT &polR, PolygonT &polS, int relationCase);
 }
 
 #endif

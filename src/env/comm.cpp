@@ -629,7 +629,8 @@ STOP_LISTENING:
                     goto EXIT_SAFELY;
                 }
                 // load partition file (create MBRs)
-                ret = storage::reader::partitionFile::loadDatasetMBRs(dataset);
+                // ret = storage::reader::partitionFile::loadDatasetMBRs(dataset);
+                ret = storage::reader::partitionFile::loadDatasetComplete(dataset);
                 if (ret != DBERR_OK) {
                     logger::log_error(DBERR_DISK_READ_FAILED, "Failed loading partition file MBRs");
                     goto EXIT_SAFELY;
@@ -1147,7 +1148,6 @@ STOP_LISTENING:
                     case spatial_lib::Q_COVERED_BY:
                     case spatial_lib::Q_MEET:
                     case spatial_lib::Q_EQUAL:
-                        out.refinementCandidates += in.refinementCandidates;
                         out.trueHits += in.trueHits;
                         out.trueNegatives += in.trueNegatives;
                         break;
@@ -1226,7 +1226,6 @@ STOP_LISTENING:
                         case spatial_lib::Q_EQUAL:
                             queryOutput.trueHits += localQueryOutput.trueHits;
                             queryOutput.trueNegatives += localQueryOutput.trueNegatives;
-                            queryOutput.refinementCandidates += localQueryOutput.refinementCandidates;
                             break;
                         case spatial_lib::Q_FIND_RELATION:
                             for (auto &it : localQueryOutput.topologyRelationsResultMap) {

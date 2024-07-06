@@ -62,11 +62,12 @@ namespace spatial_lib
 
     void QueryOutput::countAPRILresult(int result) {
         switch (result) {
-            case TRUE_NEGATIVE:
-                g_queryOutput.trueNegatives += 1;
-                break;
             case TRUE_HIT:
                 g_queryOutput.trueHits += 1;
+                g_queryOutput.queryResults += 1;
+                break;
+            case TRUE_NEGATIVE:
+                g_queryOutput.trueNegatives += 1;
                 break;
             case INCONCLUSIVE:
                 g_queryOutput.refinementCandidates += 1;

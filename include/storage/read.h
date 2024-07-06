@@ -32,6 +32,12 @@ namespace storage
             DB_STATUS loadDatasetMBRs(spatial_lib::DatasetT &dataset);
 
             /**
+             * @brief loads a dataset (vector and MBR) in-memory, to use in query processing.
+             * Creates the local index based on the objects' partitions
+             */
+            DB_STATUS loadDatasetComplete(spatial_lib::DatasetT &dataset);
+
+            /**
              * loads dataset info from the partition file. The pfile pos must be in the begining
              * loads: polygonCount, dataset nickname, dataspace MBR
              */

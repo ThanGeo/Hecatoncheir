@@ -56,7 +56,7 @@ namespace APRIL
              * @brief joins APRIL approximations for topological relations when two MBRs are equal
              * @returns DB_STATUS value, and sets the relation parameter to the identified relation (or refinement)
              */
-            DB_STATUS MBREqualJoinAPRIL(uint idR, uint idS, spatial_lib::AprilDataT *aprilR, spatial_lib::AprilDataT *aprilS, int &relation);
+            DB_STATUS MBREqualJoinAPRIL(spatial_lib::PolygonT &polR, spatial_lib::PolygonT &polS, spatial_lib::AprilDataT *aprilR, spatial_lib::AprilDataT *aprilS, int &relation);
 
             /**
              * @brief joins APRIL approximations for topological relations whose MBRs intersect generally

@@ -501,7 +501,7 @@ namespace APRIL
                 return ret;
             }
 
-            DB_STATUS MBREqualJoinAPRIL(uint idR, uint idS, spatial_lib::AprilDataT *aprilR, spatial_lib::AprilDataT *aprilS, int &relation) {
+            DB_STATUS MBREqualJoinAPRIL(spatial_lib::PolygonT &polR, spatial_lib::PolygonT &polS, spatial_lib::AprilDataT *aprilR, spatial_lib::AprilDataT *aprilS, int &relation) {
                 DB_STATUS ret = DBERR_OK;
                 // AA join to look for exact relationship between the lists
                 int AAresult = joinIntervalListsSymmetricalOptimizedTrueHitIntersect(aprilR->intervalsALL, aprilR->numIntervalsALL, aprilS->intervalsALL, aprilS->numIntervalsALL);
@@ -534,7 +534,7 @@ namespace APRIL
                 } else {
                     // AA no containment, true hit intersect because equal MBRs
                     // maybe a special case of meet, so refine first
-                    if(spatial_lib::isMeet(idR, idS)){
+                    if(spatial_lib::isMeet(polR, polS)){
                         relation = spatial_lib::TR_MEET;
                         return ret;
                     }

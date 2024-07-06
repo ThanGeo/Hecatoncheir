@@ -70,11 +70,8 @@ namespace spatial_lib
     /**
      * util
     */
-    std::pair<uint,uint> getVertexCountsOfPair(uint idR, uint idS) {
-        bg_polygon boostPolygonR = loadPolygonFromDiskBoostGeometry(idR, finR, offsetMapR);
-        bg_polygon boostPolygonS = loadPolygonFromDiskBoostGeometry(idS, finS, offsetMapS);
-
-        return std::make_pair(boostPolygonR.outer().size(), boostPolygonS.outer().size());
+    std::pair<uint,uint> getVertexCountsOfPair(PolygonT &polR, PolygonT &polS) {
+        return std::make_pair(polR.boostPolygon.outer().size(), polS.boostPolygon.outer().size());
     }
 
 
@@ -82,41 +79,41 @@ namespace spatial_lib
      * Boost geometry refinement for specific relations
      */
 
-    static int refineIntersection(bg_polygon *polygonR, bg_polygon *polygonS){
-        return boost::geometry::intersects(*polygonR, *polygonS);
+    static int refineIntersection(bg_polygon &polygonR, bg_polygon &polygonS){
+        return boost::geometry::intersects(polygonR, polygonS);
     }
 
-    static int refineInside(bg_polygon *polygonR, bg_polygon *polygonS){
-        return boost::geometry::within(*polygonR, *polygonS);
+    static int refineInside(bg_polygon &polygonR, bg_polygon &polygonS){
+        return boost::geometry::within(polygonR, polygonS);
     }
 
-    static int refineContains(bg_polygon *polygonR, bg_polygon *polygonS){
-        return boost::geometry::within(*polygonS, *polygonR);
+    static int refineContains(bg_polygon &polygonR, bg_polygon &polygonS){
+        return boost::geometry::within(polygonS, polygonR);
     }
 
-    static int refineDisjoint(bg_polygon *polygonR, bg_polygon *polygonS){
-        return boost::geometry::disjoint(*polygonR, *polygonS);
+    static int refineDisjoint(bg_polygon &polygonR, bg_polygon &polygonS){
+        return boost::geometry::disjoint(polygonR, polygonS);
     }
 
-    static int refineEqual(bg_polygon *polygonR, bg_polygon *polygonS){
+    static int refineEqual(bg_polygon &polygonR, bg_polygon &polygonS){
         // dont use this bad function. 
         // Returns false for some equal polygons (maybe due to double precision errors)
-        // return boost::geometry::equals(*polygonR, *polygonS);
+        // return boost::geometry::equals(polygonR, polygonS);
 
         // instead, use the relate method that performs the DE-9IM matrix
-        return boost::geometry::relate(*polygonR, *polygonS, equalMask);
+        return boost::geometry::relate(polygonR, polygonS, equalMask);
     }
 
-    static int refineMeet(bg_polygon *polygonR, bg_polygon *polygonS){
-        return boost::geometry::touches(*polygonR, *polygonS);
+    static int refineMeet(bg_polygon &polygonR, bg_polygon &polygonS){
+        return boost::geometry::touches(polygonR, polygonS);
     }
 
-    static int refineCovers(bg_polygon *polygonR, bg_polygon *polygonS){
-        return boost::geometry::covered_by(*polygonS, *polygonR);
+    static int refineCovers(bg_polygon &polygonR, bg_polygon &polygonS){
+        return boost::geometry::covered_by(polygonS, polygonR);
     }
 
-    static int refineCoveredBy(bg_polygon *polygonR, bg_polygon *polygonS){
-        return boost::geometry::covered_by(*polygonR, *polygonS);
+    static int refineCoveredBy(bg_polygon &polygonR, bg_polygon &polygonS){
+        return boost::geometry::covered_by(polygonR, polygonS);
     }
 
     /**
@@ -148,12 +145,12 @@ namespace spatial_lib
         return true;
     }
 
-    static inline std::string createMaskCode(bg_polygon *polygonR, bg_polygon *polygonS) {
-        boost::geometry::de9im::matrix matrix = boost::geometry::relation(*polygonR, *polygonS);
+    static inline std::string createMaskCode(bg_polygon &polygonR, bg_polygon &polygonS) {
+        boost::geometry::de9im::matrix matrix = boost::geometry::relation(polygonR, polygonS);
         return matrix.str();
     }
 
-    static int refineFindRelation(bg_polygon *polygonR, bg_polygon *polygonS, bool markedForEqual){
+    static int refineFindRelation(bg_polygon &polygonR, bg_polygon &polygonS, bool markedForEqual){
         // get the mask codes
         std::string code = createMaskCode(polygonR, polygonS);
 
@@ -206,128 +203,97 @@ namespace spatial_lib
      * Refine find specific relation
      */
 
-    void refineIntersectionJoin(uint idR, uint idS) {
-        bg_polygon boostPolygonR = loadPolygonFromDiskBoostGeometry(idR, finR, offsetMapR);
-        bg_polygon boostPolygonS = loadPolygonFromDiskBoostGeometry(idS, finS, offsetMapS);
-        
+    void refineIntersectionJoin(PolygonT &polR, PolygonT &polS) {
         // refine
-        int refinementResult = refineIntersection(&boostPolygonR, &boostPolygonS);
+        int refinementResult = refineIntersection(polR.boostPolygon, polS.boostPolygon);
+        // count result
+        if (refinementResult) {
+            g_queryOutput.countResult();
+            // printf("%d,%d\n", polR.recID, polS.recID);
+            // printf("-----------\n");
+            // printBoostPolygon(polR.boostPolygon);
+            // printBoostPolygon(polS.boostPolygon);
+            // printf("-----------\n");
+        } else {
+            // printf("-----------\n");
+            // printf("%d\n", polR.recID);
+            // printBoostPolygon(polR.boostPolygon);
+            // printf("%d\n", polS.recID);
+            // printBoostPolygon(polS.boostPolygon);
+            // printf("-----------\n");
+            // printf("%d,%d\n", polR.recID, polS.recID);
+        }
+    }
+
+    void refineInsideJoin(PolygonT &polR, PolygonT &polS) {
+        // refine
+        int refinementResult = refineInside(polR.boostPolygon, polS.boostPolygon);
         // count result
         if (refinementResult) {
             g_queryOutput.countResult();
         }
     }
 
-    void refineInsideJoin(uint idR, uint idS) {
-        bg_polygon boostPolygonR = loadPolygonFromDiskBoostGeometry(idR, finR, offsetMapR);
-        bg_polygon boostPolygonS = loadPolygonFromDiskBoostGeometry(idS, finS, offsetMapS);
-        
+    void refineDisjointJoin(PolygonT &polR, PolygonT &polS) {
         // refine
-        int refinementResult = refineInside(&boostPolygonR, &boostPolygonS);
+        int refinementResult = refineDisjoint(polR.boostPolygon, polS.boostPolygon);
         // count result
         if (refinementResult) {
             g_queryOutput.countResult();
         }
     }
 
-    void refineDisjointJoin(uint idR, uint idS) {
-        bg_polygon boostPolygonR = loadPolygonFromDiskBoostGeometry(idR, finR, offsetMapR);
-        bg_polygon boostPolygonS = loadPolygonFromDiskBoostGeometry(idS, finS, offsetMapS);
-        
+    void refineEqualJoin(PolygonT &polR, PolygonT &polS) {
         // refine
-        int refinementResult = refineDisjoint(&boostPolygonR, &boostPolygonS);
+        int refinementResult = refineEqual(polR.boostPolygon, polS.boostPolygon);
         // count result
         if (refinementResult) {
             g_queryOutput.countResult();
         }
     }
 
-    void refineEqualJoin(uint idR, uint idS) {
-        // load boost polygons
-        bg_polygon boostPolygonR = loadPolygonFromDiskBoostGeometry(idR, finR, offsetMapR);
-        bg_polygon boostPolygonS = loadPolygonFromDiskBoostGeometry(idS, finS, offsetMapS);
-
+    void refineMeetJoin(PolygonT &polR, PolygonT &polS) {
         // refine
-        int refinementResult = refineEqual(&boostPolygonR, &boostPolygonS);
+        int refinementResult = refineMeet(polR.boostPolygon, polS.boostPolygon);
         // count result
         if (refinementResult) {
             g_queryOutput.countResult();
         }
     }
 
-    void refineMeetJoin(uint idR, uint idS) {
-        // load boost polygons
-        bg_polygon boostPolygonR = loadPolygonFromDiskBoostGeometry(idR, finR, offsetMapR);
-        bg_polygon boostPolygonS = loadPolygonFromDiskBoostGeometry(idS, finS, offsetMapS);
-
+    void refineContainsJoin(PolygonT &polR, PolygonT &polS) {
         // refine
-        int refinementResult = refineMeet(&boostPolygonR, &boostPolygonS);
+        int refinementResult = refineContains(polR.boostPolygon, polS.boostPolygon);
         // count result
         if (refinementResult) {
             g_queryOutput.countResult();
         }
     }
 
-    void refineContainsJoin(uint idR, uint idS) {
-        // load boost polygons
-        bg_polygon boostPolygonR = loadPolygonFromDiskBoostGeometry(idR, finR, offsetMapR);
-        bg_polygon boostPolygonS = loadPolygonFromDiskBoostGeometry(idS, finS, offsetMapS);
-
+    void refineCoversJoin(PolygonT &polR, PolygonT &polS) {
         // refine
-        int refinementResult = refineContains(&boostPolygonR, &boostPolygonS);
+        int refinementResult = refineCovers(polR.boostPolygon, polS.boostPolygon);
         // count result
         if (refinementResult) {
             g_queryOutput.countResult();
         }
     }
 
-    void refineCoversJoin(uint idR, uint idS) {
-        // load boost polygons
-        bg_polygon boostPolygonR = loadPolygonFromDiskBoostGeometry(idR, finR, offsetMapR);
-        bg_polygon boostPolygonS = loadPolygonFromDiskBoostGeometry(idS, finS, offsetMapS);
-
+    void refineCoveredByJoin(PolygonT &polR, PolygonT &polS) {
         // refine
-        int refinementResult = refineCovers(&boostPolygonR, &boostPolygonS);
+        int refinementResult = refineCoveredBy(polR.boostPolygon, polS.boostPolygon);
         // count result
         if (refinementResult) {
             g_queryOutput.countResult();
         }
     }
-
-    void refineCoveredByJoin(uint idR, uint idS) {
-        // load boost polygons
-        bg_polygon boostPolygonR = loadPolygonFromDiskBoostGeometry(idR, finR, offsetMapR);
-        bg_polygon boostPolygonS = loadPolygonFromDiskBoostGeometry(idS, finS, offsetMapS);
-
-        // refine
-        int refinementResult = refineCoveredBy(&boostPolygonR, &boostPolygonS);
-        // count result
-        if (refinementResult) {
-            g_queryOutput.countResult();
-        }
-    }
-
-
 
     /**
      * Find Relation
      */
-
-    void refineAllRelations(uint idR, uint idS) {
-        bg_polygon boostPolygonR = loadPolygonFromDiskBoostGeometry(idR, finR, offsetMapR);
-        bg_polygon boostPolygonS = loadPolygonFromDiskBoostGeometry(idS, finS, offsetMapS);
-        
+    void refineAllRelations(PolygonT &polR, PolygonT &polS) {
         // refine
-        int refinementResult = refineFindRelation(&boostPolygonR, &boostPolygonS, true);
-        // if (refinementResult == spatial_lib::TR_INTERSECT) {
-        //     printf("%u,%u\n", idR, idS);
-        // }
-        // if (idR == 108727 && idS == 3098) {
-        //     printf("%u,%u result: %d\n", idR, idS, refinementResult);
-        // }
-        // if (idR == 230945 && idS == 9127906) {
-        //     printf("%u,%u refine result: %d\n", idR, idS, refinementResult);
-        // }
+        int refinementResult = refineFindRelation(polR.boostPolygon, polS.boostPolygon, true);
         // count result
         g_queryOutput.countTopologyRelationResult(refinementResult);
     }
@@ -336,60 +302,36 @@ namespace spatial_lib
      * FOR APRIL
      */
 
-    bool isEqual(uint idR, uint idS) {
-        // load boost polygons
-        bg_polygon boostPolygonR = loadPolygonFromDiskBoostGeometry(idR, finR, offsetMapR);
-        bg_polygon boostPolygonS = loadPolygonFromDiskBoostGeometry(idS, finS, offsetMapS);
-
+    bool isEqual(PolygonT &polR, PolygonT &polS) {
         // refine
-        return refineEqual(&boostPolygonR, &boostPolygonS);
+        return refineEqual(polR.boostPolygon, polS.boostPolygon);
     }
 
-    bool isMeet(uint idR, uint idS) {
-        // load boost polygons
-        bg_polygon boostPolygonR = loadPolygonFromDiskBoostGeometry(idR, finR, offsetMapR);
-        bg_polygon boostPolygonS = loadPolygonFromDiskBoostGeometry(idS, finS, offsetMapS);
-
+    bool isMeet(PolygonT &polR, PolygonT &polS) {
         // refine
-        return refineMeet(&boostPolygonR, &boostPolygonS);
+        return refineMeet(polR.boostPolygon, polS.boostPolygon);
     }
 
-    int refineAllRelationsNoEqual(uint idR, uint idS) {
-        bg_polygon boostPolygonR = loadPolygonFromDiskBoostGeometry(idR, finR, offsetMapR);
-        bg_polygon boostPolygonS = loadPolygonFromDiskBoostGeometry(idS, finS, offsetMapS);
-        
+    int refineAllRelationsNoEqual(PolygonT &polR, PolygonT &polS) {
         // refine
-        return refineFindRelation(&boostPolygonR, &boostPolygonS, false);
+        return refineFindRelation(polR.boostPolygon, polS.boostPolygon, false);
     }
 
-    int refineGuaranteedNoContainment(uint idR, uint idS) {
-        // load boost polygons
-        bg_polygon boostPolygonR = loadPolygonFromDiskBoostGeometry(idR, finR, offsetMapR);
-        bg_polygon boostPolygonS = loadPolygonFromDiskBoostGeometry(idS, finS, offsetMapS);
-
+    int refineGuaranteedNoContainment(PolygonT &polR, PolygonT &polS) {
         // get the mask code
-	    std::string code = createMaskCode(&boostPolygonR, &boostPolygonS);
-
+	    std::string code = createMaskCode(polR.boostPolygon, polS.boostPolygon);
         if (compareMasks(code, disjointCode)) {
             return TR_DISJOINT;
         }
-
         if (compareMasks(code, meetCode1) || compareMasks(code, meetCode2) || compareMasks(code, meetCode3)) {
             return TR_MEET;
         }
-
         return TR_INTERSECT;
     }
 
-
-    int refineContainmentsOnly(uint idR, uint idS) {
-        // load boost polygons
-        bg_polygon boostPolygonR = loadPolygonFromDiskBoostGeometry(idR, finR, offsetMapR);
-        bg_polygon boostPolygonS = loadPolygonFromDiskBoostGeometry(idS, finS, offsetMapS);
-
+    int refineContainmentsOnly(PolygonT &polR, PolygonT &polS) {
         // get the mask code
-	    std::string code = createMaskCode(&boostPolygonR, &boostPolygonS);
-
+	    std::string code = createMaskCode(polR.boostPolygon, polS.boostPolygon);
         if (compareMasks(code, coversCode1) || compareMasks(code, coversCode2) || 
             compareMasks(code, coversCode3) || compareMasks(code, coversCode4)) {
             if (compareMasks(code, containsCode)) {
@@ -397,7 +339,6 @@ namespace spatial_lib
             }
             return TR_COVERS;
         }
-
         if (compareMasks(code, coveredbyCode1) || compareMasks(code, coveredbyCode2) || 
             compareMasks(code, coveredbyCode3) || compareMasks(code, coveredbyCode4)) {
             if (compareMasks(code, insideCode)) {
@@ -405,22 +346,15 @@ namespace spatial_lib
             }
             return TR_COVERED_BY;
         }
-
         return TR_INTERSECT;
     }
 
-    int refineContainsPlus(uint idR, uint idS) {
-        // load boost polygons
-        bg_polygon boostPolygonR = loadPolygonFromDiskBoostGeometry(idR, finR, offsetMapR);
-        bg_polygon boostPolygonS = loadPolygonFromDiskBoostGeometry(idS, finS, offsetMapS);
-
+    int refineContainsPlus(PolygonT &polR, PolygonT &polS) {
         // get the mask code
-	    std::string code = createMaskCode(&boostPolygonR, &boostPolygonS);
-
+	    std::string code = createMaskCode(polR.boostPolygon, polS.boostPolygon);
         if (compareMasks(code, disjointCode)) {
             return TR_DISJOINT;
         }
-
         if (compareMasks(code, coversCode1) || compareMasks(code, coversCode2) || 
             compareMasks(code, coversCode3) || compareMasks(code, coversCode4)) {
             if (compareMasks(code, containsCode)) {
@@ -428,26 +362,18 @@ namespace spatial_lib
             }
             return TR_COVERS;
         }
-
         if (compareMasks(code, meetCode1) || compareMasks(code, meetCode2) || compareMasks(code, meetCode3)) {
             return TR_MEET;
         }
-
         return TR_INTERSECT;
     }
 
-    int refineInsidePlus(uint idR, uint idS) {
-        // load boost polygons
-        bg_polygon boostPolygonR = loadPolygonFromDiskBoostGeometry(idR, finR, offsetMapR);
-        bg_polygon boostPolygonS = loadPolygonFromDiskBoostGeometry(idS, finS, offsetMapS);
-
+    int refineInsidePlus(PolygonT &polR, PolygonT &polS) {
         // get the mask code
-	    std::string code = createMaskCode(&boostPolygonR, &boostPolygonS);
-
+	    std::string code = createMaskCode(polR.boostPolygon, polS.boostPolygon);
         if (compareMasks(code, disjointCode)) {
             return TR_DISJOINT;
         }
-
         if (compareMasks(code, coveredbyCode1) || compareMasks(code, coveredbyCode2) || 
             compareMasks(code, coveredbyCode3) || compareMasks(code, coveredbyCode4)) {
             if (compareMasks(code, insideCode)) {
@@ -455,50 +381,46 @@ namespace spatial_lib
             }
             return TR_COVERED_BY;
         }
-
         if (compareMasks(code, meetCode1) || compareMasks(code, meetCode2) || compareMasks(code, meetCode3)) {
             return TR_MEET;
         }
-
         return TR_INTERSECT;
     }
 
-    void refinementEntrypoint(uint idR, uint idS) {
+    void refinementEntrypoint(PolygonT &polR, PolygonT &polS) {
         // time
         time::markRefinementFilterTimer();
         // count post mbr candidate
         g_queryOutput.postMBRFilterCandidates += 1;
         g_queryOutput.refinementCandidates += 1;
-        
         switch(g_queryType) {
             case Q_INTERSECT:
-                refineIntersectionJoin(idR, idS);
+                refineIntersectionJoin(polR, polS);
                 break;
             case Q_INSIDE:
-                refineInsideJoin(idR, idS);
+                refineInsideJoin(polR, polS);
                 break;
             case Q_DISJOINT:
-                refineDisjointJoin(idR, idS);
+                refineDisjointJoin(polR, polS);
                 break;
             case Q_EQUAL:
-                refineEqualJoin(idR, idS);
+                refineEqualJoin(polR, polS);
                 break;
             case Q_MEET:
-                refineMeetJoin(idR, idS);
+                refineMeetJoin(polR, polS);
                 break;
             case Q_CONTAINS:
-                refineContainsJoin(idR, idS);
+                refineContainsJoin(polR, polS);
                 break;
             case Q_COVERS:
-                refineCoversJoin(idR, idS);
+                refineCoversJoin(polR, polS);
                 break;
             case Q_COVERED_BY:
-                refineCoveredByJoin(idR, idS);
+                refineCoveredByJoin(polR, polS);
                 break;
             case Q_FIND_RELATION:
-                refineAllRelations(idR, idS);
+                refineAllRelations(polR, polS);
                 break;
-
             default:
                 fprintf(stderr, "Failed. No refinement support for query type.\n");
                 exit(-1);
@@ -515,14 +437,9 @@ namespace spatial_lib
     */
     /************************************************/
 
-    int refineInsideCoveredbyTruehitIntersect(uint idR, uint idS) {
-        // load boost polygons
-        bg_polygon boostPolygonR = loadPolygonFromDiskBoostGeometry(idR, finR, offsetMapR);
-        bg_polygon boostPolygonS = loadPolygonFromDiskBoostGeometry(idS, finS, offsetMapS);
-
+    int refineInsideCoveredbyTruehitIntersect(PolygonT &polR, PolygonT &polS) {
         // get the mask code
-	    std::string code = createMaskCode(&boostPolygonR, &boostPolygonS);
-
+	    std::string code = createMaskCode(polR.boostPolygon, polS.boostPolygon);
         // covered by
         if (compareMasks(code, coveredbyCode1) || compareMasks(code, coveredbyCode2) || 
             compareMasks(code, coveredbyCode3) || compareMasks(code, coveredbyCode4)) {
@@ -536,19 +453,13 @@ namespace spatial_lib
         return TR_INTERSECT;
     }
 
-    int refineDisjointInsideCoveredbyMeetIntersect(uint idR, uint idS) {
-        // load boost polygons
-        bg_polygon boostPolygonR = loadPolygonFromDiskBoostGeometry(idR, finR, offsetMapR);
-        bg_polygon boostPolygonS = loadPolygonFromDiskBoostGeometry(idS, finS, offsetMapS);
-
+    int refineDisjointInsideCoveredbyMeetIntersect(PolygonT &polR, PolygonT &polS) {
         // get the mask code
-	    std::string code = createMaskCode(&boostPolygonR, &boostPolygonS);
-        
+	    std::string code = createMaskCode(polR.boostPolygon, polS.boostPolygon);
         // disjoint
         if (compareMasks(code, disjointCode)) {
             return TR_DISJOINT;
         }
-
         // covered by
         if (compareMasks(code, coveredbyCode1) || compareMasks(code, coveredbyCode2) || 
             compareMasks(code, coveredbyCode3) || compareMasks(code, coveredbyCode4)) {
@@ -558,24 +469,17 @@ namespace spatial_lib
             }
             return TR_COVERED_BY;
         }
-
         // meet
         if (compareMasks(code, meetCode1) || compareMasks(code, meetCode2) || compareMasks(code, meetCode3)) {
             return TR_MEET;
         }
-
         // intersect
         return TR_INTERSECT;
     }
 
-    int refineContainsCoversTruehitIntersect(uint idR, uint idS) {
-        // load boost polygons
-        bg_polygon boostPolygonR = loadPolygonFromDiskBoostGeometry(idR, finR, offsetMapR);
-        bg_polygon boostPolygonS = loadPolygonFromDiskBoostGeometry(idS, finS, offsetMapS);
-
+    int refineContainsCoversTruehitIntersect(PolygonT &polR, PolygonT &polS) {
         // get the mask code
-	    std::string code = createMaskCode(&boostPolygonR, &boostPolygonS);
-
+	    std::string code = createMaskCode(polR.boostPolygon, polS.boostPolygon);
         // covers
         if (compareMasks(code, coversCode1) || compareMasks(code, coversCode2) || 
             compareMasks(code, coversCode3) || compareMasks(code, coversCode4)) {
@@ -589,19 +493,13 @@ namespace spatial_lib
         return TR_INTERSECT;
     }
 
-    int refineDisjointContainsCoversMeetIntersect(uint idR, uint idS) {
-        // load boost polygons
-        bg_polygon boostPolygonR = loadPolygonFromDiskBoostGeometry(idR, finR, offsetMapR);
-        bg_polygon boostPolygonS = loadPolygonFromDiskBoostGeometry(idS, finS, offsetMapS);
-
+    int refineDisjointContainsCoversMeetIntersect(PolygonT &polR, PolygonT &polS) {
         // get the mask code
-	    std::string code = createMaskCode(&boostPolygonR, &boostPolygonS);
-        
+	    std::string code = createMaskCode(polR.boostPolygon, polS.boostPolygon);
         // disjoint
         if (compareMasks(code, disjointCode)) {
             return TR_DISJOINT;
         }
-
         // covers
         if (compareMasks(code, coversCode1) || compareMasks(code, coversCode2) || 
             compareMasks(code, coversCode3) || compareMasks(code, coversCode4)) {
@@ -611,47 +509,33 @@ namespace spatial_lib
             }
             return TR_COVERS;
         }
-
         // meet
         if (compareMasks(code, meetCode1) || compareMasks(code, meetCode2) || compareMasks(code, meetCode3)) {
             return TR_MEET;
         }
-
         // intersect
         return TR_INTERSECT;
     }
 
 
-    int refineDisjointMeetIntersect(uint idR, uint idS) {
-        // load boost polygons
-        bg_polygon boostPolygonR = loadPolygonFromDiskBoostGeometry(idR, finR, offsetMapR);
-        bg_polygon boostPolygonS = loadPolygonFromDiskBoostGeometry(idS, finS, offsetMapS);
-
+    int refineDisjointMeetIntersect(PolygonT &polR, PolygonT &polS) {
         // get the mask code
-	    std::string code = createMaskCode(&boostPolygonR, &boostPolygonS);
-        
+	    std::string code = createMaskCode(polR.boostPolygon, polS.boostPolygon);   
         // disjoint
         if (compareMasks(code, disjointCode)) {
             return TR_DISJOINT;
         }
-
         // meet
         if (compareMasks(code, meetCode1) || compareMasks(code, meetCode2) || compareMasks(code, meetCode3)) {
             return TR_MEET;
         }
-
         // intersect
         return TR_INTERSECT;
     }
 
-    int refineCoversCoveredByTrueHitIntersect(uint idR, uint idS) {
-        // load boost polygons
-        bg_polygon boostPolygonR = loadPolygonFromDiskBoostGeometry(idR, finR, offsetMapR);
-        bg_polygon boostPolygonS = loadPolygonFromDiskBoostGeometry(idS, finS, offsetMapS);
-
+    int refineCoversCoveredByTrueHitIntersect(PolygonT &polR, PolygonT &polS) {
         // get the mask code
-	    std::string code = createMaskCode(&boostPolygonR, &boostPolygonS);
-        
+	    std::string code = createMaskCode(polR.boostPolygon, polS.boostPolygon);     
         // covers
         if (compareMasks(code, coversCode1) || compareMasks(code, coversCode2) || 
             compareMasks(code, coversCode3) || compareMasks(code, coversCode4)) {
@@ -659,7 +543,6 @@ namespace spatial_lib
             // instead of covers, classify as contains for consistency with the DE-9IM
             return TR_CONTAINS;
         }
-
         // covered by
         if (compareMasks(code, coveredbyCode1) || compareMasks(code, coveredbyCode2) || 
             compareMasks(code, coveredbyCode3) || compareMasks(code, coveredbyCode4)) {
@@ -667,24 +550,17 @@ namespace spatial_lib
             // instead of covers, classify as contains for consistency with the DE-9IM
             return TR_INSIDE;
         }
-
         // intersect
         return TR_INTERSECT;
     }
 
-    int refineEqualCoversCoveredByTrueHitIntersect(uint idR, uint idS) {
-        // load boost polygons
-        bg_polygon boostPolygonR = loadPolygonFromDiskBoostGeometry(idR, finR, offsetMapR);
-        bg_polygon boostPolygonS = loadPolygonFromDiskBoostGeometry(idS, finS, offsetMapS);
-
+    int refineEqualCoversCoveredByTrueHitIntersect(PolygonT &polR, PolygonT &polS) {
         // get the mask code
-	    std::string code = createMaskCode(&boostPolygonR, &boostPolygonS);
-
+	    std::string code = createMaskCode(polR.boostPolygon, polS.boostPolygon);
         // equal
         if(compareMasks(code, equalCode)) {
             return TR_EQUAL;
-        }
-        
+        } 
         // covers
         if (compareMasks(code, coversCode1) || compareMasks(code, coversCode2) || 
             compareMasks(code, coversCode3) || compareMasks(code, coversCode4)) {
@@ -700,20 +576,14 @@ namespace spatial_lib
             // instead of covers, classify as contains for consistency with the DE-9IM
             return TR_INSIDE;
         }
-
         // intersect
         return TR_INTERSECT;
     }
 
 
-    int refineCoversTrueHitIntersect(uint idR, uint idS) {
-        // load boost polygons
-        bg_polygon boostPolygonR = loadPolygonFromDiskBoostGeometry(idR, finR, offsetMapR);
-        bg_polygon boostPolygonS = loadPolygonFromDiskBoostGeometry(idS, finS, offsetMapS);
-
+    int refineCoversTrueHitIntersect(PolygonT &polR, PolygonT &polS) {
         // get the mask code
-	    std::string code = createMaskCode(&boostPolygonR, &boostPolygonS);
-        
+	    std::string code = createMaskCode(polR.boostPolygon, polS.boostPolygon);
         // covers
         if (compareMasks(code, coversCode1) || compareMasks(code, coversCode2) || 
             compareMasks(code, coversCode3) || compareMasks(code, coversCode4)) {
@@ -721,20 +591,14 @@ namespace spatial_lib
             // return contains for consistency
             return TR_CONTAINS;
         }
-
         // intersect
         return TR_INTERSECT;
     }
 
 
-    int refineCoveredbyTrueHitIntersect(uint idR, uint idS) {
-        // load boost polygons
-        bg_polygon boostPolygonR = loadPolygonFromDiskBoostGeometry(idR, finR, offsetMapR);
-        bg_polygon boostPolygonS = loadPolygonFromDiskBoostGeometry(idS, finS, offsetMapS);
-
+    int refineCoveredbyTrueHitIntersect(PolygonT &polR, PolygonT &polS) {
         // get the mask code
-	    std::string code = createMaskCode(&boostPolygonR, &boostPolygonS);
-        
+	    std::string code = createMaskCode(polR.boostPolygon, polS.boostPolygon);    
         // covered by
         if (compareMasks(code, coveredbyCode1) || compareMasks(code, coveredbyCode2) || 
             compareMasks(code, coveredbyCode3) || compareMasks(code, coveredbyCode4)) {
@@ -742,24 +606,17 @@ namespace spatial_lib
             // return inside for consistency
             return TR_INSIDE;
         }
-
         // intersect
         return TR_INTERSECT;
     }
 
-    int refineEqualCoversCoveredbyTrueHitIntersect(uint idR, uint idS) {
-        // load boost polygons
-        bg_polygon boostPolygonR = loadPolygonFromDiskBoostGeometry(idR, finR, offsetMapR);
-        bg_polygon boostPolygonS = loadPolygonFromDiskBoostGeometry(idS, finS, offsetMapS);
-
+    int refineEqualCoversCoveredbyTrueHitIntersect(PolygonT &polR, PolygonT &polS) {
         // get the mask code
-	    std::string code = createMaskCode(&boostPolygonR, &boostPolygonS);
-
+	    std::string code = createMaskCode(polR.boostPolygon, polS.boostPolygon);
         // check equality first because it is a subset of covers and covered by
         if(compareMasks(code, equalCode)){
             return TR_EQUAL;
         }
-        
         // covers
         if (compareMasks(code, coversCode1) || compareMasks(code, coversCode2) || 
             compareMasks(code, coversCode3) || compareMasks(code, coversCode4)) {
@@ -767,7 +624,6 @@ namespace spatial_lib
             // instead of covers, classify as contains for consistency with the DE-9IM
             return TR_CONTAINS;
         }
-
         // covered by
         if (compareMasks(code, coveredbyCode1) || compareMasks(code, coveredbyCode2) || 
             compareMasks(code, coveredbyCode3) || compareMasks(code, coveredbyCode4)) {
@@ -775,12 +631,11 @@ namespace spatial_lib
             // instead of covers, classify as contains for consistency with the DE-9IM
             return TR_INSIDE;
         }
-
         // intersect
         return TR_INTERSECT;
     }
 
-    void specializedRefinementEntrypoint(uint idR, uint idS, int relationCase) {
+    void specializedRefinementEntrypoint(PolygonT &polR, PolygonT &polS, int relationCase) {
         // time
         time::markRefinementFilterTimer();
         // count post mbr candidate
@@ -791,16 +646,16 @@ namespace spatial_lib
 
         switch(relationCase) {
             case MBR_R_IN_S:
-                refinementResult = refineDisjointInsideCoveredbyMeetIntersect(idR, idS);
+                refinementResult = refineDisjointInsideCoveredbyMeetIntersect(polR, polS);
                 break;
             case MBR_S_IN_R:
-                refinementResult = refineDisjointContainsCoversMeetIntersect(idR,idS);
+                refinementResult = refineDisjointContainsCoversMeetIntersect(polR, polS);
                 break;
             case MBR_EQUAL:
-                refinementResult = refineEqualCoversCoveredbyTrueHitIntersect(idR, idS);
+                refinementResult = refineEqualCoversCoveredbyTrueHitIntersect(polR, polS);
                 break;
             case MBR_INTERSECT:
-                refinementResult = refineDisjointMeetIntersect(idR, idS);
+                refinementResult = refineDisjointMeetIntersect(polR, polS);
                 break;
             default:
                 fprintf(stderr, "Failed. No refinement support for this relation case.\n");

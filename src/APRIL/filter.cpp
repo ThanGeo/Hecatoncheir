@@ -41,11 +41,11 @@ namespace APRIL
                 // result holds what type of refinement needs to be made
                 case spatial_lib::REFINE_INSIDE_COVEREDBY_TRUEHIT_INTERSECT:
                     // refine
-                    // relation = spatial_lib::refineInsideCoveredbyTruehitIntersect(idR, idS);
+                    relation = spatial_lib::refineInsideCoveredbyTruehitIntersect(polR, polS);
                     break;
                 case spatial_lib::REFINE_DISJOINT_INSIDE_COVEREDBY_MEET_INTERSECT:
                     // refine
-                    // relation = spatial_lib::refineDisjointInsideCoveredbyMeetIntersect(idR, idS);
+                    relation = spatial_lib::refineDisjointInsideCoveredbyMeetIntersect(polR, polS);
                     break;
                 default:
                     logger::log_error(DBERR_APRIL_UNEXPECTED_RESULT, "R in S containment APRIL filter failed with unexpected relation:", relation, spatial_lib::mapping::relationIntToStr(relation));
@@ -53,7 +53,7 @@ namespace APRIL
                 
             }
             // count the refinement result
-            // spatial_lib::countTopologyRelationResult(relation);
+            spatial_lib::g_queryOutput.countTopologyRelationResult(relation);
             return ret;
         }
 
@@ -93,11 +93,11 @@ namespace APRIL
                 // result holds what type of refinement needs to be made
                 case spatial_lib::REFINE_CONTAINS_COVERS_TRUEHIT_INTERSECT:
                     // refine
-                    // relation = spatial_lib::refineContainsCoversTruehitIntersect(idR, idS);
+                    relation = spatial_lib::refineContainsCoversTruehitIntersect(polR, polS);
                     break;
                 case spatial_lib::REFINE_DISJOINT_CONTAINS_COVERS_MEET_INTERSECT:
                     // refine
-                    // relation = spatial_lib::refineDisjointContainsCoversMeetIntersect(idR, idS);
+                    relation = spatial_lib::refineDisjointContainsCoversMeetIntersect(polR, polS);
                     break;
                 default:
                     logger::log_error(DBERR_APRIL_UNEXPECTED_RESULT, "S in R containment APRIL filter failed with unexpected relation:", relation, spatial_lib::mapping::relationIntToStr(relation));
@@ -105,7 +105,7 @@ namespace APRIL
                 
             }
             // count the refinement result
-            // spatial_lib::countTopologyRelationResult(relation);
+            spatial_lib::g_queryOutput.countTopologyRelationResult(relation);
             return ret;
         }
 
@@ -120,7 +120,7 @@ namespace APRIL
                 spatial_lib::AprilDataT* aprilR = g_config.datasetInfo.getDatasetR()->getAprilDataBySectionAndObjectID(sectionID, polR.recID);
                 spatial_lib::AprilDataT* aprilS = g_config.datasetInfo.getDatasetS()->getAprilDataBySectionAndObjectID(sectionID, polS.recID);
                 // use APRIL intermediate filter
-                ret = uncompressed::topology::MBREqualJoinAPRIL(polR.recID, polS.recID, aprilR, aprilS, iFilterResult);
+                ret = uncompressed::topology::MBREqualJoinAPRIL(polR, polS, aprilR, aprilS, iFilterResult);
                 if (ret != DBERR_OK) {
                     logger::log_error(ret, "S in R containment APRIL filter failed.");
                     return ret;
@@ -146,26 +146,26 @@ namespace APRIL
                 // result holds what type of refinement needs to be made
                 case spatial_lib::REFINE_COVEREDBY_TRUEHIT_INTERSECT:
                     // refine
-                    // relation = spatial_lib::refineCoveredbyTrueHitIntersect(idR, idS);
+                    relation = spatial_lib::refineCoveredbyTrueHitIntersect(polR, polS);
                     break;
                 case spatial_lib::REFINE_COVERS_TRUEHIT_INTERSECT:
                     // refine
-                    // relation = spatial_lib::refineCoversTrueHitIntersect(idR, idS);
+                    relation = spatial_lib::refineCoversTrueHitIntersect(polR, polS);
                     break;
                 case spatial_lib::REFINE_COVERS_COVEREDBY_TRUEHIT_INTERSECT:
                     // refine
-                    // relation = spatial_lib::refineCoversCoveredByTrueHitIntersect(idR, idS);
+                    relation = spatial_lib::refineCoversCoveredByTrueHitIntersect(polR, polS);
                     break;
                 case spatial_lib::REFINE_EQUAL_COVERS_COVEREDBY_TRUEHIT_INTERSECT:
                     // refine
-                    // relation = spatial_lib::refineEqualCoversCoveredByTrueHitIntersect(idR, idS);
+                    relation = spatial_lib::refineEqualCoversCoveredByTrueHitIntersect(polR, polS);
                     break;
                 default:
                     logger::log_error(DBERR_APRIL_UNEXPECTED_RESULT, "Equal APRIL filter failed with unexpected relation:", relation, spatial_lib::mapping::relationIntToStr(relation));
                     return DBERR_APRIL_UNEXPECTED_RESULT;
             }
             // count the refinement result
-            // spatial_lib::countTopologyRelationResult(relation);
+            spatial_lib::g_queryOutput.countTopologyRelationResult(relation);
             return ret;
         }
 
@@ -198,9 +198,9 @@ namespace APRIL
             // count refinement candidate
             spatial_lib::g_queryOutput.countAPRILresult(spatial_lib::INCONCLUSIVE);
             // refine
-            // int relation = spatial_lib::refineDisjointMeetIntersect(idR, idS);
-            // count the refinement result
-            // spatial_lib::countTopologyRelationResult(relation);
+            int relation = spatial_lib::refineDisjointMeetIntersect(polR, polS);
+            // count the refinement relation result
+            spatial_lib::g_queryOutput.countTopologyRelationResult(relation);
             return ret;
         }
 
@@ -252,7 +252,6 @@ namespace APRIL
                 // fetch the APRIL of R and S for this section
                 spatial_lib::AprilDataT* aprilR = g_config.datasetInfo.getDatasetR()->getAprilDataBySectionAndObjectID(sectionID, polR.recID);
                 spatial_lib::AprilDataT* aprilS = g_config.datasetInfo.getDatasetS()->getAprilDataBySectionAndObjectID(sectionID, polS.recID);
-
                 int iFilterResult = -1;
                 // use appropriate query function
                 switch (g_config.queryInfo.type) {
@@ -305,27 +304,18 @@ namespace APRIL
                         logger::log_error(DBERR_QUERY_INVALID_TYPE, "Unsupported query for standard APRIL intermediate filter. Query type:", spatial_lib::mapping::queryTypeIntToStr(g_config.queryInfo.type));
                         return DBERR_QUERY_INVALID_TYPE;
                 }
-
                 // if true negative or true hit, return
                 if (iFilterResult != spatial_lib::INCONCLUSIVE) {
-                    // measure time
-                    // spatial_lib::g_queryOutput.iFilterTime += spatial_lib::time::getElapsedTime(spatial_lib::time::g_timer.iFilterTimer);
-                    // count result
+                    // count APRIL result
                     spatial_lib::g_queryOutput.countAPRILresult(iFilterResult);
                     return ret;
                 }
             }
-            // i filter ended, measure time
-            // spatial_lib::g_queryOutput.iFilterTime += spatial_lib::time::getElapsedTime(spatial_lib::time::g_timer.iFilterTimer);
-            
+            // printf("Refinining pair %d,%d\n", polR.recID, polS.recID);
             // count refinement candidate (inconclusive)
             spatial_lib::g_queryOutput.countAPRILresult(spatial_lib::INCONCLUSIVE);
-            
-            // todo: send to refinement
-            // spatial_lib::time::markRefinementFilterTimer();
-            // spatial_lib::refineIntersectionJoin(idR, idS);
-            // spatial_lib::g_queryOutput.refinementTime += spatial_lib::time::getElapsedTime(spatial_lib::time::g_timer.refTimer);
-
+            // send to refinement (todo: make appropriate based on query predicate)
+            spatial_lib::refineIntersectionJoin(polR, polS);
             return ret;
         }
     }
