@@ -28,7 +28,6 @@ static void hostTerminate() {
 }
 
 static void printResults() {
-    // todo: total results should include post refinement + early true hits
     logger::log_success("Total Results:", spatial_lib::g_queryOutput.queryResults);
     logger::log_success("  MBR Results:", spatial_lib::g_queryOutput.postMBRFilterCandidates);
     switch (g_config.queryInfo.type) {

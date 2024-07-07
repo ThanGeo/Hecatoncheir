@@ -212,66 +212,67 @@ namespace spatial_lib
         }
     }
 
-    void refineInsideJoin(PolygonT &polR, PolygonT &polS) {
+    void refineInsideJoin(PolygonT &polR, PolygonT &polS, QueryOutputT &queryOutput) {
         // refine
         int refinementResult = refineInside(polR.boostPolygon, polS.boostPolygon);
         // count result
         if (refinementResult) {
-            g_queryOutput.countResult();
+            queryOutput.countResult();
         }
     }
 
-    void refineDisjointJoin(PolygonT &polR, PolygonT &polS) {
+    void refineDisjointJoin(PolygonT &polR, PolygonT &polS, QueryOutputT &queryOutput) {
         // refine
         int refinementResult = refineDisjoint(polR.boostPolygon, polS.boostPolygon);
         // count result
         if (refinementResult) {
-            g_queryOutput.countResult();
+            queryOutput.countResult();
         }
     }
 
-    void refineEqualJoin(PolygonT &polR, PolygonT &polS) {
+    void refineEqualJoin(PolygonT &polR, PolygonT &polS, QueryOutputT &queryOutput) {
         // refine
         int refinementResult = refineEqual(polR.boostPolygon, polS.boostPolygon);
         // count result
         if (refinementResult) {
-            g_queryOutput.countResult();
+            queryOutput.countResult();
         }
     }
 
-    void refineMeetJoin(PolygonT &polR, PolygonT &polS) {
+    void refineMeetJoin(PolygonT &polR, PolygonT &polS, QueryOutputT &queryOutput) {
         // refine
         int refinementResult = refineMeet(polR.boostPolygon, polS.boostPolygon);
         // count result
         if (refinementResult) {
-            g_queryOutput.countResult();
+            queryOutput.countResult();
         }
     }
 
-    void refineContainsJoin(PolygonT &polR, PolygonT &polS) {
+    void refineContainsJoin(PolygonT &polR, PolygonT &polS, QueryOutputT &queryOutput) {
         // refine
         int refinementResult = refineContains(polR.boostPolygon, polS.boostPolygon);
         // count result
         if (refinementResult) {
-            g_queryOutput.countResult();
+            // printf("%d,%d\n", polR.recID, polS.recID);
+            queryOutput.countResult();
         }
     }
 
-    void refineCoversJoin(PolygonT &polR, PolygonT &polS) {
+    void refineCoversJoin(PolygonT &polR, PolygonT &polS, QueryOutputT &queryOutput) {
         // refine
         int refinementResult = refineCovers(polR.boostPolygon, polS.boostPolygon);
         // count result
         if (refinementResult) {
-            g_queryOutput.countResult();
+            queryOutput.countResult();
         }
     }
 
-    void refineCoveredByJoin(PolygonT &polR, PolygonT &polS) {
+    void refineCoveredByJoin(PolygonT &polR, PolygonT &polS, QueryOutputT &queryOutput) {
         // refine
         int refinementResult = refineCoveredBy(polR.boostPolygon, polS.boostPolygon);
         // count result
         if (refinementResult) {
-            g_queryOutput.countResult();
+            queryOutput.countResult();
         }
     }
 

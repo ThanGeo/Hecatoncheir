@@ -105,7 +105,6 @@ namespace APRIL
                 
             }
             // count the refinement result
-            queryOutput.countTopologyRelationResult(relation);
             return ret;
         }
 
@@ -311,11 +310,40 @@ namespace APRIL
                     return ret;
                 }
             }
-            // printf("Refinining pair %d,%d\n", polR.recID, polS.recID);
             // count refinement candidate (inconclusive)
             queryOutput.countAPRILresult(spatial_lib::INCONCLUSIVE);
-            // send to refinement (todo: make appropriate based on query predicate)
-            spatial_lib::refineIntersectionJoin(polR, polS, queryOutput);
+
+            // refine based on query type
+            switch (g_config.queryInfo.type) {
+                case spatial_lib::Q_INTERSECT:
+                    spatial_lib::refineIntersectionJoin(polR, polS, queryOutput);
+                    break;
+                case spatial_lib::Q_COVERED_BY:
+                    spatial_lib::refineCoveredByJoin(polR, polS, queryOutput);
+                    break;
+                case spatial_lib::Q_INSIDE:
+                    spatial_lib::refineInsideJoin(polR, polS, queryOutput);
+                    break;
+                case spatial_lib::Q_DISJOINT:
+                    spatial_lib::refineDisjointJoin(polR, polS, queryOutput);
+                    break;
+                case spatial_lib::Q_EQUAL:
+                    spatial_lib::refineEqualJoin(polR, polS, queryOutput);
+                    break;
+                case spatial_lib::Q_MEET:
+                    spatial_lib::refineMeetJoin(polR, polS, queryOutput);
+                    break;
+                case spatial_lib::Q_CONTAINS:
+                    spatial_lib::refineContainsJoin(polR, polS, queryOutput);
+                    break;
+                case spatial_lib::Q_COVERS:
+                    spatial_lib::refineCoversJoin(polR, polS, queryOutput);
+                    break;
+                default:
+                    // not supported/unknown
+                    logger::log_error(DBERR_QUERY_INVALID_TYPE, "Unsupported query for refinement. Query type:", spatial_lib::mapping::queryTypeIntToStr(g_config.queryInfo.type));
+                    return DBERR_QUERY_INVALID_TYPE;
+            }
             return ret;
         }
     }

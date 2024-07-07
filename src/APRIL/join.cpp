@@ -303,7 +303,7 @@ namespace APRIL
                 result = spatial_lib::TRUE_NEGATIVE;
                 return ret;
             }
-            //check ALL - FULL
+            //check ALL - FULL (todo: maybe check the opposite: find at least one interlval NOT inside, maybe its faster)
             if(insideJoinIntervalLists(aprilR->intervalsALL, aprilR->numIntervalsALL, aprilS->intervalsFULL, aprilS->numIntervalsFULL)){
                 //hit
                 result = spatial_lib::TRUE_HIT;
@@ -392,9 +392,9 @@ namespace APRIL
                 return ret;
             }
 
-            // check FULL - ALL
-            if(!insideJoinIntervalLists(aprilS->intervalsALL, aprilS->numIntervalsALL, aprilR->intervalsFULL, aprilR->numIntervalsFULL)){
-                //guaranteed not hit
+            // check FULL - ALL (todo: maybe check the opposite: find at least one interlval NOT inside, maybe its faster)
+            if(insideJoinIntervalLists(aprilS->intervalsALL, aprilS->numIntervalsALL, aprilR->intervalsFULL, aprilR->numIntervalsFULL)){
+                //guaranteed hit
                 result = spatial_lib::TRUE_HIT;
                 return ret;
             }

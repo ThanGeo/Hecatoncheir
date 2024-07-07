@@ -23,17 +23,18 @@ namespace spatial_lib
      * Entrypoint function for when there is NO intermediate filter.
      * Intermediate filters forward to refine() function and NOT this one.
     */
-    void refinementEntrypoint(PolygonT &polR, PolygonT &polS);
+    // void refinementEntrypoint(PolygonT &polR, PolygonT &polS);
 
 
     /**
      * loads boost geometries and refines for intersection
     */
     void refineIntersectionJoin(PolygonT &polR, PolygonT &polS, QueryOutputT &queryOutput);
+    
     /**
      * loads boost geometries and refines for inside
     */
-    void refineInsideJoin(PolygonT &polR, PolygonT &polS);
+    void refineInsideJoin(PolygonT &polR, PolygonT &polS, QueryOutputT &queryOutput);
 
     /**
      * Loads geometries and refines for topology based on setup configuration.
@@ -43,32 +44,32 @@ namespace spatial_lib
     /**
      * refinement for the EQUAl topology relation
     */
-    void refineEqualJoin(PolygonT &polR, PolygonT &polS);
+    void refineEqualJoin(PolygonT &polR, PolygonT &polS, QueryOutputT &queryOutput);
 
     /**
      * refinement for the DISJOINT topology relation
     */
-    void refineDisjointJoin(PolygonT &polR, PolygonT &polS);
+    void refineDisjointJoin(PolygonT &polR, PolygonT &polS, QueryOutputT &queryOutput);
 
     /**
      * refinement for the MEET topology relation
     */
-    void refineMeetJoin(PolygonT &polR, PolygonT &polS);
+    void refineMeetJoin(PolygonT &polR, PolygonT &polS, QueryOutputT &queryOutput);
 
     /**
      * refinement for the CONTAINS topology relation
     */
-    void refineContainsJoin(PolygonT &polR, PolygonT &polS);
+    void refineContainsJoin(PolygonT &polR, PolygonT &polS, QueryOutputT &queryOutput);
 
     /**
      * refinement for the COVERS topology relation
     */
-    void refineCoversJoin(PolygonT &polR, PolygonT &polS);
+    void refineCoversJoin(PolygonT &polR, PolygonT &polS, QueryOutputT &queryOutput);
 
     /**
      * refinement for the COVERED BY topology relation
     */
-    void refineCoveredByJoin(PolygonT &polR, PolygonT &polS);
+    void refineCoveredByJoin(PolygonT &polR, PolygonT &polS, QueryOutputT &queryOutput);
 
     /**
      * refinement for the DISJOINT, MEET or INTERSECT topology relations
