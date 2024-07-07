@@ -134,7 +134,7 @@ namespace pack
         return DBERR_OK;
     }
 
-    DB_STATUS packQueryResults(SerializedMsgT<int> &msg) {
+    DB_STATUS packQueryResults(SerializedMsgT<int> &msg, spatial_lib::QueryOutputT &queryOutput) {
         DB_STATUS ret = DBERR_OK;
         // serialize based on query type
         switch (g_config.queryInfo.type) {
@@ -156,11 +156,11 @@ namespace pack
                     return DBERR_MALLOC_FAILED;
                 }
                 // put objects in buffer
-                msg.data[0] = spatial_lib::g_queryOutput.queryResults;
-                msg.data[1] = spatial_lib::g_queryOutput.postMBRFilterCandidates;
-                msg.data[2] = spatial_lib::g_queryOutput.trueHits;
-                msg.data[3] = spatial_lib::g_queryOutput.trueNegatives;
-                msg.data[4] = spatial_lib::g_queryOutput.refinementCandidates;
+                msg.data[0] = queryOutput.queryResults;
+                msg.data[1] = queryOutput.postMBRFilterCandidates;
+                msg.data[2] = queryOutput.trueHits;
+                msg.data[3] = queryOutput.trueNegatives;
+                msg.data[4] = queryOutput.refinementCandidates;
                 break;
             case spatial_lib::Q_FIND_RELATION:
                 // total results, mbr results, inconclusive, disjoint, intersect, inside, contains, covers, covered by, meet, equal
@@ -173,17 +173,17 @@ namespace pack
                     return DBERR_MALLOC_FAILED;
                 }
                 // put objects in buffer
-                msg.data[0] = spatial_lib::g_queryOutput.queryResults;
-                msg.data[1] = spatial_lib::g_queryOutput.postMBRFilterCandidates;
-                msg.data[2] = spatial_lib::g_queryOutput.refinementCandidates;
-                msg.data[3] = spatial_lib::g_queryOutput.getResultForTopologyRelation(spatial_lib::TR_DISJOINT);
-                msg.data[4] = spatial_lib::g_queryOutput.getResultForTopologyRelation(spatial_lib::TR_INTERSECT);
-                msg.data[5] = spatial_lib::g_queryOutput.getResultForTopologyRelation(spatial_lib::TR_INSIDE);
-                msg.data[6] = spatial_lib::g_queryOutput.getResultForTopologyRelation(spatial_lib::TR_CONTAINS);
-                msg.data[7] = spatial_lib::g_queryOutput.getResultForTopologyRelation(spatial_lib::TR_COVERS);
-                msg.data[8] = spatial_lib::g_queryOutput.getResultForTopologyRelation(spatial_lib::TR_COVERED_BY);
-                msg.data[9] = spatial_lib::g_queryOutput.getResultForTopologyRelation(spatial_lib::TR_MEET);
-                msg.data[10] = spatial_lib::g_queryOutput.getResultForTopologyRelation(spatial_lib::TR_EQUAL);
+                msg.data[0] = queryOutput.queryResults;
+                msg.data[1] = queryOutput.postMBRFilterCandidates;
+                msg.data[2] = queryOutput.refinementCandidates;
+                msg.data[3] = queryOutput.getResultForTopologyRelation(spatial_lib::TR_DISJOINT);
+                msg.data[4] = queryOutput.getResultForTopologyRelation(spatial_lib::TR_INTERSECT);
+                msg.data[5] = queryOutput.getResultForTopologyRelation(spatial_lib::TR_INSIDE);
+                msg.data[6] = queryOutput.getResultForTopologyRelation(spatial_lib::TR_CONTAINS);
+                msg.data[7] = queryOutput.getResultForTopologyRelation(spatial_lib::TR_COVERS);
+                msg.data[8] = queryOutput.getResultForTopologyRelation(spatial_lib::TR_COVERED_BY);
+                msg.data[9] = queryOutput.getResultForTopologyRelation(spatial_lib::TR_MEET);
+                msg.data[10] = queryOutput.getResultForTopologyRelation(spatial_lib::TR_EQUAL);
                 break;
             default:
                 logger::log_error(DBERR_QUERY_INVALID_TYPE, "Invalid query type:", g_config.queryInfo.type);

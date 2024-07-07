@@ -443,6 +443,17 @@ typedef struct Config {
 extern ConfigT g_config;
 
 
+/**
+ * @brief based on query type in config, it appropriately adds the query output in parallel
+ * Used only in parallel sections for OpenMP
+ */
+void queryResultReductionFunc(spatial_lib::QueryOutputT &in, spatial_lib::QueryOutputT &out);
+
+// Declare the parallel reduction
+#pragma omp declare reduction \
+    (query_output_reduction: spatial_lib::QueryOutputT: queryResultReductionFunc(omp_in, omp_out)) \
+    initializer(omp_priv = spatial_lib::QueryOutput())
+
 
 
 #endif

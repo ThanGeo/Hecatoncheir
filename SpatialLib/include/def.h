@@ -18,11 +18,25 @@ namespace spatial_lib
         FT_WKT,
     } FileTypeE;
 
-    typedef enum QueryResult {
+    typedef enum FilterResult {
         TRUE_NEGATIVE,
         TRUE_HIT,
         INCONCLUSIVE,
-    } QueryResultT;
+    } FilterResultT;
+
+    typedef enum QueryType{
+        Q_NONE, // no query
+        Q_RANGE,
+        Q_INTERSECT,
+        Q_INSIDE,
+        Q_DISJOINT,
+        Q_EQUAL,
+        Q_MEET,
+        Q_CONTAINS,
+        Q_COVERS,
+        Q_COVERED_BY,
+        Q_FIND_RELATION,    // find what type of topological relation is there
+    }QueryTypeE;
 
     typedef struct QueryOutput {
         // for regular query rsesults
@@ -57,22 +71,8 @@ namespace spatial_lib
          */
         void shallowCopy(QueryOutput &other);
     } QueryOutputT;
-
     // global query output variable
     extern QueryOutputT g_queryOutput;
-    typedef enum QueryType{
-        Q_NONE, // no query
-        Q_RANGE,
-        Q_INTERSECT,
-        Q_INSIDE,
-        Q_DISJOINT,
-        Q_EQUAL,
-        Q_MEET,
-        Q_CONTAINS,
-        Q_COVERS,
-        Q_COVERED_BY,
-        Q_FIND_RELATION,    // find what type of topological relation is there
-    }QueryTypeE;
 
     typedef struct Section {
         uint sectionID;
@@ -131,6 +131,7 @@ namespace spatial_lib
 
     typedef struct TwoLayerIndex {
         std::unordered_map<int, TwoLayerContainerT> partitionIndex;
+        std::vector<int> partitionIDs;
         // methods
         /** @brief add an object reference to the partition with partitionID, with the specified classType */
         void addObject(int partitionID, TwoLayerClassE classType, PolygonT &polRef);

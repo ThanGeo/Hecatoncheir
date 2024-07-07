@@ -51,7 +51,7 @@ namespace pack
      * @brief packs the current contents of the query output global variable into a serialized message
      * based on query type
      */
-    DB_STATUS packQueryResults(SerializedMsgT<int> &msg);
+    DB_STATUS packQueryResults(SerializedMsgT<int> &msg, spatial_lib::QueryOutputT &queryOutput);
 }
 
 namespace unpack

@@ -5,7 +5,7 @@ namespace APRIL
 {
     namespace topology
     {
-        static DB_STATUS specializedTopologyRinSContainment(spatial_lib::PolygonT &polR, spatial_lib::PolygonT &polS) {
+        static DB_STATUS specializedTopologyRinSContainment(spatial_lib::PolygonT &polR, spatial_lib::PolygonT &polS, spatial_lib::QueryOutputT &queryOutput) {
             DB_STATUS ret = DBERR_OK;
             int iFilterResult = -1;
             // get common sections
@@ -28,12 +28,12 @@ namespace APRIL
                     case spatial_lib::TR_DISJOINT:
                     case spatial_lib::TR_INTERSECT:
                         // result
-                        spatial_lib::g_queryOutput.countTopologyRelationResult(iFilterResult);
+                        queryOutput.countTopologyRelationResult(iFilterResult);
                         return ret;
                 }
             }
             // count refinement candidate
-            spatial_lib::g_queryOutput.countAPRILresult(spatial_lib::INCONCLUSIVE);
+            queryOutput.countAPRILresult(spatial_lib::INCONCLUSIVE);
             int relation = -1;
             // switch based on result
             switch(iFilterResult) {            
@@ -53,11 +53,11 @@ namespace APRIL
                 
             }
             // count the refinement result
-            spatial_lib::g_queryOutput.countTopologyRelationResult(relation);
+            queryOutput.countTopologyRelationResult(relation);
             return ret;
         }
 
-        static DB_STATUS specializedTopologySinRContainment(spatial_lib::PolygonT &polR, spatial_lib::PolygonT &polS) {
+        static DB_STATUS specializedTopologySinRContainment(spatial_lib::PolygonT &polR, spatial_lib::PolygonT &polS, spatial_lib::QueryOutputT &queryOutput) {
             DB_STATUS ret = DBERR_OK;
             int iFilterResult = -1;
             // get common sections
@@ -80,12 +80,12 @@ namespace APRIL
                     case spatial_lib::TR_DISJOINT:
                     case spatial_lib::TR_INTERSECT:
                         // result
-                        spatial_lib::g_queryOutput.countTopologyRelationResult(iFilterResult);
+                        queryOutput.countTopologyRelationResult(iFilterResult);
                         return ret;
                 }
             }
             // count refinement candidate
-            spatial_lib::g_queryOutput.countAPRILresult(spatial_lib::INCONCLUSIVE);
+            queryOutput.countAPRILresult(spatial_lib::INCONCLUSIVE);
             int relation = -1;
             // switch based on result
             switch(iFilterResult) {            
@@ -105,11 +105,11 @@ namespace APRIL
                 
             }
             // count the refinement result
-            spatial_lib::g_queryOutput.countTopologyRelationResult(relation);
+            queryOutput.countTopologyRelationResult(relation);
             return ret;
         }
 
-        static DB_STATUS specializedTopologyEqual(spatial_lib::PolygonT &polR, spatial_lib::PolygonT &polS) {
+        static DB_STATUS specializedTopologyEqual(spatial_lib::PolygonT &polR, spatial_lib::PolygonT &polS, spatial_lib::QueryOutputT &queryOutput) {
             DB_STATUS ret = DBERR_OK;
             int iFilterResult = -1;
             // get common sections
@@ -133,12 +133,12 @@ namespace APRIL
                     case spatial_lib::TR_COVERS:
                     case spatial_lib::TR_INTERSECT:
                         // result
-                        spatial_lib::g_queryOutput.countTopologyRelationResult(iFilterResult);
+                        queryOutput.countTopologyRelationResult(iFilterResult);
                         return ret;
                 }
             }
             // count refinement candidate
-            spatial_lib::g_queryOutput.countAPRILresult(spatial_lib::INCONCLUSIVE);
+            queryOutput.countAPRILresult(spatial_lib::INCONCLUSIVE);
             int relation = -1;
             // switch based on result
             switch(iFilterResult) {            
@@ -165,11 +165,11 @@ namespace APRIL
                     return DBERR_APRIL_UNEXPECTED_RESULT;
             }
             // count the refinement result
-            spatial_lib::g_queryOutput.countTopologyRelationResult(relation);
+            queryOutput.countTopologyRelationResult(relation);
             return ret;
         }
 
-        static DB_STATUS specializedTopologyIntersection(spatial_lib::PolygonT &polR, spatial_lib::PolygonT &polS) {
+        static DB_STATUS specializedTopologyIntersection(spatial_lib::PolygonT &polR, spatial_lib::PolygonT &polS, spatial_lib::QueryOutputT &queryOutput) {
             DB_STATUS ret = DBERR_OK;
             int iFilterResult = -1;
             // get common sections
@@ -191,43 +191,43 @@ namespace APRIL
                     case spatial_lib::TR_DISJOINT:
                     case spatial_lib::TR_INTERSECT:
                         // result
-                        spatial_lib::g_queryOutput.countTopologyRelationResult(iFilterResult);
+                        queryOutput.countTopologyRelationResult(iFilterResult);
                         return ret;
                 }
             }
             // count refinement candidate
-            spatial_lib::g_queryOutput.countAPRILresult(spatial_lib::INCONCLUSIVE);
+            queryOutput.countAPRILresult(spatial_lib::INCONCLUSIVE);
             // refine
             int relation = spatial_lib::refineDisjointMeetIntersect(polR, polS);
             // count the refinement relation result
-            spatial_lib::g_queryOutput.countTopologyRelationResult(relation);
+            queryOutput.countTopologyRelationResult(relation);
             return ret;
         }
 
-        DB_STATUS IntermediateFilterEntrypoint(spatial_lib::PolygonT &polR, spatial_lib::PolygonT &polS, spatial_lib::MBRRelationCaseE mbrRelationCase) {
+        DB_STATUS IntermediateFilterEntrypoint(spatial_lib::PolygonT &polR, spatial_lib::PolygonT &polS, spatial_lib::MBRRelationCaseE mbrRelationCase, spatial_lib::QueryOutputT &queryOutput) {
             DB_STATUS ret = DBERR_OK;
             // switch based on how the MBRs intersect, to the appropriate intermediate filter
             switch (mbrRelationCase) {
                 case spatial_lib::MBR_R_IN_S:
-                    ret = specializedTopologyRinSContainment(polR, polS);
+                    ret = specializedTopologyRinSContainment(polR, polS, queryOutput);
                     if (ret != DBERR_OK) {
                         logger::log_error(ret, "specialized topology R in S containment filter failed.");
                     }
                     break;
                 case spatial_lib::MBR_S_IN_R:
-                    ret = specializedTopologySinRContainment(polR, polS);
+                    ret = specializedTopologySinRContainment(polR, polS, queryOutput);
                     if (ret != DBERR_OK) {
                         logger::log_error(ret, "specialized topology S in R containment filter failed.");
                     }
                     break;
                 case spatial_lib::MBR_EQUAL:
-                    ret = specializedTopologyEqual(polR, polS);
+                    ret = specializedTopologyEqual(polR, polS, queryOutput);
                     if (ret != DBERR_OK) {
                         logger::log_error(ret, "specialized topology S in R containment filter failed.");
                     }
                     break;
                 case spatial_lib::MBR_INTERSECT:
-                    ret = specializedTopologyIntersection(polR, polS);
+                    ret = specializedTopologyIntersection(polR, polS, queryOutput);
                     if (ret != DBERR_OK) {
                         logger::log_error(ret, "specialized topology S in R containment filter failed.");
                     }
@@ -243,7 +243,7 @@ namespace APRIL
 
     namespace standard
     {
-        DB_STATUS IntermediateFilterEntrypoint(spatial_lib::PolygonT &polR, spatial_lib::PolygonT &polS) {
+        DB_STATUS IntermediateFilterEntrypoint(spatial_lib::PolygonT &polR, spatial_lib::PolygonT &polS, spatial_lib::QueryOutputT &queryOutput) {
             DB_STATUS ret = DBERR_OK;
             // get common sections
             std::vector<uint> commonSections = spatial_lib::getCommonSectionIDsOfObjects(g_config.datasetInfo.getDatasetR(), g_config.datasetInfo.getDatasetS(), polR.recID, polS.recID);
@@ -307,15 +307,15 @@ namespace APRIL
                 // if true negative or true hit, return
                 if (iFilterResult != spatial_lib::INCONCLUSIVE) {
                     // count APRIL result
-                    spatial_lib::g_queryOutput.countAPRILresult(iFilterResult);
+                    queryOutput.countAPRILresult(iFilterResult);
                     return ret;
                 }
             }
             // printf("Refinining pair %d,%d\n", polR.recID, polS.recID);
             // count refinement candidate (inconclusive)
-            spatial_lib::g_queryOutput.countAPRILresult(spatial_lib::INCONCLUSIVE);
+            queryOutput.countAPRILresult(spatial_lib::INCONCLUSIVE);
             // send to refinement (todo: make appropriate based on query predicate)
-            spatial_lib::refineIntersectionJoin(polR, polS);
+            spatial_lib::refineIntersectionJoin(polR, polS, queryOutput);
             return ret;
         }
     }

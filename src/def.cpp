@@ -30,3 +30,27 @@ std::string actionIntToStr(ActionTypeE action) {
             return "";
     }
 }
+
+void queryResultReductionFunc(spatial_lib::QueryOutputT &in, spatial_lib::QueryOutputT &out) {
+    out.queryResults += in.queryResults;
+    out.postMBRFilterCandidates += in.postMBRFilterCandidates;
+    out.refinementCandidates += in.refinementCandidates;
+    switch (g_config.queryInfo.type) {
+        case spatial_lib::Q_DISJOINT:
+        case spatial_lib::Q_INTERSECT:
+        case spatial_lib::Q_INSIDE:
+        case spatial_lib::Q_CONTAINS:
+        case spatial_lib::Q_COVERS:
+        case spatial_lib::Q_COVERED_BY:
+        case spatial_lib::Q_MEET:
+        case spatial_lib::Q_EQUAL:
+            out.trueHits += in.trueHits;
+            out.trueNegatives += in.trueNegatives;
+            break;
+        case spatial_lib::Q_FIND_RELATION:
+            for (auto &it : in.topologyRelationsResultMap) {
+                out.topologyRelationsResultMap[it.first] += it.second;
+            }
+            break;
+    }
+}

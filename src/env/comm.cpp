@@ -556,10 +556,10 @@ STOP_LISTENING:
             return ret;
         }
 
-        static DB_STATUS respondWithQueryResults() {
+        static DB_STATUS respondWithQueryResults(spatial_lib::QueryOutputT &queryOutput) {
             // serialize results
             SerializedMsgT<int> msg(MPI_INT);
-            DB_STATUS ret = pack::packQueryResults(msg);
+            DB_STATUS ret = pack::packQueryResults(msg, queryOutput);
             if (ret != DBERR_OK) {
                 logger::log_error(ret, "Serializing query output failed");
                 return ret;
@@ -587,14 +587,15 @@ STOP_LISTENING:
             }
             // free memory
             free(msg.data);
+            spatial_lib::QueryOutputT queryOutput;
             // execute
-            ret = twolayer::processQuery();
+            ret = twolayer::processQuery(queryOutput);
             if (ret != DBERR_OK) {
                 logger::log_error(ret, "Processing query failed.");
                 return ret;
             }
             // send the result to the local controller
-            ret = respondWithQueryResults();
+            ret = respondWithQueryResults(queryOutput);
             if (ret != DBERR_OK) {
                 logger::log_error(ret, "Responding with query results failed.");
                 return ret;
@@ -1134,35 +1135,6 @@ STOP_LISTENING:
                 }
                 return ret;
             }
-
-            void queryResultReductionFunc(spatial_lib::QueryOutputT &in, spatial_lib::QueryOutputT &out) {
-                out.queryResults += in.queryResults;
-                out.postMBRFilterCandidates += in.postMBRFilterCandidates;
-                out.refinementCandidates += in.refinementCandidates;
-                switch (g_config.queryInfo.type) {
-                    case spatial_lib::Q_DISJOINT:
-                    case spatial_lib::Q_INTERSECT:
-                    case spatial_lib::Q_INSIDE:
-                    case spatial_lib::Q_CONTAINS:
-                    case spatial_lib::Q_COVERS:
-                    case spatial_lib::Q_COVERED_BY:
-                    case spatial_lib::Q_MEET:
-                    case spatial_lib::Q_EQUAL:
-                        out.trueHits += in.trueHits;
-                        out.trueNegatives += in.trueNegatives;
-                        break;
-                    case spatial_lib::Q_FIND_RELATION:
-                        for (auto &it : in.topologyRelationsResultMap) {
-                            out.topologyRelationsResultMap[it.first] += it.second;
-                        }
-                        break;
-                }
-            }
-
-            // Declare the reduction
-            #pragma omp declare reduction \
-                (query_output_reduction: spatial_lib::QueryOutputT: queryResultReductionFunc(omp_in, omp_out)) \
-                initializer(omp_priv = spatial_lib::QueryOutput())
 
             DB_STATUS gatherResults() {
                 DB_STATUS ret = DBERR_OK;

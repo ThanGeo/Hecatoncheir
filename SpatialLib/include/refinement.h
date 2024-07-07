@@ -29,7 +29,7 @@ namespace spatial_lib
     /**
      * loads boost geometries and refines for intersection
     */
-    void refineIntersectionJoin(PolygonT &polR, PolygonT &polS);
+    void refineIntersectionJoin(PolygonT &polR, PolygonT &polS, QueryOutputT &queryOutput);
     /**
      * loads boost geometries and refines for inside
     */

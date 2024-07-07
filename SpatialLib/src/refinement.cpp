@@ -203,25 +203,12 @@ namespace spatial_lib
      * Refine find specific relation
      */
 
-    void refineIntersectionJoin(PolygonT &polR, PolygonT &polS) {
+    void refineIntersectionJoin(PolygonT &polR, PolygonT &polS, QueryOutputT &queryOutput) {
         // refine
         int refinementResult = refineIntersection(polR.boostPolygon, polS.boostPolygon);
         // count result
         if (refinementResult) {
-            g_queryOutput.countResult();
-            // printf("%d,%d\n", polR.recID, polS.recID);
-            // printf("-----------\n");
-            // printBoostPolygon(polR.boostPolygon);
-            // printBoostPolygon(polS.boostPolygon);
-            // printf("-----------\n");
-        } else {
-            // printf("-----------\n");
-            // printf("%d\n", polR.recID);
-            // printBoostPolygon(polR.boostPolygon);
-            // printf("%d\n", polS.recID);
-            // printBoostPolygon(polS.boostPolygon);
-            // printf("-----------\n");
-            // printf("%d,%d\n", polR.recID, polS.recID);
+            queryOutput.countResult();
         }
     }
 
@@ -387,48 +374,48 @@ namespace spatial_lib
         return TR_INTERSECT;
     }
 
-    void refinementEntrypoint(PolygonT &polR, PolygonT &polS) {
-        // time
-        time::markRefinementFilterTimer();
-        // count post mbr candidate
-        g_queryOutput.postMBRFilterCandidates += 1;
-        g_queryOutput.refinementCandidates += 1;
-        switch(g_queryType) {
-            case Q_INTERSECT:
-                refineIntersectionJoin(polR, polS);
-                break;
-            case Q_INSIDE:
-                refineInsideJoin(polR, polS);
-                break;
-            case Q_DISJOINT:
-                refineDisjointJoin(polR, polS);
-                break;
-            case Q_EQUAL:
-                refineEqualJoin(polR, polS);
-                break;
-            case Q_MEET:
-                refineMeetJoin(polR, polS);
-                break;
-            case Q_CONTAINS:
-                refineContainsJoin(polR, polS);
-                break;
-            case Q_COVERS:
-                refineCoversJoin(polR, polS);
-                break;
-            case Q_COVERED_BY:
-                refineCoveredByJoin(polR, polS);
-                break;
-            case Q_FIND_RELATION:
-                refineAllRelations(polR, polS);
-                break;
-            default:
-                fprintf(stderr, "Failed. No refinement support for query type.\n");
-                exit(-1);
-                break;
-        }
-        // store time
-        g_queryOutput.refinementTime += time::getElapsedTime(time::g_timer.refTimer);
-    }
+    // void refinementEntrypoint(PolygonT &polR, PolygonT &polS) {
+    //     // time
+    //     time::markRefinementFilterTimer();
+    //     // count post mbr candidate
+    //     g_queryOutput.postMBRFilterCandidates += 1;
+    //     g_queryOutput.refinementCandidates += 1;
+    //     switch(g_queryType) {
+    //         case Q_INTERSECT:
+    //             refineIntersectionJoin(polR, polS);
+    //             break;
+    //         case Q_INSIDE:
+    //             refineInsideJoin(polR, polS);
+    //             break;
+    //         case Q_DISJOINT:
+    //             refineDisjointJoin(polR, polS);
+    //             break;
+    //         case Q_EQUAL:
+    //             refineEqualJoin(polR, polS);
+    //             break;
+    //         case Q_MEET:
+    //             refineMeetJoin(polR, polS);
+    //             break;
+    //         case Q_CONTAINS:
+    //             refineContainsJoin(polR, polS);
+    //             break;
+    //         case Q_COVERS:
+    //             refineCoversJoin(polR, polS);
+    //             break;
+    //         case Q_COVERED_BY:
+    //             refineCoveredByJoin(polR, polS);
+    //             break;
+    //         case Q_FIND_RELATION:
+    //             refineAllRelations(polR, polS);
+    //             break;
+    //         default:
+    //             fprintf(stderr, "Failed. No refinement support for query type.\n");
+    //             exit(-1);
+    //             break;
+    //     }
+    //     // store time
+    //     g_queryOutput.refinementTime += time::getElapsedTime(time::g_timer.refTimer);
+    // }
 
 
     /************************************************/

@@ -63,28 +63,28 @@ namespace spatial_lib
     void QueryOutput::countAPRILresult(int result) {
         switch (result) {
             case TRUE_HIT:
-                g_queryOutput.trueHits += 1;
-                g_queryOutput.queryResults += 1;
+                this->trueHits += 1;
+                this->queryResults += 1;
                 break;
             case TRUE_NEGATIVE:
-                g_queryOutput.trueNegatives += 1;
+                this->trueNegatives += 1;
                 break;
             case INCONCLUSIVE:
-                g_queryOutput.refinementCandidates += 1;
+                this->refinementCandidates += 1;
                 break;
         }
     }
 
     void QueryOutput::countResult(){
-        g_queryOutput.queryResults += 1;
+        this->queryResults += 1;
     }
 
     void QueryOutput::countMBRresult(){
-        g_queryOutput.postMBRFilterCandidates += 1;
+        this->postMBRFilterCandidates += 1;
     }
 
     void QueryOutput::countTopologyRelationResult(int relation) {
-        g_queryOutput.topologyRelationsResultMap[relation] += 1;
+        this->topologyRelationsResultMap[relation] += 1;
     }
 
     int QueryOutput::getResultForTopologyRelation(TopologyRelationE relation) {
@@ -310,8 +310,11 @@ namespace spatial_lib
         TwoLayerContainerT container;
         auto it = partitionIndex.find(partitionID);
         if (it == partitionIndex.end()) {
+            // insert new
             partitionIndex.insert(std::make_pair(partitionID, container));
+            partitionIDs.emplace_back(partitionID);
         } else {
+            // replace existing
             partitionIndex[partitionID] = container;
         }
     }
@@ -342,16 +345,8 @@ namespace spatial_lib
     void TwoLayerIndex::addObject(int partitionID, TwoLayerClassE classType, PolygonT &pol) {
         // get or create new partition entry
         TwoLayerContainerT* partition = getOrCreatePartition(partitionID);
-        
         // get or create new class entry of this class type, for this partition
         std::vector<PolygonT>* classObjects = partition->getOrCreateContainerClassContents(classType);
-
-        // if (pol.recID == 112249 || pol.recID == 1782639 || pol.recID == 110360 || pol.recID == 1781854) {
-        //     printf("vector size for partition %d, class %d: %d\n", partitionID, classType, classObjects->size());
-        // }
-        
-        // printf("Adding polygon %d with MBR: (%f,%f),(%f,%f)\n", polRef->recID, polRef->mbr.minPoint.x, polRef->mbr.minPoint.y, polRef->mbr.maxPoint.x, polRef->mbr.maxPoint.y);
-
         // add object
         classObjects->emplace_back(pol);
     }
