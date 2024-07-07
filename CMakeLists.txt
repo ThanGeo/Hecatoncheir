@@ -68,7 +68,7 @@ set(SrcFiles
     src/APRIL/filter.cpp
     src/APRIL/join.cpp
     
-    src/TwoLayer/query.cpp
+    src/TwoLayer/filter.cpp
 )
 
 # supress warnings

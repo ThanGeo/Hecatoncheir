@@ -1,5 +1,5 @@
-#ifndef D_TWOLAYER_QUERY_H
-#define D_TWOLAYER_QUERY_H
+#ifndef D_TWOLAYER_FILTER_H
+#define D_TWOLAYER_FILTER_H
 
 #include "def.h"
 #include "APRIL/filter.h"

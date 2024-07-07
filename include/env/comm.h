@@ -11,7 +11,7 @@
 #include "storage/write.h"
 #include "storage/utils.h"
 #include "APRIL/generate.h"
-#include "TwoLayer/query.h"
+#include "TwoLayer/filter.h"
 
 #include <omp.h>
 
