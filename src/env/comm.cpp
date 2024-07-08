@@ -636,10 +636,10 @@ STOP_LISTENING:
                     logger::log_error(DBERR_DISK_READ_FAILED, "Failed loading partition file MBRs");
                     goto EXIT_SAFELY;
                 }
-
                 // add to configuration
                 g_config.datasetInfo.addDataset(dataset);
             }
+            // logger::log_success("Loaded dataspace info:", g_config.datasetInfo.dataspaceInfo.xMinGlobal, g_config.datasetInfo.dataspaceInfo.yMinGlobal, g_config.datasetInfo.dataspaceInfo.xMaxGlobal, g_config.datasetInfo.dataspaceInfo.yMaxGlobal);
 EXIT_SAFELY:
             // respond
             if (ret == DBERR_OK) {

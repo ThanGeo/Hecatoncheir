@@ -9,6 +9,8 @@
 
 #include "data.h"
 
+#define EPS 1e-08
+
 namespace spatial_lib
 {
     typedef enum FileType {
@@ -92,15 +94,26 @@ namespace spatial_lib
     typedef struct DataspaceInfo {
         double xMinGlobal, yMinGlobal, xMaxGlobal, yMaxGlobal;  // global bounds based on dataset bounds
         double xExtent, yExtent, maxExtent;
+        bool boundsSet = false;
+
+        DataspaceInfo() {
+            xMinGlobal = std::numeric_limits<int>::max();
+            yMinGlobal = std::numeric_limits<int>::max();
+            xMaxGlobal = -std::numeric_limits<int>::max();
+            yMaxGlobal = -std::numeric_limits<int>::max();
+        }
 
         void set(double xMinGlobal, double yMinGlobal, double xMaxGlobal, double yMaxGlobal) {
-            this->xMinGlobal = xMinGlobal;
-            this->yMinGlobal = yMinGlobal;
-            this->xMaxGlobal = xMaxGlobal;
-            this->yMaxGlobal = yMaxGlobal;
+            this->xMinGlobal = xMinGlobal - EPS;
+            this->yMinGlobal = yMinGlobal - EPS;
+            this->xMaxGlobal = xMaxGlobal + EPS;
+            this->yMaxGlobal = yMaxGlobal + EPS;
             this->xExtent = this->xMaxGlobal - this->xMinGlobal;
             this->yExtent = this->yMaxGlobal - this->yMinGlobal;
             this->maxExtent = std::max(this->xExtent, this->yExtent);
+            // printf("Dataset bounds: (%f,%f),(%f,%f)\n", this->xMinGlobal, this->yMinGlobal, this->xMaxGlobal, this->yMaxGlobal);
+            // printf("xExtent: %f, yExtent: %f\n", this->xExtent, this->yExtent);
+            // printf("Max extent: %f\n", this->maxExtent);
         }
 
         void clear() {

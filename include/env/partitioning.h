@@ -13,6 +13,8 @@ namespace partitioning
 
     DB_STATUS partitionDataset(spatial_lib::DatasetT *dataset);
 
+    DB_STATUS calculateCSVDatasetDataspaceBounds(spatial_lib::DatasetT &dataset);
+
     /**
      * @brief returns a vector containing the IDs of the partitions that intersect with the given MBR
      * 

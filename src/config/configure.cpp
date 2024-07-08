@@ -94,13 +94,16 @@ namespace configure
         } else {
             // at least one dataset
             spatial_lib::DatasetT R;
-            // get dataspace info
-            g_config.datasetInfo.dataspaceInfo.xMinGlobal = datasetStmt->xMinGlobal;
-            g_config.datasetInfo.dataspaceInfo.yMinGlobal = datasetStmt->yMinGlobal;
-            g_config.datasetInfo.dataspaceInfo.xMaxGlobal = datasetStmt->xMaxGlobal;
-            g_config.datasetInfo.dataspaceInfo.yMaxGlobal = datasetStmt->yMaxGlobal;
-            g_config.datasetInfo.dataspaceInfo.xExtent = g_config.datasetInfo.dataspaceInfo.xMaxGlobal - g_config.datasetInfo.dataspaceInfo.xMinGlobal;
-            g_config.datasetInfo.dataspaceInfo.yExtent = g_config.datasetInfo.dataspaceInfo.yMaxGlobal - g_config.datasetInfo.dataspaceInfo.yMinGlobal;
+            // set dataspace info
+            if (datasetStmt->boundsSet) {
+                g_config.datasetInfo.dataspaceInfo.xMinGlobal = datasetStmt->xMinGlobal;
+                g_config.datasetInfo.dataspaceInfo.yMinGlobal = datasetStmt->yMinGlobal;
+                g_config.datasetInfo.dataspaceInfo.xMaxGlobal = datasetStmt->xMaxGlobal;
+                g_config.datasetInfo.dataspaceInfo.yMaxGlobal = datasetStmt->yMaxGlobal;
+                g_config.datasetInfo.dataspaceInfo.xExtent = g_config.datasetInfo.dataspaceInfo.xMaxGlobal - g_config.datasetInfo.dataspaceInfo.xMinGlobal;
+                g_config.datasetInfo.dataspaceInfo.yExtent = g_config.datasetInfo.dataspaceInfo.yMaxGlobal - g_config.datasetInfo.dataspaceInfo.yMinGlobal;
+                g_config.datasetInfo.dataspaceInfo.boundsSet = true;
+            }
             
             // build dataset R objects
             R.dataspaceInfo = g_config.datasetInfo.dataspaceInfo;
@@ -121,8 +124,8 @@ namespace configure
             
             if (datasetStmt->datasetCount == 2) {
                 spatial_lib::DatasetT S;
-                // build dataset S objects
-                S.dataspaceInfo = g_config.datasetInfo.dataspaceInfo;   //todo: this does not look good
+                // build dataset S objects (inherit the same dataspace info)
+                S.dataspaceInfo = g_config.datasetInfo.dataspaceInfo;
                 S.dataType = datasetStmt->datatypeS;
 
                 ret = statement::getFiletype(datasetStmt->filetypeS, S.fileType);

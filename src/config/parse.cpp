@@ -328,6 +328,7 @@ namespace parser
             double xMaxR = -std::numeric_limits<int>::max();
             double yMaxR = -std::numeric_limits<int>::max();
             if(dataset_config_pt.get<int>(datasetStmt->datasetNicknameR+".bounds")) {
+                // hardcoded bounds
                 xMinR = dataset_config_pt.get<double>(datasetStmt->datasetNicknameR+".xMin");
                 yMinR = dataset_config_pt.get<double>(datasetStmt->datasetNicknameR+".yMin");
                 xMaxR = dataset_config_pt.get<double>(datasetStmt->datasetNicknameR+".xMax");

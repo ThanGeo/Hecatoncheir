@@ -256,11 +256,6 @@ CLOSE_AND_EXIT:
                     }
                     // store in dataset
                     dataset.addPolygon(polygon);
-                    
-                    // if (polygon.recID == 119671 || polygon.recID == 2126931) {
-                    //     printf("Dataset %s, pol %d:\n", dataset.nickname.c_str(), polygon.recID);
-                    //     spatial_lib::printBoostPolygon(polygon.boostPolygon);
-                    // }
                 }
                 // sort two layer
                 dataset.twoLayerIndex.sortPartitionsOnY();

@@ -367,21 +367,6 @@ typedef struct DatasetInfo {
     void addDataset(spatial_lib::DatasetT &dataset) {
         // add to datasets struct
         datasets.insert(std::make_pair(dataset.nickname, dataset));
-
-        // test
-        // if (g_parent_original_rank == 0) {
-        //     logger::log_task("before insertion: dataset", dataset.nickname, "partition",507736);
-
-        //     spatial_lib::TwoLayerContainerT* tlContainerR = dataset.twoLayerIndex.getPartition(507736);
-        //     if (tlContainerR != nullptr) {
-        //         std::vector<spatial_lib::PolygonT>* pols = tlContainerR->getContainerClassContents(spatial_lib::CLASS_A);
-        //         if (pols != nullptr) { 
-        //             for (auto& it: *pols) {
-        //                 logger::log_task(it.recID, it.mbr.minPoint.x, it.mbr.minPoint.y, it.mbr.maxPoint.x, it.mbr.maxPoint.y);
-        //             }
-        //         }
-        //     }
-        // }
         if (numberOfDatasets < 1) {
             // R is being added
             R = &datasets.find(dataset.nickname)->second;
@@ -391,11 +376,13 @@ typedef struct DatasetInfo {
             // set the datatypecombination
             setDatatypeCombination();
         }
-
         numberOfDatasets++;
+        // update dataspace info
+        this->updateDataspace();
     }
 
     void updateDataspace() {
+        // find the bounds that enclose both datasets
         for (auto &it: datasets) {
             dataspaceInfo.xMinGlobal = std::min(dataspaceInfo.xMinGlobal, it.second.dataspaceInfo.xMinGlobal);
             dataspaceInfo.yMinGlobal = std::min(dataspaceInfo.yMinGlobal, it.second.dataspaceInfo.yMinGlobal);
@@ -404,6 +391,10 @@ typedef struct DatasetInfo {
         }
         dataspaceInfo.xExtent = dataspaceInfo.xMaxGlobal - dataspaceInfo.xMinGlobal;
         dataspaceInfo.yExtent = dataspaceInfo.yMaxGlobal - dataspaceInfo.yMinGlobal;
+        // set as both datasets' bounds
+        for (auto &it: datasets) {
+            it.second.dataspaceInfo = dataspaceInfo;
+        }
     }
 } DatasetInfoT;
 

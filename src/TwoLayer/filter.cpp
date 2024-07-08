@@ -5,8 +5,6 @@ namespace twolayer
 {   
     namespace topologyMBRfilterWithForwarding
     {
-        #define EPS 1e-08
-
         static inline DB_STATUS forwardPair(spatial_lib::PolygonT &polR, spatial_lib::PolygonT &polS, spatial_lib::MBRRelationCaseE mbrRelationCase, spatial_lib::QueryOutputT &queryOutput) {
             DB_STATUS ret = DBERR_OK;
             if (mbrRelationCase != spatial_lib::MBR_CROSS) {
@@ -474,7 +472,6 @@ namespace twolayer
                             #pragma omp cancel for
                             ret = local_ret;
                         }
-                        // logger::log_success("thread", omp_get_thread_num(), "partition", partitionID, "results:", spatial_lib::g_queryOutput.queryResults, "MBR results:", spatial_lib::g_queryOutput.postMBRFilterCandidates);
                     }
                 }
                 // add results  
@@ -871,7 +868,6 @@ namespace twolayer
                             #pragma omp cancel for
                             ret = local_ret;
                         }
-                        // logger::log_success("thread", omp_get_thread_num(), "partition", partitionID, "results:", spatial_lib::g_queryOutput.queryResults, "MBR results:", spatial_lib::g_queryOutput.postMBRFilterCandidates);
                     }
                 }
                 // add results  

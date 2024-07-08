@@ -165,6 +165,31 @@ static DB_STATUS initLoadAPRIL() {
     return ret;
 }
 
+static DB_STATUS initPartitioning() {
+    DB_STATUS ret = DBERR_OK;
+    for (auto &it: g_config.datasetInfo.datasets) {
+        spatial_lib::DatasetT* dataset = g_config.datasetInfo.getDatasetByNickname(it.second.nickname);
+        if (!dataset->dataspaceInfo.boundsSet) {
+            ret = partitioning::calculateCSVDatasetDataspaceBounds(*dataset);
+            if (ret != DBERR_OK) {
+                logger::log_error(ret, "Calculate CSV dataset dataspace bounds failed");
+                return ret;
+            }
+        }
+    }
+    // update the global dataspace
+    g_config.datasetInfo.updateDataspace();
+    // perform partitioning for each dataset
+    for (auto &it: g_config.datasetInfo.datasets) {
+        ret = partitioning::partitionDataset(g_config.datasetInfo.getDatasetByNickname(it.second.nickname));
+        if (ret != DBERR_OK) {
+            logger::log_error(ret, "Partitioning dataset", it.second.nickname, "failed");
+            return ret;
+        }
+    }
+    return ret;
+}
+
 static DB_STATUS performActions() {
     DB_STATUS ret = DBERR_OK;
     // perform the user-requested actions in order
@@ -172,11 +197,10 @@ static DB_STATUS performActions() {
         logger::log_task("*** Action:", actionIntToStr(g_config.actions.at(i).type));
         switch(g_config.actions.at(i).type) {
             case ACTION_PERFORM_PARTITIONING:
-                for (auto &it: g_config.datasetInfo.datasets) {
-                    ret = partitioning::partitionDataset(g_config.datasetInfo.getDatasetByNickname(it.second.nickname));
-                    if (ret != DBERR_OK) {
-                        return ret;
-                    }
+                ret = initPartitioning();
+                if (ret != DBERR_OK) {
+                    logger::log_error(ret, "Partitioning action failed");
+                    return ret;
                 }
                 break;
             case ACTION_LOAD_DATASETS:

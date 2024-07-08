@@ -26,7 +26,7 @@ namespace partitioning
             return DBERR_INVALID_PARTITION;
         }
         if (lastPartitionID < 0 || lastPartitionID > g_config.partitioningInfo.partitionsPerDimension*g_config.partitioningInfo.partitionsPerDimension -1) {
-            logger::log_error(DBERR_INVALID_PARTITION, "Last partition ID calculated wrong");
+            logger::log_error(DBERR_INVALID_PARTITION, "Last partition ID calculated wrong: MBR(", xMin, yMin, xMax, yMax, ")");
             return DBERR_INVALID_PARTITION;
         }
 
@@ -100,16 +100,6 @@ namespace partitioning
      * @return DB_STATUS 
      */
     static DB_STATUS assignGeometryToBatches(GeometryT &geometry, double geoXmin, double geoYmin, double geoXmax, double geoYmax, std::unordered_map<int,GeometryBatchT> &batchMap, int &batchesSent) {
-        // if (geometry.recID == 112249 || geometry.recID == 1782639) {
-        //     printf("Polygon %d\n", geometry.recID);
-            
-        //     for (int i=0; i<geometry.coords.size(); i+=2) {
-        //         printf("(%f,%f),", geometry.coords.at(i), geometry.coords.at(i+1));
-        //     }
-        //     printf("\n");
-        // }
-        
-        
         // find partition IDs and the class of the geometry in each partition
         std::vector<int> partitionIDs;
         std::vector<spatial_lib::TwoLayerClassE> twoLayerClasses;
@@ -152,13 +142,6 @@ namespace partitioning
                         it += 2;
                     }
                 }
-                // if (geometryCopy.recID == 112249) {
-                //     logger::log_task("  After:", geometryCopy.partitionCount);
-                //     for(int j=0; j<geometryCopy.partitions.size(); j+=2) {
-                //         logger::log_task("id:", geometryCopy.partitions.at(j), "class:", geometryCopy.partitions.at(j+1));
-                //     }
-                // }
-
                 // add moddified geometry to this batch
                 batch->addGeometryToBatch(geometryCopy);
                 // if batch is full, send and reset
@@ -175,6 +158,93 @@ namespace partitioning
 
             }
         }
+        return ret;
+    }
+
+    DB_STATUS calculateCSVDatasetDataspaceBounds(spatial_lib::DatasetT &dataset) {
+        DB_STATUS ret = DBERR_OK;
+        // open file
+        std::ifstream fin(dataset.path);
+        if (!fin.is_open()) {
+            logger::log_error(DBERR_MISSING_FILE, "Failed to open dataset path:", dataset.path);
+            return DBERR_MISSING_FILE;
+        }
+        std::string line;
+        // read total objects (first line of file)
+        std::getline(fin, line);
+        fin.close();
+        int polygonCount = stoi(line);
+        // dataset global bounds
+        double global_xMin = std::numeric_limits<int>::max();
+        double global_yMin = std::numeric_limits<int>::max();
+        double global_xMax = -std::numeric_limits<int>::max();
+        double global_yMax = -std::numeric_limits<int>::max();
+        // spawn as many threads as possible
+        int availableProcessors = omp_get_num_procs();
+        // spawn all available threads (processors)
+        #pragma omp parallel firstprivate(line, polygonCount) num_threads(availableProcessors) reduction(min:global_xMin) reduction(min:global_yMin) reduction(max:global_xMax)  reduction(max:global_yMax)
+        {
+            int recID;
+            double x,y;
+            DB_STATUS local_ret = DBERR_OK;
+            int tid = omp_get_thread_num();
+            int totalThreads = omp_get_num_threads();
+            // calculate which lines this thread will handle
+            int linesPerThread = (polygonCount / totalThreads);
+            int fromLine = 1 + (tid * linesPerThread);          // first line is polygon count
+            int toLine = 1 + ((tid + 1) * linesPerThread);    // exclusive
+            if (tid == totalThreads - 1) {
+                toLine = polygonCount;
+            }
+            // open file
+            std::ifstream fin(dataset.path);
+            if (!fin.is_open()) {
+                logger::log_error(DBERR_MISSING_FILE, "Failed to open dataset path:", dataset.path);
+                #pragma omp cancel parallel
+                ret = DBERR_MISSING_FILE;
+            }
+            // jump to start line
+            for (int i=0; i<fromLine; i++) {
+                fin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+            }
+            // loop
+            int currentLine = fromLine;
+            std::string token;
+            while (true) {
+                // next polygon
+                std::getline(fin, line);                
+                std::stringstream ss(line);
+                // recID
+                std::getline(ss, token, ',');
+                recID = std::stoi(token);
+                // Read the coords x,y
+                while (std::getline(ss, token, ',')) {
+                    std::stringstream coordStream(token);
+                    // Split the x and y values
+                    std::getline(coordStream, token, ' ');
+                    x = std::stof(token);
+                    std::getline(coordStream, token, ' ');
+                    y = std::stof(token);
+                    // bounds
+                    global_xMin = std::min(global_xMin, x);
+                    global_yMin = std::min(global_yMin, y);
+                    global_xMax = std::max(global_xMax, x);
+                    global_yMax = std::max(global_yMax, y);
+                }
+                currentLine += 1;
+                if (currentLine >= toLine) {
+                    // the last line for this thread has been read
+                    break;
+                }
+            }
+            // close file
+            fin.close();
+        }
+        if (ret != DBERR_OK) {
+            return ret;
+        }
+        // set extent
+        dataset.dataspaceInfo.set(global_xMin, global_yMin, global_xMax, global_yMax);
         return ret;
     }
 
@@ -274,6 +344,7 @@ namespace partitioning
                 if (ret != DBERR_OK) {
                     #pragma omp cancel parallel
                     ret = local_ret;
+                    break;
                 }
                 currentLine += 1;
                 if (currentLine >= toLine) {
@@ -296,6 +367,7 @@ namespace partitioning
                     if (local_ret != DBERR_OK) {
                         #pragma omp cancel parallel
                         ret = local_ret;
+                        break;
                     }
                     // empty the batch
                     batch->clear();
@@ -306,7 +378,10 @@ namespace partitioning
             // close file
             fin.close();
         }
-        
+        // check if it finished successfully
+        if (ret != DBERR_OK) {
+            return ret;
+        }
         // send an empty pack to each worker to signal the end of the partitioning for this dataset
         for (int i=0; i<g_world_size; i++) {
             // fetch batch (it is guaranteed to be empty)
@@ -321,13 +396,11 @@ namespace partitioning
                 return ret;
             }
         }
-
-        logger::log_success("Sent", batchesSent, "non-empty batches.");
-
+        // logger::log_success("Sent", batchesSent, "non-empty batches.");
         return ret;
     }
 
-    static DB_STATUS performPartitioningCSV(spatial_lib::DatasetT *dataset) {
+    static DB_STATUS performPartitioningCSV(spatial_lib::DatasetT &dataset) {
         DB_STATUS ret = DBERR_OK;  
 
         // first, issue the partitioning instruction
@@ -336,14 +409,14 @@ namespace partitioning
             return ret;
         }
         
-        // then, broadcast the dataset info message
-        ret = comm::controller::broadcastDatasetInfo(dataset);
+        // broadcast the dataset info to the nodes
+        ret = comm::controller::broadcastDatasetInfo(&dataset);
         if (ret != DBERR_OK) {
             return ret;
         }
        
         // finally, load data and partition to workers
-        ret = loadCSVDatasetAndPartition(dataset->path);
+        ret = loadCSVDatasetAndPartition(dataset.path);
         if (ret != DBERR_OK) {
             return ret;
         }
@@ -360,7 +433,7 @@ namespace partitioning
             // perform the partitioning
             case spatial_lib::FT_CSV:
                 // csv dataset
-                ret = performPartitioningCSV(dataset);
+                ret = performPartitioningCSV(*dataset);
                 if (ret != DBERR_OK) {
                     logger::log_error(DBERR_PARTITIONING_FAILED, "Partitioning failed for dataset", dataset->nickname);
                     return ret;
@@ -369,7 +442,7 @@ namespace partitioning
             case spatial_lib::FT_BINARY:
             case spatial_lib::FT_WKT:
             default:
-                logger::log_error(DBERR_FEATURE_UNSUPPORTED, "Unsupported file type:", dataset->fileType);
+                logger::log_error(DBERR_FEATURE_UNSUPPORTED, "Unsupported data file type:", dataset->fileType);
                 break;
         }
 
