@@ -83,6 +83,10 @@ namespace spatial_lib
         this->postMBRFilterCandidates += 1;
     }
 
+    void QueryOutput::countRefinementCandidate(){
+        this->refinementCandidates += 1;
+    }
+
     void QueryOutput::countTopologyRelationResult(int relation) {
         this->topologyRelationsResultMap[relation] += 1;
     }

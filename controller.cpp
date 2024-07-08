@@ -28,7 +28,6 @@ static void hostTerminate() {
 }
 
 static void printResults() {
-    logger::log_success("Total Results:", spatial_lib::g_queryOutput.queryResults);
     logger::log_success("  MBR Results:", spatial_lib::g_queryOutput.postMBRFilterCandidates);
     switch (g_config.queryInfo.type) {
         case spatial_lib::Q_DISJOINT:
@@ -39,6 +38,7 @@ static void printResults() {
         case spatial_lib::Q_COVERED_BY:
         case spatial_lib::Q_MEET:
         case spatial_lib::Q_EQUAL:
+            logger::log_success("Total Results:", spatial_lib::g_queryOutput.queryResults);
             logger::log_success("       Accept:", spatial_lib::g_queryOutput.trueHits / (double) spatial_lib::g_queryOutput.postMBRFilterCandidates * 100, "%");
             logger::log_success("       Reject:", spatial_lib::g_queryOutput.trueNegatives / (double) spatial_lib::g_queryOutput.postMBRFilterCandidates * 100, "%");
             logger::log_success(" Inconclusive:", spatial_lib::g_queryOutput.refinementCandidates / (double) spatial_lib::g_queryOutput.postMBRFilterCandidates * 100, "%");

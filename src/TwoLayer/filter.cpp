@@ -3,18 +3,26 @@
 
 namespace twolayer
 {   
-    namespace topologyMBRfilterWithForwarding
+    namespace topologyMBRfilter
     {
         static inline DB_STATUS forwardPair(spatial_lib::PolygonT &polR, spatial_lib::PolygonT &polS, spatial_lib::MBRRelationCaseE mbrRelationCase, spatial_lib::QueryOutputT &queryOutput) {
             DB_STATUS ret = DBERR_OK;
             if (mbrRelationCase != spatial_lib::MBR_CROSS) {
                 // count as MBR filter result
                 queryOutput.countMBRresult();
-                // forward to intermediate filter
-                ret = APRIL::topology::IntermediateFilterEntrypoint(polR, polS, mbrRelationCase, queryOutput);
-                if (ret != DBERR_OK) {
-                    logger::log_error(ret, "Topology intermediate filter failed.");
-                    return ret;
+                // if intermediate filter is enabled
+                if (g_config.queryInfo.IntermediateFilter) {
+                    // forward to intermediate filter
+                    ret = APRIL::topology::IntermediateFilterEntrypoint(polR, polS, mbrRelationCase, queryOutput);
+                    if (ret != DBERR_OK) {
+                        logger::log_error(ret, "Topology intermediate filter failed.");
+                        return ret;
+                    }
+                } else {
+                    // count refinement candidates
+                    queryOutput.countRefinementCandidate();
+                    // forward to refinement
+                    spatial_lib::specializedRefinementEntrypoint(polR, polS, mbrRelationCase, queryOutput);
                 }
             } else {
                 // they cross, true hit intersect (skip intermediate filter)
@@ -487,15 +495,24 @@ namespace twolayer
         }
     }
 
-    namespace intersectionMBRfilterWithForwarding
+    namespace intersectionMBRfilter
     {
         static inline DB_STATUS forwardPair(spatial_lib::PolygonT &polR, spatial_lib::PolygonT &polS, spatial_lib::QueryOutputT &queryOutput) {
+            DB_STATUS ret = DBERR_OK;
             // count as MBR filter result
             queryOutput.countMBRresult();
-            // forward to intermediate filter
-            DB_STATUS ret = APRIL::standard::IntermediateFilterEntrypoint(polR, polS, queryOutput);
-            if (ret != DBERR_OK) {
-                logger::log_error(ret, "Intermediate filter failed");
+            // check if intermediate filter is enabled
+            if (g_config.queryInfo.IntermediateFilter) {
+                // forward to intermediate filter
+                ret = APRIL::standard::IntermediateFilterEntrypoint(polR, polS, queryOutput);
+                if (ret != DBERR_OK) {
+                    logger::log_error(ret, "Intermediate filter failed");
+                }
+            } else {
+                // count refinement candidates
+                queryOutput.countRefinementCandidate();
+                // forward to refinement
+                spatial_lib::refinementEntrypoint(polR, polS, g_config.queryInfo.type, queryOutput);
             }
             return ret;
         }
@@ -898,27 +915,17 @@ namespace twolayer
             case spatial_lib::Q_CONTAINS:
             case spatial_lib::Q_COVERS:
             case spatial_lib::Q_COVERED_BY:
-                if (g_config.queryInfo.IntermediateFilter) {
-                    // APRIL filter enabled
-                    ret = intersectionMBRfilterWithForwarding::evaluate(queryOutput);
-                    if (ret != DBERR_OK) {
-                        logger::log_error(ret, "Intersection MBR filter failed");
-                        return ret;
-                    }
-                } else {
-                    // todo: APRIL filter disabled
+                ret = intersectionMBRfilter::evaluate(queryOutput);
+                if (ret != DBERR_OK) {
+                    logger::log_error(ret, "Intersection MBR filter failed");
+                    return ret;
                 }
                 break;
             case spatial_lib::Q_FIND_RELATION:
-                if (g_config.queryInfo.IntermediateFilter) {
-                    // APRIL filter enabled
-                    ret = topologyMBRfilterWithForwarding::evaluate(queryOutput);
-                    if (ret != DBERR_OK) {
-                        logger::log_error(ret, "Topology MBR filter failed");
-                        return ret;
-                    }
-                } else {
-                    // todo: APRIL filter disabled
+                ret = topologyMBRfilter::evaluate(queryOutput);
+                if (ret != DBERR_OK) {
+                    logger::log_error(ret, "Topology MBR filter failed");
+                    return ret;
                 }
                 break;
             default:

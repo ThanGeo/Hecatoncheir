@@ -375,48 +375,39 @@ namespace spatial_lib
         return TR_INTERSECT;
     }
 
-    // void refinementEntrypoint(PolygonT &polR, PolygonT &polS) {
-    //     // time
-    //     time::markRefinementFilterTimer();
-    //     // count post mbr candidate
-    //     g_queryOutput.postMBRFilterCandidates += 1;
-    //     g_queryOutput.refinementCandidates += 1;
-    //     switch(g_queryType) {
-    //         case Q_INTERSECT:
-    //             refineIntersectionJoin(polR, polS);
-    //             break;
-    //         case Q_INSIDE:
-    //             refineInsideJoin(polR, polS);
-    //             break;
-    //         case Q_DISJOINT:
-    //             refineDisjointJoin(polR, polS);
-    //             break;
-    //         case Q_EQUAL:
-    //             refineEqualJoin(polR, polS);
-    //             break;
-    //         case Q_MEET:
-    //             refineMeetJoin(polR, polS);
-    //             break;
-    //         case Q_CONTAINS:
-    //             refineContainsJoin(polR, polS);
-    //             break;
-    //         case Q_COVERS:
-    //             refineCoversJoin(polR, polS);
-    //             break;
-    //         case Q_COVERED_BY:
-    //             refineCoveredByJoin(polR, polS);
-    //             break;
-    //         case Q_FIND_RELATION:
-    //             refineAllRelations(polR, polS);
-    //             break;
-    //         default:
-    //             fprintf(stderr, "Failed. No refinement support for query type.\n");
-    //             exit(-1);
-    //             break;
-    //     }
-    //     // store time
-    //     g_queryOutput.refinementTime += time::getElapsedTime(time::g_timer.refTimer);
-    // }
+    void refinementEntrypoint(PolygonT &polR, PolygonT &polS, QueryTypeE queryType, QueryOutputT &queryOutput) {
+        // switch based on query type
+        switch(queryType) {
+            case Q_INTERSECT:
+                refineIntersectionJoin(polR, polS, queryOutput);
+                break;
+            case Q_INSIDE:
+                refineInsideJoin(polR, polS, queryOutput);
+                break;
+            case Q_DISJOINT:
+                refineDisjointJoin(polR, polS, queryOutput);
+                break;
+            case Q_EQUAL:
+                refineEqualJoin(polR, polS, queryOutput);
+                break;
+            case Q_MEET:
+                refineMeetJoin(polR, polS, queryOutput);
+                break;
+            case Q_CONTAINS:
+                refineContainsJoin(polR, polS, queryOutput);
+                break;
+            case Q_COVERS:
+                refineCoversJoin(polR, polS, queryOutput);
+                break;
+            case Q_COVERED_BY:
+                refineCoveredByJoin(polR, polS, queryOutput);
+                break;
+            default:
+                fprintf(stderr, "Failed. No refinement support for query type: %d.\n", queryType);
+                exit(-1);
+                break;
+        }
+    }
 
 
     /************************************************/
@@ -623,15 +614,9 @@ namespace spatial_lib
         return TR_INTERSECT;
     }
 
-    void specializedRefinementEntrypoint(PolygonT &polR, PolygonT &polS, int relationCase) {
-        // time
-        time::markRefinementFilterTimer();
-        // count post mbr candidate
-        g_queryOutput.postMBRFilterCandidates += 1;
-        g_queryOutput.refinementCandidates += 1;
-        
-        int refinementResult;
-
+    void specializedRefinementEntrypoint(PolygonT &polR, PolygonT &polS, int relationCase, QueryOutputT &queryOutput) {
+        int refinementResult = -1;
+        // switch based on MBR intersection case
         switch(relationCase) {
             case MBR_R_IN_S:
                 refinementResult = refineDisjointInsideCoveredbyMeetIntersect(polR, polS);
@@ -646,16 +631,12 @@ namespace spatial_lib
                 refinementResult = refineDisjointMeetIntersect(polR, polS);
                 break;
             default:
-                fprintf(stderr, "Failed. No refinement support for this relation case.\n");
+                fprintf(stderr, "Failed. No refinement support for relation case: %d\n", relationCase);
                 exit(-1);
                 break;
         }
-
         // count result
-        g_queryOutput.countTopologyRelationResult(refinementResult);
-
-        // store time
-        g_queryOutput.refinementTime += time::getElapsedTime(time::g_timer.refTimer);
+        queryOutput.countTopologyRelationResult(refinementResult);
     }
 
     bg_polygon loadBoostPolygonByIDandFlag(uint id, bool R) {

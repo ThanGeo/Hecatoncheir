@@ -54,6 +54,9 @@ namespace APRIL
             }
             // count the refinement result
             queryOutput.countTopologyRelationResult(relation);
+            // if (relation == spatial_lib::TR_MEET) {
+            //     printf("%d,%d\n", polR.recID, polS.recID);
+            // }
             return ret;
         }
 
@@ -104,7 +107,11 @@ namespace APRIL
                     return DBERR_APRIL_UNEXPECTED_RESULT;
                 
             }
+            // if (relation == spatial_lib::TR_MEET) {
+            //     printf("%d,%d\n", polR.recID, polS.recID);
+            // }
             // count the refinement result
+            queryOutput.countTopologyRelationResult(relation);
             return ret;
         }
 
@@ -198,6 +205,9 @@ namespace APRIL
             queryOutput.countAPRILresult(spatial_lib::INCONCLUSIVE);
             // refine
             int relation = spatial_lib::refineDisjointMeetIntersect(polR, polS);
+            // if (relation == spatial_lib::TR_MEET) {
+            //     printf("%d,%d\n", polR.recID, polS.recID);
+            // }
             // count the refinement relation result
             queryOutput.countTopologyRelationResult(relation);
             return ret;

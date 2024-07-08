@@ -65,6 +65,7 @@ namespace spatial_lib
         void countAPRILresult(int result);
         void countResult();
         void countMBRresult();
+        void countRefinementCandidate();
         void countTopologyRelationResult(int result);
         int getResultForTopologyRelation(TopologyRelationE relation);
         void setTopologyRelationResult(int relation, int result);

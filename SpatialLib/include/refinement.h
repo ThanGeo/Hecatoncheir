@@ -23,7 +23,7 @@ namespace spatial_lib
      * Entrypoint function for when there is NO intermediate filter.
      * Intermediate filters forward to refine() function and NOT this one.
     */
-    // void refinementEntrypoint(PolygonT &polR, PolygonT &polS);
+    void refinementEntrypoint(PolygonT &polR, PolygonT &polS, QueryTypeE queryType, QueryOutputT &queryOutput);
 
 
     /**
@@ -208,7 +208,7 @@ namespace spatial_lib
      * Entrypoint function for when there is NO intermediate filter.
      * Intermediate filters forward to refine() function and NOT this one.
     */
-    void specializedRefinementEntrypoint(PolygonT &polR, PolygonT &polS, int relationCase);
+    void specializedRefinementEntrypoint(PolygonT &polR, PolygonT &polS, int relationCase, QueryOutputT &queryOutput);
 }
 
 #endif
