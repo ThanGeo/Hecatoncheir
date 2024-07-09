@@ -11,6 +11,7 @@ namespace spatial_lib
     // boost geometry
     typedef boost::geometry::model::d2::point_xy<double> bg_point_xy;
     typedef boost::geometry::model::linestring<bg_point_xy> bg_linestring;
+    typedef boost::geometry::model::box<bg_point_xy> bg_rectangle;
     typedef boost::geometry::model::polygon<bg_point_xy> bg_polygon;
 
     // MBR topology relations
@@ -118,6 +119,18 @@ namespace spatial_lib
         MF_TOPOLOGY,
     } MBRFilterTypeE;
 
+    /*************************************
+     * 
+     * 
+     * 
+     * 
+     *              APRIL
+     * 
+     * 
+     * 
+     * 
+     *********************************** */
+
     // APRIL data
     typedef struct AprilData {
         // APRIL data
@@ -126,38 +139,6 @@ namespace spatial_lib
         uint numIntervalsFULL = 0;
         std::vector<uint> intervalsFULL;
     }AprilDataT;
-
-    /**
-     * spatial data structs
-     */
-    typedef struct Point {
-        double x,y;
-        Point() {}
-        Point(double x, double y) {
-            this->x = x;
-            this->y = y;
-        }
-    } PointT;
-
-    typedef struct Mbr {
-        PointT minPoint;
-        PointT maxPoint;
-    }MbrT;
-
-    /**
-     * main struct to hold a polygon's info in memory
-     */
-    typedef struct Polygon {
-        int recID;
-        // partitionID -> class type of object in this partition
-        std::unordered_map<int, int> partitions;
-        MbrT mbr;
-        bg_polygon boostPolygon;
-        AprilDataT aprilData;
-
-        void printMBR();
-    } PolygonT;
-
 
     // APRIL configuration
     typedef struct AprilConfig {
@@ -194,7 +175,98 @@ namespace spatial_lib
         IL_MATCH,           // match == symmetrical containment
     } IntervalListsRelationshipE;
 
-    AprilDataT createEmptyAprilDataObject();
+    /*************************************
+     * 
+     * 
+     * 
+     * 
+     *          DATA STRUCTS
+     * 
+     * 
+     * 
+     * 
+     *********************************** */
+
+
+    struct ShapeBase {
+        DataTypeE dataType;
+
+        ShapeBase(DataTypeE type) : dataType(type) {}
+
+        virtual void print() const = 0;
+    };
+
+    template <typename T>
+    struct Shape : public ShapeBase {
+        int recID;
+        bg_rectangle mbr;
+        T boostObject;
+
+        Shape() : ShapeBase(getDataType()) {}
+
+        void print() const override {
+            if constexpr (std::is_same_v<T, bg_polygon>) {
+                printf("Polygon %d: \n", recID);
+                for (const auto& point : boostObject.outer()) {
+                    printf("(%f,%f),", boost::geometry::get<0>(point), boost::geometry::get<1>(point));
+                }
+            } else if constexpr (std::is_same_v<T, bg_linestring>) {
+                printf("Linestring %d: \n", recID);
+                for (const auto& point : boostObject) {
+                    printf("(%f,%f),", boost::geometry::get<0>(point), boost::geometry::get<1>(point));
+                }
+            } else if constexpr (std::is_same_v<T, bg_rectangle>) {
+                printf("Rectangle %d: \n", recID);
+                printf("(%f,%f),(%f,%f)", boost::geometry::get<0>(boostObject.min_corner()), boost::geometry::get<1>(boostObject.min_corner()), boost::geometry::get<0>(boostObject.max_corner()), boost::geometry::get<1>(boostObject.max_corner()));
+            }
+            printf("\n");
+        }
+
+    private:
+        static DataTypeE getDataType() {
+            if constexpr (std::is_same_v<T, bg_polygon>) {
+                return DT_POLYGON;
+            } else if constexpr (std::is_same_v<T, bg_linestring>) {
+                return DT_LINESTRING;
+            } else if constexpr (std::is_same_v<T, bg_rectangle>) {
+                return DT_RECTANGLE;
+            } else if constexpr (std::is_same_v<T, bg_point_xy>) {
+                return DT_POINT;
+            } else {
+                return DT_INVALID;
+            }
+        }
+
+
+    };
+
+    typedef struct Point {
+        double x,y;
+        Point() {}
+        Point(double x, double y) {
+            this->x = x;
+            this->y = y;
+        }
+    } PointT;
+
+    typedef struct Mbr {
+        PointT minPoint;
+        PointT maxPoint;
+    }MbrT;
+
+    typedef struct Polygon {
+        int recID;
+        // partitionID -> class type of object in this partition
+        std::unordered_map<int, int> partitions;
+        MbrT mbr;
+        bg_polygon boostPolygon;
+        AprilDataT aprilData;
+
+        void printMBR();
+    } PolygonT;
+
+
+    
 }
 
 #endif
