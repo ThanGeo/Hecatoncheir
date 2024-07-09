@@ -375,26 +375,13 @@ namespace spatial_lib
         }
     }
 
-    // PolygonT* Dataset::getPolygonByID(int recID) {
-    //     auto it = polygons.find(recID);
-    //     if (it == polygons.end()) {
-    //         return nullptr;
-    //     }
-    //     return &it->second;
-    // }
-
-    void Dataset::addPolygon(PolygonT &polygon) {
+    void Dataset::addObject(PolygonT &polygon) {
         // insert reference to partition index
         for (auto &partitionIT: polygon.partitions) {
             int partitionID = partitionIT.first;
             TwoLayerClassE classType = (TwoLayerClassE) partitionIT.second;
             // add to twolayer index
             this->twoLayerIndex.addObject(partitionID, classType, polygon);
-
-            // if (polygon.recID == 112249 || polygon.recID == 1782639) {
-            //     // logger::log_success("pol", polygon.recID, "added to partition", partitionID, "as class", classType);
-            //     printf("Polygon %d added to partition %d as class %d\n", polygon.recID, partitionID, classType);
-            // }
         }
     }
 

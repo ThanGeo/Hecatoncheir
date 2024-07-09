@@ -47,6 +47,46 @@ namespace storage
                 return DBERR_OK;
             }
 
+            DB_STATUS readNextObjectForRasterization(FILE* pFile, int &recID, rasterizerlib::linestring2d &rasterizerLinestring) {
+                std::vector<int> partitions;
+                int intBuf[2];
+                // read recID and partition count
+                size_t elementsRead = fread(&intBuf, sizeof(int), 2, pFile);
+                if (elementsRead != 2) {
+                    logger::log_error(DBERR_DISK_READ_FAILED, "Couldn't read the recID + partitionCount");
+                    return DBERR_DISK_READ_FAILED;
+                }
+                // rec ID
+                recID = intBuf[0];
+                // partitionCount
+                int partitionCount = intBuf[1];
+                // read partition IDs
+                partitions.resize(partitionCount*2);
+                elementsRead = fread(partitions.data(), sizeof(int), partitionCount*2, pFile);
+                if (elementsRead != partitionCount*2) {
+                    logger::log_error(DBERR_DISK_READ_FAILED, "Couldn't read the partition IDs");
+                    return DBERR_DISK_READ_FAILED;
+                }
+                // read vertex count
+                elementsRead = fread(&intBuf, sizeof(int), 1, pFile);
+                if (elementsRead != 1) {
+                    logger::log_error(DBERR_DISK_READ_FAILED, "Couldn't read the vertex count");
+                    return DBERR_DISK_READ_FAILED;
+                }
+                int vertexCount = intBuf[0];
+                // read the points
+                std::vector<double> coords(vertexCount*2);
+                elementsRead = fread(coords.data(), sizeof(double), vertexCount*2, pFile);
+                if (elementsRead != vertexCount*2) {
+                    logger::log_error(DBERR_DISK_READ_FAILED, "Couldn't read the vertices");
+                    return DBERR_DISK_READ_FAILED;
+                }
+                // create the object
+                rasterizerLinestring = rasterizerlib::createLinestring(coords);
+                
+                return DBERR_OK;
+            }
+
             DB_STATUS readNextObjectComplete(FILE* pFile, spatial_lib::PolygonT &polygon) {
                 int intBuf[2];
                 // read recID and partition count
@@ -161,7 +201,7 @@ namespace storage
                 DB_STATUS ret = DBERR_OK;
                 double xMin, yMin, xMax, yMax;
                 int length;
-                // polygon count
+                // object count
                 size_t elementsRead = fread(&dataset.totalObjects, sizeof(int), 1, pFile);
                 if (elementsRead != 1) {
                     logger::log_error(DBERR_DISK_READ_FAILED, "Couldn't read the polygon count");
@@ -214,14 +254,14 @@ namespace storage
                 // read MBRs
                 for (int i=0; i<dataset.totalObjects; i++) {
                     spatial_lib::PolygonT polygon;
-                    // read next polygon
+                    // read next object
                     ret = readNextObjectMBR(pFile, polygon);
                     if (ret != DBERR_OK) {
                         logger::log_error(ret, "Failed to read MBR for object number", i, "of", dataset.totalObjects);
                         goto CLOSE_AND_EXIT;
                     }
                     // store in dataset
-                    dataset.addPolygon(polygon);
+                    dataset.addObject(polygon);
                 }
                 // sort two layer
                 dataset.twoLayerIndex.sortPartitionsOnY();
@@ -255,7 +295,7 @@ CLOSE_AND_EXIT:
                         goto CLOSE_AND_EXIT;
                     }
                     // store in dataset
-                    dataset.addPolygon(polygon);
+                    dataset.addObject(polygon);
                 }
                 // sort two layer
                 dataset.twoLayerIndex.sortPartitionsOnY();

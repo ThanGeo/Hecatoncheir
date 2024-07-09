@@ -190,7 +190,7 @@ namespace spatial_lib
         /**
          * adds a polygon to all related data structures.
          */
-        void addPolygon(PolygonT &polygon);
+        void addObject(PolygonT &polygon);
         // calculate the size needed for the serialization buffer
         int calculateBufferSize();
         /**

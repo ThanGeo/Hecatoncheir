@@ -127,10 +127,38 @@ namespace spatial_lib
         std::vector<uint> intervalsFULL;
     }AprilDataT;
 
+    typedef struct Mbr {
+        PointT minPoint;
+        PointT maxPoint;
+    }MbrT;
+
+    template <typename T>
+    struct Shape {
+        int recID;
+        MbrT mbr;
+        T boostObject;
+
+        void addPoint(double x, double y) {
+            bg_point_xy p(x,y);
+            if constexpr (std::is_same_v<T, bg_polygon) {
+                // polygon
+                boostObject.outer().emplace_back(p);
+            } else constexpr (std::is_same_v<T, bg_linestring) {
+                // linestring
+                boostObject.emplace_back(p);
+            } else constexpr (std::is_same_v<T, bg_point_xy) {
+                // point
+                boostObject = p;
+            } else {
+                static_assert(always_false<T>::value, "Unsupported Shape type");
+            }
+        }
+    };
+
     /**
      * spatial data structs
      */
-    typedef struct Point {
+    typedef struct Point : Shape<bg_point_xy>{
         double x,y;
         Point() {}
         Point(double x, double y) {
@@ -139,20 +167,19 @@ namespace spatial_lib
         }
     } PointT;
 
-    typedef struct Mbr {
-        PointT minPoint;
-        PointT maxPoint;
-    }MbrT;
+    typedef struct Linestring : Shape<bg_linestring> {
+        // partitionID -> class type of object in this partition
+        std::unordered_map<int, int> partitions;
+        AprilDataT aprilData;
+        void printMBR();
+    } LinestringT;
 
     /**
      * main struct to hold a polygon's info in memory
      */
-    typedef struct Polygon {
-        int recID;
+    typedef struct Polygon : Shape<bg_polygon> {
         // partitionID -> class type of object in this partition
         std::unordered_map<int, int> partitions;
-        MbrT mbr;
-        bg_polygon boostPolygon;
         AprilDataT aprilData;
 
         void printMBR();

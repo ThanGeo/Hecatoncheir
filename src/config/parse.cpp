@@ -25,49 +25,85 @@ namespace parser
             return DBERR_UNSUPPORTED_DATATYPE_COMBINATION;
         }
 
-        switch (queryType) {
-            // range query
-            case spatial_lib::Q_RANGE:
-                // requires dataset R to be queries and dataset S to be data
-                if (numberOfDatasets != 2) {
-                    logger::log_error(DBERR_QUERY_INVALID_INPUT, "Range query requires two datasets as input: R for the queries, S for the data to be queried.");
-                    return DBERR_QUERY_INVALID_INPUT;
-                }
-                // queries must be polygon or rectangle
-                if (g_config.datasetInfo.getDatasetR()->dataType != spatial_lib::DT_RECTANGLE && g_config.datasetInfo.getDatasetR()->dataType != spatial_lib::DT_POLYGON) {
-                    logger::log_error(DBERR_QUERY_INVALID_INPUT, "Query dataset (R) must contain either RECTANGLE or POLYGON objects");
-                    return DBERR_QUERY_INVALID_INPUT;
-                }
-                // currently supported queries
-                switch (datatypeCombination) {
+        switch (datatypeCombination) {
+            case spatial_lib::DC_POLYGON_POLYGON:
+                // POLYGON-POLYGON
+                switch (queryType) {
+                    // range query
+                    case spatial_lib::Q_RANGE:
+                    // joins with topological predicate
+                    case spatial_lib::Q_FIND_RELATION:
+                    case spatial_lib::Q_INTERSECT:
+                    case spatial_lib::Q_INSIDE:
+                    case spatial_lib::Q_CONTAINS:
+                    case spatial_lib::Q_COVERED_BY:
+                    case spatial_lib::Q_COVERS:
+                    case spatial_lib::Q_DISJOINT:
+                    case spatial_lib::Q_EQUAL:
+                    case spatial_lib::Q_MEET:
+                        // require two datasets
+                        if (numberOfDatasets != 2) {
+                            logger::log_error(DBERR_QUERY_INVALID_INPUT, "Joins require two datasets as input.");
+                            return DBERR_QUERY_INVALID_INPUT;
+                        }
+                        break;
                     default:
-                        logger::log_error(DBERR_UNSUPPORTED_DATATYPE_COMBINATION, "Datatype combination", spatial_lib::mapping::datatypeCombinationIntToStr(datatypeCombination), " for Range queries currently unsupported");
-                        return DBERR_UNSUPPORTED_DATATYPE_COMBINATION;
+                        logger::log_error(DBERR_UNSUPPORTED_DATATYPE_COMBINATION, "Unsupported data type combination", datatypeCombination, "for query type", queryType);
+                        break;
                 }
-                
                 break;
-            // joins with topological predicate
-            case spatial_lib::Q_FIND_RELATION:
-            case spatial_lib::Q_INTERSECT:
-            case spatial_lib::Q_INSIDE:
-            case spatial_lib::Q_CONTAINS:
-            case spatial_lib::Q_COVERED_BY:
-            case spatial_lib::Q_COVERS:
-            case spatial_lib::Q_DISJOINT:
-            case spatial_lib::Q_EQUAL:
-            case spatial_lib::Q_MEET:
-                // require two datasets
-                if (numberOfDatasets != 2) {
-                    logger::log_error(DBERR_QUERY_INVALID_INPUT, "Joins require two datasets as input.");
-                    return DBERR_QUERY_INVALID_INPUT;
+            case spatial_lib::DC_POLYGON_LINESTRING:
+                // LINESTRING-POLYGON
+                switch (queryType) {
+                    // joins with topological predicate
+                    case spatial_lib::Q_FIND_RELATION:
+                    case spatial_lib::Q_INTERSECT:
+                    case spatial_lib::Q_INSIDE:
+                    case spatial_lib::Q_COVERED_BY:
+                    case spatial_lib::Q_DISJOINT:
+                    case spatial_lib::Q_EQUAL:
+                    case spatial_lib::Q_MEET:
+                        // require two datasets
+                        if (numberOfDatasets != 2) {
+                            logger::log_error(DBERR_QUERY_INVALID_INPUT, "Joins require two datasets as input.");
+                            return DBERR_QUERY_INVALID_INPUT;
+                        }
+                        break;
+                    default:
+                        logger::log_error(DBERR_UNSUPPORTED_DATATYPE_COMBINATION, "Unsupported data type combination", datatypeCombination, "for query type", queryType);
+                        break;
                 }
-                // datatype combination support
-                if (datatypeCombination != spatial_lib::DC_POLYGON_POLYGON) {
-                    logger::log_error(DBERR_UNSUPPORTED_DATATYPE_COMBINATION, "Currently only polygon-polygon joins are supported. Input:", spatial_lib::mapping::datatypeCombinationIntToStr(datatypeCombination));
-                    return DBERR_UNSUPPORTED_DATATYPE_COMBINATION;
+                break;
+            case spatial_lib::DC_LINESTRING_POLYGON:
+                // POLYGON-LINESTRING
+                switch (queryType) {
+                    // range query
+                    case spatial_lib::Q_RANGE:
+                    // joins with topological predicate
+                    case spatial_lib::Q_FIND_RELATION:
+                    case spatial_lib::Q_INTERSECT:
+                    case spatial_lib::Q_CONTAINS:
+                    case spatial_lib::Q_COVERS:
+                    case spatial_lib::Q_DISJOINT:
+                    case spatial_lib::Q_EQUAL:
+                    case spatial_lib::Q_MEET:
+                        // require two datasets
+                        if (numberOfDatasets != 2) {
+                            logger::log_error(DBERR_QUERY_INVALID_INPUT, "Joins require two datasets as input.");
+                            return DBERR_QUERY_INVALID_INPUT;
+                        }
+                        break;
+                    default:
+                        logger::log_error(DBERR_UNSUPPORTED_DATATYPE_COMBINATION, "Unsupported data type combination", datatypeCombination, "for query type", queryType);
+                        break;
                 }
+                break;
+            default:
+                logger::log_error(DBERR_UNSUPPORTED_DATATYPE_COMBINATION, "Unsupported data type combination", datatypeCombination);
                 break;
         }
+
+        
 
         return DBERR_OK;
     }
@@ -314,8 +350,15 @@ namespace parser
         
         // datatype combination
         if (datasetStmt->datasetCount == 2) {
-            if(datasetStmt->datatypeR == spatial_lib::DT_POLYGON && datasetStmt->datatypeS == spatial_lib::DT_POLYGON) {
+            if (datasetStmt->datatypeR == spatial_lib::DT_POLYGON && datasetStmt->datatypeS == spatial_lib::DT_POLYGON) {
+                // POLYGON-POLYGON
                 datasetStmt->DatatypeCombination = spatial_lib::DC_POLYGON_POLYGON;
+            } else if (datasetStmt->datatypeR == spatial_lib::DT_POLYGON && datasetStmt->datatypeS == spatial_lib::DT_LINESTRING) {
+                // POLYGON-LINESTRING
+                datasetStmt->DatatypeCombination = spatial_lib::DC_POLYGON_LINESTRING;
+            } else if(datasetStmt->datatypeR == spatial_lib::DT_LINESTRING && datasetStmt->datatypeS == spatial_lib::DT_POLYGON) {
+                // LINESTRING-POLYGON
+                datasetStmt->DatatypeCombination = spatial_lib::DC_LINESTRING_POLYGON;
             } else {
                 logger::log_error(DBERR_UNSUPPORTED_DATATYPE_COMBINATION, "Dataset data type combination not yet supported.");
                 return DBERR_UNSUPPORTED_DATATYPE_COMBINATION;
