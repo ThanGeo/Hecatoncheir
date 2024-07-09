@@ -268,14 +268,9 @@ namespace partitioning
         fin.close();
         int polygonCount = stoi(line);
         logger::log_task("Partitioning", polygonCount, "objects...");
-        // spawn as many threads as possible
-        int availableProcessors = omp_get_num_procs();
         // count how many batches have been sent in total
         int batchesSent = 0;
-        
-        // spawn all available threads (processors)
-        // todo: maybe this is not optimal
-        #pragma omp parallel firstprivate(batchMap, line, polygonCount) num_threads(availableProcessors) reduction(+:batchesSent)
+        #pragma omp parallel firstprivate(batchMap, line, polygonCount) reduction(+:batchesSent)
         {
             int recID;
             int partitionID;
