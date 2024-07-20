@@ -2,7 +2,7 @@
 
 namespace storage
 {
-    DB_STATUS generatePartitionFilePath(spatial_lib::DatasetT &dataset) {
+    DB_STATUS generatePartitionFilePath(Dataset &dataset) {
         if (dataset.nickname == "") {
             logger::log_error(DBERR_MISSING_DATASET_INFO, "Dataset nickname is missing, cannot generate partition filepath");
             return DBERR_MISSING_DATASET_INFO;
@@ -22,7 +22,7 @@ namespace storage
         return DBERR_OK;
     }
 
-    DB_STATUS generateAPRILFilePath(spatial_lib::DatasetT &dataset) {
+    DB_STATUS generateAPRILFilePath(Dataset &dataset) {
         if (dataset.nickname == "") {
             logger::log_error(DBERR_MISSING_DATASET_INFO, "Dataset nickname is missing, cannot generate partition filepath");
             return DBERR_MISSING_DATASET_INFO;
@@ -33,7 +33,7 @@ namespace storage
         }
         dataset.aprilConfig.ALL_intervals_path = g_config.dirPaths.approximationPath + dataset.nickname + "_A";
         dataset.aprilConfig.FULL_intervals_path = g_config.dirPaths.approximationPath + dataset.nickname + "_F";
-        if (dataset.approxType == spatial_lib::AT_APRIL) {
+        if (dataset.approxType == AT_APRIL) {
             std::string aprilTail = "";
             aprilTail += "_" + std::to_string(dataset.aprilConfig.getN());
             aprilTail += "_" + std::to_string(dataset.aprilConfig.compression);

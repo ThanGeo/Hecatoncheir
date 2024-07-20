@@ -4,12 +4,15 @@
 #include <dirent.h>
 #include <string>
 #include <sstream>
+#include <vector>
 
 #include <mpi.h>
 
 bool verifyFilepath(std::string filePath);
 bool verifyDirectory(std::string directoryPath);
 std::string getDatasetNameFromPath(std::string &datasetPath);
+bool binarySearchInIntervalVector(std::vector<int> &vec, int x);
+bool binarySearchInVector(std::vector<int> &vec, int &x);
 
 namespace mpi_timer
 {
@@ -28,5 +31,6 @@ namespace mpi_timer
      */
     double getElapsedTime(double startTime);
 }
+
 
 #endif

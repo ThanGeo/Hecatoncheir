@@ -1,7 +1,7 @@
 #ifndef D_COMM_H
 #define D_COMM_H
 
-#include "SpatialLib.h"
+
 #include "def.h"
 #include "config/configure.h"
 #include "env/recv.h"
@@ -49,15 +49,6 @@ namespace comm
          */
         DB_STATUS sendInstructionToAgent(int tag);
 
-        /**
-         * @brief Packs and sends the dataset info to all worker nodes
-         * 
-         * @param dataset 
-         * @param destRank 
-         * @return DB_STATUS 
-         */
-        DB_STATUS broadcastDatasetInfo(spatial_lib::DatasetT* dataset);
-
         DB_STATUS broadcastSysInfo();
         
 
@@ -71,6 +62,15 @@ namespace comm
         
         namespace host
         {
+            /**
+             * @brief Packs and sends the dataset info to all worker nodes
+             * 
+             * @param dataset 
+             * @param destRank 
+             * @return DB_STATUS 
+             */
+            DB_STATUS broadcastDatasetInfo(Dataset* dataset);
+
             /**
              * gather responses (ACK/NACK) from workers and local agent
              */

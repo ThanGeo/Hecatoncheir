@@ -13,7 +13,7 @@ namespace partitioning
         }
     }
     
-    DB_STATUS getPartitionsForMBR(double xMin, double yMin, double xMax, double yMax, std::vector<int> &partitionIDs, std::vector<spatial_lib::TwoLayerClassE> &twoLayerClasses){
+    DB_STATUS getPartitionsForMBR(double xMin, double yMin, double xMax, double yMax, std::vector<int> &partitionIDs, std::vector<TwoLayerClassE> &twoLayerClasses){
         int minPartitionX = (xMin - g_config.datasetInfo.dataspaceInfo.xMinGlobal) / (g_config.datasetInfo.dataspaceInfo.xExtent / g_config.partitioningInfo.partitionsPerDimension);
         int minPartitionY = (yMin - g_config.datasetInfo.dataspaceInfo.yMinGlobal) / (g_config.datasetInfo.dataspaceInfo.yExtent / g_config.partitioningInfo.partitionsPerDimension);
         int maxPartitionX = (xMax - g_config.datasetInfo.dataspaceInfo.xMinGlobal) / (g_config.datasetInfo.dataspaceInfo.xExtent / g_config.partitioningInfo.partitionsPerDimension);
@@ -32,12 +32,12 @@ namespace partitioning
 
         if (startPartitionID == lastPartitionID) {
             // class A only
-            twoLayerClasses.emplace_back(spatial_lib::CLASS_A);
+            twoLayerClasses.emplace_back(CLASS_A);
             partitionIDs.emplace_back(startPartitionID);
             return DBERR_OK;
         }
         // class A
-        twoLayerClasses.emplace_back(spatial_lib::CLASS_A);
+        twoLayerClasses.emplace_back(CLASS_A);
         partitionIDs.emplace_back(startPartitionID);
         // loop overlapping partitions
         for (int i=minPartitionX; i<=maxPartitionX; i++) {
@@ -49,15 +49,15 @@ namespace partitioning
                 }
                 partitionIDs.emplace_back(partitionID);
                 // class C
-                twoLayerClasses.emplace_back(spatial_lib::CLASS_C);
+                twoLayerClasses.emplace_back(CLASS_C);
             }
             for (int j=minPartitionY+1; j<=maxPartitionY; j++) {
                 if (i == minPartitionX) {
                     // class B
-                    twoLayerClasses.emplace_back(spatial_lib::CLASS_B);
+                    twoLayerClasses.emplace_back(CLASS_B);
                 } else {
                     // class D
-                    twoLayerClasses.emplace_back(spatial_lib::CLASS_D);
+                    twoLayerClasses.emplace_back(CLASS_D);
                 }
                 int partitionID = g_config.partitioningInfo.getCellID(i, j);
                 if (partitionID < 0 || partitionID > g_config.partitioningInfo.partitionsPerDimension*g_config.partitioningInfo.partitionsPerDimension -1) {
@@ -102,7 +102,7 @@ namespace partitioning
     static DB_STATUS assignGeometryToBatches(GeometryT &geometry, double geoXmin, double geoYmin, double geoXmax, double geoYmax, std::unordered_map<int,GeometryBatchT> &batchMap, int &batchesSent) {
         // find partition IDs and the class of the geometry in each partition
         std::vector<int> partitionIDs;
-        std::vector<spatial_lib::TwoLayerClassE> twoLayerClasses;
+        std::vector<TwoLayerClassE> twoLayerClasses;
         DB_STATUS ret = partitioning::getPartitionsForMBR(geoXmin, geoYmin, geoXmax, geoYmax, partitionIDs, twoLayerClasses);
         if (ret != DBERR_OK) {
             return ret;
@@ -161,7 +161,7 @@ namespace partitioning
         return ret;
     }
 
-    DB_STATUS calculateCSVDatasetDataspaceBounds(spatial_lib::DatasetT &dataset) {
+    DB_STATUS calculateCSVDatasetDataspaceBounds(Dataset &dataset) {
         DB_STATUS ret = DBERR_OK;
         // open file
         std::ifstream fin(dataset.path);
@@ -395,7 +395,7 @@ namespace partitioning
         return ret;
     }
 
-    static DB_STATUS performPartitioningCSV(spatial_lib::DatasetT &dataset) {
+    static DB_STATUS performPartitioningCSV(Dataset &dataset) {
         DB_STATUS ret = DBERR_OK;  
 
         // first, issue the partitioning instruction
@@ -405,7 +405,7 @@ namespace partitioning
         }
         
         // broadcast the dataset info to the nodes
-        ret = comm::controller::broadcastDatasetInfo(&dataset);
+        ret = comm::controller::host::broadcastDatasetInfo(&dataset);
         if (ret != DBERR_OK) {
             return ret;
         }
@@ -419,14 +419,14 @@ namespace partitioning
         return ret;
     }
 
-    DB_STATUS partitionDataset(spatial_lib::DatasetT *dataset) {
+    DB_STATUS partitionDataset(Dataset *dataset) {
         double startTime;
         DB_STATUS ret;
         // time
         startTime = mpi_timer::markTime();
         switch (dataset->fileType) {
             // perform the partitioning
-            case spatial_lib::FT_CSV:
+            case FT_CSV:
                 // csv dataset
                 ret = performPartitioningCSV(*dataset);
                 if (ret != DBERR_OK) {
@@ -434,8 +434,8 @@ namespace partitioning
                     return ret;
                 }
                 break;
-            case spatial_lib::FT_BINARY:
-            case spatial_lib::FT_WKT:
+            case FT_BINARY:
+            case FT_WKT:
             default:
                 logger::log_error(DBERR_FEATURE_UNSUPPORTED, "Unsupported data file type:", dataset->fileType);
                 break;

@@ -6,5 +6,6 @@ hostfile
 run.sh
 _APRIL/
 _TwoLayerFilter/
+_SpatialLib/
 _Rasterizer/
 T1T2csv_results.txt

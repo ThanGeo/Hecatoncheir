@@ -265,7 +265,7 @@ namespace comm
 
     namespace agent
     {
-        static DB_STATUS deserializeBatchMessageAndStore(char *buffer, int bufferSize, FILE* outFile, spatial_lib::DatasetT *dataset, int &continueListening) {
+        static DB_STATUS deserializeBatchMessageAndStore(char *buffer, int bufferSize, FILE* outFile, Dataset *dataset, int &continueListening) {
             DB_STATUS ret = DBERR_OK;
             GeometryBatchT batch;
             // deserialize
@@ -294,7 +294,7 @@ namespace comm
             return ret;
         }
 
-        static DB_STATUS pullSerializedMessageAndHandle(MPI_Status status, FILE* outFile, spatial_lib::DatasetT *dataset, int &continueListening) {
+        static DB_STATUS pullSerializedMessageAndHandle(MPI_Status status, FILE* outFile, Dataset *dataset, int &continueListening) {
             int tag = status.MPI_TAG;
             SerializedMsgT<char> msg(MPI_CHAR);
             // receive the message
@@ -323,7 +323,7 @@ namespace comm
             return ret;
         }
 
-        static DB_STATUS generateDatasetFromMessage(SerializedMsgT<char> &datasetInfoMsg, spatial_lib::DatasetT &dataset) {
+        static DB_STATUS generateDatasetFromMessage(SerializedMsgT<char> &datasetInfoMsg, Dataset &dataset) {
             // deserialize message
             dataset.deserialize(datasetInfoMsg.data, datasetInfoMsg.count);
             // generate partition filepath
@@ -335,7 +335,7 @@ namespace comm
         }
 
         static DB_STATUS listenForDatasetPartitioning(MPI_Status status) {
-            spatial_lib::DatasetT dataset;
+            Dataset dataset;
             FILE* outFile;
             SerializedMsgT<char> datasetInfoMsg(MPI_CHAR);
             int listen = 1;
@@ -532,7 +532,7 @@ STOP_LISTENING:
 
             // create the APRIL approximations for the dataset(s)
             for (auto& it: g_config.datasetInfo.datasets) {
-                ret = APRIL::generate(it.second);
+                ret = APRIL::generation::init(it.second);
                 if (ret != DBERR_OK) {
                     logger::log_error(ret, "Failed to generate APRIL for dataset", it.second.nickname);
                 }
@@ -556,7 +556,7 @@ STOP_LISTENING:
             return ret;
         }
 
-        static DB_STATUS respondWithQueryResults(spatial_lib::QueryOutputT &queryOutput) {
+        static DB_STATUS respondWithQueryResults(QueryOutputT &queryOutput) {
             // serialize results
             SerializedMsgT<int> msg(MPI_INT);
             DB_STATUS ret = pack::packQueryResults(msg, queryOutput);
@@ -587,7 +587,7 @@ STOP_LISTENING:
             }
             // free memory
             free(msg.data);
-            spatial_lib::QueryOutputT queryOutput;
+            QueryOutputT queryOutput;
             // execute
             ret = twolayer::processQuery(queryOutput);
             if (ret != DBERR_OK) {
@@ -622,7 +622,7 @@ STOP_LISTENING:
             
             // load data and create the dataset objects to store
             for (int i=0; i<nicknames.size(); i++) {
-                spatial_lib::DatasetT dataset;
+                Dataset dataset;
                 dataset.nickname = nicknames[i];
                 // generate partition file path from dataset nickname
                 ret = storage::generatePartitionFilePath(dataset);
@@ -630,7 +630,6 @@ STOP_LISTENING:
                     goto EXIT_SAFELY;
                 }
                 // load partition file (create MBRs)
-                // ret = storage::reader::partitionFile::loadDatasetMBRs(dataset);
                 ret = storage::reader::partitionFile::loadDatasetComplete(dataset);
                 if (ret != DBERR_OK) {
                     logger::log_error(DBERR_DISK_READ_FAILED, "Failed loading partition file MBRs");
@@ -681,7 +680,7 @@ EXIT_SAFELY:
             for (auto &it: g_config.datasetInfo.datasets) {
                 // logger::log_task("APRIL info: N =", dataset.aprilConfig.getN(), "compression = ", dataset.aprilConfig.compression, "partitions = ", dataset.aprilConfig.partitions);
                 // set approximation type for dataset
-                it.second.approxType = spatial_lib::AT_APRIL;
+                it.second.approxType = AT_APRIL;
                 // generate APRIL filepaths
                 ret = storage::generateAPRILFilePath(it.second);
                 if (ret != DBERR_OK) {
@@ -821,27 +820,7 @@ STOP_LISTENING:
             return ret;
         }
 
-        DB_STATUS broadcastDatasetInfo(spatial_lib::DatasetT* dataset) {
-            SerializedMsgT<char> msgPack(MPI_CHAR);
-            // serialize
-            msgPack.count = dataset->serialize(&msgPack.data);
-            if (msgPack.count == -1) {
-                logger::log_error(DBERR_MALLOC_FAILED, "Dataset serialization failed");
-                return DBERR_MALLOC_FAILED;
-            }
-
-            // broadcast the pack
-            DB_STATUS ret = broadcast::broadcastMessage(msgPack, MSG_DATASET_INFO);
-            if (ret != DBERR_OK) {
-                logger::log_error(ret, "Failed to broadcast dataset info");
-                return ret;
-            }
-
-            // free
-            free(msgPack.data);
-
-            return ret;
-        }
+        
 
         DB_STATUS broadcastSysInfo() {
             SerializedMsgT<char> msgPack(MPI_CHAR);
@@ -1067,6 +1046,25 @@ STOP_LISTENING:
          */
         namespace host
         {
+            DB_STATUS broadcastDatasetInfo(Dataset* dataset) {
+                SerializedMsgT<char> msgPack(MPI_CHAR);
+                // serialize
+                msgPack.count = dataset->serialize(&msgPack.data);
+                if (msgPack.count == -1) {
+                    logger::log_error(DBERR_MALLOC_FAILED, "Dataset serialization failed");
+                    return DBERR_MALLOC_FAILED;
+                }
+                // broadcast the pack
+                DB_STATUS ret = broadcast::broadcastMessage(msgPack, MSG_DATASET_INFO);
+                if (ret != DBERR_OK) {
+                    logger::log_error(ret, "Failed to broadcast dataset info");
+                    return ret;
+                }
+                // free
+                free(msgPack.data);
+                return ret;
+            }
+            
             DB_STATUS gatherResponses() {
                 DB_STATUS ret = DBERR_OK;
 
@@ -1118,7 +1116,7 @@ STOP_LISTENING:
                 return ret;
             }
 
-            static DB_STATUS handleQueryResultMessage(MPI_Status &status, MPI_Comm &comm, spatial_lib::QueryTypeE queryType, spatial_lib::QueryOutputT &queryOutput) {
+            static DB_STATUS handleQueryResultMessage(MPI_Status &status, MPI_Comm &comm, QueryTypeE queryType, QueryOutputT &queryOutput) {
                 DB_STATUS ret = DBERR_OK;
                 SerializedMsgT<int> msg;
                 // receive the serialized message
@@ -1139,7 +1137,7 @@ STOP_LISTENING:
             DB_STATUS gatherResults() {
                 DB_STATUS ret = DBERR_OK;
                 int threadThatFailed = -1;
-                spatial_lib::QueryOutputT queryOutput;
+                QueryOutputT queryOutput;
                 // use threads to parallelize gathering of results
                 #pragma omp parallel num_threads(g_world_size) reduction(query_output_reduction:queryOutput)
                 {
@@ -1147,7 +1145,7 @@ STOP_LISTENING:
                     int messageFound;
                     MPI_Status status;
                     int tid = omp_get_thread_num();
-                    spatial_lib::QueryOutputT localQueryOutput;
+                    QueryOutputT localQueryOutput;
 
                     // probe for results
                     if (tid == 0) {
@@ -1188,18 +1186,18 @@ STOP_LISTENING:
                     queryOutput.postMBRFilterCandidates += localQueryOutput.postMBRFilterCandidates;
                     queryOutput.refinementCandidates += localQueryOutput.refinementCandidates;
                     switch (g_config.queryInfo.type) {
-                        case spatial_lib::Q_DISJOINT:
-                        case spatial_lib::Q_INTERSECT:
-                        case spatial_lib::Q_INSIDE:
-                        case spatial_lib::Q_CONTAINS:
-                        case spatial_lib::Q_COVERS:
-                        case spatial_lib::Q_COVERED_BY:
-                        case spatial_lib::Q_MEET:
-                        case spatial_lib::Q_EQUAL:
+                        case Q_DISJOINT:
+                        case Q_INTERSECT:
+                        case Q_INSIDE:
+                        case Q_CONTAINS:
+                        case Q_COVERS:
+                        case Q_COVERED_BY:
+                        case Q_MEET:
+                        case Q_EQUAL:
                             queryOutput.trueHits += localQueryOutput.trueHits;
                             queryOutput.trueNegatives += localQueryOutput.trueNegatives;
                             break;
-                        case spatial_lib::Q_FIND_RELATION:
+                        case Q_FIND_RELATION:
                             for (auto &it : localQueryOutput.topologyRelationsResultMap) {
                                 queryOutput.topologyRelationsResultMap[it.first] += it.second;
                             }
@@ -1212,7 +1210,7 @@ STOP_LISTENING:
                     return ret;
                 }
                 // store to the global output and return
-                spatial_lib::g_queryOutput.shallowCopy(queryOutput);
+                g_queryOutput.shallowCopy(queryOutput);
                 return ret;
             }
         }

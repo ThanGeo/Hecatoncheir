@@ -7,7 +7,7 @@
 
 namespace twolayer
 {
-    DB_STATUS processQuery(spatial_lib::QueryOutputT &queryOutput);
+    DB_STATUS processQuery(QueryOutputT &queryOutput);
 }
 
 

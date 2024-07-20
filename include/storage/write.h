@@ -7,8 +7,8 @@ namespace storage
 {
     namespace writer
     {
-        DB_STATUS appendDatasetInfoToPartitionFile(FILE* outFile, spatial_lib::DatasetT* dataset);
-        DB_STATUS appendBatchToPartitionFile(FILE* outFile, GeometryBatchT* batch, spatial_lib::DatasetT* dataset);
+        DB_STATUS appendDatasetInfoToPartitionFile(FILE* outFile, Dataset* dataset);
+        DB_STATUS appendBatchToPartitionFile(FILE* outFile, GeometryBatchT* batch, Dataset* dataset);
 
         /**
          * updates the first entry (integer) of a binary file with the new objectCount value

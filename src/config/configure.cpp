@@ -93,7 +93,7 @@ namespace configure
             return DBERR_OK;
         } else {
             // at least one dataset
-            spatial_lib::DatasetT R;
+            Dataset R;
             // set dataspace info
             if (datasetStmt->boundsSet) {
                 g_config.datasetInfo.dataspaceInfo.xMinGlobal = datasetStmt->xMinGlobal;
@@ -123,7 +123,7 @@ namespace configure
             g_config.datasetInfo.addDataset(R);
             
             if (datasetStmt->datasetCount == 2) {
-                spatial_lib::DatasetT S;
+                Dataset S;
                 // build dataset S objects (inherit the same dataspace info)
                 S.dataspaceInfo = g_config.datasetInfo.dataspaceInfo;
                 S.dataType = datasetStmt->datatypeS;

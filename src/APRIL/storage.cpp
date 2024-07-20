@@ -4,7 +4,7 @@ namespace APRIL
 {
     namespace writer
     {
-        DB_STATUS saveAPRIL(FILE* pFileALL, FILE* pFileFULL, uint recID, uint sectionID, spatial_lib::AprilDataT* aprilData) {
+        DB_STATUS saveAPRIL(FILE* pFileALL, FILE* pFileFULL, uint recID, uint sectionID, AprilDataT* aprilData) {
             // buffered write
             int buf[3];
             buf[0] = recID;
@@ -42,11 +42,11 @@ namespace APRIL
 
     namespace reader
     {
-        static DB_STATUS loadIntervals(std::string &intervalFilePath, spatial_lib::DatasetT &dataset, bool ALL) {
+        static DB_STATUS loadIntervals(std::string &intervalFilePath, Dataset &dataset, bool ALL) {
             DB_STATUS ret = DBERR_OK;
             int buf[3];
             int polygonCount, recID, sectionID, numIntervals, totalValues;
-            std::vector<uint> intervals;
+            std::vector<int> intervals;
             // open interval file
             FILE* pFile = fopen(intervalFilePath.c_str(), "rb");
             if (pFile == NULL) {
@@ -95,7 +95,7 @@ CLOSE_AND_EXIT:
             return ret;
         }
 
-        DB_STATUS loadAPRIL(spatial_lib::DatasetT &dataset) {
+        DB_STATUS loadAPRIL(Dataset &dataset) {
             // load ALL intervals
             DB_STATUS ret = loadIntervals(dataset.aprilConfig.ALL_intervals_path, dataset, true);
             if (ret != DBERR_OK) {

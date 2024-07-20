@@ -6,11 +6,21 @@
 #include <vector>
 #include <stdio.h>
 #include <mpi.h>
+#include <math.h>
+#include <any>
+#include <cstring>
 
-#include "SpatialLib.h"
+#include <variant>
+
 #include "utils.h"
 #include "env/comm_def.h"
 #include "config/containers.h"
+
+#include <boost/geometry.hpp>
+#include <boost/geometry/geometries/point_xy.hpp>
+#include <boost/geometry/geometries/polygon.hpp>
+#include <boost/geometry/geometries/linestring.hpp>
+#include <boost/geometry/geometries/box.hpp>
 
 #define AGENT_PROGRAM_NAME "./agent"
 
@@ -26,6 +36,8 @@
 #define PURPLE "\e[0;35m"
 #define NC "\e[0m"
 
+#define EPS 1e-08
+
 extern int g_world_size;
 extern int g_node_rank;
 extern int g_host_rank;
@@ -33,6 +45,12 @@ extern int g_parent_original_rank;
 
 extern MPI_Comm g_global_comm;
 extern MPI_Comm g_local_comm;
+
+// boost geometry
+typedef boost::geometry::model::d2::point_xy<double> bg_point_xy;
+typedef boost::geometry::model::linestring<bg_point_xy> bg_linestring;
+typedef boost::geometry::model::box<bg_point_xy> bg_rectangle;
+typedef boost::geometry::model::polygon<bg_point_xy> bg_polygon;
 
 /* STATUS AND ERROR CODES */
 #define DBBASE 100000
@@ -51,6 +69,8 @@ typedef enum DB_STATUS {
     DBERR_DISK_WRITE_FAILED = DBBASE + 1007,
     DBERR_DISK_READ_FAILED = DBBASE + 1008,
     DBERR_CONFIG_FILE = DBBASE + 1009,
+    DBERR_INVALID_OPERATION = DBBASE + 1010,
+    DBERR_OUT_OF_BOUNDS = DBBASE + 1011,
 
     // comm
     DBERR_COMM_RECV = DBBASE + 2000,
@@ -87,6 +107,7 @@ typedef enum DB_STATUS {
     DBERR_QUERY_INVALID_INPUT = DBBASE + 7000,
     DBERR_QUERY_INVALID_TYPE = DBBASE + 7001,
 } DB_STATUS;
+
 
 namespace logger
 {
@@ -199,6 +220,1261 @@ namespace logger
     }
 }
 
+typedef enum FileType {
+    FT_INVALID,
+    FT_BINARY,
+    FT_CSV,
+    FT_WKT,
+} FileTypeE;
+
+typedef enum FilterResult {
+    TRUE_NEGATIVE,
+    TRUE_HIT,
+    INCONCLUSIVE,
+} FilterResultT;
+
+typedef enum QueryType{
+    Q_NONE, // no query
+    Q_RANGE,
+    Q_INTERSECT,
+    Q_INSIDE,
+    Q_DISJOINT,
+    Q_EQUAL,
+    Q_MEET,
+    Q_CONTAINS,
+    Q_COVERS,
+    Q_COVERED_BY,
+    Q_FIND_RELATION,    // find what type of topological relation is there
+}QueryTypeE;
+
+// MBR topology relations
+typedef enum MBRRelationCase {
+    MBR_R_IN_S,
+    MBR_S_IN_R,
+    MBR_EQUAL,
+    MBR_CROSS,
+    MBR_INTERSECT,
+} MBRRelationCaseE;
+
+// topological
+typedef enum TopologyRelation {
+    TR_DISJOINT,
+    TR_EQUAL,
+    TR_INSIDE,
+    TR_CONTAINS,
+    TR_MEET,
+    TR_COVERS,
+    TR_COVERED_BY,
+    TR_INTERSECT,
+    // specific refinement cases
+    REFINE_CONTAINS_PLUS = 1000,
+    REFINE_INSIDE_PLUS,
+    REFINE_CONTAINMENT_ONLY,
+    REFINE_NO_CONTAINMENT,
+    REFINE_ALL_NO_EQUAL,
+    REFINE_ALL,
+    /**
+     * @brief SPECIALIZED MBR TOPOLOGY
+     */
+    // MBR(r) inside MBR(s)
+    REFINE_INSIDE_COVEREDBY_TRUEHIT_INTERSECT = 2000,
+    REFINE_DISJOINT_INSIDE_COVEREDBY_MEET_INTERSECT,
+    // MBR(s) inside MBR(r)
+    REFINE_CONTAINS_COVERS_TRUEHIT_INTERSECT,
+    REFINE_DISJOINT_CONTAINS_COVERS_MEET_INTERSECT,
+    // MBR(r) intersects MBR(s)
+    REFINE_DISJOINT_MEET_INTERSECT,
+    // MBR(r) = MBR(s)
+    REFINE_COVEREDBY_TRUEHIT_INTERSECT,
+    REFINE_COVERS_TRUEHIT_INTERSECT,
+    REFINE_COVERS_COVEREDBY_TRUEHIT_INTERSECT,
+    REFINE_EQUAL_COVERS_COVEREDBY_TRUEHIT_INTERSECT,
+} TopologyRelationE;
+
+// spatial data types
+typedef enum DataType{
+    DT_INVALID,
+    DT_POINT,
+    DT_LINESTRING,
+    DT_RECTANGLE,
+    DT_POLYGON,
+} DataTypeE;
+
+// query data type combinations
+typedef enum DatatypeCombination {
+    // invalid
+    DC_INVALID_COMBINATION,
+    // heterogenous
+    DC_POINT_LINESTRING,
+    DC_POINT_RECTANGLE,
+    DC_POINT_POLYGON,
+    DC_RECTANGLE_POINT,
+    DC_RECTANGLE_LINESTRING,
+    DC_RECTANGLE_POLYGON,
+    DC_LINESTRING_POINT,
+    DC_LINESTRING_RECTANGLE,
+    DC_LINESTRING_POLYGON,
+    DC_POLYGON_POINT,
+    DC_POLYGON_LINESTRING,
+    DC_POLYGON_RECTANGLE,
+    //homogenous
+    DC_POINT_POINT,
+    DC_LINESTRING_LINESTRING,
+    DC_RECTANGLE_RECTANGLE,
+    DC_POLYGON_POLYGON,
+}DatatypeCombinationE;
+
+// spatial approximations
+typedef enum ApproximationType{
+    AT_NONE,
+    // mine
+    AT_APRIL,
+    AT_RI,
+    // competitors
+    AT_5CCH,
+    AT_RA,
+    AT_GEOS,
+} ApproximationTypeE;
+
+typedef enum IntermediateFilterType{
+    IF_NONE,
+    IF_MARK_APRIL_BEGIN,
+    IF_APRIL_STANDARD = IF_MARK_APRIL_BEGIN,
+    IF_APRIL_OPTIMIZED,
+    IF_APRIL_OTF,
+    IF_APRIL_SCALABILITY,
+    IF_MARK_APRIL_END
+} IntermediateFilterTypeE;
+
+typedef enum TwoLayerClass {
+    CLASS_A,
+    CLASS_B,
+    CLASS_C,
+    CLASS_D,
+} TwoLayerClassE;
+
+/*************************************
+ * 
+ * 
+ * 
+ * 
+ *              APRIL
+ * 
+ * 
+ * 
+ * 
+ *********************************** */
+
+// APRIL data
+typedef struct AprilData {
+    // APRIL data
+    uint numIntervalsALL = 0;
+    std::vector<int> intervalsALL;
+    uint numIntervalsFULL = 0;
+    std::vector<int> intervalsFULL;
+}AprilDataT;
+
+// APRIL configuration
+typedef struct AprilConfig {
+    private:
+        // Hilbert curve order
+        int N = 16;
+        // cells per dimension in Hilbert grid: 2^N
+        int cellsPerDim = pow(2,16);
+    public:
+        // compression enabled, disabled
+        bool compression = 0;
+        // how many partitions (sections) in the data space
+        int partitions = 1;
+        // APRIL data file paths
+        std::string ALL_intervals_path;
+        std::string FULL_intervals_path;
+
+    void setN(int N) {
+        this->N = N;
+        this->cellsPerDim = pow(2,N);
+    }
+
+    int getN() {
+        return N;
+    }
+
+    int getCellsPerDim() {
+        return cellsPerDim;
+    }
+} AprilConfigT;
+
+// types of possible relationships between interval lists (IL)
+typedef enum IntervalListsRelationship {
+    IL_DISJOINT,        // no containment, no intersection
+    IL_INTERSECT,       // no containment, yes intersection
+    IL_R_INSIDE_S,
+    IL_S_INSIDE_R,
+    IL_MATCH,           // match == symmetrical containment
+} IntervalListsRelationshipE;
+
+
+/*************************************
+ * 
+ * 
+ * 
+ * 
+ *          DATA STRUCTS
+ * 
+ * 
+ * 
+ * 
+ *********************************** */
+
+struct Point {
+    double x, y;
+    Point(double xVal, double yVal) : x(xVal), y(yVal) {}
+};
+
+struct MBR {
+    Point pMin;
+    Point pMax;
+
+    MBR() : pMin(Point(std::numeric_limits<int>::max(), std::numeric_limits<int>::max())), pMax(Point(-std::numeric_limits<int>::max(), -std::numeric_limits<int>::max())) {}
+};
+
+// wrapper struct 
+template<typename GeometryType>
+struct GeometryWrapper {
+public:
+    GeometryType geometry;
+
+    GeometryWrapper() {}
+    explicit GeometryWrapper(const GeometryType& geom) : geometry(geom) {}
+
+    void setGeometry(const GeometryType& geom) {
+        geometry = geom;
+    }
+
+    void addPoint(const double x, const double y) {
+        logger::log_error(DBERR_INVALID_OPERATION, "Geometry wrapper can be accessed directly for operation: addPoint");
+    }
+
+    bool pipTest(const bg_point_xy &point) const {
+        logger::log_error(DBERR_INVALID_OPERATION, "Geometry wrapper can be accessed directly for operation: pipTest");
+        return false;
+    }
+
+    void printGeometry() {
+        logger::log_error(DBERR_INVALID_OPERATION, "Geometry wrapper can be accessed directly for operation: printGeometry");
+    }
+
+    void correctGeometry() {
+        logger::log_error(DBERR_INVALID_OPERATION, "Geometry wrapper can be accessed directly for operation: correctGeometry");
+    }
+
+    void modifyBoostPointByIndex(int index, double x, double y) {
+        // Default behavior: Do nothing (for types that don't support modifying points)
+        logger::log_error(DBERR_INVALID_OPERATION, "Geometry wrapper can be accessed directly for operation: modifyBoostPointByIndex");
+    }
+
+    template<typename OtherGeometryType>
+    std::string createMaskCode(const GeometryWrapper<OtherGeometryType> &other) const {
+        logger::log_error(DBERR_INVALID_OPERATION, "createMaskCode unsupported for the invoked shapes.");
+        return "";
+    }
+
+    template<typename OtherBoostGeometryObj>
+    bool intersects(const OtherBoostGeometryObj &other) const {
+        return boost::geometry::intersects(geometry, other.geometry);
+    }
+
+    template<typename OtherBoostGeometryObj>
+    bool disjoint(const OtherBoostGeometryObj &other) const {
+        return boost::geometry::disjoint(geometry, other.geometry);
+    }
+
+    template<typename OtherBoostGeometryObj>
+    bool inside(const OtherBoostGeometryObj &other) const {
+        logger::log_error(DBERR_INVALID_OPERATION, "intersects predicate unsupported for the invoked shapes.");
+        return false;
+    }
+
+    template<typename OtherBoostGeometryObj>
+    bool coveredBy(const OtherBoostGeometryObj &other) const {
+        logger::log_error(DBERR_INVALID_OPERATION, "covered bt predicate unsupported for the invoked shapes.");
+        return false;
+    }
+
+    template<typename OtherBoostGeometryObj>
+    bool contains(const OtherBoostGeometryObj &other) const {
+        logger::log_error(DBERR_INVALID_OPERATION, "contains predicate unsupported for the invoked shapes.");
+        return false;
+    }
+
+    template<typename OtherBoostGeometryObj>
+    bool covers(const OtherBoostGeometryObj &other) const {
+        logger::log_error(DBERR_INVALID_OPERATION, "covers predicate unsupported for the invoked shapes.");
+        return false;
+    }
+
+    template<typename OtherBoostGeometryObj>
+    bool meets(const OtherBoostGeometryObj &other) const {
+        logger::log_error(DBERR_INVALID_OPERATION, "meets predicate unsupported for the invoked shapes.");
+        return false;
+    }
+
+    template<typename OtherBoostGeometryObj>
+    bool equals(const OtherBoostGeometryObj &other) const {
+        logger::log_error(DBERR_INVALID_OPERATION, "meets predicate unsupported for the invoked shapes.");
+        return false;
+    }
+};
+
+// point
+template<>
+struct GeometryWrapper<bg_point_xy> {
+public:
+    bg_point_xy geometry;
+    GeometryWrapper(){}
+    GeometryWrapper(const bg_point_xy &geom) : geometry(geom) {}
+
+    void addPoint(const double x, const double y) {
+        // For points, simply replace the existing point
+        geometry = bg_point_xy(x, y);
+    }
+
+    void correctGeometry() {
+        boost::geometry::correct(geometry);
+    }
+
+    bool pipTest(const bg_point_xy &point) const {
+        return false;
+    }
+
+    void printGeometry() {
+        printf("(%f,%f)\n", geometry.x(), geometry.y());
+    }
+
+    void modifyBoostPointByIndex(int index, double x, double y) {
+        if (index != 0) {
+            logger::log_error(DBERR_INVALID_OPERATION, "Ignoring non-zero index for point shape, modifying the point anyway.");
+        }
+        geometry = bg_point_xy(x, y);
+    }
+
+    std::string createMaskCode(const GeometryWrapper<bg_polygon>& other) const;
+    std::string createMaskCode(const GeometryWrapper<bg_point_xy>& other) const {return "";}
+    std::string createMaskCode(const GeometryWrapper<bg_linestring>& other) const {return "";}
+    std::string createMaskCode(const GeometryWrapper<bg_rectangle>& other) const {return "";}
+
+    template<typename OtherBoostGeometryObj>
+    bool intersects(const OtherBoostGeometryObj &other) const {
+        return boost::geometry::intersects(geometry, other.geometry);
+    }
+
+    template<typename OtherBoostGeometryObj>
+    bool disjoint(const OtherBoostGeometryObj &other) const {
+        return boost::geometry::disjoint(geometry, other.geometry);
+    }
+
+    bool inside(const GeometryWrapper<bg_polygon>& other) const;
+    bool inside(const GeometryWrapper<bg_linestring>& other) const;
+    bool inside(const GeometryWrapper<bg_rectangle>& other) const;
+    bool inside(const GeometryWrapper<bg_point_xy>& other) const {
+        return boost::geometry::within(geometry, other.geometry);
+    }
+
+    bool contains(const GeometryWrapper<bg_point_xy>& other) const {return false;}
+    bool contains(const GeometryWrapper<bg_polygon>& other) const {return false;}
+    bool contains(const GeometryWrapper<bg_linestring>& other) const {return false;}
+    bool contains(const GeometryWrapper<bg_rectangle>& other) const {return false;}
+
+    bool meets(const GeometryWrapper<bg_polygon>& other) const;
+    bool meets(const GeometryWrapper<bg_linestring>& other) const;
+    bool meets(const GeometryWrapper<bg_rectangle>& other) const {return false;}
+    bool meets(const GeometryWrapper<bg_point_xy>& other) const {
+        return boost::geometry::touches(geometry, other.geometry);
+    }
+
+    bool equals(const GeometryWrapper<bg_linestring>& other) const {return false;}
+    bool equals(const GeometryWrapper<bg_polygon>& other) const {return false;}
+    bool equals(const GeometryWrapper<bg_rectangle>& other) const {return false;}
+    bool equals(const GeometryWrapper<bg_point_xy>& other) const {
+        return boost::geometry::equals(geometry, other.geometry);
+    }
+};
+
+
+// rectangle
+template<>
+struct GeometryWrapper<bg_rectangle> {
+public:
+    bg_rectangle geometry;
+    GeometryWrapper(){}
+    GeometryWrapper(const bg_rectangle &geom) : geometry(geom) {}
+
+    void addPoint(const double x, const double y) {
+        bg_point_xy point(x, y);
+        if (geometry.min_corner().x() == 0 && geometry.min_corner().y() == 0) {
+            // no points yet, add min point
+            geometry.min_corner() = point;
+        } else if (geometry.max_corner().x() == 0 && geometry.max_corner().y() == 0) {
+            // one point exists, add max point
+            geometry.max_corner() = point;
+        } else {
+            // both points already exist, error
+            logger::log_error(DBERR_INVALID_OPERATION, "Cannot add more than two points to a rectangle");
+        }
+    }
+
+    void correctGeometry() {
+        boost::geometry::correct(geometry);
+    }
+
+    bool pipTest(const bg_point_xy &point) const {
+        return boost::geometry::within(point, geometry);
+    }
+
+    void printGeometry() {
+        printf("(%f,%f),(%f,%f),(%f,%f),(%f,%f)\n", geometry.min_corner().x(), geometry.min_corner().y(),
+        geometry.max_corner().x(), geometry.min_corner().y(),
+        geometry.max_corner().x(), geometry.max_corner().y(),
+        geometry.min_corner().x(), geometry.max_corner().y());
+    }
+
+    void modifyBoostPointByIndex(int index, double x, double y) {
+        if (index == 0) {
+            geometry.min_corner() = bg_point_xy(x, y);
+        } else if (index == 1) {
+            geometry.max_corner() = bg_point_xy(x, y);
+        } else {
+            logger::log_error(DBERR_OUT_OF_BOUNDS, "Rectangle point index out of bounds for modifyBoostPointByIndex:", index);
+        }
+    }
+    
+    template<typename OtherGeometryType>
+    std::string createMaskCode(const GeometryWrapper<OtherGeometryType> &other) const {
+        logger::log_error(DBERR_INVALID_OPERATION, "createMaskCode unsupported for the invoked shapes.");
+        return "";
+    }
+
+    template<typename OtherBoostGeometryObj>
+    bool intersects(const OtherBoostGeometryObj &other) const {
+        return boost::geometry::intersects(geometry, other.geometry);
+    }
+
+    template<typename OtherBoostGeometryObj>
+    bool disjoint(const OtherBoostGeometryObj &other) const {
+        return boost::geometry::disjoint(geometry, other.geometry);
+    }
+
+    bool inside(const GeometryWrapper<bg_point_xy> &other) const {return false;}
+    bool inside(const GeometryWrapper<bg_linestring> &other) const {return false;}
+    bool inside(const GeometryWrapper<bg_polygon> &other) const {return false;}
+    bool inside(const GeometryWrapper<bg_rectangle> &other) const {
+        return boost::geometry::within(geometry, other.geometry);
+    }
+
+    bool contains(const GeometryWrapper<bg_linestring> &other) const {return false;}
+    bool contains(const GeometryWrapper<bg_polygon> &other) const {return false;}
+    bool contains(const GeometryWrapper<bg_rectangle> &other) const {
+        return boost::geometry::within(other.geometry, geometry);
+    }
+    bool contains(const GeometryWrapper<bg_point_xy> &other) const {
+        return boost::geometry::within(other.geometry, geometry);
+    }
+
+    bool meets(const GeometryWrapper<bg_point_xy> &other) const {return false;}
+    bool meets(const GeometryWrapper<bg_linestring> &other) const {return false;}
+    bool meets(const GeometryWrapper<bg_polygon> &other) const {return false;}
+    bool meets(const GeometryWrapper<bg_rectangle> &other) const {return false;}
+
+    bool equals(const GeometryWrapper<bg_point_xy>& other) const {return false;}
+    bool equals(const GeometryWrapper<bg_linestring>& other) const {return false;}
+    bool equals(const GeometryWrapper<bg_polygon>& other) const;
+    bool equals(const GeometryWrapper<bg_rectangle>& other) const {
+        return boost::geometry::equals(geometry, other.geometry);
+    }
+};
+
+// linestring
+template<>
+struct GeometryWrapper<bg_linestring> {
+public:
+    bg_linestring geometry;
+    GeometryWrapper(){}
+    GeometryWrapper(const bg_linestring &geom) : geometry(geom) {}
+
+    void addPoint(const double x, const double y) {
+        bg_point_xy point(x, y);
+        geometry.push_back(point);
+    }
+
+    void correctGeometry() {
+        boost::geometry::correct(geometry);
+    }
+
+    bool pipTest(const bg_point_xy &point) const {
+        return false;
+    }
+
+    void printGeometry() {
+        for(auto &it: geometry) {
+            printf("(%f,%f),", it.x(), it.y());
+        }
+        printf("\n");
+    }
+
+    void modifyBoostPointByIndex(int index, double x, double y) {
+        if (index < geometry.size()) {
+            geometry[index] = bg_point_xy(x, y);
+        } else {
+            logger::log_error(DBERR_OUT_OF_BOUNDS, "Linestring point index out of bounds for modifyBoostPointByIndex:", index);
+        }
+    }
+
+    // topology
+    // declaration
+    std::string createMaskCode(const GeometryWrapper<bg_polygon>& other) const;
+    std::string createMaskCode(const GeometryWrapper<bg_point_xy>& other) const {return "";}
+    std::string createMaskCode(const GeometryWrapper<bg_rectangle>& other) const {return "";}
+    // definitions
+    std::string createMaskCode(const GeometryWrapper<bg_linestring>& other) const {
+        boost::geometry::de9im::matrix matrix = boost::geometry::relation(geometry, other.geometry);
+        return matrix.str();
+    }
+    
+    template<typename OtherBoostGeometryObj>
+    bool intersects(const OtherBoostGeometryObj &other) const {
+        return boost::geometry::intersects(geometry, other.geometry);
+    }
+
+    template<typename OtherBoostGeometryObj>
+    bool disjoint(const OtherBoostGeometryObj &other) const {
+        return boost::geometry::disjoint(geometry, other.geometry);
+    }
+
+    bool inside(const GeometryWrapper<bg_point_xy> &other) const {return false;}
+    bool inside(const GeometryWrapper<bg_polygon> &other) const;
+    bool inside(const GeometryWrapper<bg_rectangle> &other) const {return false;}
+    bool inside(const GeometryWrapper<bg_linestring> &other) const {
+        return boost::geometry::within(geometry, other.geometry);
+    }
+
+    bool contains(const GeometryWrapper<bg_point_xy> &other) const {return false;}
+    bool contains(const GeometryWrapper<bg_polygon> &other) const {return false;}
+    bool contains(const GeometryWrapper<bg_rectangle> &other) const {return false;}
+    bool contains(const GeometryWrapper<bg_linestring> &other) const {return false;}
+
+    bool meets(const GeometryWrapper<bg_polygon>& other) const;
+    bool meets(const GeometryWrapper<bg_rectangle>& other) const {return false;}
+    bool meets(const GeometryWrapper<bg_point_xy>& other) const {
+        return boost::geometry::touches(geometry, other.geometry);
+    }
+    bool meets(const GeometryWrapper<bg_linestring>& other) const {
+        return boost::geometry::touches(geometry, other.geometry);
+    }
+
+    bool equals(const GeometryWrapper<bg_point_xy>& other) const {return false;}
+    bool equals(const GeometryWrapper<bg_polygon>& other) const {return false;}
+    bool equals(const GeometryWrapper<bg_rectangle>& other) const {return false;}
+    bool equals(const GeometryWrapper<bg_linestring>& other) const {
+        return boost::geometry::equals(geometry, other.geometry);
+    }
+};
+
+// polygon
+template<>
+struct GeometryWrapper<bg_polygon> {
+public:
+    bg_polygon geometry;
+    GeometryWrapper(){}
+    GeometryWrapper(const bg_polygon &geom) : geometry(geom) {}
+
+    void addPoint(const double x, const double y) {
+        bg_point_xy point(x, y);
+        boost::geometry::append(geometry.outer(), point);
+        boost::geometry::correct(geometry);
+    }
+
+    void correctGeometry() {
+        boost::geometry::correct(geometry);
+    }
+
+    bool pipTest(const bg_point_xy &point) const {
+        return boost::geometry::within(point, geometry);
+    }
+
+    void printGeometry() {
+        for(auto &it: geometry.outer()) {
+            printf("(%f,%f),", it.x(), it.y());
+        }
+        printf("\n");
+    }
+
+    void modifyBoostPointByIndex(int index, double x, double y) {
+        if (index < geometry.outer().size()) {
+            geometry.outer()[index] = bg_point_xy(x, y);
+            boost::geometry::correct(geometry);
+        } else {
+            logger::log_error(DBERR_OUT_OF_BOUNDS, "Polygon point index out of bounds for modifyBoostPointByIndex:", index);
+        }
+    }
+    // topology definitions
+    std::string createMaskCode(const GeometryWrapper<bg_rectangle>& other) const {return "";};
+    std::string createMaskCode(const GeometryWrapper<bg_polygon>& other) const {
+        boost::geometry::de9im::matrix matrix = boost::geometry::relation(geometry, other.geometry);
+        return matrix.str();
+    }
+    std::string createMaskCode(const GeometryWrapper<bg_linestring>& other) const {
+        boost::geometry::de9im::matrix matrix = boost::geometry::relation(geometry, other.geometry);
+        return matrix.str();
+    }
+    std::string createMaskCode(const GeometryWrapper<bg_point_xy>& other) const {
+        boost::geometry::de9im::matrix matrix = boost::geometry::relation(geometry, other.geometry);
+        return matrix.str();
+    }
+
+    template<typename OtherBoostGeometryObj>
+    bool intersects(const OtherBoostGeometryObj &other) const {
+        return boost::geometry::intersects(geometry, other.geometry);
+    }
+
+    template<typename OtherBoostGeometryObj>
+    bool disjoint(const OtherBoostGeometryObj &other) const {
+        return boost::geometry::disjoint(geometry, other.geometry);
+    }
+
+    bool inside(const GeometryWrapper<bg_point_xy>& other) const {return false;}
+    bool inside(const GeometryWrapper<bg_linestring>& other) const {return false;}
+    bool inside(const GeometryWrapper<bg_rectangle>& other) const {return false;}
+    bool inside(const GeometryWrapper<bg_polygon>& other) const {
+        return boost::geometry::within(geometry, other.geometry);
+    }
+
+    bool contains(const GeometryWrapper<bg_rectangle>& other) const {return false;}
+    bool contains(const GeometryWrapper<bg_polygon>& other) const {
+        return boost::geometry::within(other.geometry, geometry);
+    }
+    bool contains(const GeometryWrapper<bg_point_xy>& other) const {
+        return boost::geometry::within(other.geometry, geometry);
+    }
+    bool contains(const GeometryWrapper<bg_linestring>& other) const {
+        return boost::geometry::within(other.geometry, geometry);
+    }
+
+    bool meets(const GeometryWrapper<bg_rectangle>& other) const {return false;}
+    bool meets(const GeometryWrapper<bg_polygon>& other) const {
+        return boost::geometry::touches(geometry, other.geometry);
+    }
+    bool meets(const GeometryWrapper<bg_point_xy>& other) const {
+        return boost::geometry::touches(geometry, other.geometry);
+    }
+    bool meets(const GeometryWrapper<bg_linestring>& other) const {
+        return boost::geometry::touches(geometry, other.geometry);
+    }
+
+    bool equals(const GeometryWrapper<bg_point_xy>& other) const {return false;}
+    bool equals(const GeometryWrapper<bg_linestring>& other) const {return false;}
+    bool equals(const GeometryWrapper<bg_polygon>& other) const {
+        return boost::geometry::equals(geometry, other.geometry);
+    }
+    bool equals(const GeometryWrapper<bg_rectangle>& other) const {
+        return boost::geometry::equals(geometry, other.geometry);
+    }
+};
+
+/* define forward declared member functions for the wrappers */
+// linestring
+inline std::string GeometryWrapper<bg_linestring>::createMaskCode(const GeometryWrapper<bg_polygon>& other) const {
+    boost::geometry::de9im::matrix matrix = boost::geometry::relation(geometry, other.geometry);
+    return matrix.str();
+}
+inline bool GeometryWrapper<bg_linestring>::inside(const GeometryWrapper<bg_polygon> &other) const {
+    return boost::geometry::within(geometry, other.geometry);
+}
+inline bool GeometryWrapper<bg_linestring>::meets(const GeometryWrapper<bg_polygon> &other) const {
+    return boost::geometry::touches(geometry, other.geometry);
+}
+
+// point
+inline std::string GeometryWrapper<bg_point_xy>::createMaskCode(const GeometryWrapper<bg_polygon>& other) const  {
+    boost::geometry::de9im::matrix matrix = boost::geometry::relation(geometry, other.geometry);
+    return matrix.str();
+}
+inline bool GeometryWrapper<bg_point_xy>::inside(const GeometryWrapper<bg_linestring> &other) const {
+    return boost::geometry::within(geometry, other.geometry);
+}
+inline bool GeometryWrapper<bg_point_xy>::inside(const GeometryWrapper<bg_rectangle> &other) const {
+    return boost::geometry::within(geometry, other.geometry);
+}
+inline bool GeometryWrapper<bg_point_xy>::inside(const GeometryWrapper<bg_polygon> &other) const {
+    return boost::geometry::within(geometry, other.geometry);
+}
+inline bool GeometryWrapper<bg_point_xy>::meets(const GeometryWrapper<bg_linestring> &other) const {
+    return boost::geometry::touches(geometry, other.geometry);
+}
+inline bool GeometryWrapper<bg_point_xy>::meets(const GeometryWrapper<bg_polygon> &other) const {
+    return boost::geometry::touches(geometry, other.geometry);
+}
+
+//rectangle
+inline bool GeometryWrapper<bg_rectangle>::equals(const GeometryWrapper<bg_polygon>& other) const {
+    return boost::geometry::equals(geometry, other.geometry);
+}
+
+// define shape wrappers and shape struct
+using PointWrapper = GeometryWrapper<bg_point_xy>;
+using PolygonWrapper = GeometryWrapper<bg_polygon>;
+using LineStringWrapper = GeometryWrapper<bg_linestring>;
+using RectangleWrapper = GeometryWrapper<bg_rectangle>;
+
+using ShapeVariant = std::variant<PointWrapper, PolygonWrapper, LineStringWrapper, RectangleWrapper>;
+
+struct Shape {
+    int recID;
+    DataTypeE dataType;
+    MBR mbr;
+    std::vector<Point> vertices;
+    // partition ID -> two layer class of this object in that partition
+    std::unordered_map<int, int> partitions;
+    // shape variant
+    ShapeVariant shape;
+
+    Shape() {}
+
+    template<typename T>
+    explicit Shape(T geom) : shape(geom) {}
+
+    // adds a point to the shape
+    void addPoint(const double x, const double y) {
+        // first in vertices vector (todo: this is redundant, maybe use just the boost object for everything)
+        vertices.emplace_back(x,y);
+        // then in boost object
+        std::visit([&x, &y](auto&& arg) {
+            arg.addPoint(x, y);
+        }, shape);
+    }
+
+    void correctGeometry() {
+        std::visit([](auto&& arg) {
+            arg.correctGeometry();
+        }, shape);
+    }
+
+    bool pipTest(const bg_point_xy& point) const {
+        return std::visit([&point](auto&& arg) -> bool {
+            return arg.pipTest(point);
+        }, shape);
+    }
+    
+    void modifyBoostPointByIndex(int index, double x, double y) {
+        std::visit([index, &x, &y](auto&& arg) {
+            arg.modifyBoostPointByIndex(index, x, y);
+        }, shape);
+    }
+
+    std::string createMaskCode(const Shape &other) const {
+        return std::visit([&other](auto&& arg) -> std::string {
+            return std::visit([&arg](auto&& otherArg) -> std::string {
+                return arg.createMaskCode(otherArg);
+            }, other.shape);
+        }, shape);
+    }
+
+    void printGeometry() {
+        std::visit([](auto&& arg) {
+            arg.printGeometry();
+        }, shape);
+    }
+
+    template<typename OtherBoostGeometryObj>
+    bool intersects(const OtherBoostGeometryObj &other) const {
+        return std::visit([&other](auto&& arg) -> bool {
+            return std::visit([&arg](auto&& otherArg) -> bool {
+                return arg.intersects(otherArg);
+            }, other.shape);
+        }, shape);
+    }
+
+    template<typename OtherBoostGeometryObj>
+    bool disjoint(const OtherBoostGeometryObj &other) const {
+        return std::visit([&other](auto&& arg) -> bool {
+            return std::visit([&arg](auto&& otherArg) -> bool {
+                return arg.disjoint(otherArg);
+            }, other.shape);
+        }, shape);
+    }
+
+    template<typename OtherBoostGeometryObj>
+    bool inside(const OtherBoostGeometryObj &other) const {
+        return std::visit([&other](auto&& arg) -> bool {
+            return std::visit([&arg](auto&& otherArg) -> bool {
+                return arg.inside(otherArg);
+            }, other.shape);
+        }, shape);
+    }
+
+    template<typename OtherBoostGeometryObj>
+    bool coveredBy(const OtherBoostGeometryObj &other) const {
+        return std::visit([&other](auto&& arg) -> bool {
+            return std::visit([&arg](auto&& otherArg) -> bool {
+                return arg.inside(otherArg);
+            }, other.shape);
+        }, shape);
+    }
+
+    template<typename OtherBoostGeometryObj>
+    bool contains(const OtherBoostGeometryObj &other) const {
+        return std::visit([&other](auto&& arg) -> bool {
+            return std::visit([&arg](auto&& otherArg) -> bool {
+                return arg.contains(otherArg);
+            }, other.shape);
+        }, shape);
+    }
+
+    template<typename OtherBoostGeometryObj>
+    bool covers(const OtherBoostGeometryObj &other) const {
+        return std::visit([&other](auto&& arg) -> bool {
+            return std::visit([&arg](auto&& otherArg) -> bool {
+                return arg.contains(otherArg);
+            }, other.shape);
+        }, shape);
+    }
+
+    template<typename OtherBoostGeometryObj>
+    bool meets(const OtherBoostGeometryObj &other) const {
+        return std::visit([&other](auto&& arg) -> bool {
+            return std::visit([&arg](auto&& otherArg) -> bool {
+                return arg.meets(otherArg);
+            }, other.shape);
+        }, shape);
+    }
+
+    template<typename OtherBoostGeometryObj>
+    bool equals(const OtherBoostGeometryObj &other) const {
+        return std::visit([&other](auto&& arg) -> bool {
+            return std::visit([&arg](auto&& otherArg) -> bool {
+                return arg.equals(otherArg);
+            }, other.shape);
+        }, shape);
+    }
+
+};
+
+namespace shape_factory
+{
+    // Create empty shapes
+    Shape createEmptyPointShape();
+    Shape createEmptyPolygonShape();
+    Shape createEmptyLineStringShape();
+    Shape createEmptyRectangleShape();
+}
+
+
+
+// struct Shape {
+//     int recID;
+//     DataTypeE dataType;
+//     MBR mbr;
+//     std::vector<Point> vertices;
+//     // partition ID -> two layer class of this object in that partition
+//     std::unordered_map<int, int> partitions;
+
+//     Shape(DataTypeE type) : dataType(type) {}
+
+//     virtual ~Shape() = default;
+
+//     virtual void addPoint(double x, double y) {}
+//     virtual void modifyBoostPointByIndex(int index, double newX, double newY){}
+
+//     virtual bool pipTest(bg_point_xy &p) {return false;}
+
+// };
+
+// struct ShapePolygon : public Shape {
+//     bg_polygon boostObject;
+//     AprilDataT aprilData;
+
+//     ShapePolygon() : Shape(DT_POLYGON) {
+//         this->dataType = DT_POLYGON;
+//     }
+
+//     void addPoint(double x, double y) override {
+//         vertices.emplace_back(x,y);
+//         boostObject.outer().emplace_back(x, y);
+//     }
+
+//     bool pipTest(bg_point_xy &p) override {
+//         return boost::geometry::within(p, boostObject);
+//     }
+
+//     void modifyBoostPointByIndex(int index, double newX, double newY) override {
+//         boostObject.outer().at(index).set<0>(newX);
+//         boostObject.outer().at(index).set<1>(newY);
+//     }
+
+// };
+
+// struct ShapePoint : public Shape {
+//     bg_point_xy boostObject;
+//     ShapePoint() : Shape(DT_POINT) {
+//         this->dataType = DT_POINT;
+//     }
+
+//     void addPoint(double x, double y) override {
+//         vertices.emplace_back(x,y);
+//         boostObject.set<0>(x);
+//         boostObject.set<1>(y);
+//     }
+
+//     /**
+//      * index doesn't matter, it's only one point
+//      */
+//     void modifyBoostPointByIndex(int index, double newX, double newY) override {
+//         boostObject.set<0>(newX);
+//         boostObject.set<1>(newY);
+//     }
+// };
+
+// struct ShapeLinestring : public Shape {
+//     bg_linestring boostObject;
+//     AprilDataT aprilData;
+
+//     ShapeLinestring() : Shape(DT_LINESTRING) {
+//         this->dataType = DT_LINESTRING;
+//     }
+
+//     void addPoint(double x, double y) override {
+//         vertices.emplace_back(x,y);
+//         boostObject.emplace_back(x, y);
+//     }
+
+//     void modifyBoostPointByIndex(int index, double newX, double newY) override {
+//         boostObject.at(index).set<0>(newX);
+//         boostObject.at(index).set<1>(newY);
+//     }
+// };
+
+// struct ShapeRectangle : public Shape {
+//     bg_rectangle boostObject;
+//     AprilDataT aprilData;
+
+//     ShapeRectangle() : Shape(DT_RECTANGLE) {
+//         this->dataType = DT_RECTANGLE;
+//     }
+
+//     void addPoint(double x, double y) override {
+//         vertices.emplace_back(x,y);
+//         if (vertices.size() == 1) {
+//             // p min has been set just now
+//             boostObject.min_corner().set<0>(x);
+//             boostObject.min_corner().set<1>(y);
+//         } else if (vertices.size() == 2) {
+//             // p max has been set just now
+//             boostObject.max_corner().set<0>(x);
+//             boostObject.max_corner().set<1>(y);
+//         } else {
+//             // error, clear boost object
+//             boostObject.min_corner().set<0>(std::numeric_limits<int>::max());
+//             boostObject.min_corner().set<1>(std::numeric_limits<int>::max());
+//             boostObject.max_corner().set<0>(-std::numeric_limits<int>::max());
+//             boostObject.max_corner().set<1>(-std::numeric_limits<int>::max());
+//         }
+//     }
+
+//     bool pipTest(bg_point_xy &p) override {
+//         return boost::geometry::within(p, boostObject);
+//     }
+
+//     void modifyBoostPointByIndex(int index, double newX, double newY) override {
+//         if (index == 0) {
+//             boostObject.min_corner().set<0>(newX);
+//             boostObject.min_corner().set<1>(newY);
+//         } else if (index == 1) {
+//             boostObject.max_corner().set<0>(newX);
+//             boostObject.max_corner().set<1>(newY);
+//         } else {
+//             // error
+//         }
+//     }
+
+//     inline std::string createMaskCode(bg_polygon &otherBoostPol) override;
+//     inline std::string createMaskCode(bg_point_xy &otherBoostPoint) override;
+//     inline std::string createMaskCode(bg_linestring &otherBoostLinestring) override;
+//     inline std::string createMaskCode(bg_rectangle &otherBoostRectangle) override;
+// };
+
+typedef struct QueryOutput {
+    // for regular query rsesults
+    int queryResults;
+    // for topology relations results
+    std::unordered_map<int,uint> topologyRelationsResultMap;
+    // statistics
+    int postMBRFilterCandidates;
+    int refinementCandidates;
+    int trueHits;
+    int trueNegatives;
+    // times
+    double totalTime;
+    double mbrFilterTime;
+    double iFilterTime;
+    double refinementTime;
+    // on the fly april
+    uint rasterizationsDone;
+
+    QueryOutput();
+
+
+    void reset();
+    void countAPRILresult(int result);
+    void countResult();
+    void countMBRresult();
+    void countRefinementCandidate();
+    void countTopologyRelationResult(int result);
+    int getResultForTopologyRelation(TopologyRelationE relation);
+    void setTopologyRelationResult(int relation, int result);
+    /**
+     * @brief copies the contents of the 'other' object into this struct
+     */
+    void shallowCopy(QueryOutput &other);
+} QueryOutputT;
+// global query output variable
+extern QueryOutputT g_queryOutput;
+
+
+typedef struct Section {
+    uint sectionID;
+    // axis position indexes
+    uint i,j;
+    //objects that intersect this MBR will be assigned to this area
+    double interestxMin, interestyMin, interestxMax, interestyMax;
+    // double normInterestxMin, normInterestyMin, normInterestxMax, normInterestyMax;
+    //this MBR defines the rasterization area (widened interest area to include intersecting polygons completely)
+    double rasterxMin, rasteryMin, rasterxMax, rasteryMax;
+    // double normRasterxMin, normRasteryMin, normRasterxMax, normRasteryMax;
+    // APRIL data
+    uint objectCount = 0;
+    std::unordered_map<uint, AprilDataT> aprilData;
+} SectionT;
+
+typedef struct DataspaceInfo {
+    double xMinGlobal, yMinGlobal, xMaxGlobal, yMaxGlobal;  // global bounds based on dataset bounds
+    double xExtent, yExtent, maxExtent;
+    bool boundsSet = false;
+
+    DataspaceInfo() {
+        xMinGlobal = std::numeric_limits<int>::max();
+        yMinGlobal = std::numeric_limits<int>::max();
+        xMaxGlobal = -std::numeric_limits<int>::max();
+        yMaxGlobal = -std::numeric_limits<int>::max();
+    }
+
+    void set(double xMinGlobal, double yMinGlobal, double xMaxGlobal, double yMaxGlobal) {
+        this->xMinGlobal = xMinGlobal - EPS;
+        this->yMinGlobal = yMinGlobal - EPS;
+        this->xMaxGlobal = xMaxGlobal + EPS;
+        this->yMaxGlobal = yMaxGlobal + EPS;
+        this->xExtent = this->xMaxGlobal - this->xMinGlobal;
+        this->yExtent = this->yMaxGlobal - this->yMinGlobal;
+        this->maxExtent = std::max(this->xExtent, this->yExtent);
+        // printf("Dataset bounds: (%f,%f),(%f,%f)\n", this->xMinGlobal, this->yMinGlobal, this->xMaxGlobal, this->yMaxGlobal);
+        // printf("xExtent: %f, yExtent: %f\n", this->xExtent, this->yExtent);
+        // printf("Max extent: %f\n", this->maxExtent);
+    }
+
+    void clear() {
+        xMinGlobal = 0;
+        yMinGlobal = 0;
+        xMaxGlobal = 0;
+        yMaxGlobal = 0;
+        xExtent = 0;
+        yExtent = 0;
+    }
+} DataspaceInfoT;
+
+
+struct TwoLayerContainer {
+    std::unordered_map<TwoLayerClassE, std::vector<Shape>> classIndex;
+
+    std::vector<Shape>* getOrCreateContainerClassContents(TwoLayerClassE classType) {
+        auto it = classIndex.find(classType);
+        if (it == classIndex.end()) {
+            // does not exist, create
+            createClassEntry(classType);
+            // return its reference
+            return &classIndex.find(classType)->second;
+        }
+        // exists
+        return &it->second;
+    }
+
+    std::vector<Shape>* getContainerClassContents(TwoLayerClassE classType) {
+        auto it = classIndex.find(classType);
+        if (it == classIndex.end()) {
+            // does not exist
+            return nullptr;
+        }
+        // exists
+        return &it->second;
+    }
+
+    void createClassEntry(TwoLayerClassE classType) {
+        std::vector<Shape> vec;
+        auto it = classIndex.find(classType);
+        if (it == classIndex.end()) {
+            classIndex.insert(std::make_pair(classType, vec));
+        } else {
+            classIndex[classType] = vec;
+        }
+    }
+};
+
+struct TwoLayerIndex {
+    std::unordered_map<int, TwoLayerContainer> partitionIndex;
+    std::vector<int> partitionIDs;
+    // methods
+private:
+    static bool compareByY(const Shape &a, const Shape &b) {
+        return a.mbr.pMin.y < b.mbr.pMin.y;
+    }
+public:
+    /** @brief add an object reference to the partition with partitionID, with the specified classType */
+    void addObject(int partitionID, TwoLayerClassE classType, Shape &object) {
+        // get or create new partition entry
+        TwoLayerContainer* partition = getOrCreatePartition(partitionID);
+        // get or create new class entry of this class type, for this partition
+        std::vector<Shape>* classObjects = partition->getOrCreateContainerClassContents(classType);
+        // add object
+        classObjects->emplace_back(object);
+    }
+
+    TwoLayerContainer* getOrCreatePartition(int partitionID) {
+        auto it = partitionIndex.find(partitionID);
+        if (it == partitionIndex.end()) {
+            // does not exist, create it
+            createPartitionEntry(partitionID);
+            // return its reference
+            TwoLayerContainer* ref = &partitionIndex.find(partitionID)->second;
+            return ref;
+        } 
+        // exists
+        return &it->second;
+    }
+
+    TwoLayerContainer* getPartition(int partitionID) {
+        auto it = partitionIndex.find(partitionID);
+        if (it == partitionIndex.end()) {
+            // does not exist
+            return nullptr;
+        } 
+        // exists
+        return &it->second;
+    }
+
+    void createPartitionEntry(int partitionID) {
+        TwoLayerContainer container;
+        auto it = partitionIndex.find(partitionID);
+        if (it == partitionIndex.end()) {
+            // insert new
+            partitionIndex.insert(std::make_pair(partitionID, container));
+            partitionIDs.emplace_back(partitionID);
+        } else {
+            // replace existing
+            partitionIndex[partitionID] = container;
+        }
+    }
+    
+    void sortPartitionsOnY() {
+        for (auto &it: partitionIndex) {
+            // sort A
+            std::vector<Shape>* objectsA = it.second.getContainerClassContents(CLASS_A);
+            if (objectsA != nullptr) {
+                std::sort(objectsA->begin(), objectsA->end(), compareByY);
+            }
+            // sort C
+            std::vector<Shape>* objectsC = it.second.getContainerClassContents(CLASS_C);
+            if (objectsC != nullptr) {
+                std::sort(objectsC->begin(), objectsC->end(), compareByY);
+            }
+        }
+    }
+
+};
+
+struct Dataset{
+    DataTypeE dataType;
+    FileTypeE fileType;
+    std::string path;
+    std::string offsetMapPath;
+    // derived from the path
+    std::string datasetName;
+    // as given by arguments and specified by datasets.ini config file
+    std::string nickname;
+    // holds the dataset's dataspace info (MBR, extent)
+    DataspaceInfoT dataspaceInfo;
+    // unique object count
+    int totalObjects = 0;
+    // two layer
+    TwoLayerIndex twoLayerIndex;
+    /* approximations */ 
+    ApproximationTypeE approxType;
+    // APRIL
+    AprilConfigT aprilConfig;
+    std::unordered_map<uint, SectionT> sectionMap;                        // map: k,v = sectionID,(unordered map of k,v = recID,aprilData)
+    std::unordered_map<uint,std::vector<uint>> recToSectionIdMap;         // map: k,v = recID,vector<sectionID>: maps recs to sections 
+
+    /**
+     * Methods
+    */
+    void addObject(Shape &object) {
+        // insert reference to partition index
+        for (auto &partitionIT: object.partitions) {
+            int partitionID = partitionIT.first;
+            TwoLayerClassE classType = (TwoLayerClassE) partitionIT.second;
+            // add to twolayer index
+            this->twoLayerIndex.addObject(partitionID, classType, object);
+        }
+    }
+
+    // calculate the size needed for the serialization buffer
+    int calculateBufferSize();
+    /**
+     * serialize dataset info (only specific stuff)
+     */
+    int serialize(char **buffer);
+    /**
+     * deserializes a serialized buffer that contains the dataset info, 
+     * into this Dataset object
+     */
+    void deserialize(const char *buffer, int bufferSize);
+    // APRIL
+    void addAprilDataToApproximationDataMap(const uint sectionID, const uint recID, const AprilDataT &aprilData);
+    void addObjectToSectionMap(const uint sectionID, const uint recID);
+    void addIntervalsToAprilData(const uint sectionID, const uint recID, const int numIntervals, const std::vector<int> &intervals, const bool ALL);
+    AprilDataT* getAprilDataBySectionAndObjectID(uint sectionID, uint recID);
+};
+
+struct Query{
+    QueryTypeE type;
+    int numberOfDatasets;
+    Dataset R;         // R: left dataset
+    Dataset S;         // S: right dataset
+    bool boundsSet = false;
+    // double xMinGlobal, yMinGlobal, xMaxGlobal, yMaxGlobal;  // global bounds based on dataset bounds
+    DataspaceInfoT dataspaceInfo;
+};
+
+inline uint getSectionIDFromIdxs(uint i, uint j, uint partitionsNum) {
+    return (j * partitionsNum) + i;
+}
+
+/**
+ * @brief returns a list of the common section ids between two objects of two datasets
+ * 
+ * @param datasetR 
+ * @param datasetS 
+ * @param idR 
+ * @param idS 
+ * @return std::vector<uint> 
+ * 
+ */
 typedef struct DirectoryPaths {
     std::string configFilePath = "../config.ini";
     const std::string datasetsConfigPath = "../datasets.ini";
@@ -257,24 +1533,18 @@ typedef struct Action {
     
 } ActionT;
 
-typedef struct DatasetInfo {
+struct DatasetInfo {
     private:
-    spatial_lib::DatasetT* R;
-    spatial_lib::DatasetT* S;
+    Dataset* R;
+    Dataset* S;
     int numberOfDatasets;
-    spatial_lib::DatatypeCombinationE datatypeCombination = spatial_lib::DC_INVALID_COMBINATION;
+    DatatypeCombinationE datatypeCombination = DC_INVALID_COMBINATION;
 
     public:
-    std::unordered_map<std::string,spatial_lib::DatasetT> datasets;
-    spatial_lib::DataspaceInfoT dataspaceInfo;
+    std::unordered_map<std::string,Dataset> datasets;
+    DataspaceInfoT dataspaceInfo;
     
-    spatial_lib::DatasetT* getDatasetByNickname(std::string &nickname) {
-        auto it = datasets.find(nickname);
-        if (it == datasets.end()) {
-            return nullptr;
-        }        
-        return &it->second;
-    }
+    Dataset* getDatasetByNickname(std::string &nickname);
 
     int getNumberOfDatasets() {
         return numberOfDatasets;
@@ -286,85 +1556,85 @@ typedef struct DatasetInfo {
         S = nullptr;
         datasets.clear();
         dataspaceInfo.clear();
-        datatypeCombination = spatial_lib::DC_INVALID_COMBINATION;
+        datatypeCombination = DC_INVALID_COMBINATION;
     }
 
-    inline spatial_lib::DatasetT* getDatasetR() {
+    inline Dataset* getDatasetR() {
         return R;
     }
 
-    inline spatial_lib::DatasetT* getDatasetS() {
+    inline Dataset* getDatasetS() {
         return S;
     }
 
-    spatial_lib::DatatypeCombinationE getDatatypeCombination() {
+    DatatypeCombinationE getDatatypeCombination() {
         return datatypeCombination;
     }
 
     void setDatatypeCombination() {
         // R is points
-        if (getDatasetR()->dataType == spatial_lib::DT_POINT) {
-            if (getDatasetS()->dataType == spatial_lib::DT_POINT) {
-                datatypeCombination = spatial_lib::DC_POINT_POINT;
+        if (getDatasetR()->dataType == DT_POINT) {
+            if (getDatasetS()->dataType == DT_POINT) {
+                datatypeCombination = DC_POINT_POINT;
             }
-            if (getDatasetS()->dataType == spatial_lib::DT_LINESTRING) {
-                datatypeCombination = spatial_lib::DC_POINT_LINESTRING;
+            if (getDatasetS()->dataType == DT_LINESTRING) {
+                datatypeCombination = DC_POINT_LINESTRING;
             }
-            if (getDatasetS()->dataType == spatial_lib::DT_RECTANGLE) {
-                datatypeCombination = spatial_lib::DC_POINT_RECTANGLE;
+            if (getDatasetS()->dataType == DT_RECTANGLE) {
+                datatypeCombination = DC_POINT_RECTANGLE;
             }
-            if (getDatasetS()->dataType == spatial_lib::DT_POLYGON) {
-                datatypeCombination = spatial_lib::DC_POINT_POLYGON;
+            if (getDatasetS()->dataType == DT_POLYGON) {
+                datatypeCombination = DC_POINT_POLYGON;
             }
         }
         // R is linestrings
-        if (getDatasetR()->dataType == spatial_lib::DT_LINESTRING) {
-            if (getDatasetS()->dataType == spatial_lib::DT_POINT) {
-                datatypeCombination = spatial_lib::DC_LINESTRING_POINT;
+        if (getDatasetR()->dataType == DT_LINESTRING) {
+            if (getDatasetS()->dataType == DT_POINT) {
+                datatypeCombination = DC_LINESTRING_POINT;
             }
-            if (getDatasetS()->dataType == spatial_lib::DT_LINESTRING) {
-                datatypeCombination = spatial_lib::DC_LINESTRING_LINESTRING;
+            if (getDatasetS()->dataType == DT_LINESTRING) {
+                datatypeCombination = DC_LINESTRING_LINESTRING;
             }
-            if (getDatasetS()->dataType == spatial_lib::DT_RECTANGLE) {
-                datatypeCombination = spatial_lib::DC_LINESTRING_RECTANGLE;
+            if (getDatasetS()->dataType == DT_RECTANGLE) {
+                datatypeCombination = DC_LINESTRING_RECTANGLE;
             }
-            if (getDatasetS()->dataType == spatial_lib::DT_POLYGON) {
-                datatypeCombination = spatial_lib::DC_LINESTRING_POLYGON;
+            if (getDatasetS()->dataType == DT_POLYGON) {
+                datatypeCombination = DC_LINESTRING_POLYGON;
             }
         }
         // R is rectangles
-        if (getDatasetR()->dataType == spatial_lib::DT_RECTANGLE) {
-            if (getDatasetS()->dataType == spatial_lib::DT_POINT) {
-                datatypeCombination = spatial_lib::DC_RECTANGLE_POINT;
+        if (getDatasetR()->dataType == DT_RECTANGLE) {
+            if (getDatasetS()->dataType == DT_POINT) {
+                datatypeCombination = DC_RECTANGLE_POINT;
             }
-            if (getDatasetS()->dataType == spatial_lib::DT_LINESTRING) {
-                datatypeCombination = spatial_lib::DC_RECTANGLE_LINESTRING;
+            if (getDatasetS()->dataType == DT_LINESTRING) {
+                datatypeCombination = DC_RECTANGLE_LINESTRING;
             }
-            if (getDatasetS()->dataType == spatial_lib::DT_RECTANGLE) {
-                datatypeCombination = spatial_lib::DC_RECTANGLE_RECTANGLE;
+            if (getDatasetS()->dataType == DT_RECTANGLE) {
+                datatypeCombination = DC_RECTANGLE_RECTANGLE;
             }
-            if (getDatasetS()->dataType == spatial_lib::DT_POLYGON) {
-                datatypeCombination = spatial_lib::DC_RECTANGLE_POLYGON;
+            if (getDatasetS()->dataType == DT_POLYGON) {
+                datatypeCombination = DC_RECTANGLE_POLYGON;
             }
         }
         // R is polygons
-        if (getDatasetR()->dataType == spatial_lib::DT_POLYGON) {
-            if (getDatasetS()->dataType == spatial_lib::DT_POINT) {
-                datatypeCombination = spatial_lib::DC_POLYGON_POINT;
+        if (getDatasetR()->dataType == DT_POLYGON) {
+            if (getDatasetS()->dataType == DT_POINT) {
+                datatypeCombination = DC_POLYGON_POINT;
             }
-            if (getDatasetS()->dataType == spatial_lib::DT_LINESTRING) {
-                datatypeCombination = spatial_lib::DC_POLYGON_LINESTRING;
+            if (getDatasetS()->dataType == DT_LINESTRING) {
+                datatypeCombination = DC_POLYGON_LINESTRING;
             }
-            if (getDatasetS()->dataType == spatial_lib::DT_RECTANGLE) {
-                datatypeCombination = spatial_lib::DC_POLYGON_RECTANGLE;
+            if (getDatasetS()->dataType == DT_RECTANGLE) {
+                datatypeCombination = DC_POLYGON_RECTANGLE;
             }
-            if (getDatasetS()->dataType == spatial_lib::DT_POLYGON) {
-                datatypeCombination = spatial_lib::DC_POLYGON_POLYGON;
+            if (getDatasetS()->dataType == DT_POLYGON) {
+                datatypeCombination = DC_POLYGON_POLYGON;
             }
         }
     }
 
-    void addDataset(spatial_lib::DatasetT &dataset) {
+    void addDataset(Dataset &dataset) {
         // add to datasets struct
         datasets.insert(std::make_pair(dataset.nickname, dataset));
         if (numberOfDatasets < 1) {
@@ -396,54 +1666,226 @@ typedef struct DatasetInfo {
             it.second.dataspaceInfo = dataspaceInfo;
         }
     }
-} DatasetInfoT;
+};
+
+extern std::vector<int> getCommonSectionIDsOfObjects(Dataset *datasetR, Dataset *datasetS, int idR, int idS);
 
 typedef struct ApproximationInfo {
-    spatial_lib::ApproximationTypeE type;   // sets which of the following fields will be used
-    spatial_lib::AprilConfigT aprilConfig;  
+    ApproximationTypeE type;   // sets which of the following fields will be used
+    AprilConfigT aprilConfig;  
     
     ApproximationInfo() {
-        this->type = spatial_lib::AT_NONE;
+        this->type = AT_NONE;
     }
 
-    ApproximationInfo(spatial_lib::ApproximationTypeE type) {
+    ApproximationInfo(ApproximationTypeE type) {
         this->type = type;
     }
 } ApproximationInfoT;
 
 typedef struct QueryInfo {
-    spatial_lib::QueryTypeE type = spatial_lib::Q_NONE;
+    QueryTypeE type = Q_NONE;
     int MBRFilter = 1;
     int IntermediateFilter = 1;
     int Refinement = 1;
 } QueryInfoT;
 
-typedef struct Config {
+struct Config {
     DirectoryPathsT dirPaths;
     SystemOptionsT options;
     std::vector<ActionT> actions;
     PartitioningInfoT partitioningInfo;
-    DatasetInfoT datasetInfo;
+    DatasetInfo datasetInfo;
     ApproximationInfoT approximationInfo;
     QueryInfoT queryInfo;
-} ConfigT;
+};
+
+typedef struct Geometry {
+    int recID;
+    int partitionCount;
+    std::vector<int> partitions;    // tuples of <partition ID, twolayer class>
+    int vertexCount;
+    std::vector<double> coords;
+
+    Geometry(int recID, int vertexCount, std::vector<double> &coords) {
+        this->recID = recID;
+        this->vertexCount = vertexCount;
+        this->coords = coords;
+    }
+
+    Geometry(int recID, std::vector<int> &partitions, int vertexCount, std::vector<double> &coords) {
+        this->recID = recID;
+        this->partitions = partitions;
+        this->partitionCount = partitions.size() / 2; 
+        this->vertexCount = vertexCount;
+        this->coords = coords;
+    }
+
+    void setPartitions(std::vector<int> &ids, std::vector<TwoLayerClassE> &classes) {
+        for (int i=0; i<ids.size(); i++) {
+            partitions.emplace_back(ids.at(i));
+            partitions.emplace_back(classes.at(i));
+        }
+        this->partitionCount = ids.size();
+    }
+
+} GeometryT;
+
+typedef struct GeometryBatch {
+    // serializable
+    int objectCount = 0;
+    std::vector<GeometryT> geometries;
+    // unserializable/unclearable (todo: make const?)
+    int destRank = -1;   // destination node rank
+    int maxObjectCount; 
+    MPI_Comm* comm; // communicator that the batch will be send through
+    int tag = -1;        // MPI tag = indicates spatial data type
+
+    bool isValid() {
+        return !(destRank == -1 || tag == -1 || comm == nullptr);
+    }
+
+    void addGeometryToBatch(GeometryT &geometry) {
+        geometries.emplace_back(geometry);
+        objectCount += 1;
+    }
+
+    void setDestNodeRank(int destRank) {
+        this->destRank = destRank;
+    }
+
+    // calculate the size needed for the serialization buffer
+    int calculateBufferSize() {
+        int size = 0;
+        size += sizeof(int);                        // objectCount
+        
+        for (auto &it: geometries) {
+            size += sizeof(it.recID);
+            size += sizeof(int);    // partition count
+            size += it.partitions.size() * 2 * sizeof(int); // partitions id + class
+            size += sizeof(it.vertexCount); // vertex count
+            size += it.vertexCount * 2 * sizeof(double);    // vertices
+        }
+        
+        return size;
+    }
+
+    void clear() {
+        objectCount = 0;
+        geometries.clear();
+    }
+
+    int serialize(char **buffer) {
+        // calculate size
+        int bufferSize = calculateBufferSize();
+        // allocate space
+        (*buffer) = (char*) malloc(bufferSize * sizeof(char));
+        if (*buffer == NULL) {
+            // malloc failed
+            return -1;
+        }
+        char* localBuffer = *buffer;
+
+        // add object count
+        *reinterpret_cast<int*>(localBuffer) = objectCount;
+        localBuffer += sizeof(int);
+
+        // add batch geometry info
+        for (auto &it : geometries) {
+            *reinterpret_cast<int*>(localBuffer) = it.recID;
+            localBuffer += sizeof(int);
+            *reinterpret_cast<int*>(localBuffer) = it.partitionCount;
+            localBuffer += sizeof(int);
+            std::memcpy(localBuffer, it.partitions.data(), it.partitionCount * 2 * sizeof(int));
+            localBuffer += it.partitionCount * 2 * sizeof(int);
+            *reinterpret_cast<int*>(localBuffer) = it.vertexCount;
+            localBuffer += sizeof(int);
+            std::memcpy(localBuffer, it.coords.data(), it.vertexCount * 2 * sizeof(double));
+            localBuffer += it.vertexCount * 2 * sizeof(double);
+        }
+
+        return bufferSize;
+    }
+
+    /**
+     * @brief fills the struct with data from the input serialized buffer
+     * The caller must free the buffer memory
+     * @param buffer 
+     */
+    void deserialize(const char *buffer, int bufferSize) {
+        int recID, vertexCount, partitionCount;
+        const char *localBuffer = buffer;
+
+        // get object count
+        int objectCount = *reinterpret_cast<const int*>(localBuffer);
+        localBuffer += sizeof(int);
+
+        // extend reserve space
+        geometries.reserve(geometries.size() + objectCount);
+
+        // deserialize fields for each object in the batch
+        for (int i=0; i<objectCount; i++) {
+            // rec id
+            recID = *reinterpret_cast<const int*>(localBuffer);
+            localBuffer += sizeof(int);
+            // partition count
+            partitionCount = *reinterpret_cast<const int*>(localBuffer);
+            localBuffer += sizeof(int);
+            // partitions
+            std::vector<int> partitions(partitionCount * 2);
+            const int* partitionPtr = reinterpret_cast<const int*>(localBuffer);
+            for (size_t j = 0; j < partitionCount*2; j++) {
+                partitions[j] = partitionPtr[j];
+            }
+            localBuffer += partitionCount * 2 * sizeof(int);
+            // vertex count
+            vertexCount = *reinterpret_cast<const int*>(localBuffer);
+            localBuffer += sizeof(int);
+            // vertices
+            std::vector<double> coords(vertexCount * 2);
+            const double* vertexDataPtr = reinterpret_cast<const double*>(localBuffer);
+            for (size_t j = 0; j < vertexCount * 2; j++) {
+                coords[j] = vertexDataPtr[j];
+            }
+            localBuffer += vertexCount * 2 * sizeof(double);
+            
+            // add to batch
+            GeometryT geometry(recID, partitions, vertexCount, coords);
+            this->addGeometryToBatch(geometry);
+        }
+    }
+
+} GeometryBatchT;
 
 /**
  * @brief global configuration variable 
 */
-extern ConfigT g_config;
+extern Config g_config;
 
 
 /**
  * @brief based on query type in config, it appropriately adds the query output in parallel
  * Used only in parallel sections for OpenMP
  */
-void queryResultReductionFunc(spatial_lib::QueryOutputT &in, spatial_lib::QueryOutputT &out);
+void queryResultReductionFunc(QueryOutputT &in, QueryOutputT &out);
 
 // Declare the parallel reduction
 #pragma omp declare reduction \
-    (query_output_reduction: spatial_lib::QueryOutputT: queryResultReductionFunc(omp_in, omp_out)) \
-    initializer(omp_priv = spatial_lib::QueryOutput())
+    (query_output_reduction: QueryOutputT: queryResultReductionFunc(omp_in, omp_out)) \
+    initializer(omp_priv = QueryOutput())
+
+
+namespace mapping
+{
+    extern std::string actionIntToStr(ActionTypeE action);
+    extern std::string queryTypeIntToStr(int val);
+    extern int queryTypeStrToInt(std::string &str);
+    extern std::string dataTypeIntToStr(DataTypeE val);
+    extern DataTypeE dataTypeTextToInt(std::string str);
+    extern FileTypeE fileTypeTextToInt(std::string str);
+    extern std::string datatypeCombinationIntToStr(DatatypeCombinationE val);
+    extern std::string relationIntToStr(int relation);
+}
 
 
 

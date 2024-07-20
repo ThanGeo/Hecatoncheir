@@ -46,7 +46,7 @@ namespace pack
     }
 
 
-    DB_STATUS packAPRILInfo(spatial_lib::AprilConfigT &aprilConfig, SerializedMsgT<int> &aprilInfoMsg) {
+    DB_STATUS packAPRILInfo(AprilConfigT &aprilConfig, SerializedMsgT<int> &aprilInfoMsg) {
         aprilInfoMsg.count = 0;
         aprilInfoMsg.count += 3;     // N, compression, partitions
 
@@ -93,7 +93,7 @@ namespace pack
         msg.count = 0;
 
         // get dataset R
-        spatial_lib::DatasetT* R = g_config.datasetInfo.getDatasetR();
+        Dataset* R = g_config.datasetInfo.getDatasetR();
         if (R == nullptr) {
             return DBERR_OK;
         }
@@ -102,7 +102,7 @@ namespace pack
         // keep nickname
         nicknameR = R->nickname;
         // get dataset S
-        spatial_lib::DatasetT* S = g_config.datasetInfo.getDatasetS();
+        Dataset* S = g_config.datasetInfo.getDatasetS();
         if (S != nullptr) {
             // count for buffer size
             msg.count += sizeof(int) + S->nickname.length() * sizeof(int);
@@ -134,18 +134,18 @@ namespace pack
         return DBERR_OK;
     }
 
-    DB_STATUS packQueryResults(SerializedMsgT<int> &msg, spatial_lib::QueryOutputT &queryOutput) {
+    DB_STATUS packQueryResults(SerializedMsgT<int> &msg, QueryOutputT &queryOutput) {
         DB_STATUS ret = DBERR_OK;
         // serialize based on query type
         switch (g_config.queryInfo.type) {
-            case spatial_lib::Q_DISJOINT:
-            case spatial_lib::Q_INTERSECT:
-            case spatial_lib::Q_INSIDE:
-            case spatial_lib::Q_CONTAINS:
-            case spatial_lib::Q_COVERS:
-            case spatial_lib::Q_COVERED_BY:
-            case spatial_lib::Q_MEET:
-            case spatial_lib::Q_EQUAL:
+            case Q_DISJOINT:
+            case Q_INTERSECT:
+            case Q_INSIDE:
+            case Q_CONTAINS:
+            case Q_COVERS:
+            case Q_COVERED_BY:
+            case Q_MEET:
+            case Q_EQUAL:
                 // mbr results, accept, reject, inconclusive, result count
                 msg.count += 5;
                 // allocate space
@@ -162,7 +162,7 @@ namespace pack
                 msg.data[3] = queryOutput.trueNegatives;
                 msg.data[4] = queryOutput.refinementCandidates;
                 break;
-            case spatial_lib::Q_FIND_RELATION:
+            case Q_FIND_RELATION:
                 // total results, mbr results, inconclusive, disjoint, intersect, inside, contains, covers, covered by, meet, equal
                 msg.count += 11;
                 // allocate space
@@ -176,14 +176,14 @@ namespace pack
                 msg.data[0] = queryOutput.queryResults;
                 msg.data[1] = queryOutput.postMBRFilterCandidates;
                 msg.data[2] = queryOutput.refinementCandidates;
-                msg.data[3] = queryOutput.getResultForTopologyRelation(spatial_lib::TR_DISJOINT);
-                msg.data[4] = queryOutput.getResultForTopologyRelation(spatial_lib::TR_INTERSECT);
-                msg.data[5] = queryOutput.getResultForTopologyRelation(spatial_lib::TR_INSIDE);
-                msg.data[6] = queryOutput.getResultForTopologyRelation(spatial_lib::TR_CONTAINS);
-                msg.data[7] = queryOutput.getResultForTopologyRelation(spatial_lib::TR_COVERS);
-                msg.data[8] = queryOutput.getResultForTopologyRelation(spatial_lib::TR_COVERED_BY);
-                msg.data[9] = queryOutput.getResultForTopologyRelation(spatial_lib::TR_MEET);
-                msg.data[10] = queryOutput.getResultForTopologyRelation(spatial_lib::TR_EQUAL);
+                msg.data[3] = queryOutput.getResultForTopologyRelation(TR_DISJOINT);
+                msg.data[4] = queryOutput.getResultForTopologyRelation(TR_INTERSECT);
+                msg.data[5] = queryOutput.getResultForTopologyRelation(TR_INSIDE);
+                msg.data[6] = queryOutput.getResultForTopologyRelation(TR_CONTAINS);
+                msg.data[7] = queryOutput.getResultForTopologyRelation(TR_COVERS);
+                msg.data[8] = queryOutput.getResultForTopologyRelation(TR_COVERED_BY);
+                msg.data[9] = queryOutput.getResultForTopologyRelation(TR_MEET);
+                msg.data[10] = queryOutput.getResultForTopologyRelation(TR_EQUAL);
                 break;
             default:
                 logger::log_error(DBERR_QUERY_INVALID_TYPE, "Invalid query type:", g_config.queryInfo.type);
@@ -235,9 +235,9 @@ namespace unpack
         // partitions
         g_config.approximationInfo.aprilConfig.partitions = aprilInfoMsg.data[2];
         // set type
-        g_config.approximationInfo.type = spatial_lib::AT_APRIL;
+        g_config.approximationInfo.type = AT_APRIL;
         for (auto& it: g_config.datasetInfo.datasets) {
-            it.second.approxType = spatial_lib::AT_APRIL;
+            it.second.approxType = AT_APRIL;
             it.second.aprilConfig.setN(N);
             it.second.aprilConfig.compression = g_config.approximationInfo.aprilConfig.compression;
             it.second.aprilConfig.partitions = g_config.approximationInfo.aprilConfig.partitions;
@@ -247,7 +247,7 @@ namespace unpack
     }
 
     DB_STATUS unpackQueryInfo(SerializedMsgT<int> &queryInfoMsg) {
-        g_config.queryInfo.type = (spatial_lib::QueryTypeE) queryInfoMsg.data[0];
+        g_config.queryInfo.type = (QueryTypeE) queryInfoMsg.data[0];
         g_config.queryInfo.MBRFilter = queryInfoMsg.data[1];
         g_config.queryInfo.IntermediateFilter = queryInfoMsg.data[2];
         g_config.queryInfo.Refinement = queryInfoMsg.data[3];
@@ -255,36 +255,36 @@ namespace unpack
         return DBERR_OK;
     }
 
-    DB_STATUS unpackQueryResults(SerializedMsgT<int> &queryResultsMsg, spatial_lib::QueryTypeE queryType, spatial_lib::QueryOutputT &queryOutput) {
+    DB_STATUS unpackQueryResults(SerializedMsgT<int> &queryResultsMsg, QueryTypeE queryType, QueryOutputT &queryOutput) {
         // total results and mbr results is common
         queryOutput.queryResults = queryResultsMsg.data[0];   
         queryOutput.postMBRFilterCandidates = queryResultsMsg.data[1];    
         // unpack based on query type
         switch (queryType) {
-            case spatial_lib::Q_DISJOINT:
-            case spatial_lib::Q_INTERSECT:
-            case spatial_lib::Q_INSIDE:
-            case spatial_lib::Q_CONTAINS:
-            case spatial_lib::Q_COVERS:
-            case spatial_lib::Q_COVERED_BY:
-            case spatial_lib::Q_MEET:
-            case spatial_lib::Q_EQUAL:
+            case Q_DISJOINT:
+            case Q_INTERSECT:
+            case Q_INSIDE:
+            case Q_CONTAINS:
+            case Q_COVERS:
+            case Q_COVERED_BY:
+            case Q_MEET:
+            case Q_EQUAL:
                 // accept, reject, inconclusive, result count
                 queryOutput.trueHits = queryResultsMsg.data[2];
                 queryOutput.trueNegatives = queryResultsMsg.data[3];
                 queryOutput.refinementCandidates = queryResultsMsg.data[4];
                 break;
-            case spatial_lib::Q_FIND_RELATION:
+            case Q_FIND_RELATION:
                 // inconclusive, disjoint, intersect, inside, contains, covers, covered by, meet, equal
                 queryOutput.refinementCandidates = queryResultsMsg.data[2];
-                queryOutput.setTopologyRelationResult(spatial_lib::TR_DISJOINT, queryResultsMsg.data[3]);
-                queryOutput.setTopologyRelationResult(spatial_lib::TR_INTERSECT, queryResultsMsg.data[4]);
-                queryOutput.setTopologyRelationResult(spatial_lib::TR_INSIDE, queryResultsMsg.data[5]);
-                queryOutput.setTopologyRelationResult(spatial_lib::TR_CONTAINS, queryResultsMsg.data[6]);
-                queryOutput.setTopologyRelationResult(spatial_lib::TR_COVERS, queryResultsMsg.data[7]);
-                queryOutput.setTopologyRelationResult(spatial_lib::TR_COVERED_BY, queryResultsMsg.data[8]);
-                queryOutput.setTopologyRelationResult(spatial_lib::TR_MEET, queryResultsMsg.data[9]);
-                queryOutput.setTopologyRelationResult(spatial_lib::TR_EQUAL, queryResultsMsg.data[10]);
+                queryOutput.setTopologyRelationResult(TR_DISJOINT, queryResultsMsg.data[3]);
+                queryOutput.setTopologyRelationResult(TR_INTERSECT, queryResultsMsg.data[4]);
+                queryOutput.setTopologyRelationResult(TR_INSIDE, queryResultsMsg.data[5]);
+                queryOutput.setTopologyRelationResult(TR_CONTAINS, queryResultsMsg.data[6]);
+                queryOutput.setTopologyRelationResult(TR_COVERS, queryResultsMsg.data[7]);
+                queryOutput.setTopologyRelationResult(TR_COVERED_BY, queryResultsMsg.data[8]);
+                queryOutput.setTopologyRelationResult(TR_MEET, queryResultsMsg.data[9]);
+                queryOutput.setTopologyRelationResult(TR_EQUAL, queryResultsMsg.data[10]);
                 break;
         }
         return DBERR_OK;

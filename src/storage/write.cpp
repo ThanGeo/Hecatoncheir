@@ -4,9 +4,9 @@ namespace storage
 {
     namespace writer
     {
-        DB_STATUS appendDatasetInfoToPartitionFile(FILE* outFile, spatial_lib::DatasetT* dataset) {
+        DB_STATUS appendDatasetInfoToPartitionFile(FILE* outFile, Dataset* dataset) {
             // datatype
-            fwrite(&dataset->dataType, sizeof(spatial_lib::DataTypeE), 1, outFile);
+            fwrite(&dataset->dataType, sizeof(DataTypeE), 1, outFile);
             // nikcname length + string
             int length = dataset->nickname.length();
             fwrite(&length, sizeof(int), 1, outFile);
@@ -20,7 +20,7 @@ namespace storage
             return DBERR_OK;
         }
 
-        DB_STATUS appendBatchToPartitionFile(FILE* outFile, GeometryBatchT* batch, spatial_lib::DatasetT* dataset) {
+        DB_STATUS appendBatchToPartitionFile(FILE* outFile, GeometryBatchT* batch, Dataset* dataset) {
             // store each geometry
             for(auto &it: batch->geometries) {
                 fwrite(&it.recID, sizeof(int), 1, outFile);

@@ -2,7 +2,7 @@
 #define D_CONFIG_STATEMENT
 
 #include "def.h"
-#include "SpatialLib.h"
+
 
 
 typedef struct ActionsStatement {
@@ -20,7 +20,7 @@ typedef struct DatasetStatement {
     std::string filetypeR,filetypeS;
     int DatatypeCombination = -1;
     int datasetCount = 0;
-    spatial_lib::DataTypeE datatypeR, datatypeS;
+    DataTypeE datatypeR, datatypeS;
     bool boundsSet = false;
     double xMinGlobal, yMinGlobal, xMaxGlobal, yMaxGlobal;
 } DatasetStatementT;
@@ -47,7 +47,7 @@ namespace statement
 {
     DB_STATUS getPartitioningType(std::string &typeStr, PartitioningTypeE &type);
 
-    DB_STATUS getFiletype(std::string &filetypeStr, spatial_lib::FileTypeE &filetype);
+    DB_STATUS getFiletype(std::string &filetypeStr, FileTypeE &filetype);
 
     DB_STATUS getCreateApproximationAction(std::string &approximationStr, ActionT &actionType);
 }

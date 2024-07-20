@@ -50,6 +50,47 @@ std::string getDatasetNameFromPath(std::string &datasetPath) {
     return datasetName;
 }
 
+bool binarySearchInIntervalVector(std::vector<int> &vec, int x){
+    int low = 0;
+    int high = vec.size()-1;
+    int mid;
+    while(low <= high){
+        mid = (low+high) / 2;
+        if(vec.at(mid) > x){
+            if(mid-1 > 0){
+                if(vec.at(mid-1) <= x){
+                    return !((mid-1)%2);
+                }
+            }
+            high = mid-1;
+        }else{
+            if(mid+1 > vec.size()-1 || vec.at(mid+1) > x){
+                return !(mid%2);
+            }
+            low = mid+1;
+        }
+    }
+    return false;
+}
+
+bool binarySearchInVector(std::vector<int> &vec, int &x){
+    int low = 0;
+    int high = vec.size()-1;
+    int mid;
+    while(low <= high){
+        mid = (low+high) / 2;
+        if(vec.at(mid) == x){
+            return true;
+        }
+        if(vec.at(mid) < x){
+            low = mid+1;
+        }else{
+            high = mid-1;
+        }
+    }
+    return false;
+}
+
 namespace mpi_timer
 {
     double markTime() {

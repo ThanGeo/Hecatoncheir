@@ -3,7 +3,7 @@
 
 #include "def.h"
 #include "comm_def.h"
-#include "SpatialLib.h"
+
 
 namespace pack
 {
@@ -34,7 +34,7 @@ namespace pack
     /*
      * packs april info into a serialized message 
      */
-    DB_STATUS packAPRILInfo(spatial_lib::AprilConfigT &aprilConfig, SerializedMsgT<int> &aprilInfoMsg);
+    DB_STATUS packAPRILInfo(AprilConfigT &aprilConfig, SerializedMsgT<int> &aprilInfoMsg);
 
     /**
      * packs query info into a serialized message
@@ -51,7 +51,7 @@ namespace pack
      * @brief packs the current contents of the query output global variable into a serialized message
      * based on query type
      */
-    DB_STATUS packQueryResults(SerializedMsgT<int> &msg, spatial_lib::QueryOutputT &queryOutput);
+    DB_STATUS packQueryResults(SerializedMsgT<int> &msg, QueryOutputT &queryOutput);
 }
 
 namespace unpack
@@ -63,7 +63,7 @@ namespace unpack
 
     DB_STATUS unpackQueryInfo(SerializedMsgT<int> &queryInfoMsg);
 
-    DB_STATUS unpackQueryResults(SerializedMsgT<int> &queryResultsMsg, spatial_lib::QueryTypeE queryType, spatial_lib::QueryOutputT &queryOutput);
+    DB_STATUS unpackQueryResults(SerializedMsgT<int> &queryResultsMsg, QueryTypeE queryType, QueryOutputT &queryOutput);
 
     DB_STATUS unpackDatasetsNicknames(SerializedMsgT<char> &msg, std::vector<std::string> &nicknames);
 }

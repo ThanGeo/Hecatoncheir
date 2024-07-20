@@ -22,15 +22,15 @@ endif()
 # supress warnings
 # add_definitions(-w)
 
-include_directories(SpatialLib)
-if(NOT TARGET SpatialLib)
-    add_subdirectory(SpatialLib)
-endif()
+# include_directories(SpatialLib)
+# if(NOT TARGET SpatialLib)
+#     add_subdirectory(SpatialLib)
+# endif()
 
-include_directories(Rasterizer)
-if(NOT TARGET Rasterizer)
-    add_subdirectory(Rasterizer)
-endif()
+# include_directories(Rasterizer)
+# if(NOT TARGET Rasterizer)
+#     add_subdirectory(Rasterizer)
+# endif()
 
 # include_directories(APRIL)
 # if(NOT TARGET APRIL)
@@ -69,6 +69,9 @@ set(SrcFiles
     src/APRIL/join.cpp
     
     src/TwoLayer/filter.cpp
+
+    src/refinement/topology.cpp
+    src/refinement/relate.cpp
 )
 
 # supress warnings
@@ -94,16 +97,16 @@ add_executable(agent agent.cpp)
 add_executable(controller controller.cpp)
 
 # link all
-target_link_libraries(agent ${PROJECT_NAME})
-target_link_libraries(agent ${Boost_LIBRARIES})
-target_link_libraries(agent ${MPI_C_LIBRARIES})
 target_link_libraries(controller ${PROJECT_NAME})
 target_link_libraries(controller ${Boost_LIBRARIES})
 target_link_libraries(controller ${MPI_C_LIBRARIES})
+target_link_libraries(agent ${PROJECT_NAME})
+target_link_libraries(agent ${Boost_LIBRARIES})
+target_link_libraries(agent ${MPI_C_LIBRARIES})
 # target_link_libraries(agent APRIL)
 # target_link_libraries(controller APRIL)
 # target_link_libraries(main TwoLayerFilter)
-target_link_libraries(agent SpatialLib)
-target_link_libraries(controller SpatialLib)
-target_link_libraries(agent Rasterizer)
-target_link_libraries(controller Rasterizer)
+# target_link_libraries(agent SpatialLib)
+# target_link_libraries(controller SpatialLib)
+# target_link_libraries(agent Rasterizer)
+# target_link_libraries(controller Rasterizer)

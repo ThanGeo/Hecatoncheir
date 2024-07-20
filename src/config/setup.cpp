@@ -2,7 +2,8 @@
 
 namespace setup
 {
-    DB_STATUS setupSystem(int argc, char* argv[]) {        
+    DB_STATUS setupSystem(int argc, char* argv[]) {
+        
         // parse
         DB_STATUS ret = parser::parse(argc, argv);
         if (ret != DBERR_OK) {

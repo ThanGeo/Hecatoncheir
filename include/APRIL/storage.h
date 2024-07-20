@@ -7,12 +7,12 @@ namespace APRIL
 {
     namespace writer
     {
-        DB_STATUS saveAPRIL(FILE* pFileALL, FILE* pFileFULL, uint recID, uint sectionID, spatial_lib::AprilDataT* aprilData);
+        DB_STATUS saveAPRIL(FILE* pFileALL, FILE* pFileFULL, uint recID, uint sectionID, AprilDataT* aprilData);
     }
 
     namespace reader
     {
-        DB_STATUS loadAPRIL(spatial_lib::DatasetT &dataset);
+        DB_STATUS loadAPRIL(Dataset &dataset);
     }
 }
 

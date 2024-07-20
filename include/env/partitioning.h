@@ -11,9 +11,9 @@ namespace partitioning
 
     void printPartitionAssignment();
 
-    DB_STATUS partitionDataset(spatial_lib::DatasetT *dataset);
+    DB_STATUS partitionDataset(Dataset *dataset);
 
-    DB_STATUS calculateCSVDatasetDataspaceBounds(spatial_lib::DatasetT &dataset);
+    DB_STATUS calculateCSVDatasetDataspaceBounds(Dataset &dataset);
 
     /**
      * @brief returns a vector containing the IDs of the partitions that intersect with the given MBR
@@ -25,7 +25,7 @@ namespace partitioning
      * @param partitionIDs 
      * @return DB_STATUS 
      */
-    DB_STATUS getPartitionsForMBR(double xMin, double yMin, double xMax, double yMax, std::vector<int> &partitionIDs, std::vector<spatial_lib::TwoLayerClassE> &twoLayerClasses);
+    DB_STATUS getPartitionsForMBR(double xMin, double yMin, double xMax, double yMax, std::vector<int> &partitionIDs, std::vector<TwoLayerClassE> &twoLayerClasses);
 }
 
 #endif

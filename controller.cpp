@@ -1,5 +1,5 @@
 
-#include "SpatialLib.h"
+
 
 #include "def.h"
 #include "proc.h"
@@ -28,31 +28,31 @@ static void hostTerminate() {
 }
 
 static void printResults() {
-    logger::log_success("  MBR Results:", spatial_lib::g_queryOutput.postMBRFilterCandidates);
+    logger::log_success("  MBR Results:", g_queryOutput.postMBRFilterCandidates);
     switch (g_config.queryInfo.type) {
-        case spatial_lib::Q_DISJOINT:
-        case spatial_lib::Q_INTERSECT:
-        case spatial_lib::Q_INSIDE:
-        case spatial_lib::Q_CONTAINS:
-        case spatial_lib::Q_COVERS:
-        case spatial_lib::Q_COVERED_BY:
-        case spatial_lib::Q_MEET:
-        case spatial_lib::Q_EQUAL:
-            logger::log_success("Total Results:", spatial_lib::g_queryOutput.queryResults);
-            logger::log_success("       Accept:", spatial_lib::g_queryOutput.trueHits / (double) spatial_lib::g_queryOutput.postMBRFilterCandidates * 100, "%");
-            logger::log_success("       Reject:", spatial_lib::g_queryOutput.trueNegatives / (double) spatial_lib::g_queryOutput.postMBRFilterCandidates * 100, "%");
-            logger::log_success(" Inconclusive:", spatial_lib::g_queryOutput.refinementCandidates / (double) spatial_lib::g_queryOutput.postMBRFilterCandidates * 100, "%");
+        case Q_DISJOINT:
+        case Q_INTERSECT:
+        case Q_INSIDE:
+        case Q_CONTAINS:
+        case Q_COVERS:
+        case Q_COVERED_BY:
+        case Q_MEET:
+        case Q_EQUAL:
+            logger::log_success("Total Results:", g_queryOutput.queryResults);
+            logger::log_success("       Accept:", g_queryOutput.trueHits / (double) g_queryOutput.postMBRFilterCandidates * 100, "%");
+            logger::log_success("       Reject:", g_queryOutput.trueNegatives / (double) g_queryOutput.postMBRFilterCandidates * 100, "%");
+            logger::log_success(" Inconclusive:", g_queryOutput.refinementCandidates / (double) g_queryOutput.postMBRFilterCandidates * 100, "%");
             break;
-        case spatial_lib::Q_FIND_RELATION:
-            logger::log_success(" Inconclusive:", spatial_lib::g_queryOutput.refinementCandidates / (double) spatial_lib::g_queryOutput.postMBRFilterCandidates * 100, "%");
-            logger::log_success("     Disjoint:", spatial_lib::g_queryOutput.topologyRelationsResultMap[spatial_lib::TR_DISJOINT]);
-            logger::log_success("    Intersect:", spatial_lib::g_queryOutput.topologyRelationsResultMap[spatial_lib::TR_INTERSECT]);
-            logger::log_success("       Inside:", spatial_lib::g_queryOutput.topologyRelationsResultMap[spatial_lib::TR_INSIDE]);
-            logger::log_success("     Contains:", spatial_lib::g_queryOutput.topologyRelationsResultMap[spatial_lib::TR_CONTAINS]);
-            logger::log_success("       Covers:", spatial_lib::g_queryOutput.topologyRelationsResultMap[spatial_lib::TR_COVERS]);
-            logger::log_success("   Covered by:", spatial_lib::g_queryOutput.topologyRelationsResultMap[spatial_lib::TR_COVERED_BY]);
-            logger::log_success("         Meet:", spatial_lib::g_queryOutput.topologyRelationsResultMap[spatial_lib::TR_MEET]);
-            logger::log_success("        Equal:", spatial_lib::g_queryOutput.topologyRelationsResultMap[spatial_lib::TR_EQUAL]);
+        case Q_FIND_RELATION:
+            logger::log_success(" Inconclusive:", g_queryOutput.refinementCandidates / (double) g_queryOutput.postMBRFilterCandidates * 100, "%");
+            logger::log_success("     Disjoint:", g_queryOutput.topologyRelationsResultMap[TR_DISJOINT]);
+            logger::log_success("    Intersect:", g_queryOutput.topologyRelationsResultMap[TR_INTERSECT]);
+            logger::log_success("       Inside:", g_queryOutput.topologyRelationsResultMap[TR_INSIDE]);
+            logger::log_success("     Contains:", g_queryOutput.topologyRelationsResultMap[TR_CONTAINS]);
+            logger::log_success("       Covers:", g_queryOutput.topologyRelationsResultMap[TR_COVERS]);
+            logger::log_success("   Covered by:", g_queryOutput.topologyRelationsResultMap[TR_COVERED_BY]);
+            logger::log_success("         Meet:", g_queryOutput.topologyRelationsResultMap[TR_MEET]);
+            logger::log_success("        Equal:", g_queryOutput.topologyRelationsResultMap[TR_EQUAL]);
             break;
     }
 }
@@ -99,8 +99,8 @@ static DB_STATUS initQueryExecution() {
         return ret;
     }
     // reset query outpyt
-    spatial_lib::g_queryOutput.reset();
-    logger::log_task("Processing query '", spatial_lib::mapping::queryTypeIntToStr(g_config.queryInfo.type),"' on datasets", g_config.datasetInfo.getDatasetR()->nickname, "-", g_config.datasetInfo.getDatasetS()->nickname);
+    g_queryOutput.reset();
+    logger::log_task("Processing query '", mapping::queryTypeIntToStr(g_config.queryInfo.type),"' on datasets", g_config.datasetInfo.getDatasetR()->nickname, "-", g_config.datasetInfo.getDatasetS()->nickname);
     // measure response time
     double startTime;
     startTime = mpi_timer::markTime();
@@ -168,7 +168,7 @@ static DB_STATUS initLoadAPRIL() {
 static DB_STATUS initPartitioning() {
     DB_STATUS ret = DBERR_OK;
     for (auto &it: g_config.datasetInfo.datasets) {
-        spatial_lib::DatasetT* dataset = g_config.datasetInfo.getDatasetByNickname(it.second.nickname);
+        Dataset* dataset = g_config.datasetInfo.getDatasetByNickname(it.second.nickname);
         if (!dataset->dataspaceInfo.boundsSet) {
             ret = partitioning::calculateCSVDatasetDataspaceBounds(*dataset);
             if (ret != DBERR_OK) {
@@ -194,7 +194,7 @@ static DB_STATUS performActions() {
     DB_STATUS ret = DBERR_OK;
     // perform the user-requested actions in order
     for(int i=0;i <g_config.actions.size(); i++) {
-        logger::log_task("*** Action:", actionIntToStr(g_config.actions.at(i).type));
+        logger::log_task("*** Action:", mapping::actionIntToStr(g_config.actions.at(i).type));
         switch(g_config.actions.at(i).type) {
             case ACTION_PERFORM_PARTITIONING:
                 ret = initPartitioning();
