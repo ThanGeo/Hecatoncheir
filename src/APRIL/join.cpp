@@ -6,7 +6,7 @@ namespace APRIL
      * @brief returns 1 if the two interval lists have at least one overlap, otherwise zero
      * if any of them is empty, they can not overlap
      */
-    static inline int intersectionJoinIntervalLists(std::vector<int> &ar1, uint &numintervals1, std::vector<int> &ar2, uint &numintervals2){
+    static inline int intersectionJoinIntervalLists(std::vector<uint32_t> &ar1, uint &numintervals1, std::vector<uint32_t> &ar2, uint &numintervals2){
         // printf("%u and %u intervals\n", numintervals1, numintervals2);
         //they may not have any intervals of this type
         if(numintervals1 == 0 || numintervals2 == 0){
@@ -53,7 +53,7 @@ namespace APRIL
      * @brief returns 1 if the intervals of the first list (ar1) are completely inside the intervals of the second list (ar2)
      * otherwise 0
      */
-    static inline int insideJoinIntervalLists(std::vector<int> &ar1, uint &numintervals1, std::vector<int> &ar2, uint &numintervals2){
+    static inline int insideJoinIntervalLists(std::vector<uint32_t> &ar1, uint &numintervals1, std::vector<uint32_t> &ar2, uint &numintervals2){
         //they may not have any intervals of this type
         if(numintervals1 == 0 || numintervals2 == 0){
             return 0;
@@ -100,7 +100,7 @@ namespace APRIL
      * @brief returns 1 if the two interval lists match 100%
      * otherwise 0
      */
-    static inline int joinIntervalsForMatch(std::vector<int> &ar1, uint &numintervals1, std::vector<int> &ar2, uint &numintervals2){
+    static inline int joinIntervalsForMatch(std::vector<uint32_t> &ar1, uint &numintervals1, std::vector<uint32_t> &ar2, uint &numintervals2){
         // if interval lists have different sizes (or both are 0) then they cannot match
         if(numintervals1 != numintervals2){
             return 0;
@@ -143,7 +143,7 @@ namespace APRIL
      * @brief returns a value to indicate the relationship between the two interval lists
      * could be that ar1 is inside ar2, the reverse, that they intersect or that they are disjoint
      */
-    static inline int joinIntervalsHybrid(std::vector<int> &ar1, uint &numintervals1, std::vector<int> &ar2, uint &numintervals2){
+    static inline int joinIntervalsHybrid(std::vector<uint32_t> &ar1, uint &numintervals1, std::vector<uint32_t> &ar2, uint &numintervals2){
         bool intersect = false;
         //they may not have any intervals of this type
         if(numintervals1 == 0 || numintervals2 == 0){
@@ -239,7 +239,7 @@ namespace APRIL
     /**
      * @brief compares two lists for whether ar1 is inside ar2, the reverse, they match, they intersect or they are disjoint
      */
-    static inline int joinIntervalListsSymmetricalOptimizedTrueHitIntersect(std::vector<int> &ar1, uint &numintervals1, std::vector<int> &ar2, uint &numintervals2) {
+    static inline int joinIntervalListsSymmetricalOptimizedTrueHitIntersect(std::vector<uint32_t> &ar1, uint &numintervals1, std::vector<uint32_t> &ar2, uint &numintervals2) {
         // a list might be empty (disjoint)
         if(numintervals1 == 0 || numintervals2 == 0){
             return IL_DISJOINT;
@@ -273,18 +273,21 @@ namespace APRIL
         DB_STATUS intersectionJoinAPRIL(AprilDataT *aprilR, AprilDataT *aprilS, int &result){
             DB_STATUS ret = DBERR_OK;
             // check ALL - ALL
+            // printf("AA\n");
             if(!intersectionJoinIntervalLists(aprilR->intervalsALL, aprilR->numIntervalsALL, aprilS->intervalsALL, aprilS->numIntervalsALL)){
                 //guaranteed not hit
                 result = TRUE_NEGATIVE;
                 return ret;
             }
             //check ALL - FULL
+            // printf("AF\n");
             if(intersectionJoinIntervalLists(aprilR->intervalsALL, aprilR->numIntervalsALL, aprilS->intervalsFULL, aprilS->numIntervalsFULL)){
                 //hit
                 result = TRUE_HIT;
                 return ret;
             }
             //check FULL - ALL
+            // printf("FA\n");
             if(intersectionJoinIntervalLists(aprilR->intervalsFULL, aprilR->numIntervalsFULL, aprilS->intervalsALL, aprilS->numIntervalsALL)){
                 //hit
                 result = TRUE_HIT;

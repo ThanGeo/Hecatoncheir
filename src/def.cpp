@@ -285,7 +285,7 @@ void Dataset::addObjectToSectionMap(const uint sectionID, const uint recID) {
     }
 }
 
-void Dataset::addIntervalsToAprilData(const uint sectionID, const uint recID, const int numIntervals, const std::vector<int> &intervals, const bool ALL) {
+void Dataset::addIntervalsToAprilData(const uint sectionID, const uint recID, const int numIntervals, const std::vector<uint32_t> &intervals, const bool ALL) {
     // retrieve section
     auto secIT = this->sectionMap.find(sectionID);
     if (secIT == this->sectionMap.end()) {

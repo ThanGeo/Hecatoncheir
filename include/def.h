@@ -365,13 +365,77 @@ typedef enum TwoLayerClass {
  * 
  *********************************** */
 
+// rotate/flip a quadrant appropriately
+inline void rot(uint32_t n, uint32_t &x, uint32_t &y, uint32_t rx, uint32_t ry) {
+    if (ry == 0) {
+        if (rx == 1) {
+            x = n-1 - x;
+            y = n-1 - y;
+        }
+        //Swap x and y
+        uint32_t t  = x;
+        x = y;
+        y = t;
+    }
+}
+
+// convert (x,y) to d
+inline uint32_t xy2d (uint32_t n, uint32_t x, uint32_t y) {
+    uint32_t rx, ry, s;
+    uint32_t d=0;
+    for (s=n/2; s>0; s/=2) {
+        rx = (x & s) > 0;
+        ry = (y & s) > 0;
+        d += s * s * ((3 * rx) ^ ry);
+        rot(s, x, y, rx, ry);
+    }
+    return d;
+}
+
+// convert d to (x,y)
+inline void d2xy(uint32_t n, uint32_t d, uint32_t &x, uint32_t &y) {
+    uint32_t rx, ry, s, t=d;
+    x = y = 0;
+    for (s=1; s<n; s*=2) {
+        rx = 1 & (t/2);
+        ry = 1 & (t ^ rx);
+        rot(s, x, y, rx, ry);
+        x += s * rx;
+        y += s * ry;
+        t /= 4;
+    }
+}
+
 // APRIL data
 typedef struct AprilData {
     // APRIL data
     uint numIntervalsALL = 0;
-    std::vector<int> intervalsALL;
+    std::vector<uint32_t> intervalsALL;
     uint numIntervalsFULL = 0;
-    std::vector<int> intervalsFULL;
+    std::vector<uint32_t> intervalsFULL;
+
+    void printALLintervals() {
+        for (int i=0; i<intervalsALL.size(); i+=2) {
+            printf("[%u,%u)\n", intervalsALL[i], intervalsALL[i+1]);
+        }
+    }
+
+    void printALLcells(uint32_t n) {
+        uint32_t x,y,d;
+        for (int i=0; i<intervalsALL.size(); i+=2) {
+            for (int j=intervalsALL[i]; j<intervalsALL[i+1]; j++) {
+                d2xy(n, j, x, y);
+                printf("(%u,%u),", x, y);
+            }
+        }
+        printf("\n");
+    }
+
+    void printFULLintervals() {
+        for (int i=0; i<intervalsFULL.size(); i+=2) {
+            printf("[%u,%u)\n", intervalsFULL[i], intervalsFULL[i+1]);
+        }
+    }
 }AprilDataT;
 
 // APRIL configuration
@@ -790,7 +854,6 @@ public:
     void addPoint(const double x, const double y) {
         bg_point_xy point(x, y);
         boost::geometry::append(geometry.outer(), point);
-        boost::geometry::correct(geometry);
     }
 
     void correctGeometry() {
@@ -811,7 +874,6 @@ public:
     void modifyBoostPointByIndex(int index, double x, double y) {
         if (index < geometry.outer().size()) {
             geometry.outer()[index] = bg_point_xy(x, y);
-            boost::geometry::correct(geometry);
         } else {
             logger::log_error(DBERR_OUT_OF_BOUNDS, "Polygon point index out of bounds for modifyBoostPointByIndex:", index);
         }
@@ -979,6 +1041,7 @@ struct Shape {
     }
 
     void printGeometry() {
+        printf("id: %d\n", recID);
         std::visit([](auto&& arg) {
             arg.printGeometry();
         }, shape);
@@ -1066,140 +1129,6 @@ namespace shape_factory
     Shape createEmptyLineStringShape();
     Shape createEmptyRectangleShape();
 }
-
-
-
-// struct Shape {
-//     int recID;
-//     DataTypeE dataType;
-//     MBR mbr;
-//     std::vector<Point> vertices;
-//     // partition ID -> two layer class of this object in that partition
-//     std::unordered_map<int, int> partitions;
-
-//     Shape(DataTypeE type) : dataType(type) {}
-
-//     virtual ~Shape() = default;
-
-//     virtual void addPoint(double x, double y) {}
-//     virtual void modifyBoostPointByIndex(int index, double newX, double newY){}
-
-//     virtual bool pipTest(bg_point_xy &p) {return false;}
-
-// };
-
-// struct ShapePolygon : public Shape {
-//     bg_polygon boostObject;
-//     AprilDataT aprilData;
-
-//     ShapePolygon() : Shape(DT_POLYGON) {
-//         this->dataType = DT_POLYGON;
-//     }
-
-//     void addPoint(double x, double y) override {
-//         vertices.emplace_back(x,y);
-//         boostObject.outer().emplace_back(x, y);
-//     }
-
-//     bool pipTest(bg_point_xy &p) override {
-//         return boost::geometry::within(p, boostObject);
-//     }
-
-//     void modifyBoostPointByIndex(int index, double newX, double newY) override {
-//         boostObject.outer().at(index).set<0>(newX);
-//         boostObject.outer().at(index).set<1>(newY);
-//     }
-
-// };
-
-// struct ShapePoint : public Shape {
-//     bg_point_xy boostObject;
-//     ShapePoint() : Shape(DT_POINT) {
-//         this->dataType = DT_POINT;
-//     }
-
-//     void addPoint(double x, double y) override {
-//         vertices.emplace_back(x,y);
-//         boostObject.set<0>(x);
-//         boostObject.set<1>(y);
-//     }
-
-//     /**
-//      * index doesn't matter, it's only one point
-//      */
-//     void modifyBoostPointByIndex(int index, double newX, double newY) override {
-//         boostObject.set<0>(newX);
-//         boostObject.set<1>(newY);
-//     }
-// };
-
-// struct ShapeLinestring : public Shape {
-//     bg_linestring boostObject;
-//     AprilDataT aprilData;
-
-//     ShapeLinestring() : Shape(DT_LINESTRING) {
-//         this->dataType = DT_LINESTRING;
-//     }
-
-//     void addPoint(double x, double y) override {
-//         vertices.emplace_back(x,y);
-//         boostObject.emplace_back(x, y);
-//     }
-
-//     void modifyBoostPointByIndex(int index, double newX, double newY) override {
-//         boostObject.at(index).set<0>(newX);
-//         boostObject.at(index).set<1>(newY);
-//     }
-// };
-
-// struct ShapeRectangle : public Shape {
-//     bg_rectangle boostObject;
-//     AprilDataT aprilData;
-
-//     ShapeRectangle() : Shape(DT_RECTANGLE) {
-//         this->dataType = DT_RECTANGLE;
-//     }
-
-//     void addPoint(double x, double y) override {
-//         vertices.emplace_back(x,y);
-//         if (vertices.size() == 1) {
-//             // p min has been set just now
-//             boostObject.min_corner().set<0>(x);
-//             boostObject.min_corner().set<1>(y);
-//         } else if (vertices.size() == 2) {
-//             // p max has been set just now
-//             boostObject.max_corner().set<0>(x);
-//             boostObject.max_corner().set<1>(y);
-//         } else {
-//             // error, clear boost object
-//             boostObject.min_corner().set<0>(std::numeric_limits<int>::max());
-//             boostObject.min_corner().set<1>(std::numeric_limits<int>::max());
-//             boostObject.max_corner().set<0>(-std::numeric_limits<int>::max());
-//             boostObject.max_corner().set<1>(-std::numeric_limits<int>::max());
-//         }
-//     }
-
-//     bool pipTest(bg_point_xy &p) override {
-//         return boost::geometry::within(p, boostObject);
-//     }
-
-//     void modifyBoostPointByIndex(int index, double newX, double newY) override {
-//         if (index == 0) {
-//             boostObject.min_corner().set<0>(newX);
-//             boostObject.min_corner().set<1>(newY);
-//         } else if (index == 1) {
-//             boostObject.max_corner().set<0>(newX);
-//             boostObject.max_corner().set<1>(newY);
-//         } else {
-//             // error
-//         }
-//     }
-
-//     inline std::string createMaskCode(bg_polygon &otherBoostPol) override;
-//     inline std::string createMaskCode(bg_point_xy &otherBoostPoint) override;
-//     inline std::string createMaskCode(bg_linestring &otherBoostLinestring) override;
-//     inline std::string createMaskCode(bg_rectangle &otherBoostRectangle) override;
-// };
 
 typedef struct QueryOutput {
     // for regular query rsesults
@@ -1447,7 +1376,7 @@ struct Dataset{
     // APRIL
     void addAprilDataToApproximationDataMap(const uint sectionID, const uint recID, const AprilDataT &aprilData);
     void addObjectToSectionMap(const uint sectionID, const uint recID);
-    void addIntervalsToAprilData(const uint sectionID, const uint recID, const int numIntervals, const std::vector<int> &intervals, const bool ALL);
+    void addIntervalsToAprilData(const uint sectionID, const uint recID, const int numIntervals, const std::vector<uint32_t> &intervals, const bool ALL);
     AprilDataT* getAprilDataBySectionAndObjectID(uint sectionID, uint recID);
 };
 

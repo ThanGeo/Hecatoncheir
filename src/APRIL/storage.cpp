@@ -16,7 +16,7 @@ namespace APRIL
                 logger::log_error(DBERR_DISK_WRITE_FAILED, "Writing recID, sectionID and numIntervalsALL failed for polygon with ID", recID);
                 return DBERR_DISK_WRITE_FAILED;
             }
-            elementsWritten = fwrite(&aprilData->intervalsALL.data()[0], sizeof(uint), aprilData->numIntervalsALL * 2, pFileALL);
+            elementsWritten = fwrite(&aprilData->intervalsALL.data()[0], sizeof(uint32_t), aprilData->numIntervalsALL * 2, pFileALL);
             if (elementsWritten != aprilData->numIntervalsALL * 2) {
                 logger::log_error(DBERR_DISK_WRITE_FAILED, "Writing ALL intervals failed for polygon with ID", recID);
                 return DBERR_DISK_WRITE_FAILED;
@@ -29,7 +29,7 @@ namespace APRIL
                     logger::log_error(DBERR_DISK_WRITE_FAILED, "Writing recID, sectionID and numIntervalsFULL failed for polygon with ID", recID);
                     return DBERR_DISK_WRITE_FAILED;
                 }
-                elementsWritten = fwrite(&aprilData->intervalsFULL.data()[0], sizeof(uint), aprilData->numIntervalsFULL * 2, pFileFULL);
+                elementsWritten = fwrite(&aprilData->intervalsFULL.data()[0], sizeof(uint32_t), aprilData->numIntervalsFULL * 2, pFileFULL);
                 if (elementsWritten != aprilData->numIntervalsFULL * 2) {
                     logger::log_error(DBERR_DISK_WRITE_FAILED, "Writing FULL intervals failed for polygon with ID", recID);
                     return DBERR_DISK_WRITE_FAILED;
@@ -46,7 +46,7 @@ namespace APRIL
             DB_STATUS ret = DBERR_OK;
             int buf[3];
             int polygonCount, recID, sectionID, numIntervals, totalValues;
-            std::vector<int> intervals;
+            std::vector<uint32_t> intervals;
             // open interval file
             FILE* pFile = fopen(intervalFilePath.c_str(), "rb");
             if (pFile == NULL) {
@@ -74,7 +74,7 @@ namespace APRIL
                 // X intervals are comprised of X*2 numbers [start,end)
                 totalValues = numIntervals*2;
                 intervals.resize(totalValues);
-                elementsRead = fread(&intervals.data()[0], sizeof(uint), totalValues, pFile);
+                elementsRead = fread(&intervals.data()[0], sizeof(uint32_t), totalValues, pFile);
                 if (elementsRead != totalValues) {
                     logger::log_error(DBERR_DISK_READ_FAILED, "Couldn't read the intervals");
                     ret = DBERR_DISK_READ_FAILED;

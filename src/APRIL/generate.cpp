@@ -24,7 +24,7 @@ namespace APRIL
         }
         
 
-        static inline bool checkY(double &y1, double &OGy1, double &OGy2, int &startCellY, int &endCellY){
+        static inline bool checkY(double &y1, double &OGy1, double &OGy2, uint32_t &startCellY, uint32_t &endCellY){
             if(OGy1 < OGy2){
                 return (startCellY <= y1 && y1 <= endCellY + 1);
             }else{
@@ -32,7 +32,7 @@ namespace APRIL
             }
         }
 
-        static inline double mapSingleValueToHilbert(double val, double minval, double maxval, int &cellsPerDim){
+        static inline double mapSingleValueToHilbert(double val, double minval, double maxval, uint32_t &cellsPerDim){
             double newval =  ((double) (cellsPerDim-1) / (maxval - minval)) * (val - minval);
             if(newval < 0){
                 newval = 0;
@@ -43,48 +43,9 @@ namespace APRIL
             return newval;
         }
 
-        // rotate/flip a quadrant appropriately
-        static inline void rot(int n, int &x, int &y, int rx, int ry) {
-            if (ry == 0) {
-                if (rx == 1) {
-                    x = n-1 - x;
-                    y = n-1 - y;
-                }
-                //Swap x and y
-                int t  = x;
-                x = y;
-                y = t;
-            }
-        }
+        
 
-        // convert (x,y) to d
-        static inline int xy2d (int n, int x, int y) {
-            int rx, ry, s;
-            int d=0;
-            for (s=n/2; s>0; s/=2) {
-                rx = (x & s) > 0;
-                ry = (y & s) > 0;
-                d += s * s * ((3 * rx) ^ ry);
-                rot(s, x, y, rx, ry);
-            }
-            return d;
-        }
-
-        // convert d to (x,y)
-        static inline void d2xy(int n, int d, int &x, int &y) {
-            int rx, ry, s, t=d;
-            x = y = 0;
-            for (s=1; s<n; s*=2) {
-                rx = 1 & (t/2);
-                ry = 1 & (t ^ rx);
-                rot(s, x, y, rx, ry);
-                x += s * rx;
-                y += s * ry;
-                t /= 4;
-            }
-        }
-
-        static inline void mapXYToHilbert(double &x, double &y, int &cellsPerDim){
+        static inline void mapXYToHilbert(double &x, double &y, uint32_t &cellsPerDim){
             x = ((double) (cellsPerDim-1) / (rasterXmax - rasterXmin)) * (x - rasterXmin);
             y = ((double) (cellsPerDim-1) / (rasterYmax - rasterYmin)) * (y - rasterYmin);
             if(x < 0){
@@ -101,11 +62,11 @@ namespace APRIL
             }
         }
 
-        static inline int checkNeighborsInInterval(int &current_id, int &x, int &y, RasterData &rasterData, std::vector<int> &fullIntervals, std::vector<int> &partialCells, int cellsPerDim){
+        static inline int checkNeighborsInInterval(uint32_t &current_id, uint32_t &x, uint32_t &y, RasterData &rasterData, std::vector<uint32_t> &fullIntervals, std::vector<uint32_t> &partialCells, uint32_t cellsPerDim){
             if(fullIntervals.size() == 0){
                 return UNCERTAIN;
             }
-            int d;
+            uint32_t d;
             //4 neighbors
             for(int i=0; i<x_offset.size(); i++){		
                 //if neighbor is out of bounds, ignore
@@ -136,12 +97,13 @@ namespace APRIL
             return UNCERTAIN;
         }
 
-        static inline void mapObjectToHilbertSpace(Shape &object, RasterData &rasterData, int cellsPerDim){
+        static inline void mapObjectToHilbertSpace(Shape &object, RasterData &rasterData, uint32_t cellsPerDim){
             //first, map the polygon's coordinates to this section's hilbert space
             for (int i=0; i<object.vertices.size(); i++) {
                 mapXYToHilbert(object.vertices[i].x, object.vertices[i].y, cellsPerDim);
                 object.modifyBoostPointByIndex(i, object.vertices[i].x, object.vertices[i].y);
             }
+            object.correctGeometry();
             //map the object's mbr
             rasterData.minCellX = mapSingleValueToHilbert(object.mbr.pMin.x, rasterXmin, rasterXmax, cellsPerDim);
             rasterData.minCellX > 0 ? rasterData.minCellX -= 1 : rasterData.minCellX = 0;
@@ -156,23 +118,23 @@ namespace APRIL
             rasterData.bufferHeight = rasterData.maxCellY - rasterData.minCellY + 1;
         }
 
-        static int** calculatePartialAndUncertain(Shape &object, int &cellsPerDim, RasterData &rasterData){
+        static uint32_t** calculatePartialAndUncertain(Shape &object, uint32_t &cellsPerDim, RasterData &rasterData){
             //create empty matrix
-            int **M = new int*[rasterData.bufferWidth]();
-            for(int i=0; i<rasterData.bufferWidth; i++){
-                M[i] = new int[rasterData.bufferHeight]();		
-                for(int j=0; j<rasterData.bufferHeight; j++){
+            uint32_t **M = new uint32_t*[rasterData.bufferWidth]();
+            for(uint32_t i=0; i<rasterData.bufferWidth; i++){
+                M[i] = new uint32_t[rasterData.bufferHeight]();		
+                for(uint32_t j=0; j<rasterData.bufferHeight; j++){
                     M[i][j] = UNCERTAIN;
                 }
             }
             // local scope variables
-            int startCellX, startCellY, endCellX, endCellY;;
-            int currentCellX, currentCellY;
+            uint32_t startCellX, startCellY, endCellX, endCellY;;
+            uint32_t currentCellX, currentCellY;
             double x1, y1, x2, y2;
             double x, y;
             double ogy1, ogy2;
             int stepX, stepY;
-            int verticalStartY, verticalEndY, horizontalY;
+            uint32_t verticalStartY, verticalEndY, horizontalY;
             double tMaxX, tMaxY;
             double tDeltaX, tDeltaY;
             double edgeLength;
@@ -201,10 +163,10 @@ namespace APRIL
                 ogy2 = y2;	
 
                 //set endpoint hilbert cells
-                startCellX = (int)x1;
-                startCellY = (int)y1;
-                endCellX = (int)x2;
-                endCellY = (int)y2;
+                startCellX = (uint32_t)x1;
+                startCellY = (uint32_t)y1;
+                endCellX = (uint32_t)x2;
+                endCellY = (uint32_t)y2;
 
                 if(startCellX == endCellX && startCellY == endCellY){
                     //label the cell in the partially covered matrix
@@ -222,7 +184,7 @@ namespace APRIL
                     bg_linestring vertical{{(double) (startCellX+1), 0},{(double) (startCellX+1), (double) cellsPerDim}};
                     
                     //define NEAREST HORIZONTAL grid line
-                    y1 < y2 ? horizontalY = int(y1) + 1 : horizontalY = int(y1);
+                    y1 < y2 ? horizontalY = uint32_t(y1) + 1 : horizontalY = uint32_t(y1);
                     bg_linestring horizontal{{0, (double) horizontalY},{(double) cellsPerDim, (double) horizontalY}};
 
                     //get intersection points with the vertical and nearest lines
@@ -253,7 +215,7 @@ namespace APRIL
                     
                     //loop (traverse ray)
                     while(startCellX <= x1 && x1 < endCellX+1 && checkY(y1, ogy1, ogy2, startCellY, endCellY)){
-                        M[(int)x1-rasterData.minCellX][(int)y1-rasterData.minCellY] = PARTIAL;
+                        M[(uint32_t)x1-rasterData.minCellX][(uint32_t)y1-rasterData.minCellY] = PARTIAL;
                         if(tMaxX < tMaxY){
                             x1 = x1 + stepX;
                             tMaxX = tMaxX + tDeltaX;
@@ -267,10 +229,10 @@ namespace APRIL
             return M;
         }
         
-        static inline std::vector<int> getPartialCellsFromMatrix(RasterData &rasterData, int cellsPerDim, int **M){
-            std::vector<int> partialCells;
-            for(int i=0; i<rasterData.bufferWidth; i++){
-                for(int j=0; j<rasterData.bufferHeight; j++){
+        static inline std::vector<uint32_t> getPartialCellsFromMatrix(RasterData &rasterData, uint32_t cellsPerDim, uint32_t **M){
+            std::vector<uint32_t> partialCells;
+            for(uint32_t i=0; i<rasterData.bufferWidth; i++){
+                for(uint32_t j=0; j<rasterData.bufferHeight; j++){
                     if(M[i][j] == PARTIAL){			
                         //store into preallocated array
                         partialCells.emplace_back(xy2d(cellsPerDim, i + rasterData.minCellX, j + rasterData.minCellY));
@@ -280,16 +242,16 @@ namespace APRIL
             return partialCells;
         }
 
-        static DB_STATUS computeAllAndFullIntervals(Shape &object, int cellsPerDim, RasterData &rasterData, std::vector<int> &partialCells, AprilDataT &aprilData){
+        static DB_STATUS computeAllAndFullIntervals(Shape &object, uint32_t cellsPerDim, RasterData &rasterData, std::vector<uint32_t> &partialCells, AprilDataT &aprilData){
             int res;
             bool pip_res;
-            int x,y, current_id;
-            std::vector<int> fullIntervals;
-            std::vector<int> allIntervals;
+            uint32_t x,y, current_id;
+            std::vector<uint32_t> fullIntervals;
+            std::vector<uint32_t> allIntervals;
             clock_t timer;
             //set first partial cell
             auto current_partial_cell = partialCells.begin();
-            int allStart = *current_partial_cell;
+            uint32_t allStart = *current_partial_cell;
             //set first interval start and starting uncertain cell (the next cell after the first partial interval)
             while(*current_partial_cell == *(current_partial_cell+1) - 1){
                 current_partial_cell++;
@@ -353,17 +315,16 @@ namespace APRIL
             return DBERR_OK;
         }
 
-        // intervalize shape with area (polygon rectangle)
-        static DB_STATUS intervalize(Shape &object, int cellsPerDim, AprilDataT &aprilData){
+        // intervalize shape with area (polygon rectangle) TODO: MAKE ANOTHER FOR POINTS/LINESTRINGS
+        static DB_STATUS intervalize(Shape &object, uint32_t cellsPerDim, AprilDataT &aprilData){
             DB_STATUS ret = DBERR_OK;
-            int x,y;
             clock_t timer;
             RasterData rasterData;
             //first of all map the object's coordinates to this section's hilbert space
             mapObjectToHilbertSpace(object, rasterData, cellsPerDim);
             // compute partial cells
-            int **M = calculatePartialAndUncertain(object, cellsPerDim, rasterData);
-            std::vector<int> partialCells;
+            uint32_t **M = calculatePartialAndUncertain(object, cellsPerDim, rasterData);
+            std::vector<uint32_t> partialCells;
             partialCells = getPartialCellsFromMatrix(rasterData, cellsPerDim, M);
             //sort the cells by cell int 
             sort(partialCells.begin(), partialCells.end());
@@ -372,8 +333,7 @@ namespace APRIL
                 delete M[i];
             }
             delete M;
-            //compute all/full intervals
-            // they may have full intervals
+            // generate all/full intervals
             ret = computeAllAndFullIntervals(object, cellsPerDim, rasterData, partialCells, aprilData);
             // logger::log_success("Object", object.recID, ":", aprilData.numIntervalsALL, "and", aprilData.numIntervalsFULL,"intervals.");
             // if (object.dataType == DT_POLYGON || object.dataType == DT_RECTANGLE) {

@@ -11,8 +11,8 @@
 bool verifyFilepath(std::string filePath);
 bool verifyDirectory(std::string directoryPath);
 std::string getDatasetNameFromPath(std::string &datasetPath);
-bool binarySearchInIntervalVector(std::vector<int> &vec, int x);
-bool binarySearchInVector(std::vector<int> &vec, int &x);
+bool binarySearchInIntervalVector(std::vector<uint32_t> &vec, uint32_t x);
+bool binarySearchInVector(std::vector<uint32_t> &vec, uint32_t &x);
 
 namespace mpi_timer
 {

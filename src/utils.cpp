@@ -50,7 +50,7 @@ std::string getDatasetNameFromPath(std::string &datasetPath) {
     return datasetName;
 }
 
-bool binarySearchInIntervalVector(std::vector<int> &vec, int x){
+bool binarySearchInIntervalVector(std::vector<uint32_t> &vec, uint32_t x){
     int low = 0;
     int high = vec.size()-1;
     int mid;
@@ -73,7 +73,7 @@ bool binarySearchInIntervalVector(std::vector<int> &vec, int x){
     return false;
 }
 
-bool binarySearchInVector(std::vector<int> &vec, int &x){
+bool binarySearchInVector(std::vector<uint32_t> &vec, uint32_t &x){
     int low = 0;
     int high = vec.size()-1;
     int mid;

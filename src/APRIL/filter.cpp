@@ -8,7 +8,7 @@ namespace APRIL
         
         static DB_STATUS specializedTopologyRinSContainment(Shape &objR, Shape &objS, QueryOutputT &queryOutput) {
             DB_STATUS ret = DBERR_OK;
-            int iFilterResult = -1;
+            int iFilterResult = INCONCLUSIVE;
             // get common sections
             std::vector<int> commonSections = getCommonSectionIDsOfObjects(g_config.datasetInfo.getDatasetR(), g_config.datasetInfo.getDatasetS(), objR.recID, objS.recID);
             // for each common section
@@ -64,7 +64,7 @@ namespace APRIL
         
         static DB_STATUS specializedTopologySinRContainment(Shape &objR, Shape &objS, QueryOutputT &queryOutput) {
             DB_STATUS ret = DBERR_OK;
-            int iFilterResult = -1;
+            int iFilterResult = INCONCLUSIVE;
             // get common sections
             std::vector<int> commonSections = getCommonSectionIDsOfObjects(g_config.datasetInfo.getDatasetR(), g_config.datasetInfo.getDatasetS(), objR.recID, objS.recID);
             // for each common section
@@ -120,7 +120,7 @@ namespace APRIL
         
         static DB_STATUS specializedTopologyEqual(Shape &objR, Shape &objS, QueryOutputT &queryOutput) {
             DB_STATUS ret = DBERR_OK;
-            int iFilterResult = -1;
+            int iFilterResult = INCONCLUSIVE;
             // get common sections
             std::vector<int> commonSections = getCommonSectionIDsOfObjects(g_config.datasetInfo.getDatasetR(), g_config.datasetInfo.getDatasetS(), objR.recID, objS.recID);
             // for each common section
@@ -181,7 +181,7 @@ namespace APRIL
         
         static DB_STATUS specializedTopologyIntersection(Shape &objR, Shape &objS, QueryOutputT &queryOutput) {
             DB_STATUS ret = DBERR_OK;
-            int iFilterResult = -1;
+            int iFilterResult = INCONCLUSIVE;
             // get common sections
             std::vector<int> commonSections = getCommonSectionIDsOfObjects(g_config.datasetInfo.getDatasetR(), g_config.datasetInfo.getDatasetS(), objR.recID, objS.recID);
             // for each common section
@@ -267,7 +267,7 @@ namespace APRIL
                 // fetch the APRIL of R and S for this section
                 AprilDataT* aprilR = g_config.datasetInfo.getDatasetR()->getAprilDataBySectionAndObjectID(sectionID, objR.recID);
                 AprilDataT* aprilS = g_config.datasetInfo.getDatasetS()->getAprilDataBySectionAndObjectID(sectionID, objS.recID);
-                int iFilterResult = -1;
+                int iFilterResult = INCONCLUSIVE;
                 // use appropriate query function
                 switch (g_config.queryInfo.type) {
                     case Q_INTERSECT:
@@ -323,6 +323,9 @@ namespace APRIL
                 if (iFilterResult != INCONCLUSIVE) {
                     // count APRIL result
                     queryOutput.countAPRILresult(iFilterResult);
+                    // if (iFilterResult == TRUE_HIT) {
+                    //     printf("%d,%d\n", objR.recID, objS.recID);
+                    // }
                     return ret;
                 }
             }
