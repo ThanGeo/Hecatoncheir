@@ -17,6 +17,7 @@ namespace APRIL
         extern std::vector<int> x_offset;
         extern std::vector<int> y_offset;
 
+
         typedef enum CellType {
             EMPTY,
             UNCERTAIN,

@@ -371,7 +371,7 @@ namespace mapping
         }
     }
 
-    std::string queryTypeIntToStr(int val){
+    std::string queryTypeIntToStr(QueryTypeE val){
         switch(val) {
             case Q_INTERSECT: return "intersect";
             case Q_INSIDE: return "inside";
@@ -382,11 +382,12 @@ namespace mapping
             case Q_CONTAINS: return "contains";
             case Q_MEET: return "meet";
             case Q_FIND_RELATION: return "find relation";
+            case Q_NONE: return "no query";
             default: return "";
         }
     }
 
-    int queryTypeStrToInt(std::string &str) {
+    QueryTypeE queryTypeStrToInt(std::string &str) {
         if (str == "range") {
             return Q_RANGE;
         } else if (str == "intersect") {
@@ -408,7 +409,7 @@ namespace mapping
         } else if (str == "find_relation") {
             return Q_FIND_RELATION;
         } else {
-            return -1;
+            return Q_NONE;
         }
     }
 
@@ -437,31 +438,6 @@ namespace mapping
         else if (str.compare("WKT") == 0) return FT_WKT;
 
         return FT_INVALID;
-    }
-
-    std::string datatypeCombinationIntToStr(DatatypeCombinationE val) {
-        switch(val) {
-            case DC_POINT_POINT: return "POINT-POINT";
-            case DC_POINT_LINESTRING: return "POINT-LINESTRING";
-            case DC_POINT_RECTANGLE: return "POINT-RECTANGLE";
-            case DC_POINT_POLYGON: return "POINT-POLYGON";
-            
-            case DC_LINESTRING_POINT: return "LINESTRING-POINT";
-            case DC_LINESTRING_LINESTRING: return "LINESTRING-LINESTRING";
-            case DC_LINESTRING_RECTANGLE: return "LINESTRING-RECTANGLE";
-            case DC_LINESTRING_POLYGON: return "LINESTRING-POLYGON";
-
-            case DC_RECTANGLE_POINT: return "RECTANGLE-POINT";
-            case DC_RECTANGLE_LINESTRING: return "RECTANGLE-LINESTRING";
-            case DC_RECTANGLE_RECTANGLE: return "RECTANGLE-RECTANGLE";
-            case DC_RECTANGLE_POLYGON: return "RECTANGLE-POLYGON";
-
-            case DC_POLYGON_POINT: return "POLYGON-POINT";
-            case DC_POLYGON_LINESTRING: return "POLYGON-LINESTRING";
-            case DC_POLYGON_RECTANGLE: return "POLYGON-RECTANGLE";
-            case DC_POLYGON_POLYGON: return "POLYGON-POLYGON";
-            default: return "";
-        }
     }
 
     std::string relationIntToStr(int relation) {

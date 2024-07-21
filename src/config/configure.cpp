@@ -117,7 +117,6 @@ namespace configure
 
             R.path = datasetStmt->datasetPathR;
             R.nickname = datasetStmt->datasetNicknameR;
-            R.offsetMapPath = datasetStmt->offsetMapPathR;
             R.datasetName = getDatasetNameFromPath(R.path);
             // add to config
             g_config.datasetInfo.addDataset(R);
@@ -136,7 +135,6 @@ namespace configure
 
                 S.path = datasetStmt->datasetPathS;
                 S.nickname = datasetStmt->datasetNicknameS;
-                S.offsetMapPath = datasetStmt->offsetMapPathS;
                 S.datasetName = getDatasetNameFromPath(S.path);
                 // add to config
                 g_config.datasetInfo.addDataset(S);

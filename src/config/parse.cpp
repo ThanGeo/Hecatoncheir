@@ -6,6 +6,56 @@ namespace parser
     static boost::property_tree::ptree system_config_pt;
     static boost::property_tree::ptree dataset_config_pt;
 
+    // query support map
+    QuerySupportMap g_querySupportMap = {
+        {Q_INTERSECT, {
+            {{DT_POLYGON, DT_LINESTRING}, true},
+            {{DT_POLYGON, DT_POLYGON}, true},
+            {{DT_LINESTRING, DT_POLYGON}, true}
+        }},
+        {Q_INSIDE, {
+            {{DT_POLYGON, DT_LINESTRING}, true},
+            {{DT_POLYGON, DT_POLYGON}, true},
+            {{DT_LINESTRING, DT_POLYGON}, true}
+        }},
+        {Q_COVERED_BY, {
+            {{DT_POLYGON, DT_LINESTRING}, true},
+            {{DT_POLYGON, DT_POLYGON}, true},
+            {{DT_LINESTRING, DT_POLYGON}, true}
+        }},
+        {Q_COVERS, {
+            {{DT_POLYGON, DT_LINESTRING}, true},
+            {{DT_POLYGON, DT_POLYGON}, true},
+            {{DT_LINESTRING, DT_POLYGON}, true}
+        }},
+        {Q_CONTAINS, {
+            {{DT_POLYGON, DT_LINESTRING}, true},
+            {{DT_POLYGON, DT_POLYGON}, true},
+            {{DT_LINESTRING, DT_POLYGON}, true}
+        }},
+        {Q_DISJOINT, {
+            {{DT_POLYGON, DT_LINESTRING}, true},
+            {{DT_POLYGON, DT_POLYGON}, true},
+            {{DT_LINESTRING, DT_POLYGON}, true}
+        }},
+        {Q_EQUAL, {
+            {{DT_POLYGON, DT_LINESTRING}, true},
+            {{DT_POLYGON, DT_POLYGON}, true},
+            {{DT_LINESTRING, DT_POLYGON}, true}
+        }},
+        {Q_MEET, {
+            {{DT_POLYGON, DT_LINESTRING}, true},
+            {{DT_POLYGON, DT_POLYGON}, true},
+            {{DT_LINESTRING, DT_POLYGON}, true}
+        }},
+        {Q_FIND_RELATION, {
+            {{DT_POLYGON, DT_LINESTRING}, true},
+            {{DT_POLYGON, DT_POLYGON}, true},
+            {{DT_LINESTRING, DT_POLYGON}, true}
+        }},
+    };
+
+
     static int systemSetupTypeStrToInt(std::string &str) {
         if (str == "LOCAL") {
             return SYS_LOCAL_MACHINE;
@@ -15,61 +65,29 @@ namespace parser
         return -1;
     }
 
-    static DB_STATUS verifyDatatypeCombinationForQueryType(int queryType) {
+    static DB_STATUS verifyDatatypeCombinationForQueryType(QueryTypeE queryType) {
         // get number of datasets
         int numberOfDatasets = g_config.datasetInfo.getNumberOfDatasets();
-        // get dataset data types combination
-        DatatypeCombinationE datatypeCombination = g_config.datasetInfo.getDatatypeCombination();
-        if (datatypeCombination == DC_INVALID_COMBINATION) {
-            logger::log_error(DBERR_UNSUPPORTED_DATATYPE_COMBINATION, "Unsupported data type combination:", datatypeCombination);
-            return DBERR_UNSUPPORTED_DATATYPE_COMBINATION;
+        // find if query type is supported
+        auto queryIT = g_querySupportMap.find(queryType);
+        if (queryIT != g_querySupportMap.end()) {
+            DataTypeE dataTypeR = g_config.datasetInfo.getDatasetR()->dataType;
+            // todo: for queries with one dataset input, handle this accordingly
+            DataTypeE dataTypeS = g_config.datasetInfo.getDatasetS()->dataType;
+            const auto& allowedCombinations = queryIT->second;
+            auto dataTypesPair = std::make_pair(dataTypeR, dataTypeS);
+            auto datatypesIT = allowedCombinations.find(dataTypesPair);
+            if (datatypesIT != allowedCombinations.end()) {
+                // query data types combination supported
+                return DBERR_OK;
+            } else {
+                logger::log_error(DBERR_QUERY_INVALID_TYPE, "Data type combination unsupported for query", mapping::queryTypeIntToStr(g_config.queryInfo.type), "combination:", mapping::dataTypeIntToStr(dataTypeR), "and", mapping::dataTypeIntToStr(dataTypeS));
+                return DBERR_QUERY_INVALID_TYPE;
+            }
         }
-
-        switch (queryType) {
-            // range query
-            case Q_RANGE:
-                // requires dataset R to be queries and dataset S to be data
-                if (numberOfDatasets != 2) {
-                    logger::log_error(DBERR_QUERY_INVALID_INPUT, "Range query requires two datasets as input: R for the queries, S for the data to be queried.");
-                    return DBERR_QUERY_INVALID_INPUT;
-                }
-                // queries must be polygon or rectangle
-                if (g_config.datasetInfo.getDatasetR()->dataType != DT_RECTANGLE && g_config.datasetInfo.getDatasetR()->dataType != DT_POLYGON) {
-                    logger::log_error(DBERR_QUERY_INVALID_INPUT, "Query dataset (R) must contain either RECTANGLE or POLYGON objects");
-                    return DBERR_QUERY_INVALID_INPUT;
-                }
-                // currently supported queries
-                switch (datatypeCombination) {
-                    default:
-                        logger::log_error(DBERR_UNSUPPORTED_DATATYPE_COMBINATION, "Datatype combination", mapping::datatypeCombinationIntToStr(datatypeCombination), " for Range queries currently unsupported");
-                        return DBERR_UNSUPPORTED_DATATYPE_COMBINATION;
-                }
-                
-                break;
-            // joins with topological predicate
-            case Q_FIND_RELATION:
-            case Q_INTERSECT:
-            case Q_INSIDE:
-            case Q_CONTAINS:
-            case Q_COVERED_BY:
-            case Q_COVERS:
-            case Q_DISJOINT:
-            case Q_EQUAL:
-            case Q_MEET:
-                // require two datasets
-                if (numberOfDatasets != 2) {
-                    logger::log_error(DBERR_QUERY_INVALID_INPUT, "Joins require two datasets as input.");
-                    return DBERR_QUERY_INVALID_INPUT;
-                }
-                // datatype combination support
-                if (datatypeCombination != DC_POLYGON_POLYGON) {
-                    logger::log_error(DBERR_UNSUPPORTED_DATATYPE_COMBINATION, "Currently only polygon-polygon joins are supported. Input:", mapping::datatypeCombinationIntToStr(datatypeCombination));
-                    return DBERR_UNSUPPORTED_DATATYPE_COMBINATION;
-                }
-                break;
-        }
-
-        return DBERR_OK;
+        // error for query type
+        logger::log_error(DBERR_QUERY_INVALID_TYPE, "Query type unsupported. Query code:", queryType);
+        return DBERR_QUERY_INVALID_TYPE;
     }
 
     static DB_STATUS loadAPRILconfig() {
@@ -120,7 +138,7 @@ namespace parser
             ActionT action(ACTION_LOAD_DATASETS);
             g_config.actions.emplace_back(action);
         }
-        // approximations
+        // create APRIL
         for (int i=0; i<actionsStmt->createApproximations.size(); i++) {
             ActionT action;
             ret = statement::getCreateApproximationAction(actionsStmt->createApproximations.at(i), action);
@@ -235,7 +253,7 @@ namespace parser
                 return DBERR_INVALID_FILETYPE;
             }
 
-            // verify dataset R path + offset
+            // verify dataset R path
             if (!verifyFilepath(datasetStmt->datasetPathR)) {
                 logger::log_error(DBERR_MISSING_FILE, "Dataset R invalid path:", datasetStmt->datasetPathR);
                 return DBERR_MISSING_FILE;
@@ -249,7 +267,7 @@ namespace parser
                     logger::log_error(DBERR_INVALID_FILETYPE, "Unkown file type of dataset S:", datasetStmt->filetypeS);
                     return DBERR_INVALID_FILETYPE;
                 }
-                // verify dataset S path + offset
+                // verify dataset S path
                 if (!verifyFilepath(datasetStmt->datasetPathS)) {
                     logger::log_error(DBERR_MISSING_FILE, "Dataset S invalid path:", datasetStmt->datasetPathS);
                     return DBERR_MISSING_FILE;
@@ -278,17 +296,8 @@ namespace parser
                 return DBERR_INVALID_DATATYPE;
             }
             datasetStmt->datatypeR = datatypeR;
-
             // file type
             datasetStmt->filetypeR = dataset_config_pt.get<std::string>(datasetStmt->datasetNicknameR+".filetype");
-
-            // offset map
-            datasetStmt->offsetMapPathR = dataset_config_pt.get<std::string>(datasetStmt->datasetNicknameR+".offsetMapPath");
-            if (datasetStmt->offsetMapPathR == "") {
-                logger::log_error(DBERR_MISSING_FILE, "Missing offset map path for dataset R.");
-                return DBERR_MISSING_FILE;
-            }
-            
         }
         if (datasetStmt->datasetNicknameS != "") {
             datasetStmt->datasetPathS = dataset_config_pt.get<std::string>(datasetStmt->datasetNicknameS+".path");
@@ -302,24 +311,6 @@ namespace parser
 
             // file type
             datasetStmt->filetypeS = dataset_config_pt.get<std::string>(datasetStmt->datasetNicknameS+".filetype");
-
-            // offset map
-            datasetStmt->offsetMapPathS = dataset_config_pt.get<std::string>(datasetStmt->datasetNicknameS+".offsetMapPath");
-            if (datasetStmt->offsetMapPathS == "") {
-                logger::log_error(DBERR_MISSING_FILE, "Missing offset map path for dataset S.");
-                return DBERR_MISSING_FILE;
-            }
-            
-        }
-        
-        // datatype combination
-        if (datasetStmt->datasetCount == 2) {
-            if(datasetStmt->datatypeR == DT_POLYGON && datasetStmt->datatypeS == DT_POLYGON) {
-                datasetStmt->DatatypeCombination = DC_POLYGON_POLYGON;
-            } else {
-                logger::log_error(DBERR_UNSUPPORTED_DATATYPE_COMBINATION, "Dataset data type combination not yet supported.");
-                return DBERR_UNSUPPORTED_DATATYPE_COMBINATION;
-            }
         }
         if (datasetStmt->datasetCount > 0) {
             // hardcoded bounds
@@ -382,7 +373,7 @@ namespace parser
             return DBERR_OK;
         }
         // get query type int
-        int queryType = mapping::queryTypeStrToInt(queryStmt->queryType);
+        QueryTypeE queryType = mapping::queryTypeStrToInt(queryStmt->queryType);
         if (queryType == -1) {
             logger::log_error(DBERR_INVALID_PARAMETER, "Invalid query type:", queryStmt->queryType);
             return DBERR_INVALID_PARAMETER;

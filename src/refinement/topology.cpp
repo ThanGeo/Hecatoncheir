@@ -293,7 +293,7 @@ namespace refinement
         }
 
 
-        void specializedRefinementEntrypoint(Shape &objR, Shape &objS, int relationCase, QueryOutputT &queryOutput) {
+        DB_STATUS specializedRefinementEntrypoint(Shape &objR, Shape &objS, int relationCase, QueryOutputT &queryOutput) {
             int refinementResult = -1;
             // switch based on MBR intersection case
             switch(relationCase) {
@@ -310,12 +310,13 @@ namespace refinement
                     refinementResult = refineDisjointMeetIntersect(objR, objS);
                     break;
                 default:
-                    fprintf(stderr, "Failed. No refinement support for relation case: %d\n", relationCase);
-                    exit(-1);
-                    break;
+                    logger::log_error(DBERR_QUERY_INVALID_TYPE, "no refinement support for mbr relation case", relationCase);
+                    return DBERR_QUERY_INVALID_TYPE;
             }
             // count result
             queryOutput.countTopologyRelationResult(refinementResult);
+
+            return DBERR_OK;
         }
 
         int refineGuaranteedNoContainment(Shape &objR, Shape &objS) {
@@ -487,7 +488,7 @@ namespace refinement
             }
         }
         
-        void refinementEntrypoint(Shape &objR, Shape &objS, QueryTypeE queryType, QueryOutputT &queryOutput) {
+        DB_STATUS refinementEntrypoint(Shape &objR, Shape &objS, QueryTypeE queryType, QueryOutputT &queryOutput) {
             // switch based on query type
             switch(queryType) {
                 case Q_INTERSECT:
@@ -515,10 +516,11 @@ namespace refinement
                     refineCoveredByJoin(objR, objS, queryOutput);
                     break;
                 default:
-                    fprintf(stderr, "Failed. No refinement support for query type: %d.\n", queryType);
-                    exit(-1);
-                    break;
+                    logger::log_error(DBERR_QUERY_INVALID_TYPE, "no refinement support for query:", mapping::queryTypeIntToStr(queryType));
+                    return DBERR_QUERY_INVALID_TYPE;
             }
+
+            return DBERR_OK;
         }
         
         /**

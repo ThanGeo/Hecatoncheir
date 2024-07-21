@@ -300,30 +300,6 @@ typedef enum DataType{
     DT_POLYGON,
 } DataTypeE;
 
-// query data type combinations
-typedef enum DatatypeCombination {
-    // invalid
-    DC_INVALID_COMBINATION,
-    // heterogenous
-    DC_POINT_LINESTRING,
-    DC_POINT_RECTANGLE,
-    DC_POINT_POLYGON,
-    DC_RECTANGLE_POINT,
-    DC_RECTANGLE_LINESTRING,
-    DC_RECTANGLE_POLYGON,
-    DC_LINESTRING_POINT,
-    DC_LINESTRING_RECTANGLE,
-    DC_LINESTRING_POLYGON,
-    DC_POLYGON_POINT,
-    DC_POLYGON_LINESTRING,
-    DC_POLYGON_RECTANGLE,
-    //homogenous
-    DC_POINT_POINT,
-    DC_LINESTRING_LINESTRING,
-    DC_RECTANGLE_RECTANGLE,
-    DC_POLYGON_POLYGON,
-}DatatypeCombinationE;
-
 // spatial approximations
 typedef enum ApproximationType{
     AT_NONE,
@@ -515,6 +491,10 @@ public:
         geometry = geom;
     }
 
+    void reset() {
+        logger::log_error(DBERR_INVALID_OPERATION, "Geometry wrapper can be accessed directly for operation: reset");
+    }
+
     void addPoint(const double x, const double y) {
         logger::log_error(DBERR_INVALID_OPERATION, "Geometry wrapper can be accessed directly for operation: addPoint");
     }
@@ -535,6 +515,16 @@ public:
     void modifyBoostPointByIndex(int index, double x, double y) {
         // Default behavior: Do nothing (for types that don't support modifying points)
         logger::log_error(DBERR_INVALID_OPERATION, "Geometry wrapper can be accessed directly for operation: modifyBoostPointByIndex");
+    }
+
+    const std::vector<bg_point_xy>* getReferenceToPoints() const {
+        logger::log_error(DBERR_INVALID_OPERATION, "Geometry wrapper can be accessed directly for operation: getReferenceToPoints.");
+        return nullptr;
+    }
+
+    int getVertexCount() const {
+        logger::log_error(DBERR_INVALID_OPERATION, "Geometry wrapper can be accessed directly for operation: getVertexCount.");
+        return 0;
     }
 
     template<typename OtherGeometryType>
@@ -607,6 +597,10 @@ public:
         boost::geometry::correct(geometry);
     }
 
+    void reset() {
+        boost::geometry::clear(geometry);
+    }
+
     bool pipTest(const bg_point_xy &point) const {
         return false;
     }
@@ -621,6 +615,20 @@ public:
         }
         geometry = bg_point_xy(x, y);
     }
+
+
+    const std::vector<bg_point_xy>* getReferenceToPoints() const {
+        logger::log_error(DBERR_INVALID_OPERATION, "Can't return reference to points on Point shape.");
+        return nullptr;
+    }
+
+    int getVertexCount() const {
+        return 1;
+    }
+
+    /**
+     * queries
+     */
 
     std::string createMaskCode(const GeometryWrapper<bg_polygon>& other) const;
     std::string createMaskCode(const GeometryWrapper<bg_point_xy>& other) const {return "";}
@@ -670,6 +678,7 @@ template<>
 struct GeometryWrapper<bg_rectangle> {
 public:
     bg_rectangle geometry;
+    std::vector<bg_point_xy> vertices;
     GeometryWrapper(){}
     GeometryWrapper(const bg_rectangle &geom) : geometry(geom) {}
 
@@ -685,6 +694,7 @@ public:
             // both points already exist, error
             logger::log_error(DBERR_INVALID_OPERATION, "Cannot add more than two points to a rectangle");
         }
+        vertices.emplace_back(point);
     }
 
     void correctGeometry() {
@@ -693,6 +703,11 @@ public:
 
     bool pipTest(const bg_point_xy &point) const {
         return boost::geometry::within(point, geometry);
+    }
+
+    void reset() {
+        boost::geometry::clear(geometry);
+        vertices.clear();
     }
 
     void printGeometry() {
@@ -710,7 +725,20 @@ public:
         } else {
             logger::log_error(DBERR_OUT_OF_BOUNDS, "Rectangle point index out of bounds for modifyBoostPointByIndex:", index);
         }
+        vertices[index] = bg_point_xy(x, y);
     }
+
+    const std::vector<bg_point_xy>* getReferenceToPoints() const {
+        return &vertices;
+    }
+
+    int getVertexCount() const {
+        return 2;
+    }
+
+    /**
+     * queries
+     */
     
     template<typename OtherGeometryType>
     std::string createMaskCode(const GeometryWrapper<OtherGeometryType> &other) const {
@@ -785,12 +813,24 @@ public:
         printf("\n");
     }
 
+    void reset() {
+        boost::geometry::clear(geometry);
+    }
+
     void modifyBoostPointByIndex(int index, double x, double y) {
         if (index < geometry.size()) {
             geometry[index] = bg_point_xy(x, y);
         } else {
             logger::log_error(DBERR_OUT_OF_BOUNDS, "Linestring point index out of bounds for modifyBoostPointByIndex:", index);
         }
+    }
+
+    const std::vector<bg_point_xy>* getReferenceToPoints() const {
+        return &geometry;
+    }
+
+    int getVertexCount() const {
+        return geometry.size();
     }
 
     // topology
@@ -860,15 +900,15 @@ public:
         boost::geometry::correct(geometry);
     }
 
-    bool pipTest(const bg_point_xy &point) const {
-        return boost::geometry::within(point, geometry);
-    }
-
     void printGeometry() {
         for(auto &it: geometry.outer()) {
             printf("(%f,%f),", it.x(), it.y());
         }
         printf("\n");
+    }
+
+    void reset() {
+        boost::geometry::clear(geometry);
     }
 
     void modifyBoostPointByIndex(int index, double x, double y) {
@@ -878,6 +918,20 @@ public:
             logger::log_error(DBERR_OUT_OF_BOUNDS, "Polygon point index out of bounds for modifyBoostPointByIndex:", index);
         }
     }
+
+    const std::vector<bg_point_xy>* getReferenceToPoints() const {
+        return &geometry.outer();
+    }
+
+    int getVertexCount() const {
+        return geometry.outer().size();
+    }
+
+    // APRIL
+    bool pipTest(const bg_point_xy &point) const {
+        return boost::geometry::within(point, geometry);
+    }
+
     // topology definitions
     std::string createMaskCode(const GeometryWrapper<bg_rectangle>& other) const {return "";};
     std::string createMaskCode(const GeometryWrapper<bg_polygon>& other) const {
@@ -993,7 +1047,6 @@ struct Shape {
     size_t recID;
     DataTypeE dataType;
     MBR mbr;
-    std::vector<Point> vertices;
     // partition ID -> two layer class of this object in that partition
     std::unordered_map<int, int> partitions;
     // shape variant
@@ -1004,10 +1057,12 @@ struct Shape {
     template<typename T>
     explicit Shape(T geom) : shape(geom) {}
 
+    /**
+     * utils
+     */
+
     // adds a point to the shape
     void addPoint(const double x, const double y) {
-        // first in vertices vector (todo: this is redundant, maybe use just the boost object for everything)
-        vertices.emplace_back(x,y);
         // then in boost object
         std::visit([&x, &y](auto&& arg) {
             arg.addPoint(x, y);
@@ -1020,23 +1075,9 @@ struct Shape {
         }, shape);
     }
 
-    bool pipTest(const bg_point_xy& point) const {
-        return std::visit([&point](auto&& arg) -> bool {
-            return arg.pipTest(point);
-        }, shape);
-    }
-    
     void modifyBoostPointByIndex(int index, double x, double y) {
         std::visit([index, &x, &y](auto&& arg) {
             arg.modifyBoostPointByIndex(index, x, y);
-        }, shape);
-    }
-
-    std::string createMaskCode(const Shape &other) const {
-        return std::visit([&other](auto&& arg) -> std::string {
-            return std::visit([&arg](auto&& otherArg) -> std::string {
-                return arg.createMaskCode(otherArg);
-            }, other.shape);
         }, shape);
     }
 
@@ -1044,6 +1085,49 @@ struct Shape {
         printf("id: %zu\n", recID);
         std::visit([](auto&& arg) {
             arg.printGeometry();
+        }, shape);
+    }
+
+    void reset() {
+        recID = 0;
+        dataType = DT_INVALID;
+        mbr = MBR();
+        partitions.clear();
+        std::visit([](auto&& arg) {
+            arg.reset();
+        }, shape);
+    }
+
+    const std::vector<bg_point_xy>* getReferenceToPoints() {
+        return std::visit([](auto&& arg) -> const std::vector<bg_point_xy>* {
+            return arg.getReferenceToPoints();
+        }, shape);
+    }
+
+    int getVertexCount() {
+        return std::visit([](auto&& arg) -> int {
+            return arg.getVertexCount();
+        }, shape);
+    }
+
+    /**
+     * APRIL
+     */
+
+    bool pipTest(const bg_point_xy& point) const {
+        return std::visit([&point](auto&& arg) -> bool {
+            return arg.pipTest(point);
+        }, shape);
+    }
+
+    /**
+     * queries/spatial operations
+     */
+    std::string createMaskCode(const Shape &other) const {
+        return std::visit([&other](auto&& arg) -> std::string {
+            return std::visit([&arg](auto&& otherArg) -> std::string {
+                return arg.createMaskCode(otherArg);
+            }, other.shape);
         }, shape);
     }
 
@@ -1331,7 +1415,6 @@ struct Dataset{
     DataTypeE dataType;
     FileTypeE fileType;
     std::string path;
-    std::string offsetMapPath;
     // derived from the path
     std::string datasetName;
     // as given by arguments and specified by datasets.ini config file
@@ -1467,7 +1550,6 @@ struct DatasetInfo {
     Dataset* R;
     Dataset* S;
     int numberOfDatasets;
-    DatatypeCombinationE datatypeCombination = DC_INVALID_COMBINATION;
 
     public:
     std::unordered_map<std::string,Dataset> datasets;
@@ -1485,7 +1567,6 @@ struct DatasetInfo {
         S = nullptr;
         datasets.clear();
         dataspaceInfo.clear();
-        datatypeCombination = DC_INVALID_COMBINATION;
     }
 
     inline Dataset* getDatasetR() {
@@ -1494,73 +1575,6 @@ struct DatasetInfo {
 
     inline Dataset* getDatasetS() {
         return S;
-    }
-
-    DatatypeCombinationE getDatatypeCombination() {
-        return datatypeCombination;
-    }
-
-    void setDatatypeCombination() {
-        // R is points
-        if (getDatasetR()->dataType == DT_POINT) {
-            if (getDatasetS()->dataType == DT_POINT) {
-                datatypeCombination = DC_POINT_POINT;
-            }
-            if (getDatasetS()->dataType == DT_LINESTRING) {
-                datatypeCombination = DC_POINT_LINESTRING;
-            }
-            if (getDatasetS()->dataType == DT_RECTANGLE) {
-                datatypeCombination = DC_POINT_RECTANGLE;
-            }
-            if (getDatasetS()->dataType == DT_POLYGON) {
-                datatypeCombination = DC_POINT_POLYGON;
-            }
-        }
-        // R is linestrings
-        if (getDatasetR()->dataType == DT_LINESTRING) {
-            if (getDatasetS()->dataType == DT_POINT) {
-                datatypeCombination = DC_LINESTRING_POINT;
-            }
-            if (getDatasetS()->dataType == DT_LINESTRING) {
-                datatypeCombination = DC_LINESTRING_LINESTRING;
-            }
-            if (getDatasetS()->dataType == DT_RECTANGLE) {
-                datatypeCombination = DC_LINESTRING_RECTANGLE;
-            }
-            if (getDatasetS()->dataType == DT_POLYGON) {
-                datatypeCombination = DC_LINESTRING_POLYGON;
-            }
-        }
-        // R is rectangles
-        if (getDatasetR()->dataType == DT_RECTANGLE) {
-            if (getDatasetS()->dataType == DT_POINT) {
-                datatypeCombination = DC_RECTANGLE_POINT;
-            }
-            if (getDatasetS()->dataType == DT_LINESTRING) {
-                datatypeCombination = DC_RECTANGLE_LINESTRING;
-            }
-            if (getDatasetS()->dataType == DT_RECTANGLE) {
-                datatypeCombination = DC_RECTANGLE_RECTANGLE;
-            }
-            if (getDatasetS()->dataType == DT_POLYGON) {
-                datatypeCombination = DC_RECTANGLE_POLYGON;
-            }
-        }
-        // R is polygons
-        if (getDatasetR()->dataType == DT_POLYGON) {
-            if (getDatasetS()->dataType == DT_POINT) {
-                datatypeCombination = DC_POLYGON_POINT;
-            }
-            if (getDatasetS()->dataType == DT_LINESTRING) {
-                datatypeCombination = DC_POLYGON_LINESTRING;
-            }
-            if (getDatasetS()->dataType == DT_RECTANGLE) {
-                datatypeCombination = DC_POLYGON_RECTANGLE;
-            }
-            if (getDatasetS()->dataType == DT_POLYGON) {
-                datatypeCombination = DC_POLYGON_POLYGON;
-            }
-        }
     }
 
     void addDataset(Dataset &dataset) {
@@ -1572,8 +1586,6 @@ struct DatasetInfo {
         } else {
             // S is being added
             S = &datasets.find(dataset.nickname)->second;
-            // set the datatypecombination
-            setDatatypeCombination();
         }
         numberOfDatasets++;
         // update dataspace info
@@ -1808,12 +1820,11 @@ void queryResultReductionFunc(QueryOutputT &in, QueryOutputT &out);
 namespace mapping
 {
     extern std::string actionIntToStr(ActionTypeE action);
-    extern std::string queryTypeIntToStr(int val);
-    extern int queryTypeStrToInt(std::string &str);
+    extern std::string queryTypeIntToStr(QueryTypeE val);
+    extern QueryTypeE queryTypeStrToInt(std::string &str);
     extern std::string dataTypeIntToStr(DataTypeE val);
     extern DataTypeE dataTypeTextToInt(std::string str);
     extern FileTypeE fileTypeTextToInt(std::string str);
-    extern std::string datatypeCombinationIntToStr(DatatypeCombinationE val);
     extern std::string relationIntToStr(int relation);
 }
 

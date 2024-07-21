@@ -23,7 +23,11 @@ namespace twolayer
                     // count refinement candidates
                     queryOutput.countRefinementCandidate();
                     // forward to refinement
-                    refinement::topology::specializedRefinementEntrypoint(objR, objS, mbrRelationCase, queryOutput);
+                    ret = refinement::topology::specializedRefinementEntrypoint(objR, objS, mbrRelationCase, queryOutput);
+                    if (ret != DBERR_OK) {
+                        logger::log_error(ret, "Refinement failed");
+                        return ret;
+                    }
                 }
             } else {
                 // they cross, true hit intersect (skip intermediate filter)
@@ -527,7 +531,10 @@ namespace twolayer
                 // count refinement candidates
                 queryOutput.countRefinementCandidate();
                 // forward to refinement
-                refinement::relate::refinementEntrypoint(objR, objS, g_config.queryInfo.type, queryOutput);
+                ret = refinement::relate::refinementEntrypoint(objR, objS, g_config.queryInfo.type, queryOutput);
+                if (ret != DBERR_OK) {
+                    logger::log_error(ret, "Refinement failed");
+                }
             }
             return ret;
         }

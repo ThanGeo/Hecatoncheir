@@ -13,7 +13,7 @@ namespace refinement
          * Entrypoint function for when there is NO intermediate filter.
          * Intermediate filters forward to refine() function and NOT this one.
         */
-        void specializedRefinementEntrypoint(Shape &objR, Shape &objS, int relationCase, QueryOutputT &queryOutput);
+        DB_STATUS specializedRefinementEntrypoint(Shape &objR, Shape &objS, int relationCase, QueryOutputT &queryOutput);
 
         /**
          * @brief refines for inside/covered by but is guaranteed intersection (no disjoint)
@@ -107,7 +107,7 @@ namespace refinement
          * Entrypoint function for when there is NO intermediate filter.
          * Intermediate filters forward to refine() function and NOT this one.
         */
-        void refinementEntrypoint(Shape &objR, Shape &objS, QueryTypeE queryType, QueryOutputT &queryOutput);
+        DB_STATUS refinementEntrypoint(Shape &objR, Shape &objS, QueryTypeE queryType, QueryOutputT &queryOutput);
 
         /**
          * loads boost geometries and refines for intersection

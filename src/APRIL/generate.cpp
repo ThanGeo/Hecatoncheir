@@ -4,10 +4,7 @@ namespace APRIL
 {
     namespace generation 
     {
-        double rasterXmin;
-        double rasterYmin;
-        double rasterXmax;
-        double rasterYmax;
+        double rasterXmin, rasterYmin, rasterXmax, rasterYmax;
         std::vector<int> x_offset = { 1,1,1, 0,0,-1,-1,-1};
         std::vector<int> y_offset = {-1,0,1,-1,1,-1, 0, 1};
 
@@ -42,8 +39,6 @@ namespace APRIL
             }
             return newval;
         }
-
-        
 
         static inline void mapXYToHilbert(double &x, double &y, uint32_t &cellsPerDim){
             x = ((double) (cellsPerDim-1) / (rasterXmax - rasterXmin)) * (x - rasterXmin);
@@ -99,9 +94,13 @@ namespace APRIL
 
         static inline void mapObjectToHilbertSpace(Shape &object, RasterData &rasterData, uint32_t cellsPerDim){
             //first, map the object's coordinates to this section's hilbert space
-            for (int i=0; i<object.vertices.size(); i++) {
-                mapXYToHilbert(object.vertices[i].x, object.vertices[i].y, cellsPerDim);
-                object.modifyBoostPointByIndex(i, object.vertices[i].x, object.vertices[i].y);
+            double x,y;
+            const std::vector<bg_point_xy>* vertices = object.getReferenceToPoints();
+            for (int i=0; i<vertices->size(); i++) {
+                x = vertices->at(i).x();
+                y = vertices->at(i).y();
+                mapXYToHilbert(x, y, cellsPerDim);
+                object.modifyBoostPointByIndex(i, x, y);
             }
             object.correctGeometry();
             //map the object's mbr
@@ -140,22 +139,30 @@ namespace APRIL
             double edgeLength;
             std::deque<bg_point_xy> output;
             double error_margin = 0.00001;
+            // get const reference to the shape's vertices
+            const std::vector<bg_point_xy>* vertices = object.getReferenceToPoints();
 
-            // todo: what if it is a single point?
+            // if only one point
+            if (object.getVertexCount() == 1) {
+                startCellX = (uint32_t)vertices->at(0).x();
+                startCellY = (uint32_t)vertices->at(0).y();
+                M[startCellX-rasterData.minCellX][startCellY-rasterData.minCellY] = PARTIAL;
+                return M;
+            }
 
-            //loop points
-            for (auto it = object.vertices.begin(); it != object.vertices.end()-1; it++) {
+            // else, loop edges
+            for (auto it = vertices->begin(); it != vertices->end()-1; it++) {
                 //set points x1 has the lowest x
-                if(it->x < (it+1)->x){
-                    x1 = it->x;
-                    y1 = it->y;
-                    x2 = (it+1)->x;
-                    y2 = (it+1)->y;
+                if(it->x() < (it+1)->x()){
+                    x1 = it->x();
+                    y1 = it->y();
+                    x2 = (it+1)->x();
+                    y2 = (it+1)->y();
                 }else{
-                    x2 = it->x;
-                    y2 = it->y;
-                    x1 = (it+1)->x;
-                    y1 = (it+1)->y;
+                    x2 = it->x();
+                    y2 = it->y();
+                    x1 = (it+1)->x();
+                    y1 = (it+1)->y();
                 }
 
                 //keep original values of y1,y2
@@ -242,13 +249,38 @@ namespace APRIL
             return partialCells;
         }
 
+        static DB_STATUS computeAllIntervalsFromPartialCells(uint32_t cellsPerDim, RasterData &rasterData, std::vector<uint32_t> &partialCells, AprilDataT &aprilData) {
+            uint32_t current_id;
+            std::vector<uint32_t> allIntervals;
+            uint32_t allStart = *partialCells.begin();
+            uint32_t currentOrder = allStart;
+            for (int i=1; i<partialCells.size(); i++) {
+                if (partialCells[i] > currentOrder + 1) {
+                    // store interval
+                    allIntervals.emplace_back(allStart);
+                    allIntervals.emplace_back(currentOrder + 1);
+                    allStart = partialCells[i];
+                }
+                currentOrder = partialCells[i];
+            }
+            
+            // save last interval
+            allIntervals.emplace_back(allStart);
+            allIntervals.emplace_back(partialCells.back() + 1);
+
+            // store into the aprilData
+            aprilData.intervalsALL = allIntervals;
+            aprilData.numIntervalsALL = allIntervals.size() / 2;
+            aprilData.numIntervalsFULL = 0;
+            return DBERR_OK;
+        }
+
         static DB_STATUS computeAllAndFullIntervals(Shape &object, uint32_t cellsPerDim, RasterData &rasterData, std::vector<uint32_t> &partialCells, AprilDataT &aprilData){
             int res;
             bool pip_res;
             uint32_t x,y, current_id;
             std::vector<uint32_t> fullIntervals;
             std::vector<uint32_t> allIntervals;
-            clock_t timer;
             //set first partial cell
             auto current_partial_cell = partialCells.begin();
             uint32_t allStart = *current_partial_cell;
@@ -307,7 +339,7 @@ namespace APRIL
             allIntervals.emplace_back(allStart);
             allIntervals.emplace_back(*(current_partial_cell-1) + 1);
 
-            // store into the object
+            // store into the aprilData
             aprilData.intervalsALL = allIntervals;
             aprilData.numIntervalsALL = allIntervals.size() / 2;
             aprilData.intervalsFULL = fullIntervals;
@@ -315,8 +347,8 @@ namespace APRIL
             return DBERR_OK;
         }
 
-        // intervalize shape with area (polygon rectangle) TODO: MAKE ANOTHER FOR POINTS/LINESTRINGS
-        static DB_STATUS intervalize(Shape &object, uint32_t cellsPerDim, AprilDataT &aprilData){
+        // intervalize shape with area (polygons and rectangles)
+        static DB_STATUS intervalizeRegionShape(Shape &object, uint32_t cellsPerDim, AprilDataT &aprilData){
             DB_STATUS ret = DBERR_OK;
             clock_t timer;
             RasterData rasterData;
@@ -335,42 +367,42 @@ namespace APRIL
             delete M;
             // generate all/full intervals
             ret = computeAllAndFullIntervals(object, cellsPerDim, rasterData, partialCells, aprilData);
-            // logger::log_success("Object", object.recID, ":", aprilData.numIntervalsALL, "and", aprilData.numIntervalsFULL,"intervals.");
-            // if (object.dataType == DT_POLYGON || object.dataType == DT_RECTANGLE) {
-            // } 
-            // else {
-            //     // they cannot have full intervals: todo
-            //     logger::log_error(DBERR_FEATURE_UNSUPPORTED, "Unsupported intervalization for points/linestrings yet");
-            //     return DBERR_FEATURE_UNSUPPORTED;
-            // }
             return ret;
         }
 
-        static DB_STATUS loadAndIntervalizeContents(Dataset &dataset, FILE* pFile,  FILE* pFileALL, FILE* pFileFULL) {
+        // intervalize shape without area (points and linestrings)
+        static DB_STATUS intervalizeNonRegionShape(Shape &object, uint32_t cellsPerDim, AprilDataT &aprilData){
+            DB_STATUS ret = DBERR_OK;
+            clock_t timer;
+            RasterData rasterData;
+            //first of all map the object's coordinates to this section's hilbert space
+            mapObjectToHilbertSpace(object, rasterData, cellsPerDim);
+            // compute partial cells
+            uint32_t **M = calculatePartialAndUncertain(object, cellsPerDim, rasterData);
+            std::vector<uint32_t> partialCells;
+            partialCells = getPartialCellsFromMatrix(rasterData, cellsPerDim, M);
+            //sort the cells by cell int 
+            sort(partialCells.begin(), partialCells.end());
+            // delete the matrix memory, not needed anymore
+            for(size_t i = 0; i < rasterData.bufferWidth; i++){
+                delete M[i];
+            }
+            delete M;
+            // generate all intervals from the partial cells
+            ret = computeAllIntervalsFromPartialCells(cellsPerDim, rasterData, partialCells, aprilData);
+            return ret;
+        }
+
+        /**
+         * @brief load and intervalize shapes like polygon or rectangle that have area
+         */
+        static DB_STATUS loadAndIntervalizeRegionShape(Dataset &dataset, FILE* pFile,  FILE* pFileALL, FILE* pFileFULL, Shape object) {
             DB_STATUS ret = DBERR_OK;
             int objectsInFullFile = 0;
             // loop objects 
             for(size_t i=0; i<dataset.totalObjects; i++){
-                Shape object;
-                // check datatype (todo: remove from loop)
-                switch (dataset.dataType) {
-                    case DT_POLYGON:
-                        object = shape_factory::createEmptyPolygonShape();
-                        break;
-                    case DT_POINT:
-                        object = shape_factory::createEmptyPointShape();
-                        break;
-                    case DT_LINESTRING:
-                        object = shape_factory::createEmptyLineStringShape();
-                        break;
-                    case DT_RECTANGLE:
-                        object = shape_factory::createEmptyRectangleShape();
-                        break;
-                    default:
-                        // error
-                        logger::log_error(DBERR_INVALID_DATATYPE, "Invalid datatype in intervalization:", dataset.dataType);
-                        return DBERR_INVALID_DATATYPE;
-                }
+                // reset object
+                object.reset();
                 // get next object to rasterize
                 ret = storage::reader::partitionFile::loadNextObjectComplete(pFile, object);
                 if (ret != DBERR_OK) {
@@ -379,7 +411,7 @@ namespace APRIL
                 }
                 // generate APRIL
                 AprilDataT aprilData;
-                ret = intervalize(object, dataset.aprilConfig.getCellsPerDim(), aprilData);
+                ret = intervalizeRegionShape(object, dataset.aprilConfig.getCellsPerDim(), aprilData);
                 if (ret != DBERR_OK || aprilData.numIntervalsALL == 0) {
                     // at least 1 ALL interval is needed for each object, otherwise there is an error
                     logger::log_error(DBERR_APRIL_CREATE, "Failed to generate APRIL for object with ID", object.recID);
@@ -404,6 +436,51 @@ namespace APRIL
             }
             return ret;
         }
+
+        /**
+         * @brief intervalize shapes like point or linestring that have no area
+         */
+        static DB_STATUS loadAndIntervalizeNonRegionShape(Dataset &dataset, FILE* pFile,  FILE* pFileALL, FILE* pFileFULL, Shape object) {
+            DB_STATUS ret = DBERR_OK;
+            int objectsInFullFile = 0;
+            // loop objects 
+            for(size_t i=0; i<dataset.totalObjects; i++){
+                // reset object
+                object.reset();
+                // get next object to rasterize
+                ret = storage::reader::partitionFile::loadNextObjectComplete(pFile, object);
+                if (ret != DBERR_OK) {
+                    logger::log_error(ret, "Failed while reading object number",i,"from partition file");
+                    return ret;
+                }
+                // generate APRIL
+                AprilDataT aprilData;
+                ret = intervalizeNonRegionShape(object, dataset.aprilConfig.getCellsPerDim(), aprilData);
+                if (ret != DBERR_OK || aprilData.numIntervalsALL == 0) {
+                    // at least 1 ALL interval is needed for each object, otherwise there is an error
+                    logger::log_error(DBERR_APRIL_CREATE, "Failed to generate APRIL for object with ID", object.recID);
+                    return DBERR_APRIL_CREATE;
+                }
+                // save on disk
+                ret = APRIL::writer::saveAPRIL(pFileALL, pFileFULL, object.recID, 0, &aprilData);
+                if (ret != DBERR_OK) {
+                    logger::log_error(ret, "Failed while saving APRIL on disk");
+                    return ret;
+                }
+                // count objects
+                if (aprilData.numIntervalsFULL > 0) {
+                    objectsInFullFile += 1;
+                }
+            }
+            // update value 
+            ret = storage::writer::updateObjectCountInFile(pFileFULL, objectsInFullFile);
+            if (ret != DBERR_OK) {
+                logger::log_error(ret, "Couldn't update object count value in FULL intervals file");
+                return ret;
+            }
+            return ret;
+        }
+    
     
         DB_STATUS init(Dataset &dataset) {
             DB_STATUS ret = DBERR_OK;
@@ -434,19 +511,41 @@ namespace APRIL
                 logger::log_error(DBERR_MISSING_FILE, "Couldnt open APRIL FULL file:", dataset.aprilConfig.FULL_intervals_path);
                 return DBERR_MISSING_FILE;
             }
-
+            // dummy object
+            Shape object;
             // next read the dataset info
             ret = storage::reader::partitionFile::loadDatasetInfo(pFile, dataset);
             if (ret != DBERR_OK) {
                 goto CLOSE_AND_EXIT;
             }
-
             // write dummy value for object count. 
             fwrite(&dataset.totalObjects, sizeof(size_t), 1, pFileALL);
             // will replace with the actual value in the end, because some objects may not have FULL intervals
             fwrite(&dataset.totalObjects, sizeof(size_t), 1, pFileFULL);
-            // intervalize dataset objects
-            ret = loadAndIntervalizeContents(dataset, pFile, pFileALL, pFileFULL);
+            // switch based on data type
+            switch (dataset.dataType) {
+                // intervalize dataset objects
+                case DT_POLYGON:
+                    object = shape_factory::createEmptyPolygonShape();
+                    ret = loadAndIntervalizeRegionShape(dataset, pFile, pFileALL, pFileFULL, object);
+                    break;
+                case DT_POINT:
+                    object = shape_factory::createEmptyPointShape();
+                    ret = loadAndIntervalizeNonRegionShape(dataset, pFile, pFileALL, pFileFULL, object);
+                    break;
+                case DT_LINESTRING:
+                    object = shape_factory::createEmptyLineStringShape();
+                    ret = loadAndIntervalizeNonRegionShape(dataset, pFile, pFileALL, pFileFULL, object);
+                    break;
+                case DT_RECTANGLE:
+                    object = shape_factory::createEmptyRectangleShape();
+                    ret = loadAndIntervalizeRegionShape(dataset, pFile, pFileALL, pFileFULL, object);
+                    break;
+                default:
+                    // error
+                    logger::log_error(DBERR_INVALID_DATATYPE, "Invalid datatype in intervalization:", dataset.dataType);
+                    return DBERR_INVALID_DATATYPE;
+            }
             if (ret != DBERR_OK) {
                 logger::log_error(ret, "Failed to load and intervalize dataset contents.");
                 goto CLOSE_AND_EXIT;
