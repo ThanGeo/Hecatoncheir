@@ -4,16 +4,20 @@ namespace APRIL
 {
     namespace writer
     {
-        DB_STATUS saveAPRIL(FILE* pFileALL, FILE* pFileFULL, uint recID, uint sectionID, AprilDataT* aprilData) {
-            // buffered write
-            int buf[3];
-            buf[0] = recID;
-            buf[1] = sectionID;
-            buf[2] = aprilData->numIntervalsALL;
+        DB_STATUS saveAPRIL(FILE* pFileALL, FILE* pFileFULL, size_t recID, uint sectionID, AprilDataT* aprilData) {
             // ALL intervals
-            size_t elementsWritten = fwrite(buf, sizeof(int), 3, pFileALL);
-            if (elementsWritten != 3) {
-                logger::log_error(DBERR_DISK_WRITE_FAILED, "Writing recID, sectionID and numIntervalsALL failed for object with ID", recID);
+            size_t elementsWritten = fwrite(&recID, sizeof(size_t), 1, pFileALL);
+            if (elementsWritten != 1) {
+                logger::log_error(DBERR_DISK_WRITE_FAILED, "Writing recID failed for object with ID", recID);
+                return DBERR_DISK_WRITE_FAILED;
+            }
+            // buffered write for section id and numIntervals
+            int buf[2];
+            buf[0] = sectionID;
+            buf[1] = aprilData->numIntervalsALL;
+            elementsWritten = fwrite(buf, sizeof(int), 2, pFileALL);
+            if (elementsWritten != 2) {
+                logger::log_error(DBERR_DISK_WRITE_FAILED, "Writing sectionID and numIntervalsALL failed for object with ID", recID);
                 return DBERR_DISK_WRITE_FAILED;
             }
             elementsWritten = fwrite(&aprilData->intervalsALL.data()[0], sizeof(uint32_t), aprilData->numIntervalsALL * 2, pFileALL);
@@ -23,10 +27,15 @@ namespace APRIL
             }
             // FULL intervals (if any)
             if(aprilData->numIntervalsFULL > 0){
-                buf[2] = aprilData->numIntervalsFULL;
-                elementsWritten = fwrite(buf, sizeof(int), 3, pFileFULL);
-                if (elementsWritten != 3) {
-                    logger::log_error(DBERR_DISK_WRITE_FAILED, "Writing recID, sectionID and numIntervalsFULL failed for object with ID", recID);
+                elementsWritten = fwrite(&recID, sizeof(size_t), 1, pFileFULL);
+                if (elementsWritten != 1) {
+                    logger::log_error(DBERR_DISK_WRITE_FAILED, "Writing recID failed for object with ID", recID);
+                    return DBERR_DISK_WRITE_FAILED;
+                }
+                buf[1] = aprilData->numIntervalsFULL;
+                elementsWritten = fwrite(buf, sizeof(int), 2, pFileFULL);
+                if (elementsWritten != 2) {
+                    logger::log_error(DBERR_DISK_WRITE_FAILED, "Writing sectionID and numIntervalsFULL failed for object with ID", recID);
                     return DBERR_DISK_WRITE_FAILED;
                 }
                 elementsWritten = fwrite(&aprilData->intervalsFULL.data()[0], sizeof(uint32_t), aprilData->numIntervalsFULL * 2, pFileFULL);
@@ -46,7 +55,8 @@ namespace APRIL
             DB_STATUS ret = DBERR_OK;
             int buf[3];
             size_t objectCount;
-            int recID, sectionID, numIntervals, totalValues;
+            size_t recID;
+            int sectionID, numIntervals, totalValues;
             std::vector<uint32_t> intervals;
             // open interval file
             FILE* pFile = fopen(intervalFilePath.c_str(), "rb");
@@ -63,15 +73,20 @@ namespace APRIL
             }
             // read APRIL for each object
             for (size_t i=0; i<objectCount; i++) {
-                elementsRead = fread(&buf, sizeof(int), 3, pFile);
-                if (elementsRead != 3) {
-                    logger::log_error(DBERR_DISK_READ_FAILED, "Read", elementsRead,"instead of",3,"for object number",i,"of",objectCount);
+                elementsRead = fread(&recID, sizeof(size_t), 1, pFile);
+                if (elementsRead != 1) {
+                    logger::log_error(DBERR_DISK_READ_FAILED, "Couldn't read the recID","for object number",i,"of",objectCount);
                     ret = DBERR_DISK_READ_FAILED;
                     goto CLOSE_AND_EXIT;
                 }
-                recID = buf[0];
-                sectionID = buf[1];
-                numIntervals = buf[2];
+                elementsRead = fread(&buf, sizeof(int), 2, pFile);
+                if (elementsRead != 2) {
+                    logger::log_error(DBERR_DISK_READ_FAILED, "Read", elementsRead,"instead of",2,"for object number",i,"of",objectCount);
+                    ret = DBERR_DISK_READ_FAILED;
+                    goto CLOSE_AND_EXIT;
+                }
+                sectionID = buf[0];
+                numIntervals = buf[1];
                 // X intervals are comprised of X*2 numbers [start,end)
                 totalValues = numIntervals*2;
                 intervals.resize(totalValues);

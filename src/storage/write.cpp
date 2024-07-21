@@ -23,7 +23,7 @@ namespace storage
         DB_STATUS appendBatchToPartitionFile(FILE* outFile, GeometryBatchT* batch, Dataset* dataset) {
             // store each geometry
             for(auto &it: batch->geometries) {
-                fwrite(&it.recID, sizeof(int), 1, outFile);
+                fwrite(&it.recID, sizeof(size_t), 1, outFile);
                 fwrite(&it.partitionCount, sizeof(int), 1, outFile);
                 fwrite(it.partitions.data(), sizeof(int), it.partitionCount * 2, outFile);
                 fwrite(&it.vertexCount, sizeof(int), 1, outFile);

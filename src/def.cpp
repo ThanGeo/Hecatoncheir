@@ -38,7 +38,7 @@ void queryResultReductionFunc(QueryOutputT &in, QueryOutputT &out) {
     }
 }
 
-std::vector<int> getCommonSectionIDsOfObjects(Dataset *datasetR, Dataset *datasetS, int idR, int idS) {
+std::vector<int> getCommonSectionIDsOfObjects(Dataset *datasetR, Dataset *datasetS, size_t idR, size_t idS) {
     auto itR = datasetR->recToSectionIdMap.find(idR);
     auto itS = datasetS->recToSectionIdMap.find(idS);
     std::vector<int> commonSectionIDs;
@@ -255,7 +255,7 @@ void Dataset::deserialize(const char *buffer, int bufferSize) {
     }
 }
 
-void Dataset::addAprilDataToApproximationDataMap(const uint sectionID, const uint recID, const AprilDataT &aprilData) {
+void Dataset::addAprilDataToApproximationDataMap(const uint sectionID, const size_t recID, const AprilDataT &aprilData) {
     // store april data
     this->sectionMap[sectionID].aprilData.insert(std::make_pair(recID, aprilData));
     // store mapping recID -> sectionID
@@ -270,7 +270,7 @@ void Dataset::addAprilDataToApproximationDataMap(const uint sectionID, const uin
     }
 }
 
-void Dataset::addObjectToSectionMap(const uint sectionID, const uint recID) {
+void Dataset::addObjectToSectionMap(const uint sectionID, const size_t recID) {
     AprilDataT aprilData;
     this->sectionMap[sectionID].aprilData.insert(std::make_pair(recID, aprilData));
     // store mapping recID -> sectionID
@@ -285,17 +285,17 @@ void Dataset::addObjectToSectionMap(const uint sectionID, const uint recID) {
     }
 }
 
-void Dataset::addIntervalsToAprilData(const uint sectionID, const uint recID, const int numIntervals, const std::vector<uint32_t> &intervals, const bool ALL) {
+void Dataset::addIntervalsToAprilData(const uint sectionID, const size_t recID, const int numIntervals, const std::vector<uint32_t> &intervals, const bool ALL) {
     // retrieve section
     auto secIT = this->sectionMap.find(sectionID);
     if (secIT == this->sectionMap.end()) {
-        printf("Error: could not find section ID %d in dataset section map\n", sectionID);
+        logger::log_error(DBERR_INVALID_PARAMETER, "could not find section ID", sectionID, "in section map of dataset", this->nickname);
         return;
     }
     // retrieve object
     auto it = secIT->second.aprilData.find(recID);
     if (it == secIT->second.aprilData.end()) {
-        printf("Error: could not find rec ID %d in section map\n", recID);
+        logger::log_error(DBERR_INVALID_PARAMETER, "could not find recID", recID, "in section map of dataset", this->nickname);
         return;
     }
     // replace intervals in april data
@@ -308,7 +308,7 @@ void Dataset::addIntervalsToAprilData(const uint sectionID, const uint recID, co
     }
 }
 
-AprilDataT* Dataset::getAprilDataBySectionAndObjectID(uint sectionID, uint recID) {
+AprilDataT* Dataset::getAprilDataBySectionAndObjectID(uint sectionID, size_t recID) {
     auto sec = this->sectionMap.find(sectionID);
     if (sec != this->sectionMap.end()){
         auto obj = sec->second.aprilData.find(recID);

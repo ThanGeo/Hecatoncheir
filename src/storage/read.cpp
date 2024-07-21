@@ -47,17 +47,18 @@ namespace storage
             }
 
             DB_STATUS loadNextObjectComplete(FILE* pFile, Shape &object) {
-                int intBuf[2];
                 // read recID and partition count
-                size_t elementsRead = fread(&intBuf, sizeof(int), 2, pFile);
-                if (elementsRead != 2) {
-                    logger::log_error(DBERR_DISK_READ_FAILED, "Couldn't read the recID + partitionCount");
+                int partitionCount;
+                size_t elementsRead = fread(&object.recID, sizeof(size_t), 1, pFile);
+                if (elementsRead != 1) {
+                    logger::log_error(DBERR_DISK_READ_FAILED, "Couldn't read the recID");
                     return DBERR_DISK_READ_FAILED;
                 }
-                // rec ID
-                object.recID = intBuf[0];
-                // partitionCount
-                int partitionCount = intBuf[1];
+                elementsRead = fread(&partitionCount, sizeof(int), 1, pFile);
+                if (elementsRead != 1) {
+                    logger::log_error(DBERR_DISK_READ_FAILED, "Couldn't read the  partitionCount");
+                    return DBERR_DISK_READ_FAILED;
+                }
                 // read partitions data
                 std::vector<int> partitionVector;
                 partitionVector.resize(partitionCount * 2);
@@ -71,12 +72,12 @@ namespace storage
                     object.partitions.insert(std::make_pair(partitionVector.at(i), partitionVector.at(i+1)));
                 }
                 // read vertex count
-                elementsRead = fread(&intBuf, sizeof(int), 1, pFile);
+                int vertexCount;
+                elementsRead = fread(&vertexCount, sizeof(int), 1, pFile);
                 if (elementsRead != 1) {
                     logger::log_error(DBERR_DISK_READ_FAILED, "Couldn't read the vertex count");
                     return DBERR_DISK_READ_FAILED;
                 }
-                int vertexCount = intBuf[0];
                 // read the points
                 std::vector<double> coords(vertexCount*2);
                 elementsRead = fread(coords.data(), sizeof(double), vertexCount*2, pFile);

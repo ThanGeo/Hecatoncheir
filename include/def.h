@@ -990,7 +990,7 @@ using RectangleWrapper = GeometryWrapper<bg_rectangle>;
 using ShapeVariant = std::variant<PointWrapper, PolygonWrapper, LineStringWrapper, RectangleWrapper>;
 
 struct Shape {
-    int recID;
+    size_t recID;
     DataTypeE dataType;
     MBR mbr;
     std::vector<Point> vertices;
@@ -1041,7 +1041,7 @@ struct Shape {
     }
 
     void printGeometry() {
-        printf("id: %d\n", recID);
+        printf("id: %zu\n", recID);
         std::visit([](auto&& arg) {
             arg.printGeometry();
         }, shape);
@@ -1180,7 +1180,7 @@ typedef struct Section {
     // double normRasterxMin, normRasteryMin, normRasterxMax, normRasteryMax;
     // APRIL data
     size_t objectCount = 0;
-    std::unordered_map<uint, AprilDataT> aprilData;
+    std::unordered_map<size_t, AprilDataT> aprilData;
 } SectionT;
 
 typedef struct DataspaceInfo {
@@ -1347,7 +1347,7 @@ struct Dataset{
     // APRIL
     AprilConfigT aprilConfig;
     std::unordered_map<uint, SectionT> sectionMap;                        // map: k,v = sectionID,(unordered map of k,v = recID,aprilData)
-    std::unordered_map<uint,std::vector<uint>> recToSectionIdMap;         // map: k,v = recID,vector<sectionID>: maps recs to sections 
+    std::unordered_map<size_t,std::vector<uint>> recToSectionIdMap;         // map: k,v = recID,vector<sectionID>: maps recs to sections 
 
     /**
      * Methods
@@ -1374,10 +1374,10 @@ struct Dataset{
      */
     void deserialize(const char *buffer, int bufferSize);
     // APRIL
-    void addAprilDataToApproximationDataMap(const uint sectionID, const uint recID, const AprilDataT &aprilData);
-    void addObjectToSectionMap(const uint sectionID, const uint recID);
-    void addIntervalsToAprilData(const uint sectionID, const uint recID, const int numIntervals, const std::vector<uint32_t> &intervals, const bool ALL);
-    AprilDataT* getAprilDataBySectionAndObjectID(uint sectionID, uint recID);
+    void addAprilDataToApproximationDataMap(const uint sectionID, const size_t recID, const AprilDataT &aprilData);
+    void addObjectToSectionMap(const uint sectionID, const size_t recID);
+    void addIntervalsToAprilData(const uint sectionID, const size_t recID, const int numIntervals, const std::vector<uint32_t> &intervals, const bool ALL);
+    AprilDataT* getAprilDataBySectionAndObjectID(uint sectionID, size_t recID);
 };
 
 struct Query{
@@ -1597,7 +1597,7 @@ struct DatasetInfo {
     }
 };
 
-extern std::vector<int> getCommonSectionIDsOfObjects(Dataset *datasetR, Dataset *datasetS, int idR, int idS);
+extern std::vector<int> getCommonSectionIDsOfObjects(Dataset *datasetR, Dataset *datasetS, size_t idR, size_t idS);
 
 typedef struct ApproximationInfo {
     ApproximationTypeE type;   // sets which of the following fields will be used
@@ -1630,19 +1630,19 @@ struct Config {
 };
 
 typedef struct Geometry {
-    int recID;
+    size_t recID;
     int partitionCount;
     std::vector<int> partitions;    // tuples of <partition ID, twolayer class>
     int vertexCount;
     std::vector<double> coords;
 
-    Geometry(int recID, int vertexCount, std::vector<double> &coords) {
+    Geometry(size_t recID, int vertexCount, std::vector<double> &coords) {
         this->recID = recID;
         this->vertexCount = vertexCount;
         this->coords = coords;
     }
 
-    Geometry(int recID, std::vector<int> &partitions, int vertexCount, std::vector<double> &coords) {
+    Geometry(size_t recID, std::vector<int> &partitions, int vertexCount, std::vector<double> &coords) {
         this->recID = recID;
         this->partitions = partitions;
         this->partitionCount = partitions.size() / 2; 
@@ -1689,7 +1689,7 @@ typedef struct GeometryBatch {
         size += sizeof(size_t);                        // objectCount
         
         for (auto &it: geometries) {
-            size += sizeof(it.recID);
+            size += sizeof(size_t); // recID
             size += sizeof(int);    // partition count
             size += it.partitions.size() * 2 * sizeof(int); // partitions id + class
             size += sizeof(it.vertexCount); // vertex count
@@ -1721,8 +1721,8 @@ typedef struct GeometryBatch {
 
         // add batch geometry info
         for (auto &it : geometries) {
-            *reinterpret_cast<int*>(localBuffer) = it.recID;
-            localBuffer += sizeof(int);
+            *reinterpret_cast<size_t*>(localBuffer) = it.recID;
+            localBuffer += sizeof(size_t);
             *reinterpret_cast<int*>(localBuffer) = it.partitionCount;
             localBuffer += sizeof(int);
             std::memcpy(localBuffer, it.partitions.data(), it.partitionCount * 2 * sizeof(int));
@@ -1742,7 +1742,8 @@ typedef struct GeometryBatch {
      * @param buffer 
      */
     void deserialize(const char *buffer, int bufferSize) {
-        int recID, vertexCount, partitionCount;
+        size_t recID;
+        int vertexCount, partitionCount;
         const char *localBuffer = buffer;
 
         // get object count
@@ -1755,8 +1756,8 @@ typedef struct GeometryBatch {
         // deserialize fields for each object in the batch
         for (size_t i=0; i<objectCount; i++) {
             // rec id
-            recID = *reinterpret_cast<const int*>(localBuffer);
-            localBuffer += sizeof(int);
+            recID = *reinterpret_cast<const size_t*>(localBuffer);
+            localBuffer += sizeof(size_t);
             // partition count
             partitionCount = *reinterpret_cast<const int*>(localBuffer);
             localBuffer += sizeof(int);

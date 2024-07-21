@@ -173,7 +173,7 @@ namespace partitioning
         // read total objects (first line of file)
         std::getline(fin, line);
         fin.close();
-        size_t objectCount = stoi(line);
+        size_t objectCount = (size_t) std::stoull(line);
         // dataset global bounds
         double global_xMin = std::numeric_limits<int>::max();
         double global_yMin = std::numeric_limits<int>::max();
@@ -182,7 +182,7 @@ namespace partitioning
         // spawn all available threads (processors)
         #pragma omp parallel firstprivate(line, objectCount) reduction(min:global_xMin) reduction(min:global_yMin) reduction(max:global_xMax)  reduction(max:global_yMax)
         {
-            int recID;
+            size_t recID;
             double x,y;
             DB_STATUS local_ret = DBERR_OK;
             int tid = omp_get_thread_num();
@@ -214,7 +214,7 @@ namespace partitioning
                 std::stringstream ss(line);
                 // recID
                 std::getline(ss, token, ',');
-                recID = std::stoi(token);
+                recID = (size_t) std::stoull(token);
                 // Read the coords x,y
                 while (std::getline(ss, token, ',')) {
                     std::stringstream coordStream(token);
@@ -264,13 +264,13 @@ namespace partitioning
         // read total objects (first line of file)
         std::getline(fin, line);
         fin.close();
-        int objectCount = stoi(line);
+        size_t objectCount = (size_t) std::stoull(line);
         logger::log_task("Partitioning", objectCount, "objects...");
         // count how many batches have been sent in total
         int batchesSent = 0;
         #pragma omp parallel firstprivate(batchMap, line, objectCount) reduction(+:batchesSent)
         {
-            int recID;
+            size_t recID;
             int partitionID;
             int vertexCount;
             double x,y;
@@ -279,9 +279,9 @@ namespace partitioning
             int tid = omp_get_thread_num();
             int totalThreads = omp_get_num_threads();
             // calculate which lines this thread will handle
-            int linesPerThread = (objectCount / totalThreads);
-            int fromLine = 1 + (tid * linesPerThread);          // first line is object count
-            int toLine = 1 + ((tid + 1) * linesPerThread);    // exclusive
+            size_t linesPerThread = (objectCount / totalThreads);
+            size_t fromLine = 1 + (tid * linesPerThread);          // first line is object count
+            size_t toLine = 1 + ((tid + 1) * linesPerThread);    // exclusive
             if (tid == totalThreads - 1) {
                 toLine = objectCount;
             }
@@ -293,11 +293,11 @@ namespace partitioning
                 ret = DBERR_MISSING_FILE;
             }
             // jump to start line
-            for (int i=0; i<fromLine; i++) {
+            for (size_t i=0; i<fromLine; i++) {
                 fin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
             }
             // loop
-            int currentLine = fromLine;
+            size_t currentLine = fromLine;
             std::string token;
             while (true) {
                 // next object
@@ -309,7 +309,7 @@ namespace partitioning
                 yMax = -std::numeric_limits<int>::max();
                 // recID
                 std::getline(ss, token, ',');
-                recID = std::stoi(token);
+                recID = (size_t) std::stoull(token);
                 // Read the coords x,y
                 vertexCount = 0;
                 std::vector<double> coords;

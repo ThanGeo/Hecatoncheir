@@ -407,10 +407,6 @@ namespace APRIL
     
         DB_STATUS init(Dataset &dataset) {
             DB_STATUS ret = DBERR_OK;
-            int recID, vertexCount;
-            double xMin, yMin, xMax, yMax;
-            double coordLoadSpace[1000000];
-            int objectsInFullFile = 0;
             // init rasterization environment
             ret = setRasterBounds(dataset.dataspaceInfo.xMinGlobal, dataset.dataspaceInfo.yMinGlobal, dataset.dataspaceInfo.xMaxGlobal, dataset.dataspaceInfo.yMaxGlobal);
             if (ret != DBERR_OK) {
