@@ -92,10 +92,14 @@ namespace APRIL
             return UNCERTAIN;
         }
 
-        static inline void mapObjectToHilbertSpace(Shape &object, RasterData &rasterData, uint32_t cellsPerDim){
+        static inline DB_STATUS mapObjectToHilbertSpace(Shape &object, RasterData &rasterData, uint32_t cellsPerDim){
             //first, map the object's coordinates to this section's hilbert space
             double x,y;
             const std::vector<bg_point_xy>* vertices = object.getReferenceToPoints();
+            if (vertices == nullptr) {
+                logger::log_error(DBERR_NULL_PTR_EXCEPTION, "Empty vertex list returned for object with id", object.recID);
+                return DBERR_NULL_PTR_EXCEPTION;
+            }
             for (int i=0; i<vertices->size(); i++) {
                 x = vertices->at(i).x();
                 y = vertices->at(i).y();
@@ -115,6 +119,8 @@ namespace APRIL
             //set dimensions for buffers 
             rasterData.bufferWidth = rasterData.maxCellX - rasterData.minCellX + 1;
             rasterData.bufferHeight = rasterData.maxCellY - rasterData.minCellY + 1;
+
+            return DBERR_OK;
         }
 
         static uint32_t** calculatePartialAndUncertain(Shape &object, uint32_t &cellsPerDim, RasterData &rasterData){
@@ -141,6 +147,10 @@ namespace APRIL
             double error_margin = 0.00001;
             // get const reference to the shape's vertices
             const std::vector<bg_point_xy>* vertices = object.getReferenceToPoints();
+            if (vertices == nullptr) {
+                logger::log_error(DBERR_NULL_PTR_EXCEPTION, "Empty vertex list returned for object with id", object.recID);
+                return M;
+            }
 
             // if only one point
             if (object.getVertexCount() == 1) {
@@ -353,8 +363,12 @@ namespace APRIL
             clock_t timer;
             RasterData rasterData;
             //first of all map the object's coordinates to this section's hilbert space
-            mapObjectToHilbertSpace(object, rasterData, cellsPerDim);
-            // compute partial cells
+            ret = mapObjectToHilbertSpace(object, rasterData, cellsPerDim);
+            if (ret != DBERR_OK) {
+                logger::log_error(ret, "Couldn't map to hilbert space object with id", object.recID);
+                return ret;
+            }
+            // compute partial cells (todo: adjust to return DB_STATUS)
             uint32_t **M = calculatePartialAndUncertain(object, cellsPerDim, rasterData);
             std::vector<uint32_t> partialCells;
             partialCells = getPartialCellsFromMatrix(rasterData, cellsPerDim, M);
@@ -376,7 +390,11 @@ namespace APRIL
             clock_t timer;
             RasterData rasterData;
             //first of all map the object's coordinates to this section's hilbert space
-            mapObjectToHilbertSpace(object, rasterData, cellsPerDim);
+            ret = mapObjectToHilbertSpace(object, rasterData, cellsPerDim);
+            if (ret != DBERR_OK) {
+                logger::log_error(ret, "Couldn't map to hilbert space object with id", object.recID);
+                return ret;
+            }
             // compute partial cells
             uint32_t **M = calculatePartialAndUncertain(object, cellsPerDim, rasterData);
             std::vector<uint32_t> partialCells;

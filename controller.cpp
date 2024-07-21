@@ -28,7 +28,7 @@ static void hostTerminate() {
 }
 
 static void printResults() {
-    logger::log_success("  MBR Results:", g_queryOutput.postMBRFilterCandidates);
+    logger::log_success("MBR Results:", g_queryOutput.postMBRFilterCandidates);
     switch (g_config.queryInfo.type) {
         case Q_DISJOINT:
         case Q_INTERSECT:
