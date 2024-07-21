@@ -98,7 +98,7 @@ namespace APRIL
         }
 
         static inline void mapObjectToHilbertSpace(Shape &object, RasterData &rasterData, uint32_t cellsPerDim){
-            //first, map the polygon's coordinates to this section's hilbert space
+            //first, map the object's coordinates to this section's hilbert space
             for (int i=0; i<object.vertices.size(); i++) {
                 mapXYToHilbert(object.vertices[i].x, object.vertices[i].y, cellsPerDim);
                 object.modifyBoostPointByIndex(i, object.vertices[i].x, object.vertices[i].y);
@@ -176,7 +176,7 @@ namespace APRIL
                     stepX = x2 > x1 ? 1 : -1;
                     stepY = y2 > y1 ? 1 : -1;
 
-                    //define the polygon edge
+                    //define the edge
                     bg_linestring ls{{x1, y1},{x2, y2}};
                     edgeLength = boost::geometry::length(ls);
 
@@ -350,7 +350,7 @@ namespace APRIL
             DB_STATUS ret = DBERR_OK;
             int objectsInFullFile = 0;
             // loop objects 
-            for(int i=0; i<dataset.totalObjects; i++){
+            for(size_t i=0; i<dataset.totalObjects; i++){
                 Shape object;
                 // check datatype (todo: remove from loop)
                 switch (dataset.dataType) {
@@ -374,15 +374,15 @@ namespace APRIL
                 // get next object to rasterize
                 ret = storage::reader::partitionFile::loadNextObjectComplete(pFile, object);
                 if (ret != DBERR_OK) {
-                    logger::log_error(ret, "Failed while reading polygon number",i,"from partition file");
+                    logger::log_error(ret, "Failed while reading object number",i,"from partition file");
                     return ret;
                 }
                 // generate APRIL
                 AprilDataT aprilData;
                 ret = intervalize(object, dataset.aprilConfig.getCellsPerDim(), aprilData);
                 if (ret != DBERR_OK || aprilData.numIntervalsALL == 0) {
-                    // at least 1 ALL interval is needed for each polygon, otherwise there is an error
-                    logger::log_error(DBERR_APRIL_CREATE, "Failed to generate APRIL for polygon with ID", object.recID);
+                    // at least 1 ALL interval is needed for each object, otherwise there is an error
+                    logger::log_error(DBERR_APRIL_CREATE, "Failed to generate APRIL for object with ID", object.recID);
                     return DBERR_APRIL_CREATE;
                 }
                 // save on disk
@@ -445,10 +445,10 @@ namespace APRIL
                 goto CLOSE_AND_EXIT;
             }
 
-            // write dummy value for polygon count. 
-            fwrite(&dataset.totalObjects, sizeof(int), 1, pFileALL);
+            // write dummy value for object count. 
+            fwrite(&dataset.totalObjects, sizeof(size_t), 1, pFileALL);
             // will replace with the actual value in the end, because some objects may not have FULL intervals
-            fwrite(&dataset.totalObjects, sizeof(int), 1, pFileFULL);
+            fwrite(&dataset.totalObjects, sizeof(size_t), 1, pFileFULL);
             // intervalize dataset objects
             ret = loadAndIntervalizeContents(dataset, pFile, pFileALL, pFileFULL);
             if (ret != DBERR_OK) {

@@ -13,12 +13,12 @@ namespace APRIL
             // ALL intervals
             size_t elementsWritten = fwrite(buf, sizeof(int), 3, pFileALL);
             if (elementsWritten != 3) {
-                logger::log_error(DBERR_DISK_WRITE_FAILED, "Writing recID, sectionID and numIntervalsALL failed for polygon with ID", recID);
+                logger::log_error(DBERR_DISK_WRITE_FAILED, "Writing recID, sectionID and numIntervalsALL failed for object with ID", recID);
                 return DBERR_DISK_WRITE_FAILED;
             }
             elementsWritten = fwrite(&aprilData->intervalsALL.data()[0], sizeof(uint32_t), aprilData->numIntervalsALL * 2, pFileALL);
             if (elementsWritten != aprilData->numIntervalsALL * 2) {
-                logger::log_error(DBERR_DISK_WRITE_FAILED, "Writing ALL intervals failed for polygon with ID", recID);
+                logger::log_error(DBERR_DISK_WRITE_FAILED, "Writing ALL intervals failed for object with ID", recID);
                 return DBERR_DISK_WRITE_FAILED;
             }
             // FULL intervals (if any)
@@ -26,12 +26,12 @@ namespace APRIL
                 buf[2] = aprilData->numIntervalsFULL;
                 elementsWritten = fwrite(buf, sizeof(int), 3, pFileFULL);
                 if (elementsWritten != 3) {
-                    logger::log_error(DBERR_DISK_WRITE_FAILED, "Writing recID, sectionID and numIntervalsFULL failed for polygon with ID", recID);
+                    logger::log_error(DBERR_DISK_WRITE_FAILED, "Writing recID, sectionID and numIntervalsFULL failed for object with ID", recID);
                     return DBERR_DISK_WRITE_FAILED;
                 }
                 elementsWritten = fwrite(&aprilData->intervalsFULL.data()[0], sizeof(uint32_t), aprilData->numIntervalsFULL * 2, pFileFULL);
                 if (elementsWritten != aprilData->numIntervalsFULL * 2) {
-                    logger::log_error(DBERR_DISK_WRITE_FAILED, "Writing FULL intervals failed for polygon with ID", recID);
+                    logger::log_error(DBERR_DISK_WRITE_FAILED, "Writing FULL intervals failed for object with ID", recID);
                     return DBERR_DISK_WRITE_FAILED;
                 }
             }
@@ -45,7 +45,8 @@ namespace APRIL
         static DB_STATUS loadIntervals(std::string &intervalFilePath, Dataset &dataset, bool ALL) {
             DB_STATUS ret = DBERR_OK;
             int buf[3];
-            int polygonCount, recID, sectionID, numIntervals, totalValues;
+            size_t objectCount;
+            int recID, sectionID, numIntervals, totalValues;
             std::vector<uint32_t> intervals;
             // open interval file
             FILE* pFile = fopen(intervalFilePath.c_str(), "rb");
@@ -53,18 +54,18 @@ namespace APRIL
                 logger::log_error(DBERR_MISSING_FILE, "Could not open partitioned dataset file from path:", intervalFilePath);
                 return DBERR_MISSING_FILE;
             }
-            // read polygon count
-            size_t elementsRead = fread(&polygonCount, sizeof(int), 1, pFile);
+            // read object count
+            size_t elementsRead = fread(&objectCount, sizeof(size_t), 1, pFile);
             if (elementsRead != 1) {
-                logger::log_error(DBERR_DISK_READ_FAILED, "Couldn't read polygon count");
+                logger::log_error(DBERR_DISK_READ_FAILED, "Couldn't read object count");
                 ret = DBERR_DISK_READ_FAILED;
                 goto CLOSE_AND_EXIT;
             }
-            // read APRIL for each polygon
-            for (int i=0; i<polygonCount; i++) {
+            // read APRIL for each object
+            for (size_t i=0; i<objectCount; i++) {
                 elementsRead = fread(&buf, sizeof(int), 3, pFile);
                 if (elementsRead != 3) {
-                    logger::log_error(DBERR_DISK_READ_FAILED, "Read", elementsRead,"instead of",3,"for polygon number",i,"of",polygonCount);
+                    logger::log_error(DBERR_DISK_READ_FAILED, "Read", elementsRead,"instead of",3,"for object number",i,"of",objectCount);
                     ret = DBERR_DISK_READ_FAILED;
                     goto CLOSE_AND_EXIT;
                 }

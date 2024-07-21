@@ -36,10 +36,10 @@ namespace storage
             return DBERR_OK;
         }
 
-        DB_STATUS updateObjectCountInFile(FILE* outFile, int objectCount) {
+        DB_STATUS updateObjectCountInFile(FILE* outFile, size_t objectCount) {
             // go to the begining place in the file
             fseek(outFile, 0, SEEK_SET);
-            size_t elementsWritten = fwrite(&objectCount, sizeof(objectCount), 1, outFile);
+            size_t elementsWritten = fwrite(&objectCount, sizeof(size_t), 1, outFile);
             if (elementsWritten != 1) {
                 logger::log_error(DBERR_DISK_WRITE_FAILED, "Failed while updating object count in partition file");
                 return DBERR_DISK_WRITE_FAILED;

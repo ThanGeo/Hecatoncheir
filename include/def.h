@@ -1179,7 +1179,7 @@ typedef struct Section {
     double rasterxMin, rasteryMin, rasterxMax, rasteryMax;
     // double normRasterxMin, normRasteryMin, normRasterxMax, normRasteryMax;
     // APRIL data
-    uint objectCount = 0;
+    size_t objectCount = 0;
     std::unordered_map<uint, AprilDataT> aprilData;
 } SectionT;
 
@@ -1339,7 +1339,7 @@ struct Dataset{
     // holds the dataset's dataspace info (MBR, extent)
     DataspaceInfoT dataspaceInfo;
     // unique object count
-    int totalObjects = 0;
+    size_t totalObjects = 0;
     // two layer
     TwoLayerIndex twoLayerIndex;
     /* approximations */ 
@@ -1662,11 +1662,11 @@ typedef struct Geometry {
 
 typedef struct GeometryBatch {
     // serializable
-    int objectCount = 0;
+    size_t objectCount = 0;
     std::vector<GeometryT> geometries;
     // unserializable/unclearable (todo: make const?)
     int destRank = -1;   // destination node rank
-    int maxObjectCount; 
+    size_t maxObjectCount; 
     MPI_Comm* comm; // communicator that the batch will be send through
     int tag = -1;        // MPI tag = indicates spatial data type
 
@@ -1686,7 +1686,7 @@ typedef struct GeometryBatch {
     // calculate the size needed for the serialization buffer
     int calculateBufferSize() {
         int size = 0;
-        size += sizeof(int);                        // objectCount
+        size += sizeof(size_t);                        // objectCount
         
         for (auto &it: geometries) {
             size += sizeof(it.recID);
@@ -1716,8 +1716,8 @@ typedef struct GeometryBatch {
         char* localBuffer = *buffer;
 
         // add object count
-        *reinterpret_cast<int*>(localBuffer) = objectCount;
-        localBuffer += sizeof(int);
+        *reinterpret_cast<size_t*>(localBuffer) = objectCount;
+        localBuffer += sizeof(size_t);
 
         // add batch geometry info
         for (auto &it : geometries) {
@@ -1746,14 +1746,14 @@ typedef struct GeometryBatch {
         const char *localBuffer = buffer;
 
         // get object count
-        int objectCount = *reinterpret_cast<const int*>(localBuffer);
-        localBuffer += sizeof(int);
+        size_t objectCount = *reinterpret_cast<const size_t*>(localBuffer);
+        localBuffer += sizeof(size_t);
 
         // extend reserve space
         geometries.reserve(geometries.size() + objectCount);
 
         // deserialize fields for each object in the batch
-        for (int i=0; i<objectCount; i++) {
+        for (size_t i=0; i<objectCount; i++) {
             // rec id
             recID = *reinterpret_cast<const int*>(localBuffer);
             localBuffer += sizeof(int);

@@ -13,7 +13,7 @@ namespace storage
         /**
          * updates the first entry (integer) of a binary file with the new objectCount value
          */
-        DB_STATUS updateObjectCountInFile(FILE* outFile, int objectCount);
+        DB_STATUS updateObjectCountInFile(FILE* outFile, size_t objectCount);
     }
 }
 

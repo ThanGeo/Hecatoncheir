@@ -8,7 +8,6 @@ if(NOT CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE Release)
 endif()
 
-# set(CMAKE_CXX_FLAGS "-Wall -Wextra")
 set(CMAKE_CXX_FLAGS "-fopenmp")
 set(CMAKE_CXX_FLAGS_DEBUG "-g")
 set(CMAKE_CXX_FLAGS_RELEASE "-O3")
@@ -21,26 +20,6 @@ endif()
 
 # supress warnings
 # add_definitions(-w)
-
-# include_directories(SpatialLib)
-# if(NOT TARGET SpatialLib)
-#     add_subdirectory(SpatialLib)
-# endif()
-
-# include_directories(Rasterizer)
-# if(NOT TARGET Rasterizer)
-#     add_subdirectory(Rasterizer)
-# endif()
-
-# include_directories(APRIL)
-# if(NOT TARGET APRIL)
-#     add_subdirectory(APRIL)
-# endif()
-
-# include_directories(TwoLayerFilter)
-# if(NOT TARGET TwoLayerFilter)
-#     add_subdirectory(TwoLayerFilter)
-# endif()
 
 set(SrcFiles
     src/def.cpp
@@ -103,10 +82,3 @@ target_link_libraries(controller ${MPI_C_LIBRARIES})
 target_link_libraries(agent ${PROJECT_NAME})
 target_link_libraries(agent ${Boost_LIBRARIES})
 target_link_libraries(agent ${MPI_C_LIBRARIES})
-# target_link_libraries(agent APRIL)
-# target_link_libraries(controller APRIL)
-# target_link_libraries(main TwoLayerFilter)
-# target_link_libraries(agent SpatialLib)
-# target_link_libraries(controller SpatialLib)
-# target_link_libraries(agent Rasterizer)
-# target_link_libraries(controller Rasterizer)

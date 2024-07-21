@@ -18,7 +18,7 @@ namespace storage
 
             /**
              * loads dataset info from the partition file. The pfile pos must be in the begining
-             * loads: polygonCount, dataset nickname, dataspace MBR
+             * loads: objectCount, dataset nickname, dataspace MBR
              */
             DB_STATUS loadDatasetInfo(FILE* pFile, Dataset &dataset);
 

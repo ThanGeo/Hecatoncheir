@@ -187,17 +187,6 @@ namespace refinement
         bool isMeet(Shape &objR, Shape &objS);
 
     }
-
-    /**
-     * @brief returns a bg polygon from disk using the offset map
-     * flag R indicates which file to load from (true = R, false = S)
-     * 
-     * @param id 
-     * @param flag 
-     * @return bg_polygon 
-     */
-    bg_polygon loadBoostPolygonByIDandFlag(uint id, bool R);
-
 }
 
 #endif

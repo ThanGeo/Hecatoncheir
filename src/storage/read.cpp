@@ -11,10 +11,10 @@ namespace storage
                 DB_STATUS ret = DBERR_OK;
                 double xMin, yMin, xMax, yMax;
                 int length;
-                // polygon count
-                size_t elementsRead = fread(&dataset.totalObjects, sizeof(int), 1, pFile);
+                // object count
+                size_t elementsRead = fread(&dataset.totalObjects, sizeof(size_t), 1, pFile);
                 if (elementsRead != 1) {
-                    logger::log_error(DBERR_DISK_READ_FAILED, "Couldn't read the polygon count");
+                    logger::log_error(DBERR_DISK_READ_FAILED, "Couldn't read the object count");
                     return DBERR_DISK_READ_FAILED;
                 }
                 // read data type
@@ -108,7 +108,7 @@ namespace storage
             static DB_STATUS loadPolygonDatasetContents(FILE *pFile, Dataset &dataset) {
                 DB_STATUS ret = DBERR_OK;
                 // read data (vector and create MBRs as well)
-                for (int i=0; i<dataset.totalObjects; i++) {
+                for (size_t i=0; i<dataset.totalObjects; i++) {
                     // read next object
                     Shape object = shape_factory::createEmptyPolygonShape();
                     ret = loadNextObjectComplete(pFile, object);
@@ -128,7 +128,7 @@ namespace storage
             static DB_STATUS loadLinestringDatasetContents(FILE *pFile, Dataset &dataset) {
                 DB_STATUS ret = DBERR_OK;
                 // read data (vector and create MBRs as well)
-                for (int i=0; i<dataset.totalObjects; i++) {
+                for (size_t i=0; i<dataset.totalObjects; i++) {
                     // read next object
                     Shape object = shape_factory::createEmptyLineStringShape();
                     ret = loadNextObjectComplete(pFile, object);
@@ -147,7 +147,7 @@ namespace storage
             static DB_STATUS loadPointDatasetContents(FILE *pFile, Dataset &dataset) {
                 DB_STATUS ret = DBERR_OK;
                 // read data (vector and create MBRs as well)
-                for (int i=0; i<dataset.totalObjects; i++) {
+                for (size_t i=0; i<dataset.totalObjects; i++) {
                     // read next object
                     Shape object = shape_factory::createEmptyPointShape();
                     ret = loadNextObjectComplete(pFile, object);
@@ -166,7 +166,7 @@ namespace storage
             static DB_STATUS loadRectangleDatasetContents(FILE *pFile, Dataset &dataset) {
                 DB_STATUS ret = DBERR_OK;
                 // read data (vector and create MBRs as well)
-                for (int i=0; i<dataset.totalObjects; i++) {
+                for (size_t i=0; i<dataset.totalObjects; i++) {
                     // read next object
                     Shape object = shape_factory::createEmptyRectangleShape();
                     ret = loadNextObjectComplete(pFile, object);

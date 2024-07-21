@@ -2,9 +2,9 @@
 
 namespace comm 
 {
-    static int getBatchObjectCountFromMessage(SerializedMsgT<char> &msg) {
-        int objectCount = -1;
-        memcpy(&objectCount, msg.data, sizeof(int));
+    static size_t getBatchObjectCountFromMessage(SerializedMsgT<char> &msg) {
+        size_t objectCount = -1;
+        memcpy(&objectCount, msg.data, sizeof(size_t));
         return objectCount;
     }
 
@@ -145,7 +145,7 @@ namespace comm
                 return ret;
             }
             // get batch object count
-            int objectCount = getBatchObjectCountFromMessage(msg);
+            size_t objectCount = getBatchObjectCountFromMessage(msg);
             if (objectCount == 0) {
                 continueListening = 0;
             }
@@ -339,7 +339,7 @@ namespace comm
             FILE* outFile;
             SerializedMsgT<char> datasetInfoMsg(MPI_CHAR);
             int listen = 1;
-            int dummy = -1;
+            size_t dummy = 0;
 
             // proble blockingly for the dataset info
             DB_STATUS ret = probeBlocking(PARENT_RANK, MPI_ANY_TAG, g_local_comm, status);
@@ -373,10 +373,9 @@ namespace comm
                 return DBERR_MISSING_FILE;
             }
 
-            // write a dummy value for the total polygon count in the very begining of the file
+            // write a dummy value for the total object count in the very begining of the file
             // it will be corrected when the batches are finished
-            
-            fwrite(&dummy, sizeof(int), 1, outFile);
+            fwrite(&dummy, sizeof(size_t), 1, outFile);
 
             // write the dataset info to the partition file
             ret = storage::writer::appendDatasetInfoToPartitionFile(outFile, &dataset);
