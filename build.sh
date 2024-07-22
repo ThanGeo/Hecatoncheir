@@ -56,7 +56,7 @@ if [ "$systype" = "cluster" ]; then
   echo "-- Syncing code across machines..."
   # sync for each node and append to hostfile
   hostfile="hostfile"
-  echo "# node specification" > $hostfile
+  > $hostfile
   for node in "${NODES[@]}"; do
     # echo "Syncing code to $node..."
     sync_code $node
@@ -87,6 +87,9 @@ echo -e "args=\${@:2}" >> $runscript
 echo -e "numre='^[0-9]+$'" >> $runscript
 echo -e "if ! [[ \$numnodes =~ \$numre ]] ; then\n\techo \"number of nodes must be a number\"\n\texit 1\nfi" >> $runscript
 echo -e "echo \"Number of nodes: \$numnodes\"" >> $runscript
+echo -e "# edit the hostfile" >> $runscript
+echo -e "head -n \$numnodes hostfile > temp_hostfile.txt && mv temp_hostfile.txt hostfile" >> $runscript
+echo -e "#execute" >> $runscript
 echo -e "cd build\nmpirun.mpich -np \$numnodes $hostfile ./controller -t $type -c $configfilepath \$args" >> $runscript
 echo -e "cd .." >> $runscript
 chmod +x $runscript

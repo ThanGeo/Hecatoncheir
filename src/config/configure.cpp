@@ -55,7 +55,6 @@ namespace configure
                 return DBERR_CREATE_DIR;
             }
         }
-
         if (!verifyDirectory(g_config.dirPaths.approximationPath) ) {
             // if dataset config directory doesn't exist, create
             ret = mkdir(g_config.dirPaths.approximationPath.c_str(), 0777);
