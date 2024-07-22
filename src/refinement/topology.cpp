@@ -94,9 +94,9 @@ namespace refinement
             return true;
         }
 
-        int refineInsideCoveredbyTruehitIntersect(Shape &objR, Shape &objS) {
+        int refineInsideCoveredbyTruehitIntersect(Shape* objR, Shape* objS) {
             // get the mask code
-            std::string code = objR.createMaskCode(objS);
+            std::string code = objR->createMaskCode(*objS);
             // covered by
             if (compareMasks(code, coveredbyCode1) || compareMasks(code, coveredbyCode2) || 
                 compareMasks(code, coveredbyCode3) || compareMasks(code, coveredbyCode4)) {
@@ -110,9 +110,9 @@ namespace refinement
             return TR_INTERSECT;
         }
 
-        int refineDisjointInsideCoveredbyMeetIntersect(Shape &objR, Shape &objS) {
+        int refineDisjointInsideCoveredbyMeetIntersect(Shape* objR, Shape* objS) {
             // get the mask code
-            std::string code = objR.createMaskCode(objS);
+            std::string code = objR->createMaskCode(*objS);
             // disjoint
             if (compareMasks(code, disjointCode)) {
                 return TR_DISJOINT;
@@ -134,9 +134,9 @@ namespace refinement
             return TR_INTERSECT;
         }
 
-        int refineContainsCoversTruehitIntersect(Shape &objR, Shape &objS) {
+        int refineContainsCoversTruehitIntersect(Shape* objR, Shape* objS) {
             // get the mask code
-            std::string code = objR.createMaskCode(objS);
+            std::string code = objR->createMaskCode(*objS);
             // covers
             if (compareMasks(code, coversCode1) || compareMasks(code, coversCode2) || 
                 compareMasks(code, coversCode3) || compareMasks(code, coversCode4)) {
@@ -150,9 +150,9 @@ namespace refinement
             return TR_INTERSECT;
         }
 
-        int refineDisjointContainsCoversMeetIntersect(Shape &objR, Shape &objS) {
+        int refineDisjointContainsCoversMeetIntersect(Shape* objR, Shape* objS) {
             // get the mask code
-            std::string code = objR.createMaskCode(objS);
+            std::string code = objR->createMaskCode(*objS);
             // disjoint
             if (compareMasks(code, disjointCode)) {
                 return TR_DISJOINT;
@@ -175,9 +175,9 @@ namespace refinement
         }
 
 
-        int refineDisjointMeetIntersect(Shape &objR, Shape &objS) {
+        int refineDisjointMeetIntersect(Shape* objR, Shape* objS) {
             // get the mask code
-            std::string code = objR.createMaskCode(objS);   
+            std::string code = objR->createMaskCode(*objS);   
             // disjoint
             if (compareMasks(code, disjointCode)) {
                 return TR_DISJOINT;
@@ -190,9 +190,9 @@ namespace refinement
             return TR_INTERSECT;
         }
 
-        int refineCoversCoveredByTrueHitIntersect(Shape &objR, Shape &objS) {
+        int refineCoversCoveredByTrueHitIntersect(Shape* objR, Shape* objS) {
             // get the mask code
-            std::string code = objR.createMaskCode(objS);     
+            std::string code = objR->createMaskCode(*objS);     
             // covers
             if (compareMasks(code, coversCode1) || compareMasks(code, coversCode2) || 
                 compareMasks(code, coversCode3) || compareMasks(code, coversCode4)) {
@@ -211,9 +211,9 @@ namespace refinement
             return TR_INTERSECT;
         }
 
-        int refineEqualCoversCoveredByTrueHitIntersect(Shape &objR, Shape &objS) {
+        int refineEqualCoversCoveredByTrueHitIntersect(Shape* objR, Shape* objS) {
             // get the mask code
-            std::string code = objR.createMaskCode(objS);
+            std::string code = objR->createMaskCode(*objS);
             // equal
             if(compareMasks(code, equalCode)) {
                 return TR_EQUAL;
@@ -238,9 +238,9 @@ namespace refinement
         }
 
 
-        int refineCoversTrueHitIntersect(Shape &objR, Shape &objS) {
+        int refineCoversTrueHitIntersect(Shape* objR, Shape* objS) {
             // get the mask code
-            std::string code = objR.createMaskCode(objS);
+            std::string code = objR->createMaskCode(*objS);
             // covers
             if (compareMasks(code, coversCode1) || compareMasks(code, coversCode2) || 
                 compareMasks(code, coversCode3) || compareMasks(code, coversCode4)) {
@@ -253,9 +253,9 @@ namespace refinement
         }
 
 
-        int refineCoveredbyTrueHitIntersect(Shape &objR, Shape &objS) {
+        int refineCoveredbyTrueHitIntersect(Shape* objR, Shape* objS) {
             // get the mask code
-            std::string code = objR.createMaskCode(objS);    
+            std::string code = objR->createMaskCode(*objS);    
             // covered by
             if (compareMasks(code, coveredbyCode1) || compareMasks(code, coveredbyCode2) || 
                 compareMasks(code, coveredbyCode3) || compareMasks(code, coveredbyCode4)) {
@@ -267,9 +267,9 @@ namespace refinement
             return TR_INTERSECT;
         }
 
-        int refineEqualCoversCoveredbyTrueHitIntersect(Shape &objR, Shape &objS) {
+        int refineEqualCoversCoveredbyTrueHitIntersect(Shape* objR, Shape* objS) {
             // get the mask code
-            std::string code = objR.createMaskCode(objS);
+            std::string code = objR->createMaskCode(*objS);
             // check equality first because it is a subset of covers and covered by
             if(compareMasks(code, equalCode)){
                 return TR_EQUAL;
@@ -293,7 +293,7 @@ namespace refinement
         }
 
 
-        DB_STATUS specializedRefinementEntrypoint(Shape &objR, Shape &objS, int relationCase, QueryOutputT &queryOutput) {
+        DB_STATUS specializedRefinementEntrypoint(Shape* objR, Shape* objS, int relationCase, QueryOutputT &queryOutput) {
             int refinementResult = -1;
             // switch based on MBR intersection case
             switch(relationCase) {
@@ -319,9 +319,9 @@ namespace refinement
             return DBERR_OK;
         }
 
-        int refineGuaranteedNoContainment(Shape &objR, Shape &objS) {
+        int refineGuaranteedNoContainment(Shape* objR, Shape* objS) {
             // get the mask code
-            std::string code = objR.createMaskCode(objS);
+            std::string code = objR->createMaskCode(*objS);
             if (compareMasks(code, disjointCode)) {
                 return TR_DISJOINT;
             }
@@ -331,9 +331,9 @@ namespace refinement
             return TR_INTERSECT;
         }
 
-        int refineContainmentsOnly(Shape &objR, Shape &objS) {
+        int refineContainmentsOnly(Shape* objR, Shape* objS) {
             // get the mask code
-            std::string code = objR.createMaskCode(objS);
+            std::string code = objR->createMaskCode(*objS);
             if (compareMasks(code, coversCode1) || compareMasks(code, coversCode2) || 
                 compareMasks(code, coversCode3) || compareMasks(code, coversCode4)) {
                 if (compareMasks(code, containsCode)) {
@@ -351,9 +351,9 @@ namespace refinement
             return TR_INTERSECT;
         }
 
-        int refineContainsPlus(Shape &objR, Shape &objS) {
+        int refineContainsPlus(Shape* objR, Shape* objS) {
             // get the mask code
-            std::string code = objR.createMaskCode(objS);
+            std::string code = objR->createMaskCode(*objS);
             if (compareMasks(code, disjointCode)) {
                 return TR_DISJOINT;
             }
@@ -370,9 +370,9 @@ namespace refinement
             return TR_INTERSECT;
         }
 
-        int refineInsidePlus(Shape &objR, Shape &objS) {
+        int refineInsidePlus(Shape* objR, Shape* objS) {
             // get the mask code
-            std::string code = objR.createMaskCode(objS);
+            std::string code = objR->createMaskCode(*objS);
             if (compareMasks(code, disjointCode)) {
                 return TR_DISJOINT;
             }
@@ -439,56 +439,56 @@ namespace refinement
          * Refine find specific relation
          */
 
-        void refineIntersectionJoin(Shape &objR, Shape &objS, QueryOutputT &queryOutput) {
-            if (objR.intersects(objS)) {
-                // printf("%d,%d\n", objR.recID, objS.recID);
+        void refineIntersectionJoin(Shape* objR, Shape* objS, QueryOutputT &queryOutput) {
+            if (objR->intersects(*objS)) {
+                // printf("%d,%d\n", objR->recID, objS.recID);
                 queryOutput.countResult();
             }
         }
 
-        void refineInsideJoin(Shape &objR, Shape &objS, QueryOutputT &queryOutput) {
-            if (objR.inside(objS)) {
+        void refineInsideJoin(Shape* objR, Shape* objS, QueryOutputT &queryOutput) {
+            if (objR->inside(*objS)) {
                 queryOutput.countResult();
             }
         }
 
-        void refineDisjointJoin(Shape &objR, Shape &objS, QueryOutputT &queryOutput) {
-            if (objR.disjoint(objS)) {
+        void refineDisjointJoin(Shape* objR, Shape* objS, QueryOutputT &queryOutput) {
+            if (objR->disjoint(*objS)) {
                 queryOutput.countResult();
             }
         }
 
-        void refineEqualJoin(Shape &objR, Shape &objS, QueryOutputT &queryOutput) {
-            if (objR.equals(objS)) {
+        void refineEqualJoin(Shape* objR, Shape* objS, QueryOutputT &queryOutput) {
+            if (objR->equals(*objS)) {
                 queryOutput.countResult();
             }
         }
 
-        void refineMeetJoin(Shape &objR, Shape &objS, QueryOutputT &queryOutput) {
-            if (objR.meets(objS)) {
+        void refineMeetJoin(Shape* objR, Shape* objS, QueryOutputT &queryOutput) {
+            if (objR->meets(*objS)) {
                 queryOutput.countResult();
             }
         }
 
-        void refineContainsJoin(Shape &objR, Shape &objS, QueryOutputT &queryOutput) {
-            if (objR.contains(objS)) {
+        void refineContainsJoin(Shape* objR, Shape* objS, QueryOutputT &queryOutput) {
+            if (objR->contains(*objS)) {
                 queryOutput.countResult();
             }
         }
 
-        void refineCoversJoin(Shape &objR, Shape &objS, QueryOutputT &queryOutput) {
-            if (objR.covers(objS)) {
+        void refineCoversJoin(Shape* objR, Shape* objS, QueryOutputT &queryOutput) {
+            if (objR->covers(*objS)) {
                 queryOutput.countResult();
             }
         }
 
-        void refineCoveredByJoin(Shape &objR, Shape &objS, QueryOutputT &queryOutput) {
-            if (objR.coveredBy(objS)) {
+        void refineCoveredByJoin(Shape* objR, Shape* objS, QueryOutputT &queryOutput) {
+            if (objR->coveredBy(*objS)) {
                 queryOutput.countResult();
             }
         }
         
-        DB_STATUS refinementEntrypoint(Shape &objR, Shape &objS, QueryTypeE queryType, QueryOutputT &queryOutput) {
+        DB_STATUS refinementEntrypoint(Shape* objR, Shape* objS, QueryTypeE queryType, QueryOutputT &queryOutput) {
             // switch based on query type
             switch(queryType) {
                 case Q_INTERSECT:
@@ -527,12 +527,12 @@ namespace refinement
          * FOR APRIL
          */
 
-        bool isEqual(Shape &objR, Shape &objS) {
-            return objR.equals(objS);
+        bool isEqual(Shape* objR, Shape* objS) {
+            return objR->equals(*objS);
         }
 
-        bool isMeet(Shape &objR, Shape &objS) {
-            return objR.meets(objS);
+        bool isMeet(Shape* objR, Shape* objS) {
+            return objR->meets(*objS);
         }
     }
 

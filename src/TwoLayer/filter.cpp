@@ -6,7 +6,7 @@ namespace twolayer
     namespace topologyMBRfilter
     {
         
-        static inline DB_STATUS forwardPair(Shape &objR, Shape &objS, MBRRelationCaseE mbrRelationCase, QueryOutputT &queryOutput) {
+        static inline DB_STATUS forwardPair(Shape* objR, Shape* objS, MBRRelationCaseE mbrRelationCase, QueryOutputT &queryOutput) {
             DB_STATUS ret = DBERR_OK;
             if (mbrRelationCase != MBR_CROSS) {
                 // count as MBR filter result
@@ -37,13 +37,13 @@ namespace twolayer
         }
 
         
-        static inline DB_STATUS relateMBRs(Shape &objR, Shape &objS, QueryOutputT &queryOutput) {
+        static inline DB_STATUS relateMBRs(Shape* objR, Shape* objS, QueryOutputT &queryOutput) {
             DB_STATUS ret = DBERR_OK;
             // compute deltas
-            double d_xmin = objR.mbr.pMin.x - objS.mbr.pMin.x;
-            double d_ymin = objR.mbr.pMin.y - objS.mbr.pMin.y;
-            double d_xmax = objR.mbr.pMax.x - objS.mbr.pMax.x;
-            double d_ymax = objR.mbr.pMax.y - objS.mbr.pMax.y;
+            double d_xmin = objR->mbr.pMin.x - objS->mbr.pMin.x;
+            double d_ymin = objR->mbr.pMin.y - objS->mbr.pMin.y;
+            double d_xmax = objR->mbr.pMax.x - objS->mbr.pMax.x;
+            double d_ymax = objR->mbr.pMax.y - objS->mbr.pMax.y;
 
             // check for equality using an error margin because doubles
             if (abs(d_xmin) < EPS) {
@@ -116,12 +116,12 @@ namespace twolayer
         }
 
         
-        static inline DB_STATUS internal_sweepRollY_1(std::vector<Shape>::iterator &rec, std::vector<Shape>::iterator &firstFS, std::vector<Shape>::iterator &lastFS, int flag, QueryOutputT &queryOutput) {
+        static inline DB_STATUS internal_sweepRollY_1(std::vector<Shape*>::iterator &rec, std::vector<Shape*>::iterator &firstFS, std::vector<Shape*>::iterator &lastFS, int flag, QueryOutputT &queryOutput) {
             DB_STATUS ret = DBERR_OK;
             auto pivot = firstFS;
-            while ((pivot < lastFS) && ((*rec).mbr.pMax.y >= (*pivot).mbr.pMin.y)) {               
+            while ((pivot < lastFS) && ((*rec)->mbr.pMax.y >= (*pivot)->mbr.pMin.y)) {               
                 // disjoint, skip
-                if (((*rec).mbr.pMin.x > (*pivot).mbr.pMax.x) || ((*rec).mbr.pMax.x < (*pivot).mbr.pMin.x)) {
+                if (((*rec)->mbr.pMin.x > (*pivot)->mbr.pMax.x) || ((*rec)->mbr.pMax.x < (*pivot)->mbr.pMin.x)) {
                     pivot++;
                     continue;
                 }
@@ -145,11 +145,11 @@ namespace twolayer
         }
 
         
-        static inline DB_STATUS internal_sweepRollY_2(std::vector<Shape>::iterator &rec, std::vector<Shape>::iterator &firstFS, std::vector<Shape>::iterator &lastFS, int flag, QueryOutputT &queryOutput) {
+        static inline DB_STATUS internal_sweepRollY_2(std::vector<Shape*>::iterator &rec, std::vector<Shape*>::iterator &firstFS, std::vector<Shape*>::iterator &lastFS, int flag, QueryOutputT &queryOutput) {
             DB_STATUS ret = DBERR_OK;
             auto pivot = firstFS;
-            while ((pivot < lastFS) && ((*rec).mbr.pMax.y >= (*pivot).mbr.pMin.y)) {               
-                if (((*rec).mbr.pMin.x > (*pivot).mbr.pMax.x) || ((*rec).mbr.pMax.x < (*pivot).mbr.pMin.x)) {
+            while ((pivot < lastFS) && ((*rec)->mbr.pMax.y >= (*pivot)->mbr.pMin.y)) {               
+                if (((*rec)->mbr.pMin.x > (*pivot)->mbr.pMax.x) || ((*rec)->mbr.pMax.x < (*pivot)->mbr.pMin.x)) {
                     pivot++;
                     continue;
                 }
@@ -173,11 +173,11 @@ namespace twolayer
         }
 
         
-        static inline DB_STATUS internal_sweepRollY_3_1(std::vector<Shape>::iterator &rec, std::vector<Shape>::iterator &firstFS, std::vector<Shape>::iterator &lastFS, int flag, QueryOutputT &queryOutput) {
+        static inline DB_STATUS internal_sweepRollY_3_1(std::vector<Shape*>::iterator &rec, std::vector<Shape*>::iterator &firstFS, std::vector<Shape*>::iterator &lastFS, int flag, QueryOutputT &queryOutput) {
             DB_STATUS ret = DBERR_OK;
             auto pivot = firstFS;
-            while ((pivot < lastFS) && ((*rec).mbr.pMax.y >= (*pivot).mbr.pMin.y)) {                
-                if ((*rec).mbr.pMin.x > (*pivot).mbr.pMax.x) {
+            while ((pivot < lastFS) && ((*rec)->mbr.pMax.y >= (*pivot)->mbr.pMin.y)) {                
+                if ((*rec)->mbr.pMin.x > (*pivot)->mbr.pMax.x) {
                     pivot++;
                     continue;
                 }
@@ -203,11 +203,11 @@ namespace twolayer
         }
 
         
-        static inline DB_STATUS internal_sweepRollY_3_2(std::vector<Shape>::iterator &rec, std::vector<Shape>::iterator &firstFS, std::vector<Shape>::iterator &lastFS, int flag, QueryOutputT &queryOutput) {
+        static inline DB_STATUS internal_sweepRollY_3_2(std::vector<Shape*>::iterator &rec, std::vector<Shape*>::iterator &firstFS, std::vector<Shape*>::iterator &lastFS, int flag, QueryOutputT &queryOutput) {
             DB_STATUS ret = DBERR_OK;
             auto pivot = firstFS;
-            while ((pivot < lastFS) && ((*rec).mbr.pMax.y >= (*pivot).mbr.pMin.y)) {       
-                if ((*pivot).mbr.pMin.x > (*rec).mbr.pMax.x) {
+            while ((pivot < lastFS) && ((*rec)->mbr.pMax.y >= (*pivot)->mbr.pMin.y)) {       
+                if ((*pivot)->mbr.pMin.x > (*rec)->mbr.pMax.x) {
                     pivot++;
                     continue;
                 }
@@ -231,11 +231,11 @@ namespace twolayer
         }
 
         
-        static inline DB_STATUS internal_sweepRollY_4(std::vector<Shape>::iterator &rec, std::vector<Shape>::iterator &firstFS, std::vector<Shape>::iterator &lastFS, int flag, QueryOutputT &queryOutput) {
+        static inline DB_STATUS internal_sweepRollY_4(std::vector<Shape*>::iterator &rec, std::vector<Shape*>::iterator &firstFS, std::vector<Shape*>::iterator &lastFS, int flag, QueryOutputT &queryOutput) {
             DB_STATUS ret = DBERR_OK;
             auto pivot = firstFS;
-            while ((pivot < lastFS) && ((*rec).mbr.pMax.y >= (*pivot).mbr.pMin.y)) {                       
-                if ((*rec).mbr.pMin.x > (*pivot).mbr.pMax.x) {
+            while ((pivot < lastFS) && ((*rec)->mbr.pMax.y >= (*pivot)->mbr.pMin.y)) {                       
+                if ((*rec)->mbr.pMin.x > (*pivot)->mbr.pMax.x) {
                     pivot++;
                     continue;
                 }
@@ -259,11 +259,11 @@ namespace twolayer
         }
 
         
-        static inline DB_STATUS internal_sweepRollY_5(std::vector<Shape>::iterator &rec, std::vector<Shape>::iterator &firstFS, std::vector<Shape>::iterator &lastFS, int flag, QueryOutputT &queryOutput) {
+        static inline DB_STATUS internal_sweepRollY_5(std::vector<Shape*>::iterator &rec, std::vector<Shape*>::iterator &firstFS, std::vector<Shape*>::iterator &lastFS, int flag, QueryOutputT &queryOutput) {
             DB_STATUS ret = DBERR_OK;
             auto pivot = firstFS;
-            while ((pivot < lastFS) && ((*rec).mbr.pMax.y >= (*pivot).mbr.pMin.y)) {              
-                if ((*rec).mbr.pMax.x < (*pivot).mbr.pMin.x) {
+            while ((pivot < lastFS) && ((*rec)->mbr.pMax.y >= (*pivot)->mbr.pMin.y)) {              
+                if ((*rec)->mbr.pMax.x < (*pivot)->mbr.pMin.x) {
                     pivot++;
                     continue;
                 }
@@ -288,7 +288,7 @@ namespace twolayer
         }
 
         
-        static inline DB_STATUS sweepRollY_1(std::vector<Shape>* objectsR, std::vector<Shape>* objectsS, QueryOutputT &queryOutput) {
+        static inline DB_STATUS sweepRollY_1(std::vector<Shape*>* objectsR, std::vector<Shape*>* objectsS, QueryOutputT &queryOutput) {
             if (objectsR == nullptr || objectsS == nullptr) {
                 return DBERR_OK;
             }
@@ -297,8 +297,8 @@ namespace twolayer
             auto s = objectsS->begin();
             auto lastR = objectsR->end();
             auto lastS = objectsS->end();
-            while ((r < lastR) && (s < lastS)) {
-                if ((*r).mbr.pMin.y < (*s).mbr.pMin.y) {
+            while ((r != lastR) && (s != lastS)) {
+                if ((*r)->mbr.pMin.y < (*s)->mbr.pMin.y) {
                     // internal loop
                     ret = internal_sweepRollY_1(r, s, lastS, 0, queryOutput);
                     if (ret != DBERR_OK) {
@@ -318,7 +318,7 @@ namespace twolayer
         }
 
         
-        static inline DB_STATUS sweepRollY_2(std::vector<Shape>* objectsR, std::vector<Shape>* objectsS, int flag, QueryOutputT &queryOutput) {
+        static inline DB_STATUS sweepRollY_2(std::vector<Shape*>* objectsR, std::vector<Shape*>* objectsS, int flag, QueryOutputT &queryOutput) {
             if (objectsR == nullptr || objectsS == nullptr) {
                 return DBERR_OK;
             }
@@ -327,7 +327,7 @@ namespace twolayer
             auto s = objectsS->begin();
             auto lastR = objectsR->end();
             auto lastS = objectsS->end();
-            while ((r < lastR))
+            while ((r != lastR))
             {
                 ret = internal_sweepRollY_2(r, s, lastS, flag, queryOutput);
                 if (ret != DBERR_OK) {
@@ -339,7 +339,7 @@ namespace twolayer
         }
 
         
-        static inline DB_STATUS sweepRollY_3(std::vector<Shape>* objectsR, std::vector<Shape>* objectsS, int flag, QueryOutputT &queryOutput) {
+        static inline DB_STATUS sweepRollY_3(std::vector<Shape*>* objectsR, std::vector<Shape*>* objectsS, int flag, QueryOutputT &queryOutput) {
             if (objectsR == nullptr || objectsS == nullptr) {
                 return DBERR_OK;
             }
@@ -348,8 +348,8 @@ namespace twolayer
             auto s = objectsS->begin();
             auto lastR = objectsR->end();
             auto lastS = objectsS->end();
-            while ((r < lastR) && (s < lastS)) {
-                if ((*r).mbr.pMin.y < (*s).mbr.pMin.y) {
+            while ((r != lastR) && (s != lastS)) {
+                if ((*r)->mbr.pMin.y < (*s)->mbr.pMin.y) {
                     // Run internal loop.
                     ret = internal_sweepRollY_3_1(r, s, lastS, flag, queryOutput);
                     if (ret != DBERR_OK) {
@@ -370,7 +370,7 @@ namespace twolayer
         }
 
         
-        static inline DB_STATUS sweepRollY_4(std::vector<Shape>* objectsR, std::vector<Shape>* objectsS, int flag, QueryOutputT &queryOutput) {
+        static inline DB_STATUS sweepRollY_4(std::vector<Shape*>* objectsR, std::vector<Shape*>* objectsS, int flag, QueryOutputT &queryOutput) {
             if (objectsR == nullptr || objectsS == nullptr) {
                 return DBERR_OK;
             }
@@ -379,7 +379,7 @@ namespace twolayer
             auto s = objectsS->begin();
             auto lastR = objectsR->end();
             auto lastS = objectsS->end();
-            while ((r < lastR)) { 
+            while ((r != lastR)) { 
                 // Run internal loop.
                 ret = internal_sweepRollY_4(r, s, lastS, flag, queryOutput);
                 if (ret != DBERR_OK) {
@@ -392,7 +392,7 @@ namespace twolayer
         }
 
         
-        inline DB_STATUS sweepRollY_5(std::vector<Shape>* objectsR, std::vector<Shape>* objectsS, int flag, QueryOutputT &queryOutput) {
+        inline DB_STATUS sweepRollY_5(std::vector<Shape*>* objectsR, std::vector<Shape*>* objectsS, int flag, QueryOutputT &queryOutput) {
             if (objectsR == nullptr || objectsS == nullptr) {
                 return DBERR_OK;
             }
@@ -401,7 +401,7 @@ namespace twolayer
             auto s = objectsS->begin();
             auto lastR = objectsR->end();
             auto lastS = objectsS->end();
-            while ((r < lastR)) { 
+            while ((r != lastR)) { 
                 // Run internal loop.
                 ret = internal_sweepRollY_5(r, s, lastS, flag, queryOutput);
                 if (ret != DBERR_OK) {
@@ -516,7 +516,7 @@ namespace twolayer
     namespace intersectionMBRfilter
     {
         
-        static inline DB_STATUS forwardPair(Shape &objR, Shape &objS, QueryOutputT &queryOutput) {
+        static inline DB_STATUS forwardPair(Shape* objR, Shape* objS, QueryOutputT &queryOutput) {
             DB_STATUS ret = DBERR_OK;
             // count as MBR filter result
             queryOutput.countMBRresult();
@@ -540,12 +540,12 @@ namespace twolayer
         }
 
         
-        static inline DB_STATUS internal_sweepRollY_1(std::vector<Shape>::iterator &rec, std::vector<Shape>::iterator &firstFS, std::vector<Shape>::iterator &lastFS, int flag, QueryOutputT &queryOutput) {
+        static inline DB_STATUS internal_sweepRollY_1(std::vector<Shape*>::iterator &rec, std::vector<Shape*>::iterator &firstFS, std::vector<Shape*>::iterator &lastFS, int flag, QueryOutputT &queryOutput) {
             DB_STATUS ret = DBERR_OK;
             auto pivot = firstFS;
-            while ((pivot < lastFS) && ((*rec).mbr.pMax.y >= (*pivot).mbr.pMin.y)) {               
+            while ((pivot < lastFS) && ((*rec)->mbr.pMax.y >= (*pivot)->mbr.pMin.y)) {               
                 // disjoint, skip
-                if (((*rec).mbr.pMin.x > (*pivot).mbr.pMax.x) || ((*rec).mbr.pMax.x < (*pivot).mbr.pMin.x)) {
+                if (((*rec)->mbr.pMin.x > (*pivot)->mbr.pMax.x) || ((*rec)->mbr.pMax.x < (*pivot)->mbr.pMin.x)) {
                     pivot++;
                     continue;
                 }
@@ -568,11 +568,11 @@ namespace twolayer
         }
 
         
-        static inline DB_STATUS internal_sweepRollY_2(std::vector<Shape>::iterator &rec, std::vector<Shape>::iterator &firstFS, std::vector<Shape>::iterator &lastFS, int flag, QueryOutputT &queryOutput) {
+        static inline DB_STATUS internal_sweepRollY_2(std::vector<Shape*>::iterator &rec, std::vector<Shape*>::iterator &firstFS, std::vector<Shape*>::iterator &lastFS, int flag, QueryOutputT &queryOutput) {
             DB_STATUS ret = DBERR_OK;
             auto pivot = firstFS;
-            while ((pivot < lastFS) && ((*rec).mbr.pMax.y >= (*pivot).mbr.pMin.y)) {               
-                if (((*rec).mbr.pMin.x > (*pivot).mbr.pMax.x) || ((*rec).mbr.pMax.x < (*pivot).mbr.pMin.x)) {
+            while ((pivot < lastFS) && ((*rec)->mbr.pMax.y >= (*pivot)->mbr.pMin.y)) {               
+                if (((*rec)->mbr.pMin.x > (*pivot)->mbr.pMax.x) || ((*rec)->mbr.pMax.x < (*pivot)->mbr.pMin.x)) {
                     pivot++;
                     continue;
                 }
@@ -596,11 +596,11 @@ namespace twolayer
         }
 
         
-        static inline DB_STATUS internal_sweepRollY_3_1(std::vector<Shape>::iterator &rec, std::vector<Shape>::iterator &firstFS, std::vector<Shape>::iterator &lastFS, int flag, QueryOutputT &queryOutput) {
+        static inline DB_STATUS internal_sweepRollY_3_1(std::vector<Shape*>::iterator &rec, std::vector<Shape*>::iterator &firstFS, std::vector<Shape*>::iterator &lastFS, int flag, QueryOutputT &queryOutput) {
             DB_STATUS ret = DBERR_OK;
             auto pivot = firstFS;
-            while ((pivot < lastFS) && ((*rec).mbr.pMax.y >= (*pivot).mbr.pMin.y)) {                
-                if ((*rec).mbr.pMin.x > (*pivot).mbr.pMax.x) {
+            while ((pivot < lastFS) && ((*rec)->mbr.pMax.y >= (*pivot)->mbr.pMin.y)) {                
+                if ((*rec)->mbr.pMin.x > (*pivot)->mbr.pMax.x) {
                     pivot++;
                     continue;
                 }
@@ -625,11 +625,11 @@ namespace twolayer
         }
 
         
-        static inline DB_STATUS internal_sweepRollY_3_2(std::vector<Shape>::iterator &rec, std::vector<Shape>::iterator &firstFS, std::vector<Shape>::iterator &lastFS, int flag, QueryOutputT &queryOutput) {
+        static inline DB_STATUS internal_sweepRollY_3_2(std::vector<Shape*>::iterator &rec, std::vector<Shape*>::iterator &firstFS, std::vector<Shape*>::iterator &lastFS, int flag, QueryOutputT &queryOutput) {
             DB_STATUS ret = DBERR_OK;
             auto pivot = firstFS;
-            while ((pivot < lastFS) && ((*rec).mbr.pMax.y >= (*pivot).mbr.pMin.y)) {       
-                if ((*pivot).mbr.pMin.x > (*rec).mbr.pMax.x) {
+            while ((pivot < lastFS) && ((*rec)->mbr.pMax.y >= (*pivot)->mbr.pMin.y)) {       
+                if ((*pivot)->mbr.pMin.x > (*rec)->mbr.pMax.x) {
                     pivot++;
                     continue;
                 }
@@ -653,11 +653,11 @@ namespace twolayer
         }
 
         
-        static inline DB_STATUS internal_sweepRollY_4(std::vector<Shape>::iterator &rec, std::vector<Shape>::iterator &firstFS, std::vector<Shape>::iterator &lastFS, int flag, QueryOutputT &queryOutput) {
+        static inline DB_STATUS internal_sweepRollY_4(std::vector<Shape*>::iterator &rec, std::vector<Shape*>::iterator &firstFS, std::vector<Shape*>::iterator &lastFS, int flag, QueryOutputT &queryOutput) {
             DB_STATUS ret = DBERR_OK;
             auto pivot = firstFS;
-            while ((pivot < lastFS) && ((*rec).mbr.pMax.y >= (*pivot).mbr.pMin.y)) {                       
-                if ((*rec).mbr.pMin.x > (*pivot).mbr.pMax.x) {
+            while ((pivot < lastFS) && ((*rec)->mbr.pMax.y >= (*pivot)->mbr.pMin.y)) {                       
+                if ((*rec)->mbr.pMin.x > (*pivot)->mbr.pMax.x) {
                     pivot++;
                     continue;
                 }
@@ -681,11 +681,11 @@ namespace twolayer
         }
 
         
-        static inline DB_STATUS internal_sweepRollY_5(std::vector<Shape>::iterator &rec, std::vector<Shape>::iterator &firstFS, std::vector<Shape>::iterator &lastFS, int flag, QueryOutputT &queryOutput) {
+        static inline DB_STATUS internal_sweepRollY_5(std::vector<Shape*>::iterator &rec, std::vector<Shape*>::iterator &firstFS, std::vector<Shape*>::iterator &lastFS, int flag, QueryOutputT &queryOutput) {
             DB_STATUS ret = DBERR_OK;
             auto pivot = firstFS;
-            while ((pivot < lastFS) && ((*rec).mbr.pMax.y >= (*pivot).mbr.pMin.y)) {                
-                if ((*rec).mbr.pMax.x < (*pivot).mbr.pMin.x) {
+            while ((pivot < lastFS) && ((*rec)->mbr.pMax.y >= (*pivot)->mbr.pMin.y)) {                
+                if ((*rec)->mbr.pMax.x < (*pivot)->mbr.pMin.x) {
                     pivot++;
                     continue;
                 }
@@ -710,17 +710,17 @@ namespace twolayer
         }
 
         
-        static inline DB_STATUS sweepRollY_1(std::vector<Shape>* objectsR, std::vector<Shape>* objectsS, QueryOutputT &queryOutput) {
+        static inline DB_STATUS sweepRollY_1(std::vector<Shape*>* objectsR, std::vector<Shape*>* objectsS, QueryOutputT &queryOutput) {
             if (objectsR == nullptr || objectsS == nullptr) {
                 return DBERR_OK;
             }
             DB_STATUS ret = DBERR_OK;
-            auto r = objectsR->begin();
+            std::vector<Shape*>::iterator r = objectsR->begin();
             auto s = objectsS->begin();
             auto lastR = objectsR->end();
             auto lastS = objectsS->end();
-            while ((r < lastR) && (s < lastS)) {
-                if ((*r).mbr.pMin.y < (*s).mbr.pMin.y) {
+            while ((r != lastR) && (s != lastS)) {
+                if ((*r)->mbr.pMin.y < (*s)->mbr.pMin.y) {
                     // internal loop
                     ret = internal_sweepRollY_1(r, s, lastS, 0, queryOutput);
                     if (ret != DBERR_OK) {
@@ -740,7 +740,7 @@ namespace twolayer
         }
 
         
-        static inline DB_STATUS sweepRollY_2(std::vector<Shape>* objectsR, std::vector<Shape>* objectsS, int flag, QueryOutputT &queryOutput) {
+        static inline DB_STATUS sweepRollY_2(std::vector<Shape*>* objectsR, std::vector<Shape*>* objectsS, int flag, QueryOutputT &queryOutput) {
             if (objectsR == nullptr || objectsS == nullptr) {
                 return DBERR_OK;
             }
@@ -749,7 +749,7 @@ namespace twolayer
             auto s = objectsS->begin();
             auto lastR = objectsR->end();
             auto lastS = objectsS->end();
-            while ((r < lastR)) {
+            while ((r != lastR)) {
                 ret = internal_sweepRollY_2(r, s, lastS, flag, queryOutput);
                 if (ret != DBERR_OK) {
                     return ret;
@@ -760,7 +760,7 @@ namespace twolayer
         }
 
         
-        static inline DB_STATUS sweepRollY_3(std::vector<Shape>* objectsR, std::vector<Shape>* objectsS, int flag, QueryOutputT &queryOutput) {
+        static inline DB_STATUS sweepRollY_3(std::vector<Shape*>* objectsR, std::vector<Shape*>* objectsS, int flag, QueryOutputT &queryOutput) {
             if (objectsR == nullptr || objectsS == nullptr) {
                 return DBERR_OK;
             }
@@ -769,8 +769,8 @@ namespace twolayer
             auto s = objectsS->begin();
             auto lastR = objectsR->end();
             auto lastS = objectsS->end();
-            while ((r < lastR) && (s < lastS)) {
-                if ((*r).mbr.pMin.y < (*s).mbr.pMin.y) {
+            while ((r != lastR) && (s != lastS)) {
+                if ((*r)->mbr.pMin.y < (*s)->mbr.pMin.y) {
                     // Run internal loop.
                     ret = internal_sweepRollY_3_1(r, s, lastS, flag, queryOutput);
                     if (ret != DBERR_OK) {
@@ -791,7 +791,7 @@ namespace twolayer
         }
 
         
-        static inline DB_STATUS sweepRollY_4(std::vector<Shape>* objectsR, std::vector<Shape>* objectsS, int flag, QueryOutputT &queryOutput) {
+        static inline DB_STATUS sweepRollY_4(std::vector<Shape*>* objectsR, std::vector<Shape*>* objectsS, int flag, QueryOutputT &queryOutput) {
             if (objectsR == nullptr || objectsS == nullptr) {
                 return DBERR_OK;
             }
@@ -800,7 +800,7 @@ namespace twolayer
             auto s = objectsS->begin();
             auto lastR = objectsR->end();
             auto lastS = objectsS->end();
-            while ((r < lastR)) { 
+            while ((r != lastR)) { 
                 // Run internal loop.
                 ret = internal_sweepRollY_4(r, s, lastS, flag, queryOutput);
                 if (ret != DBERR_OK) {
@@ -813,7 +813,7 @@ namespace twolayer
         }
 
         
-        inline DB_STATUS sweepRollY_5(std::vector<Shape>* objectsR, std::vector<Shape>* objectsS, int flag, QueryOutputT &queryOutput) {
+        inline DB_STATUS sweepRollY_5(std::vector<Shape*>* objectsR, std::vector<Shape*>* objectsS, int flag, QueryOutputT &queryOutput) {
             if (objectsR == nullptr || objectsS == nullptr) {
                 return DBERR_OK;
             }
@@ -822,7 +822,7 @@ namespace twolayer
             auto s = objectsS->begin();
             auto lastR = objectsR->end();
             auto lastS = objectsS->end();
-            while ((r < lastR)) { 
+            while ((r != lastR)) { 
                 // Run internal loop.
                 ret = internal_sweepRollY_5(r, s, lastS, flag, queryOutput);
                 if (ret != DBERR_OK) {

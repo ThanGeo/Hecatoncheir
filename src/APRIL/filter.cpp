@@ -6,16 +6,16 @@ namespace APRIL
     namespace topology
     {
         
-        static DB_STATUS specializedTopologyRinSContainment(Shape &objR, Shape &objS, QueryOutputT &queryOutput) {
+        static DB_STATUS specializedTopologyRinSContainment(Shape* objR, Shape* objS, QueryOutputT &queryOutput) {
             DB_STATUS ret = DBERR_OK;
             int iFilterResult = INCONCLUSIVE;
             // get common sections
-            std::vector<int> commonSections = getCommonSectionIDsOfObjects(g_config.datasetInfo.getDatasetR(), g_config.datasetInfo.getDatasetS(), objR.recID, objS.recID);
+            std::vector<int> commonSections = getCommonSectionIDsOfObjects(g_config.datasetInfo.getDatasetR(), g_config.datasetInfo.getDatasetS(), objR->recID, objS->recID);
             // for each common section
             for (auto &sectionID : commonSections) {
                 // fetch the APRIL of R and S for this section
-                AprilDataT* aprilR = g_config.datasetInfo.getDatasetR()->getAprilDataBySectionAndObjectID(sectionID, objR.recID);
-                AprilDataT* aprilS = g_config.datasetInfo.getDatasetS()->getAprilDataBySectionAndObjectID(sectionID, objS.recID);
+                AprilDataT* aprilR = g_config.datasetInfo.getDatasetR()->getAprilDataBySectionAndObjectID(sectionID, objR->recID);
+                AprilDataT* aprilS = g_config.datasetInfo.getDatasetS()->getAprilDataBySectionAndObjectID(sectionID, objS->recID);
                 // use APRIL intermediate filter
                 ret = uncompressed::topology::MBRRinSContainmentJoinAPRIL(aprilR, aprilS, iFilterResult);
                 if (ret != DBERR_OK) {
@@ -56,22 +56,22 @@ namespace APRIL
             // count the refinement result
             queryOutput.countTopologyRelationResult(relation);
             // if (relation == TR_MEET) {
-            //     printf("%d,%d\n", objR.recID, objS.recID);
+            //     printf("%d,%d\n", objR->recID, objS->recID);
             // }
             return ret;
         }
 
         
-        static DB_STATUS specializedTopologySinRContainment(Shape &objR, Shape &objS, QueryOutputT &queryOutput) {
+        static DB_STATUS specializedTopologySinRContainment(Shape* objR, Shape* objS, QueryOutputT &queryOutput) {
             DB_STATUS ret = DBERR_OK;
             int iFilterResult = INCONCLUSIVE;
             // get common sections
-            std::vector<int> commonSections = getCommonSectionIDsOfObjects(g_config.datasetInfo.getDatasetR(), g_config.datasetInfo.getDatasetS(), objR.recID, objS.recID);
+            std::vector<int> commonSections = getCommonSectionIDsOfObjects(g_config.datasetInfo.getDatasetR(), g_config.datasetInfo.getDatasetS(), objR->recID, objS->recID);
             // for each common section
             for (auto &sectionID : commonSections) {
                 // fetch the APRIL of R and S for this section
-                AprilDataT* aprilR = g_config.datasetInfo.getDatasetR()->getAprilDataBySectionAndObjectID(sectionID, objR.recID);
-                AprilDataT* aprilS = g_config.datasetInfo.getDatasetS()->getAprilDataBySectionAndObjectID(sectionID, objS.recID);
+                AprilDataT* aprilR = g_config.datasetInfo.getDatasetR()->getAprilDataBySectionAndObjectID(sectionID, objR->recID);
+                AprilDataT* aprilS = g_config.datasetInfo.getDatasetS()->getAprilDataBySectionAndObjectID(sectionID, objS->recID);
                 // use APRIL intermediate filter
                 ret = uncompressed::topology::MBRSinRContainmentJoinAPRIL(aprilR, aprilS, iFilterResult);
                 if (ret != DBERR_OK) {
@@ -110,7 +110,7 @@ namespace APRIL
                 
             }
             // if (relation == TR_MEET) {
-            //     printf("%d,%d\n", objR.recID, objS.recID);
+            //     printf("%d,%d\n", objR->recID, objS->recID);
             // }
             // count the refinement result
             queryOutput.countTopologyRelationResult(relation);
@@ -118,16 +118,16 @@ namespace APRIL
         }
 
         
-        static DB_STATUS specializedTopologyEqual(Shape &objR, Shape &objS, QueryOutputT &queryOutput) {
+        static DB_STATUS specializedTopologyEqual(Shape* objR, Shape* objS, QueryOutputT &queryOutput) {
             DB_STATUS ret = DBERR_OK;
             int iFilterResult = INCONCLUSIVE;
             // get common sections
-            std::vector<int> commonSections = getCommonSectionIDsOfObjects(g_config.datasetInfo.getDatasetR(), g_config.datasetInfo.getDatasetS(), objR.recID, objS.recID);
+            std::vector<int> commonSections = getCommonSectionIDsOfObjects(g_config.datasetInfo.getDatasetR(), g_config.datasetInfo.getDatasetS(), objR->recID, objS->recID);
             // for each common section
             for (auto &sectionID : commonSections) {
                 // fetch the APRIL of R and S for this section
-                AprilDataT* aprilR = g_config.datasetInfo.getDatasetR()->getAprilDataBySectionAndObjectID(sectionID, objR.recID);
-                AprilDataT* aprilS = g_config.datasetInfo.getDatasetS()->getAprilDataBySectionAndObjectID(sectionID, objS.recID);
+                AprilDataT* aprilR = g_config.datasetInfo.getDatasetR()->getAprilDataBySectionAndObjectID(sectionID, objR->recID);
+                AprilDataT* aprilS = g_config.datasetInfo.getDatasetS()->getAprilDataBySectionAndObjectID(sectionID, objS->recID);
                 // use APRIL intermediate filter
                 ret = uncompressed::topology::MBREqualJoinAPRIL(objR, objS, aprilR, aprilS, iFilterResult);
                 if (ret != DBERR_OK) {
@@ -179,16 +179,16 @@ namespace APRIL
         }
 
         
-        static DB_STATUS specializedTopologyIntersection(Shape &objR, Shape &objS, QueryOutputT &queryOutput) {
+        static DB_STATUS specializedTopologyIntersection(Shape* objR, Shape* objS, QueryOutputT &queryOutput) {
             DB_STATUS ret = DBERR_OK;
             int iFilterResult = INCONCLUSIVE;
             // get common sections
-            std::vector<int> commonSections = getCommonSectionIDsOfObjects(g_config.datasetInfo.getDatasetR(), g_config.datasetInfo.getDatasetS(), objR.recID, objS.recID);
+            std::vector<int> commonSections = getCommonSectionIDsOfObjects(g_config.datasetInfo.getDatasetR(), g_config.datasetInfo.getDatasetS(), objR->recID, objS->recID);
             // for each common section
             for (auto &sectionID : commonSections) {
                 // fetch the APRIL of R and S for this section
-                AprilDataT* aprilR = g_config.datasetInfo.getDatasetR()->getAprilDataBySectionAndObjectID(sectionID, objR.recID);
-                AprilDataT* aprilS = g_config.datasetInfo.getDatasetS()->getAprilDataBySectionAndObjectID(sectionID, objS.recID);
+                AprilDataT* aprilR = g_config.datasetInfo.getDatasetR()->getAprilDataBySectionAndObjectID(sectionID, objR->recID);
+                AprilDataT* aprilS = g_config.datasetInfo.getDatasetS()->getAprilDataBySectionAndObjectID(sectionID, objS->recID);
                 // use APRIL intermediate filter
                 ret = uncompressed::topology::MBRIntersectionJoinAPRIL(aprilR, aprilS, iFilterResult);
                 if (ret != DBERR_OK) {
@@ -210,7 +210,7 @@ namespace APRIL
             // refine
             int relation = refinement::topology::refineDisjointMeetIntersect(objR, objS);
             // if (relation == TR_MEET) {
-            //     printf("%d,%d\n", objR.recID, objS.recID);
+            //     printf("%d,%d\n", objR->recID, objS->recID);
             // }
             // count the refinement relation result
             queryOutput.countTopologyRelationResult(relation);
@@ -218,7 +218,7 @@ namespace APRIL
         }
 
         
-        DB_STATUS IntermediateFilterEntrypoint(Shape &objR, Shape &objS, MBRRelationCaseE mbrRelationCase, QueryOutputT &queryOutput) {
+        DB_STATUS IntermediateFilterEntrypoint(Shape* objR, Shape* objS, MBRRelationCaseE mbrRelationCase, QueryOutputT &queryOutput) {
             DB_STATUS ret = DBERR_OK;
             // switch based on how the MBRs intersect, to the appropriate intermediate filter
             switch (mbrRelationCase) {
@@ -258,22 +258,22 @@ namespace APRIL
     namespace standard
     {
         
-        DB_STATUS IntermediateFilterEntrypoint(Shape &objR, Shape &objS, QueryOutputT &queryOutput) {
+        DB_STATUS IntermediateFilterEntrypoint(Shape* objR, Shape* objS, QueryOutputT &queryOutput) {
             DB_STATUS ret = DBERR_OK;
             // get common sections
-            std::vector<int> commonSections = getCommonSectionIDsOfObjects(g_config.datasetInfo.getDatasetR(), g_config.datasetInfo.getDatasetS(), objR.recID, objS.recID);
+            std::vector<int> commonSections = getCommonSectionIDsOfObjects(g_config.datasetInfo.getDatasetR(), g_config.datasetInfo.getDatasetS(), objR->recID, objS->recID);
             // for each common section
             for (auto &sectionID : commonSections) {
                 // fetch the APRIL of R and S for this section
-                AprilDataT* aprilR = g_config.datasetInfo.getDatasetR()->getAprilDataBySectionAndObjectID(sectionID, objR.recID);
-                AprilDataT* aprilS = g_config.datasetInfo.getDatasetS()->getAprilDataBySectionAndObjectID(sectionID, objS.recID);
+                AprilDataT* aprilR = g_config.datasetInfo.getDatasetR()->getAprilDataBySectionAndObjectID(sectionID, objR->recID);
+                AprilDataT* aprilS = g_config.datasetInfo.getDatasetS()->getAprilDataBySectionAndObjectID(sectionID, objS->recID);
                 int iFilterResult = INCONCLUSIVE;
                 // use appropriate query function
                 switch (g_config.queryInfo.type) {
                     case Q_INTERSECT:
                         ret = uncompressed::intersectionJoinAPRIL(aprilR, aprilS, iFilterResult);
                         if (ret != DBERR_OK) {
-                            logger::log_error(ret, "APRIL intersection join failed for pair", objR.recID, "and", objS.recID);
+                            logger::log_error(ret, "APRIL intersection join failed for pair", objR->recID, "and", objS->recID);
                             return ret;
                         }
                         break;
@@ -281,28 +281,28 @@ namespace APRIL
                     case Q_INSIDE:
                         ret = uncompressed::insideCoveredByJoinAPRIL(aprilR, aprilS, iFilterResult);
                         if (ret != DBERR_OK) {
-                            logger::log_error(ret, "APRIL inside/covered by join failed for pair", objR.recID, "and", objS.recID);
+                            logger::log_error(ret, "APRIL inside/covered by join failed for pair", objR->recID, "and", objS->recID);
                             return ret;
                         }
                         break;
                     case Q_DISJOINT:
                         ret = uncompressed::disjointJoinAPRIL(aprilR, aprilS, iFilterResult);
                         if (ret != DBERR_OK) {
-                            logger::log_error(ret, "APRIL disjoint join failed for pair", objR.recID, "and", objS.recID);
+                            logger::log_error(ret, "APRIL disjoint join failed for pair", objR->recID, "and", objS->recID);
                             return ret;
                         }
                         break;
                     case Q_EQUAL:
                         ret = uncompressed::equalJoinAPRIL(aprilR, aprilS, iFilterResult);
                         if (ret != DBERR_OK) {
-                            logger::log_error(ret, "APRIL equality join failed for pair", objR.recID, "and", objS.recID);
+                            logger::log_error(ret, "APRIL equality join failed for pair", objR->recID, "and", objS->recID);
                             return ret;
                         }
                         break;
                     case Q_MEET:
                         ret = uncompressed::meetJoinAPRIL(aprilR, aprilS, iFilterResult);
                         if (ret != DBERR_OK) {
-                            logger::log_error(ret, "APRIL meet join failed for pair", objR.recID, "and", objS.recID);
+                            logger::log_error(ret, "APRIL meet join failed for pair", objR->recID, "and", objS->recID);
                             return ret;
                         }
                         break;
@@ -310,7 +310,7 @@ namespace APRIL
                     case Q_COVERS:
                         ret = uncompressed::containsCoversJoinAPRIL(aprilR, aprilS, iFilterResult);
                         if (ret != DBERR_OK) {
-                            logger::log_error(ret, "APRIL contains/covers join failed for pair", objR.recID, "and", objS.recID);
+                            logger::log_error(ret, "APRIL contains/covers join failed for pair", objR->recID, "and", objS->recID);
                             return ret;
                         }
                         break;
@@ -324,7 +324,7 @@ namespace APRIL
                     // count APRIL result
                     queryOutput.countAPRILresult(iFilterResult);
                     // if (iFilterResult == TRUE_HIT) {
-                    //     printf("%d,%d\n", objR.recID, objS.recID);
+                    //     printf("%d,%d\n", objR->recID, objS->recID);
                     // }
                     return ret;
                 }

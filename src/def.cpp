@@ -175,6 +175,59 @@ void QueryOutput::shallowCopy(QueryOutput &other) {
     this->rasterizationsDone = other.rasterizationsDone;
 }
 
+std::vector<Shape*>* TwoLayerContainer::getOrCreateContainerClassContents(TwoLayerClassE classType) {
+    auto it = classIndex.find(classType);
+    if (it == classIndex.end()) {
+        // does not exist, create
+        createClassEntry(classType);
+        // return its reference
+        return &classIndex.find(classType)->second;
+    }
+    // exists
+    return &it->second;
+}
+
+std::vector<Shape*>* TwoLayerContainer::getContainerClassContents(TwoLayerClassE classType) {
+    auto it = classIndex.find(classType);
+    if (it == classIndex.end()) {
+        // does not exist
+        return nullptr;
+    }
+    return &it->second;
+}
+
+void TwoLayerContainer::createClassEntry(TwoLayerClassE classType) {
+    std::vector<Shape*> vec;
+    auto it = classIndex.find(classType);
+    if (it == classIndex.end()) {
+        classIndex.insert(std::make_pair(classType, vec));
+    } else {
+        classIndex[classType] = vec;
+    }
+}
+
+Shape* Dataset::getObject(size_t recID) {
+    auto it = objects.find(recID);
+    if (it == objects.end()) {
+        return nullptr;
+    }
+    return &it->second;
+}
+
+void Dataset::addObject(Shape &object) {
+    // add object to the objects map
+    objects.insert(std::make_pair(object.recID, object));
+    // get object reference
+    Shape* objectRef = this->getObject(object.recID);
+    // insert reference to partition index
+    for (auto &partitionIT: object.partitions) {
+        int partitionID = partitionIT.first;
+        TwoLayerClassE classType = (TwoLayerClassE) partitionIT.second;
+        // add to twolayer index
+        this->twoLayerIndex.addObject(partitionID, classType, objectRef);
+    }
+}
+
 int Dataset::calculateBufferSize() {
     int size = 0;
     // dataset data type

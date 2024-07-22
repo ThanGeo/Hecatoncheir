@@ -25,6 +25,7 @@ namespace APRIL
                 logger::log_error(DBERR_DISK_WRITE_FAILED, "Writing ALL intervals failed for object with ID", recID);
                 return DBERR_DISK_WRITE_FAILED;
             }
+            // logger::log_success("Object:", recID, "saved", aprilData->numIntervalsALL * 2, "uint32_t elements for ALL intervals");
             // FULL intervals (if any)
             if(aprilData->numIntervalsFULL > 0){
                 elementsWritten = fwrite(&recID, sizeof(size_t), 1, pFileFULL);
@@ -122,6 +123,7 @@ CLOSE_AND_EXIT:
             if (ret != DBERR_OK) {
                 return ret;
             }
+
             
             return ret;
         }

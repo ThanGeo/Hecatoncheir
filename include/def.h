@@ -1305,39 +1305,13 @@ typedef struct DataspaceInfo {
 
 
 struct TwoLayerContainer {
-    std::unordered_map<TwoLayerClassE, std::vector<Shape>> classIndex;
+    std::unordered_map<TwoLayerClassE, std::vector<Shape*>> classIndex;
 
-    std::vector<Shape>* getOrCreateContainerClassContents(TwoLayerClassE classType) {
-        auto it = classIndex.find(classType);
-        if (it == classIndex.end()) {
-            // does not exist, create
-            createClassEntry(classType);
-            // return its reference
-            return &classIndex.find(classType)->second;
-        }
-        // exists
-        return &it->second;
-    }
+    std::vector<Shape*>* getOrCreateContainerClassContents(TwoLayerClassE classType);
 
-    std::vector<Shape>* getContainerClassContents(TwoLayerClassE classType) {
-        auto it = classIndex.find(classType);
-        if (it == classIndex.end()) {
-            // does not exist
-            return nullptr;
-        }
-        // exists
-        return &it->second;
-    }
+    std::vector<Shape*>* getContainerClassContents(TwoLayerClassE classType);
 
-    void createClassEntry(TwoLayerClassE classType) {
-        std::vector<Shape> vec;
-        auto it = classIndex.find(classType);
-        if (it == classIndex.end()) {
-            classIndex.insert(std::make_pair(classType, vec));
-        } else {
-            classIndex[classType] = vec;
-        }
-    }
+    void createClassEntry(TwoLayerClassE classType);
 };
 
 struct TwoLayerIndex {
@@ -1345,18 +1319,23 @@ struct TwoLayerIndex {
     std::vector<int> partitionIDs;
     // methods
 private:
-    static bool compareByY(const Shape &a, const Shape &b) {
-        return a.mbr.pMin.y < b.mbr.pMin.y;
+    static bool compareByY(const Shape* a, const Shape* b) {
+        return a->mbr.pMin.y < b->mbr.pMin.y;
     }
 public:
-    /** @brief add an object reference to the partition with partitionID, with the specified classType */
-    void addObject(int partitionID, TwoLayerClassE classType, Shape &object) {
+    /** 
+     * @brief adds an object to the partition with partitionID, with the specified classType 
+     * @note creates a copy of the object, and returns a pointer to the copied address
+     * @warning input Shape &object has virtually no lifetime
+     */
+    void addObject(int partitionID, TwoLayerClassE classType, Shape* objectRef) {
         // get or create new partition entry
         TwoLayerContainer* partition = getOrCreatePartition(partitionID);
         // get or create new class entry of this class type, for this partition
-        std::vector<Shape>* classObjects = partition->getOrCreateContainerClassContents(classType);
+        std::vector<Shape*>* classObjects = partition->getOrCreateContainerClassContents(classType);
         // add object
-        classObjects->emplace_back(object);
+        classObjects->push_back(objectRef);
+        // logger::log_success("Added object ref:", objectRef->recID);
     }
 
     TwoLayerContainer* getOrCreatePartition(int partitionID) {
@@ -1398,12 +1377,12 @@ public:
     void sortPartitionsOnY() {
         for (auto &it: partitionIndex) {
             // sort A
-            std::vector<Shape>* objectsA = it.second.getContainerClassContents(CLASS_A);
+            std::vector<Shape*>* objectsA = it.second.getContainerClassContents(CLASS_A);
             if (objectsA != nullptr) {
                 std::sort(objectsA->begin(), objectsA->end(), compareByY);
             }
             // sort C
-            std::vector<Shape>* objectsC = it.second.getContainerClassContents(CLASS_C);
+            std::vector<Shape*>* objectsC = it.second.getContainerClassContents(CLASS_C);
             if (objectsC != nullptr) {
                 std::sort(objectsC->begin(), objectsC->end(), compareByY);
             }
@@ -1424,6 +1403,7 @@ struct Dataset{
     DataspaceInfoT dataspaceInfo;
     // unique object count
     size_t totalObjects = 0;
+    std::unordered_map<size_t, Shape> objects;
     // two layer
     TwoLayerIndex twoLayerIndex;
     /* approximations */ 
@@ -1436,15 +1416,13 @@ struct Dataset{
     /**
      * Methods
     */
-    void addObject(Shape &object) {
-        // insert reference to partition index
-        for (auto &partitionIT: object.partitions) {
-            int partitionID = partitionIT.first;
-            TwoLayerClassE classType = (TwoLayerClassE) partitionIT.second;
-            // add to twolayer index
-            this->twoLayerIndex.addObject(partitionID, classType, object);
-        }
-    }
+    /**
+     * @brief adds a Shape object into two layer index and the reference map
+     * 
+     */
+    void addObject(Shape &object);
+
+    Shape* getObject(size_t recID);
 
     // calculate the size needed for the serialization buffer
     int calculateBufferSize();
@@ -1577,7 +1555,10 @@ struct DatasetInfo {
     inline Dataset* getDatasetS() {
         return S;
     }
-
+    /**
+     * @brief adds a Dataset to the configuration's dataset info
+     * @warning it has to be an empty dataset BUT its nickname needs to be set
+     */
     void addDataset(Dataset &dataset) {
         // add to datasets struct
         datasets.insert(std::make_pair(dataset.nickname, dataset));
@@ -1589,8 +1570,6 @@ struct DatasetInfo {
             S = &datasets.find(dataset.nickname)->second;
         }
         numberOfDatasets++;
-        // update dataspace info
-        this->updateDataspace();
     }
 
     void updateDataspace() {

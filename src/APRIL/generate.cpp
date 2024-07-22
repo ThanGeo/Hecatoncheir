@@ -17,6 +17,7 @@ namespace APRIL
             rasterYmin = yMin;
             rasterXmax = xMax;
             rasterYmax = yMax;
+            // logger::log_success("Set raster bounds:", rasterXmin, rasterYmin, rasterXmax, rasterYmax);
             return DBERR_OK;
         }
         
@@ -103,8 +104,10 @@ namespace APRIL
             for (int i=0; i<vertices->size(); i++) {
                 x = vertices->at(i).x();
                 y = vertices->at(i).y();
+                // printf("mapping %f,%f to ", x, y);
                 mapXYToHilbert(x, y, cellsPerDim);
                 object.modifyBoostPointByIndex(i, x, y);
+                // printf("%f,%f\n", x, y);
             }
             object.correctGeometry();
             //map the object's mbr
@@ -152,6 +155,8 @@ namespace APRIL
                 return M;
             }
 
+            // logger::log_success("got reference to points");
+
             // if only one point
             if (object.getVertexCount() == 1) {
                 startCellX = (uint32_t)vertices->at(0).x();
@@ -174,6 +179,7 @@ namespace APRIL
                     x1 = (it+1)->x();
                     y1 = (it+1)->y();
                 }
+                // logger::log_success(x1,y1,x2,y2);
 
                 //keep original values of y1,y2
                 ogy1 = y1;
@@ -358,7 +364,7 @@ namespace APRIL
         }
 
         // intervalize shape with area (polygons and rectangles)
-        static DB_STATUS intervalizeRegionShape(Shape &object, uint32_t cellsPerDim, AprilDataT &aprilData){
+        static DB_STATUS intervalizeRegionShape(Shape object, uint32_t cellsPerDim, AprilDataT &aprilData){
             DB_STATUS ret = DBERR_OK;
             clock_t timer;
             RasterData rasterData;
@@ -368,8 +374,10 @@ namespace APRIL
                 logger::log_error(ret, "Couldn't map to hilbert space object with id", object.recID);
                 return ret;
             }
+            // logger::log_success("mapped");
             // compute partial cells (todo: adjust to return DB_STATUS)
             uint32_t **M = calculatePartialAndUncertain(object, cellsPerDim, rasterData);
+            // logger::log_success("partial");
             std::vector<uint32_t> partialCells;
             partialCells = getPartialCellsFromMatrix(rasterData, cellsPerDim, M);
             //sort the cells by cell int 
@@ -379,13 +387,17 @@ namespace APRIL
                 delete M[i];
             }
             delete M;
+            // logger::log_success("sorted");
             // generate all/full intervals
             ret = computeAllAndFullIntervals(object, cellsPerDim, rasterData, partialCells, aprilData);
+            if (ret != DBERR_OK) {
+                logger::log_error(ret, "Computing ALL and FULL intervals failed");
+            }
             return ret;
         }
 
         // intervalize shape without area (points and linestrings)
-        static DB_STATUS intervalizeNonRegionShape(Shape &object, uint32_t cellsPerDim, AprilDataT &aprilData){
+        static DB_STATUS intervalizeNonRegionShape(Shape object, uint32_t cellsPerDim, AprilDataT &aprilData){
             DB_STATUS ret = DBERR_OK;
             clock_t timer;
             RasterData rasterData;
@@ -411,168 +423,316 @@ namespace APRIL
             return ret;
         }
 
-        /**
-         * @brief load and intervalize shapes like polygon or rectangle that have area
-         */
-        static DB_STATUS loadAndIntervalizeRegionShape(Dataset &dataset, FILE* pFile,  FILE* pFileALL, FILE* pFileFULL, Shape object) {
-            DB_STATUS ret = DBERR_OK;
-            int objectsInFullFile = 0;
-            // loop objects 
-            for(size_t i=0; i<dataset.totalObjects; i++){
-                // reset object
-                object.reset();
-                // get next object to rasterize
-                ret = storage::reader::partitionFile::loadNextObjectComplete(pFile, object);
+
+        namespace disk
+        {
+            /**
+             * @brief load and intervalize shapes like polygon or rectangle that have area
+             */
+            static DB_STATUS loadAndIntervalizeRegionShape(Dataset &dataset, FILE* pFile,  FILE* pFileALL, FILE* pFileFULL, Shape object) {
+                DB_STATUS ret = DBERR_OK;
+                int objectsInFullFile = 0;
+                // loop objects 
+                for(size_t i=0; i<dataset.totalObjects; i++){
+                    // reset object
+                    object.reset();
+                    // get next object to rasterize
+                    ret = storage::reader::partitionFile::loadNextObjectComplete(pFile, object);
+                    if (ret != DBERR_OK) {
+                        logger::log_error(ret, "Failed while reading object number",i,"from partition file");
+                        return ret;
+                    }
+                    // generate APRIL
+                    AprilDataT aprilData;
+                    ret = intervalizeRegionShape(object, dataset.aprilConfig.getCellsPerDim(), aprilData);
+                    if (ret != DBERR_OK || aprilData.numIntervalsALL == 0) {
+                        // at least 1 ALL interval is needed for each object, otherwise there is an error
+                        logger::log_error(DBERR_APRIL_CREATE, "Failed to generate APRIL for object with ID", object.recID);
+                        return DBERR_APRIL_CREATE;
+                    }
+                    // save on disk
+                    ret = APRIL::writer::saveAPRIL(pFileALL, pFileFULL, object.recID, 0, &aprilData);
+                    if (ret != DBERR_OK) {
+                        logger::log_error(ret, "Failed while saving APRIL on disk");
+                        return ret;
+                    }
+                    // count objects
+                    if (aprilData.numIntervalsFULL > 0) {
+                        objectsInFullFile += 1;
+                    }
+                }
+                // update value 
+                ret = storage::writer::updateObjectCountInFile(pFileFULL, objectsInFullFile);
                 if (ret != DBERR_OK) {
-                    logger::log_error(ret, "Failed while reading object number",i,"from partition file");
+                    logger::log_error(ret, "Couldn't update object count value in FULL intervals file");
                     return ret;
                 }
-                // generate APRIL
-                AprilDataT aprilData;
-                ret = intervalizeRegionShape(object, dataset.aprilConfig.getCellsPerDim(), aprilData);
-                if (ret != DBERR_OK || aprilData.numIntervalsALL == 0) {
-                    // at least 1 ALL interval is needed for each object, otherwise there is an error
-                    logger::log_error(DBERR_APRIL_CREATE, "Failed to generate APRIL for object with ID", object.recID);
-                    return DBERR_APRIL_CREATE;
-                }
-                // save on disk
-                ret = APRIL::writer::saveAPRIL(pFileALL, pFileFULL, object.recID, 0, &aprilData);
-                if (ret != DBERR_OK) {
-                    logger::log_error(ret, "Failed while saving APRIL on disk");
-                    return ret;
-                }
-                // count objects
-                if (aprilData.numIntervalsFULL > 0) {
-                    objectsInFullFile += 1;
-                }
-            }
-            // update value 
-            ret = storage::writer::updateObjectCountInFile(pFileFULL, objectsInFullFile);
-            if (ret != DBERR_OK) {
-                logger::log_error(ret, "Couldn't update object count value in FULL intervals file");
                 return ret;
             }
-            return ret;
+
+            /**
+             * @brief intervalize shapes like point or linestring that have no area
+             */
+            static DB_STATUS loadAndIntervalizeNonRegionShape(Dataset &dataset, FILE* pFile,  FILE* pFileALL, FILE* pFileFULL, Shape object) {
+                DB_STATUS ret = DBERR_OK;
+                int objectsInFullFile = 0;
+                // loop objects 
+                for(size_t i=0; i<dataset.totalObjects; i++){
+                    // reset object
+                    object.reset();
+                    // get next object to rasterize
+                    ret = storage::reader::partitionFile::loadNextObjectComplete(pFile, object);
+                    if (ret != DBERR_OK) {
+                        logger::log_error(ret, "Failed while reading object number",i,"from partition file");
+                        return ret;
+                    }
+                    // generate APRIL
+                    AprilDataT aprilData;
+                    ret = intervalizeNonRegionShape(object, dataset.aprilConfig.getCellsPerDim(), aprilData);
+                    if (ret != DBERR_OK || aprilData.numIntervalsALL == 0) {
+                        // at least 1 ALL interval is needed for each object, otherwise there is an error
+                        logger::log_error(DBERR_APRIL_CREATE, "Failed to generate APRIL for object with ID", object.recID);
+                        return DBERR_APRIL_CREATE;
+                    }
+                    // save on disk
+                    ret = APRIL::writer::saveAPRIL(pFileALL, pFileFULL, object.recID, 0, &aprilData);
+                    if (ret != DBERR_OK) {
+                        logger::log_error(ret, "Failed while saving APRIL on disk");
+                        return ret;
+                    }
+                    // count objects
+                    if (aprilData.numIntervalsFULL > 0) {
+                        objectsInFullFile += 1;
+                    }
+                }
+                // update value 
+                ret = storage::writer::updateObjectCountInFile(pFileFULL, objectsInFullFile);
+                if (ret != DBERR_OK) {
+                    logger::log_error(ret, "Couldn't update object count value in FULL intervals file");
+                    return ret;
+                }
+                return ret;
+            }
+
+            DB_STATUS init(Dataset &dataset) {
+                DB_STATUS ret = DBERR_OK;
+                // init rasterization environment
+                ret = setRasterBounds(dataset.dataspaceInfo.xMinGlobal, dataset.dataspaceInfo.yMinGlobal, dataset.dataspaceInfo.xMaxGlobal, dataset.dataspaceInfo.yMaxGlobal);
+                if (ret != DBERR_OK) {
+                    return DBERR_INVALID_PARAMETER;
+                }
+                // open dataset file
+                FILE* pFile = fopen(dataset.path.c_str(), "rb");
+                if (pFile == NULL) {
+                    logger::log_error(DBERR_MISSING_FILE, "Could not open partitioned dataset file from path:", dataset.path);
+                    return DBERR_MISSING_FILE;
+                }
+                // generate approximation filepaths
+                ret = storage::generateAPRILFilePath(dataset);
+                if (ret != DBERR_OK) {
+                    return ret;
+                }
+                // open april files for writing
+                FILE* pFileALL = fopen(dataset.aprilConfig.ALL_intervals_path.c_str(), "wb");
+                if (pFileALL == NULL) {
+                    logger::log_error(DBERR_MISSING_FILE, "Couldnt open APRIL ALL file:", dataset.aprilConfig.ALL_intervals_path);
+                    return DBERR_MISSING_FILE;
+                }
+                FILE* pFileFULL = fopen(dataset.aprilConfig.FULL_intervals_path.c_str(), "wb");
+                if (pFileFULL == NULL) {
+                    logger::log_error(DBERR_MISSING_FILE, "Couldnt open APRIL FULL file:", dataset.aprilConfig.FULL_intervals_path);
+                    return DBERR_MISSING_FILE;
+                }
+                // dummy object
+                Shape object;
+                // next read the dataset info
+                ret = storage::reader::partitionFile::loadDatasetInfo(pFile, dataset);
+                if (ret != DBERR_OK) {
+                    goto CLOSE_AND_EXIT;
+                }
+                // write dummy value for object count. 
+                fwrite(&dataset.totalObjects, sizeof(size_t), 1, pFileALL);
+                // will replace with the actual value in the end, because some objects may not have FULL intervals
+                fwrite(&dataset.totalObjects, sizeof(size_t), 1, pFileFULL);
+                // switch based on data type
+                switch (dataset.dataType) {
+                    // intervalize dataset objects
+                    case DT_POLYGON:
+                        object = shape_factory::createEmptyPolygonShape();
+                        ret = loadAndIntervalizeRegionShape(dataset, pFile, pFileALL, pFileFULL, object);
+                        break;
+                    case DT_POINT:
+                        object = shape_factory::createEmptyPointShape();
+                        ret = loadAndIntervalizeNonRegionShape(dataset, pFile, pFileALL, pFileFULL, object);
+                        break;
+                    case DT_LINESTRING:
+                        object = shape_factory::createEmptyLineStringShape();
+                        ret = loadAndIntervalizeNonRegionShape(dataset, pFile, pFileALL, pFileFULL, object);
+                        break;
+                    case DT_RECTANGLE:
+                        object = shape_factory::createEmptyRectangleShape();
+                        ret = loadAndIntervalizeRegionShape(dataset, pFile, pFileALL, pFileFULL, object);
+                        break;
+                    default:
+                        // error
+                        logger::log_error(DBERR_INVALID_DATATYPE, "Invalid datatype in intervalization:", dataset.dataType);
+                        return DBERR_INVALID_DATATYPE;
+                }
+                if (ret != DBERR_OK) {
+                    logger::log_error(ret, "Failed to load and intervalize dataset contents.");
+                    goto CLOSE_AND_EXIT;
+                }
+        CLOSE_AND_EXIT:
+                fclose(pFile);
+                fclose(pFileALL);
+                fclose(pFileFULL);
+                return ret;
+            }
         }
 
-        /**
-         * @brief intervalize shapes like point or linestring that have no area
-         */
-        static DB_STATUS loadAndIntervalizeNonRegionShape(Dataset &dataset, FILE* pFile,  FILE* pFileALL, FILE* pFileFULL, Shape object) {
-            DB_STATUS ret = DBERR_OK;
-            int objectsInFullFile = 0;
-            // loop objects 
-            for(size_t i=0; i<dataset.totalObjects; i++){
-                // reset object
-                object.reset();
-                // get next object to rasterize
-                ret = storage::reader::partitionFile::loadNextObjectComplete(pFile, object);
+        namespace memory
+        {
+            /**
+             * @brief load and intervalize shapes like polygon or rectangle that have area
+             */
+            static DB_STATUS intervalizeRegionShapes(Dataset &dataset, FILE* pFileALL, FILE* pFileFULL) {
+                DB_STATUS ret = DBERR_OK;
+                int objectsInFullFile = 0;
+                // loop objects from map
+                for (auto &objectIT : dataset.objects) {
+                    // get next object
+                    Shape* object = dataset.getObject(objectIT.first);
+                    // generate APRIL
+                    AprilDataT aprilData;
+                    ret = intervalizeRegionShape(*object, dataset.aprilConfig.getCellsPerDim(), aprilData);
+                    if (ret != DBERR_OK || aprilData.numIntervalsALL == 0) {
+                        // at least 1 ALL interval is needed for each object, otherwise there is an error
+                        logger::log_error(DBERR_APRIL_CREATE, "Failed to generate APRIL for object with ID", object->recID);
+                        return DBERR_APRIL_CREATE;
+                    }
+                    // logger::log_success("Object", object->recID, aprilData.numIntervalsALL, aprilData.numIntervalsFULL, "ALL and FULL intervals");
+                    // save on disk
+                    ret = APRIL::writer::saveAPRIL(pFileALL, pFileFULL, object->recID, 0, &aprilData);
+                    if (ret != DBERR_OK) {
+                        logger::log_error(ret, "Failed while saving APRIL on disk");
+                        return ret;
+                    }
+                    // count objects
+                    if (aprilData.numIntervalsFULL > 0) {
+                        objectsInFullFile += 1;
+                    }
+                }
+                // update value 
+                ret = storage::writer::updateObjectCountInFile(pFileFULL, objectsInFullFile);
                 if (ret != DBERR_OK) {
-                    logger::log_error(ret, "Failed while reading object number",i,"from partition file");
+                    logger::log_error(ret, "Couldn't update object count value in FULL intervals file");
                     return ret;
                 }
-                // generate APRIL
-                AprilDataT aprilData;
-                ret = intervalizeNonRegionShape(object, dataset.aprilConfig.getCellsPerDim(), aprilData);
-                if (ret != DBERR_OK || aprilData.numIntervalsALL == 0) {
-                    // at least 1 ALL interval is needed for each object, otherwise there is an error
-                    logger::log_error(DBERR_APRIL_CREATE, "Failed to generate APRIL for object with ID", object.recID);
-                    return DBERR_APRIL_CREATE;
+                return ret;
+            }
+
+
+            /**
+             * @brief load and intervalize shapes like polygon or rectangle that have area
+             */
+            static DB_STATUS intervalizeNonRegionShapes(Dataset &dataset, FILE* pFileALL, FILE* pFileFULL) {
+                DB_STATUS ret = DBERR_OK;
+                int objectsInFullFile = 0;
+                // loop objects from map
+                for (auto &objectIT : dataset.objects) {
+                    // get next object
+                    Shape* object = dataset.getObject(objectIT.first);
+                    // generate APRIL
+                    AprilDataT aprilData;
+                    ret = intervalizeNonRegionShape(*object, dataset.aprilConfig.getCellsPerDim(), aprilData);
+                    if (ret != DBERR_OK || aprilData.numIntervalsALL == 0) {
+                        // at least 1 ALL interval is needed for each object, otherwise there is an error
+                        logger::log_error(DBERR_APRIL_CREATE, "Failed to generate APRIL for object with ID", object->recID);
+                        return DBERR_APRIL_CREATE;
+                    }
+                    // save on disk
+                    ret = APRIL::writer::saveAPRIL(pFileALL, pFileFULL, object->recID, 0, &aprilData);
+                    if (ret != DBERR_OK) {
+                        logger::log_error(ret, "Failed while saving APRIL on disk");
+                        return ret;
+                    }
+                    // count objects
+                    if (aprilData.numIntervalsFULL > 0) {
+                        objectsInFullFile += 1;
+                    }
                 }
-                // save on disk
-                ret = APRIL::writer::saveAPRIL(pFileALL, pFileFULL, object.recID, 0, &aprilData);
+                // update value 
+                ret = storage::writer::updateObjectCountInFile(pFileFULL, objectsInFullFile);
                 if (ret != DBERR_OK) {
-                    logger::log_error(ret, "Failed while saving APRIL on disk");
+                    logger::log_error(ret, "Couldn't update object count value in FULL intervals file");
                     return ret;
                 }
-                // count objects
-                if (aprilData.numIntervalsFULL > 0) {
-                    objectsInFullFile += 1;
+                return ret;
+            }    
+
+
+            DB_STATUS init(Dataset &dataset) {
+                DB_STATUS ret = DBERR_OK;
+                // init rasterization environment
+                ret = setRasterBounds(dataset.dataspaceInfo.xMinGlobal, dataset.dataspaceInfo.yMinGlobal, dataset.dataspaceInfo.xMaxGlobal, dataset.dataspaceInfo.yMaxGlobal);
+                if (ret != DBERR_OK) {
+                    return DBERR_INVALID_PARAMETER;
                 }
-            }
-            // update value 
-            ret = storage::writer::updateObjectCountInFile(pFileFULL, objectsInFullFile);
-            if (ret != DBERR_OK) {
-                logger::log_error(ret, "Couldn't update object count value in FULL intervals file");
+                // generate approximation filepaths
+                ret = storage::generateAPRILFilePath(dataset);
+                if (ret != DBERR_OK) {
+                    return ret;
+                }
+                // open april files for writing
+                FILE* pFileALL = fopen(dataset.aprilConfig.ALL_intervals_path.c_str(), "wb");
+                if (pFileALL == NULL) {
+                    logger::log_error(DBERR_MISSING_FILE, "Couldnt open APRIL ALL file:", dataset.aprilConfig.ALL_intervals_path);
+                    return DBERR_MISSING_FILE;
+                }
+                FILE* pFileFULL = fopen(dataset.aprilConfig.FULL_intervals_path.c_str(), "wb");
+                if (pFileFULL == NULL) {
+                    logger::log_error(DBERR_MISSING_FILE, "Couldnt open APRIL FULL file:", dataset.aprilConfig.FULL_intervals_path);
+                    return DBERR_MISSING_FILE;
+                }
+                // write dummy value for object count. 
+                size_t elementsWritten = fwrite(&dataset.totalObjects, sizeof(size_t), 1, pFileALL);
+                if (elementsWritten != 1) {
+                    logger::log_error(DBERR_DISK_WRITE_FAILED, "Writing total objects in ALL file failed");
+                    return DBERR_DISK_WRITE_FAILED;
+                }
+                // will replace with the actual value in the end, because some objects may not have FULL intervals
+                elementsWritten = fwrite(&dataset.totalObjects, sizeof(size_t), 1, pFileFULL);
+                if (elementsWritten != 1) {
+                    logger::log_error(DBERR_DISK_WRITE_FAILED, "Writing total objects in ALL file failed");
+                    return DBERR_DISK_WRITE_FAILED;
+                }
+                // switch based on data type
+                switch (dataset.dataType) {
+                    // intervalize dataset objects
+                    case DT_POLYGON:
+                    case DT_RECTANGLE:
+                        ret = intervalizeRegionShapes(dataset, pFileALL, pFileFULL);
+                        break;
+                    case DT_POINT:
+                    case DT_LINESTRING:
+                        ret = intervalizeNonRegionShapes(dataset, pFileALL, pFileFULL);
+                        break;
+                    default:
+                        // error
+                        logger::log_error(DBERR_INVALID_DATATYPE, "Invalid datatype in intervalization:", dataset.dataType);
+                        return DBERR_INVALID_DATATYPE;
+                }
+                if (ret != DBERR_OK) {
+                    logger::log_error(ret, "Failed to load and intervalize dataset contents.");
+                    goto CLOSE_AND_EXIT;
+                }
+        CLOSE_AND_EXIT:
+                fflush(pFileALL);
+                fclose(pFileALL);
+                fflush(pFileFULL);
+                fclose(pFileFULL);
                 return ret;
             }
-            return ret;
-        }
-    
-    
-        DB_STATUS init(Dataset &dataset) {
-            DB_STATUS ret = DBERR_OK;
-            // init rasterization environment
-            ret = setRasterBounds(dataset.dataspaceInfo.xMinGlobal, dataset.dataspaceInfo.yMinGlobal, dataset.dataspaceInfo.xMaxGlobal, dataset.dataspaceInfo.yMaxGlobal);
-            if (ret != DBERR_OK) {
-                return DBERR_INVALID_PARAMETER;
-            }
-            // open dataset file
-            FILE* pFile = fopen(dataset.path.c_str(), "rb");
-            if (pFile == NULL) {
-                logger::log_error(DBERR_MISSING_FILE, "Could not open partitioned dataset file from path:", dataset.path);
-                return DBERR_MISSING_FILE;
-            }
-            // generate approximation filepaths
-            ret = storage::generateAPRILFilePath(dataset);
-            if (ret != DBERR_OK) {
-                return ret;
-            }
-            // open april files for writing
-            FILE* pFileALL = fopen(dataset.aprilConfig.ALL_intervals_path.c_str(), "wb");
-            if (pFileALL == NULL) {
-                logger::log_error(DBERR_MISSING_FILE, "Couldnt open APRIL ALL file:", dataset.aprilConfig.ALL_intervals_path);
-                return DBERR_MISSING_FILE;
-            }
-            FILE* pFileFULL = fopen(dataset.aprilConfig.FULL_intervals_path.c_str(), "wb");
-            if (pFileFULL == NULL) {
-                logger::log_error(DBERR_MISSING_FILE, "Couldnt open APRIL FULL file:", dataset.aprilConfig.FULL_intervals_path);
-                return DBERR_MISSING_FILE;
-            }
-            // dummy object
-            Shape object;
-            // next read the dataset info
-            ret = storage::reader::partitionFile::loadDatasetInfo(pFile, dataset);
-            if (ret != DBERR_OK) {
-                goto CLOSE_AND_EXIT;
-            }
-            // write dummy value for object count. 
-            fwrite(&dataset.totalObjects, sizeof(size_t), 1, pFileALL);
-            // will replace with the actual value in the end, because some objects may not have FULL intervals
-            fwrite(&dataset.totalObjects, sizeof(size_t), 1, pFileFULL);
-            // switch based on data type
-            switch (dataset.dataType) {
-                // intervalize dataset objects
-                case DT_POLYGON:
-                    object = shape_factory::createEmptyPolygonShape();
-                    ret = loadAndIntervalizeRegionShape(dataset, pFile, pFileALL, pFileFULL, object);
-                    break;
-                case DT_POINT:
-                    object = shape_factory::createEmptyPointShape();
-                    ret = loadAndIntervalizeNonRegionShape(dataset, pFile, pFileALL, pFileFULL, object);
-                    break;
-                case DT_LINESTRING:
-                    object = shape_factory::createEmptyLineStringShape();
-                    ret = loadAndIntervalizeNonRegionShape(dataset, pFile, pFileALL, pFileFULL, object);
-                    break;
-                case DT_RECTANGLE:
-                    object = shape_factory::createEmptyRectangleShape();
-                    ret = loadAndIntervalizeRegionShape(dataset, pFile, pFileALL, pFileFULL, object);
-                    break;
-                default:
-                    // error
-                    logger::log_error(DBERR_INVALID_DATATYPE, "Invalid datatype in intervalization:", dataset.dataType);
-                    return DBERR_INVALID_DATATYPE;
-            }
-            if (ret != DBERR_OK) {
-                logger::log_error(ret, "Failed to load and intervalize dataset contents.");
-                goto CLOSE_AND_EXIT;
-            }
-    CLOSE_AND_EXIT:
-            fclose(pFile);
-            fclose(pFileALL);
-            fclose(pFileFULL);
-            return ret;
         }
     }
 }

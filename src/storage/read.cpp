@@ -119,8 +119,8 @@ namespace storage
                     }
                     // store in dataset
                     dataset.addObject(object);
-                    // logger::log_success("loaded object", object.recID, "with mbr:", object.mbr.pMin.x, object.mbr.pMin.y, object.mbr.pMax.x, object.mbr.pMax.y);
                 }
+
                 // sort two layer
                 dataset.twoLayerIndex.sortPartitionsOnY();
                 return ret;

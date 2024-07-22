@@ -504,7 +504,7 @@ namespace APRIL
                 return ret;
             }
             
-            DB_STATUS MBREqualJoinAPRIL(Shape &objR, Shape &objS, AprilDataT *aprilR, AprilDataT *aprilS, int &relation) {
+            DB_STATUS MBREqualJoinAPRIL(Shape* objR, Shape* objS, AprilDataT *aprilR, AprilDataT *aprilS, int &relation) {
                 DB_STATUS ret = DBERR_OK;
                 // AA join to look for exact relationship between the lists
                 int AAresult = joinIntervalListsSymmetricalOptimizedTrueHitIntersect(aprilR->intervalsALL, aprilR->numIntervalsALL, aprilS->intervalsALL, aprilS->numIntervalsALL);

@@ -29,11 +29,23 @@ namespace APRIL
             uint32_t minCellX, minCellY, maxCellX, maxCellY;
             uint32_t bufferWidth, bufferHeight;
         };
+        namespace disk
+        {
+            /**
+             * @brief generates all APRIL approximations for the given dataset.
+             * @note It loads each polygon one by one and creates its APRIL approximation
+             */
+            extern DB_STATUS init(Dataset &dataset);
+        }
         
-        /**
-         * generates all APRIL approximations for the given dataset
-         */
-        extern DB_STATUS init(Dataset &dataset);
+        namespace memory
+        {
+            /**
+             * @brief generates all APRIL approximations for the given dataset.
+             * @warning requires all objects to be stored already in memory (in the dataset)
+             */
+            extern DB_STATUS init(Dataset &dataset);
+        }
     }
 }
 

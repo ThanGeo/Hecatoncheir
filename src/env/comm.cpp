@@ -531,7 +531,8 @@ STOP_LISTENING:
 
             // create the APRIL approximations for the dataset(s)
             for (auto& it: g_config.datasetInfo.datasets) {
-                ret = APRIL::generation::init(it.second);
+                // ret = APRIL::generation::disk::init(it.second);
+                ret = APRIL::generation::memory::init(it.second);
                 if (ret != DBERR_OK) {
                     logger::log_error(ret, "Failed to generate APRIL for dataset", it.second.nickname);
                 }
@@ -618,26 +619,31 @@ STOP_LISTENING:
             }
             // free memory
             free(msg.data);
-            
-            // load data and create the dataset objects to store
+
+            // create empty datasets
             for (int i=0; i<nicknames.size(); i++) {
                 Dataset dataset;
                 dataset.nickname = nicknames[i];
+                // add empty dataset to configuration
+                g_config.datasetInfo.addDataset(dataset);
+            }
+            // load data and fill the dataset objects
+            for (int i=0; i<nicknames.size(); i++) {
+                Dataset* dataset = g_config.datasetInfo.getDatasetByNickname(nicknames[i]);
                 // generate partition file path from dataset nickname
-                ret = storage::generatePartitionFilePath(dataset);
+                ret = storage::generatePartitionFilePath(*dataset);
                 if (ret != DBERR_OK) {
                     goto EXIT_SAFELY;
                 }
                 // load partition file (create MBRs)
-                ret = storage::reader::partitionFile::loadDatasetComplete(dataset);
+                ret = storage::reader::partitionFile::loadDatasetComplete(*dataset);
                 if (ret != DBERR_OK) {
                     logger::log_error(DBERR_DISK_READ_FAILED, "Failed loading partition file MBRs");
                     goto EXIT_SAFELY;
-                }
-                // add to configuration
-                g_config.datasetInfo.addDataset(dataset);
+                }  
             }
-            // logger::log_success("Loaded dataspace info:", g_config.datasetInfo.dataspaceInfo.xMinGlobal, g_config.datasetInfo.dataspaceInfo.yMinGlobal, g_config.datasetInfo.dataspaceInfo.xMaxGlobal, g_config.datasetInfo.dataspaceInfo.yMaxGlobal);
+            // dont forget to update the dataspace info of the configuration
+            g_config.datasetInfo.updateDataspace();
 EXIT_SAFELY:
             // respond
             if (ret == DBERR_OK) {
@@ -656,7 +662,6 @@ EXIT_SAFELY:
                 }
                 return errorCode;
             }
-
             return ret;
         }
 
