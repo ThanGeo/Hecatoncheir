@@ -167,35 +167,13 @@ void QueryOutput::shallowCopy(QueryOutput &other) {
     this->rasterizationsDone = other.rasterizationsDone;
 }
 
-std::vector<Shape*>* TwoLayerContainer::getOrCreateContainerClassContents(TwoLayerClassE classType) {
-    auto it = classIndex.find(classType);
-    if (it == classIndex.end()) {
-        // does not exist, create
-        createClassEntry(classType);
-        // return its reference
-        return &classIndex.find(classType)->second;
-    }
-    // exists
-    return &it->second;
-}
-
-std::vector<Shape*>* TwoLayerContainer::getContainerClassContents(TwoLayerClassE classType) {
-    auto it = classIndex.find(classType);
-    if (it == classIndex.end()) {
-        // does not exist
+std::vector<Shape*>* Partition::getContainerClassContents(TwoLayerClassE classType) {
+    if (classType < CLASS_A || classType > CLASS_D) {
+        logger::log_error(DBERR_OUT_OF_BOUNDS, "class type index out of bounds");
         return nullptr;
     }
-    return &it->second;
-}
-
-void TwoLayerContainer::createClassEntry(TwoLayerClassE classType) {
-    std::vector<Shape*> vec;
-    auto it = classIndex.find(classType);
-    if (it == classIndex.end()) {
-        classIndex.insert(std::make_pair(classType, vec));
-    } else {
-        classIndex[classType] = vec;
-    }
+    // exists
+    return &classIndex[classType];
 }
 
 Shape* Dataset::getObject(size_t recID) {

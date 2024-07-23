@@ -1304,25 +1304,40 @@ typedef struct DataspaceInfo {
 } DataspaceInfoT;
 
 
-struct TwoLayerContainer {
-    std::unordered_map<TwoLayerClassE, std::vector<Shape*>> classIndex;
-
-    std::vector<Shape*>* getOrCreateContainerClassContents(TwoLayerClassE classType);
-
+struct Partition {
+    size_t partitionID;
+    /* 4 positions, one for each class type. Contains the objects of that class for this partition */
+    std::vector<std::vector<Shape*>> classIndex;
+    /**
+     * @brief Constructor: there are only 4 classes (A, B, C, D)
+     */
+    Partition(size_t id) : partitionID(id), classIndex(4) {}
     std::vector<Shape*>* getContainerClassContents(TwoLayerClassE classType);
-
-    void createClassEntry(TwoLayerClassE classType);
 };
 
 struct TwoLayerIndex {
-    std::unordered_map<int, TwoLayerContainer> partitionIndex;
-    std::vector<int> partitionIDs;
+    std::vector<Partition> partitions;
+    std::unordered_map<int, size_t> partitionMap;
     // methods
 private:
     static bool compareByY(const Shape* a, const Shape* b) {
         return a->mbr.pMin.y < b->mbr.pMin.y;
     }
 public:
+    Partition* getOrCreatePartition(int partitionID) {
+        // return &it->second;
+        auto it = partitionMap.find(partitionID);
+        if (it == partitionMap.end()) {
+            // new partition
+            partitions.emplace_back(partitionID);
+            size_t newIndex = partitions.size() - 1;
+            partitionMap[partitionID] = newIndex;
+            return &partitions[newIndex];
+        } else {
+            // existing
+            return &partitions[it->second];
+        }
+    }
     /** 
      * @brief adds an object to the partition with partitionID, with the specified classType 
      * @note creates a copy of the object, and returns a pointer to the copied address
@@ -1330,59 +1345,33 @@ public:
      */
     void addObject(int partitionID, TwoLayerClassE classType, Shape* objectRef) {
         // get or create new partition entry
-        TwoLayerContainer* partition = getOrCreatePartition(partitionID);
+        Partition* partition = getOrCreatePartition(partitionID);
         // get or create new class entry of this class type, for this partition
-        std::vector<Shape*>* classObjects = partition->getOrCreateContainerClassContents(classType);
+        std::vector<Shape*>* classObjects = partition->getContainerClassContents(classType);
         // add object
         classObjects->push_back(objectRef);
         // logger::log_success("Added object ref:", objectRef->recID);
     }
 
-    TwoLayerContainer* getOrCreatePartition(int partitionID) {
-        auto it = partitionIndex.find(partitionID);
-        if (it == partitionIndex.end()) {
-            // does not exist, create it
-            createPartitionEntry(partitionID);
-            // return its reference
-            TwoLayerContainer* ref = &partitionIndex.find(partitionID)->second;
-            return ref;
-        } 
-        // exists
-        return &it->second;
-    }
-
-    TwoLayerContainer* getPartition(int partitionID) {
-        auto it = partitionIndex.find(partitionID);
-        if (it == partitionIndex.end()) {
+    Partition* getPartition(int partitionID) {
+        auto it = partitionMap.find(partitionID);
+        if (it == partitionMap.end()) {
             // does not exist
             return nullptr;
         } 
         // exists
-        return &it->second;
+        return &partitions[it->second];
     }
 
-    void createPartitionEntry(int partitionID) {
-        TwoLayerContainer container;
-        auto it = partitionIndex.find(partitionID);
-        if (it == partitionIndex.end()) {
-            // insert new
-            partitionIndex.insert(std::make_pair(partitionID, container));
-            partitionIDs.emplace_back(partitionID);
-        } else {
-            // replace existing
-            partitionIndex[partitionID] = container;
-        }
-    }
-    
     void sortPartitionsOnY() {
-        for (auto &it: partitionIndex) {
+        for (auto &it: partitions) {
             // sort A
-            std::vector<Shape*>* objectsA = it.second.getContainerClassContents(CLASS_A);
+            std::vector<Shape*>* objectsA = it.getContainerClassContents(CLASS_A);
             if (objectsA != nullptr) {
                 std::sort(objectsA->begin(), objectsA->end(), compareByY);
             }
             // sort C
-            std::vector<Shape*>* objectsC = it.second.getContainerClassContents(CLASS_C);
+            std::vector<Shape*>* objectsC = it.getContainerClassContents(CLASS_C);
             if (objectsC != nullptr) {
                 std::sort(objectsC->begin(), objectsC->end(), compareByY);
             }

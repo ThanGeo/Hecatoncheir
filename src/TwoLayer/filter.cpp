@@ -427,14 +427,14 @@ namespace twolayer
                 QueryOutputT localQueryOutput;
                 // loop common partitions (todo: optimize to start from the dataset that has the fewer ones)
                 #pragma omp for
-                for (int i=0; i<R->twoLayerIndex.partitionIDs.size(); i++) {
+                for (int i=0; i<R->twoLayerIndex.partitions.size(); i++) {
                     // get partition ID and S container
-                    int partitionID = R->twoLayerIndex.partitionIDs[i];
-                    TwoLayerContainer* tlContainerS = S->twoLayerIndex.getPartition(partitionID);
+                    int partitionID = R->twoLayerIndex.partitions[i].partitionID;
+                    Partition* tlContainerS = S->twoLayerIndex.getPartition(partitionID);
                     // if relation S has any objects for this partition (non-empty container)
                     if (tlContainerS != nullptr) {
                         // common partition found
-                        TwoLayerContainer* tlContainerR = R->twoLayerIndex.getPartition(partitionID);
+                        Partition* tlContainerR = &R->twoLayerIndex.partitions[i];
                         // R_A - S_A
                         local_ret = sweepRollY_1(tlContainerR->getContainerClassContents(CLASS_A), tlContainerS->getContainerClassContents(CLASS_A), localQueryOutput);
                         if (local_ret != DBERR_OK) {
@@ -848,14 +848,14 @@ namespace twolayer
                 QueryOutputT localQueryOutput;
                 // loop common partitions (todo: optimize to start from the dataset that has the fewer ones)
                 #pragma omp for
-                for (int i=0; i<R->twoLayerIndex.partitionIDs.size(); i++) {
+                for (int i=0; i<R->twoLayerIndex.partitions.size(); i++) {
                     // get partition ID and S container
-                    int partitionID = R->twoLayerIndex.partitionIDs[i];
-                    TwoLayerContainer* tlContainerS = S->twoLayerIndex.getPartition(partitionID);
+                    int partitionID = R->twoLayerIndex.partitions[i].partitionID;
+                    Partition* tlContainerS = S->twoLayerIndex.getPartition(partitionID);
                     // if relation S has any objects for this partition (non-empty container)
                     if (tlContainerS != nullptr) {
                         // common partition found
-                        TwoLayerContainer* tlContainerR = R->twoLayerIndex.getPartition(partitionID);
+                        Partition* tlContainerR = &R->twoLayerIndex.partitions[i];
                         // R_A - S_A
                         local_ret = sweepRollY_1(tlContainerR->getContainerClassContents(CLASS_A), tlContainerS->getContainerClassContents(CLASS_A), localQueryOutput);
                         if (local_ret != DBERR_OK) {
