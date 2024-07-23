@@ -192,7 +192,7 @@ namespace partitioning
             size_t fromLine = 1 + (tid * linesPerThread);          // first line is object count
             size_t toLine = 1 + ((tid + 1) * linesPerThread);    // exclusive
             if (tid == totalThreads - 1) {
-                toLine = objectCount;
+                toLine = objectCount+1;
             }
             // open file
             std::ifstream fin(dataset.path);
@@ -283,7 +283,7 @@ namespace partitioning
             size_t fromLine = 1 + (tid * linesPerThread);          // first line is object count
             size_t toLine = 1 + ((tid + 1) * linesPerThread);    // exclusive
             if (tid == totalThreads - 1) {
-                toLine = objectCount;
+                toLine = objectCount+1;
             }
             // open file
             std::ifstream fin(datasetPath);

@@ -221,6 +221,7 @@ namespace storage
                     logger::log_error(ret, "Failed to load dataset contents");
                     goto CLOSE_AND_EXIT;
                 }
+                // logger::log_success("Loaded", dataset.totalObjects, "objects");
 CLOSE_AND_EXIT:
                 fclose(pFile);
                 return ret;

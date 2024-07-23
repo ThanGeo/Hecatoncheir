@@ -1589,8 +1589,6 @@ struct DatasetInfo {
     }
 };
 
-extern std::vector<int> getCommonSectionIDsOfObjects(Dataset *datasetR, Dataset *datasetS, size_t idR, size_t idS);
-
 typedef struct ApproximationInfo {
     ApproximationTypeE type;   // sets which of the following fields will be used
     AprilConfigT aprilConfig;  

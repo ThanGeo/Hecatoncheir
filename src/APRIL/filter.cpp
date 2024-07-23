@@ -3,6 +3,14 @@
 
 namespace APRIL
 {
+    std::vector<int> getCommonSectionIDsOfObjects(Dataset *datasetR, Dataset *datasetS, size_t idR, size_t idS) {
+        auto itR = datasetR->recToSectionIdMap.find(idR);
+        auto itS = datasetS->recToSectionIdMap.find(idS);
+        std::vector<int> commonSectionIDs;
+        set_intersection(itR->second.begin(),itR->second.end(),itS->second.begin(),itS->second.end(),back_inserter(commonSectionIDs));
+        return commonSectionIDs;
+    }
+
     namespace topology
     {
         
