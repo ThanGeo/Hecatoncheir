@@ -7,7 +7,7 @@
 
 namespace pack
 {
-    DB_STATUS packSystemInfo(SerializedMsgT<char> &sysInfoMsg);
+    DB_STATUS packSystemInfo(SerializedMsg<char> &sysInfoMsg);
 
 
     /**
@@ -17,7 +17,7 @@ namespace pack
      * @param msgPack 
      */
     template <typename T> 
-    void printMsgPack(SerializedMsgT<T> &msgPack) {
+    void printMsgPack(SerializedMsg<T> &msgPack) {
         std::cout << "Message:" << std::endl;
         std::cout << "\ttype: " << g_MPI_Datatype_map[msgPack.type] << std::endl;
         std::cout << "\tsize: " << msgPack.count << std::endl;
@@ -34,38 +34,38 @@ namespace pack
     /*
      * packs april info into a serialized message 
      */
-    DB_STATUS packAPRILInfo(AprilConfigT &aprilConfig, SerializedMsgT<int> &aprilInfoMsg);
+    DB_STATUS packAPRILInfo(AprilConfig &aprilConfig, SerializedMsg<int> &aprilInfoMsg);
 
     /**
      * packs query info into a serialized message
      */
-    DB_STATUS packQueryInfo(QueryInfoT &queryInfo, SerializedMsgT<int> &queryInfoMsg);
+    DB_STATUS packQueryInfo(QueryInfo &queryInfo, SerializedMsg<int> &queryInfoMsg);
 
     /**
      * packs the loaded dataset nicknames into a serialized message 
      * (both R and S, or only R if there's no S)
      */
-    DB_STATUS packDatasetsNicknames(SerializedMsgT<char> &msg);
+    DB_STATUS packDatasetsNicknames(SerializedMsg<char> &msg);
 
     /**
      * @brief packs the current contents of the query output global variable into a serialized message
      * based on query type
      */
-    DB_STATUS packQueryResults(SerializedMsgT<int> &msg, QueryOutputT &queryOutput);
+    DB_STATUS packQueryResults(SerializedMsg<int> &msg, QueryOutput &queryOutput);
 }
 
 namespace unpack
 {   
 
-    DB_STATUS unpackSystemInfo(SerializedMsgT<char> &sysInfoMsg);
+    DB_STATUS unpackSystemInfo(SerializedMsg<char> &sysInfoMsg);
 
-    DB_STATUS unpackAPRILInfo(SerializedMsgT<int> &aprilInfoMsg);
+    DB_STATUS unpackAPRILInfo(SerializedMsg<int> &aprilInfoMsg);
 
-    DB_STATUS unpackQueryInfo(SerializedMsgT<int> &queryInfoMsg);
+    DB_STATUS unpackQueryInfo(SerializedMsg<int> &queryInfoMsg);
 
-    DB_STATUS unpackQueryResults(SerializedMsgT<int> &queryResultsMsg, QueryTypeE queryType, QueryOutputT &queryOutput);
+    DB_STATUS unpackQueryResults(SerializedMsg<int> &queryResultsMsg, QueryTypeE queryType, QueryOutput &queryOutput);
 
-    DB_STATUS unpackDatasetsNicknames(SerializedMsgT<char> &msg, std::vector<std::string> &nicknames);
+    DB_STATUS unpackDatasetsNicknames(SerializedMsg<char> &msg, std::vector<std::string> &nicknames);
 }
 
 #endif 

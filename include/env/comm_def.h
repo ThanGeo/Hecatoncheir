@@ -69,16 +69,16 @@ inline std::unordered_map<MPI_Datatype, std::string> g_MPI_Datatype_map = {{MPI_
                                                                 };
 
 template <typename T> 
-struct SerializedMsgT { 
+struct SerializedMsg { 
     MPI_Datatype type;      // mpi datatype of message data
     int count = 0;             // number of elements in message
     T *data;                // pointer to the message data
 
-    SerializedMsgT(MPI_Datatype type) {
+    SerializedMsg(MPI_Datatype type) {
         this->type = type;
     }
 
-    SerializedMsgT() {
+    SerializedMsg() {
         if constexpr (std::is_same<T,char>::value) {
             this->type = MPI_CHAR;
         } else if constexpr (std::is_same<T,int>::value) {

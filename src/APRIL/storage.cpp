@@ -4,7 +4,7 @@ namespace APRIL
 {
     namespace writer
     {
-        DB_STATUS saveAPRIL(FILE* pFileALL, FILE* pFileFULL, size_t recID, uint sectionID, AprilDataT* aprilData) {
+        DB_STATUS saveAPRIL(FILE* pFileALL, FILE* pFileFULL, size_t recID, uint sectionID, AprilData* aprilData) {
             // ALL intervals
             size_t elementsWritten = fwrite(&recID, sizeof(size_t), 1, pFileALL);
             if (elementsWritten != 1) {

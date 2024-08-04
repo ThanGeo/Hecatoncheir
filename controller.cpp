@@ -58,7 +58,7 @@ static void printResults() {
 }
 
 static DB_STATUS initAPRILCreation() {
-    SerializedMsgT<int> aprilInfoMsg(MPI_INT);
+    SerializedMsg<int> aprilInfoMsg(MPI_INT);
     // pack the APRIL info
     DB_STATUS ret = pack::packAPRILInfo(g_config.approximationInfo.aprilConfig, aprilInfoMsg);
     if (ret != DBERR_OK) {
@@ -85,7 +85,7 @@ static DB_STATUS initAPRILCreation() {
 }
 
 static DB_STATUS initQueryExecution() {
-    SerializedMsgT<int> queryInfoMsg(MPI_INT);
+    SerializedMsg<int> queryInfoMsg(MPI_INT);
     // pack the APRIL info
     DB_STATUS ret = pack::packQueryInfo(g_config.queryInfo, queryInfoMsg);
     if (ret != DBERR_OK) {
@@ -121,7 +121,7 @@ static DB_STATUS initLoadDatasets() {
     // send load instruction + dataset info
     DB_STATUS ret = DBERR_OK;
     // pack nicknames
-    SerializedMsgT<char> msg(MPI_CHAR);
+    SerializedMsg<char> msg(MPI_CHAR);
     ret = pack::packDatasetsNicknames(msg);
     if (ret != DBERR_OK) {
         return ret;
@@ -144,7 +144,7 @@ static DB_STATUS initLoadDatasets() {
 }
 
 static DB_STATUS initLoadAPRIL() {
-    SerializedMsgT<int> aprilInfoMsg(MPI_INT);
+    SerializedMsg<int> aprilInfoMsg(MPI_INT);
     // pack the APRIL info
     DB_STATUS ret = pack::packAPRILInfo(g_config.approximationInfo.aprilConfig, aprilInfoMsg);
     if (ret != DBERR_OK) {

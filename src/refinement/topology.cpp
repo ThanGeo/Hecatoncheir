@@ -293,7 +293,7 @@ namespace refinement
         }
 
 
-        DB_STATUS specializedRefinementEntrypoint(Shape* objR, Shape* objS, int relationCase, QueryOutputT &queryOutput) {
+        DB_STATUS specializedRefinementEntrypoint(Shape* objR, Shape* objS, int relationCase, QueryOutput &queryOutput) {
             int refinementResult = -1;
             // switch based on MBR intersection case
             switch(relationCase) {
@@ -439,56 +439,56 @@ namespace refinement
          * Refine find specific relation
          */
 
-        void refineIntersectionJoin(Shape* objR, Shape* objS, QueryOutputT &queryOutput) {
+        void refineIntersectionJoin(Shape* objR, Shape* objS, QueryOutput &queryOutput) {
             if (objR->intersects(*objS)) {
                 // printf("%d,%d\n", objR->recID, objS.recID);
                 queryOutput.countResult();
             }
         }
 
-        void refineInsideJoin(Shape* objR, Shape* objS, QueryOutputT &queryOutput) {
+        void refineInsideJoin(Shape* objR, Shape* objS, QueryOutput &queryOutput) {
             if (objR->inside(*objS)) {
                 queryOutput.countResult();
             }
         }
 
-        void refineDisjointJoin(Shape* objR, Shape* objS, QueryOutputT &queryOutput) {
+        void refineDisjointJoin(Shape* objR, Shape* objS, QueryOutput &queryOutput) {
             if (objR->disjoint(*objS)) {
                 queryOutput.countResult();
             }
         }
 
-        void refineEqualJoin(Shape* objR, Shape* objS, QueryOutputT &queryOutput) {
+        void refineEqualJoin(Shape* objR, Shape* objS, QueryOutput &queryOutput) {
             if (objR->equals(*objS)) {
                 queryOutput.countResult();
             }
         }
 
-        void refineMeetJoin(Shape* objR, Shape* objS, QueryOutputT &queryOutput) {
+        void refineMeetJoin(Shape* objR, Shape* objS, QueryOutput &queryOutput) {
             if (objR->meets(*objS)) {
                 queryOutput.countResult();
             }
         }
 
-        void refineContainsJoin(Shape* objR, Shape* objS, QueryOutputT &queryOutput) {
+        void refineContainsJoin(Shape* objR, Shape* objS, QueryOutput &queryOutput) {
             if (objR->contains(*objS)) {
                 queryOutput.countResult();
             }
         }
 
-        void refineCoversJoin(Shape* objR, Shape* objS, QueryOutputT &queryOutput) {
+        void refineCoversJoin(Shape* objR, Shape* objS, QueryOutput &queryOutput) {
             if (objR->covers(*objS)) {
                 queryOutput.countResult();
             }
         }
 
-        void refineCoveredByJoin(Shape* objR, Shape* objS, QueryOutputT &queryOutput) {
+        void refineCoveredByJoin(Shape* objR, Shape* objS, QueryOutput &queryOutput) {
             if (objR->coveredBy(*objS)) {
                 queryOutput.countResult();
             }
         }
         
-        DB_STATUS refinementEntrypoint(Shape* objR, Shape* objS, QueryTypeE queryType, QueryOutputT &queryOutput) {
+        DB_STATUS refinementEntrypoint(Shape* objR, Shape* objS, QueryTypeE queryType, QueryOutput &queryOutput) {
             // switch based on query type
             switch(queryType) {
                 case Q_INTERSECT:

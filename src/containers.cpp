@@ -2,9 +2,9 @@
 
 Config g_config;
 
-QueryOutputT g_queryOutput;
+QueryOutput g_queryOutput;
 
-void queryResultReductionFunc(QueryOutputT &in, QueryOutputT &out) {
+void queryResultReductionFunc(QueryOutput &in, QueryOutput &out) {
     out.queryResults += in.queryResults;
     out.postMBRFilterCandidates += in.postMBRFilterCandidates;
     out.refinementCandidates += in.refinementCandidates;
@@ -304,7 +304,7 @@ void Dataset::deserialize(const char *buffer, int bufferSize) {
     }
 }
 
-void Dataset::addAprilDataToApproximationDataMap(const uint sectionID, const size_t recID, const AprilDataT &aprilData) {
+void Dataset::addAprilDataToApproximationDataMap(const uint sectionID, const size_t recID, const AprilData &aprilData) {
     // store april data
     this->sectionMap[sectionID].aprilData.insert(std::make_pair(recID, aprilData));
     // store mapping recID -> sectionID
@@ -320,7 +320,7 @@ void Dataset::addAprilDataToApproximationDataMap(const uint sectionID, const siz
 }
 
 void Dataset::addObjectToSectionMap(const uint sectionID, const size_t recID) {
-    AprilDataT aprilData;
+    AprilData aprilData;
     this->sectionMap[sectionID].aprilData.insert(std::make_pair(recID, aprilData));
     // store mapping recID -> sectionID
     auto it = this->recToSectionIdMap.find(recID);
@@ -357,7 +357,7 @@ void Dataset::addIntervalsToAprilData(const uint sectionID, const size_t recID, 
     }
 }
 
-AprilDataT* Dataset::getAprilDataBySectionAndObjectID(uint sectionID, size_t recID) {
+AprilData* Dataset::getAprilDataBySectionAndObjectID(uint sectionID, size_t recID) {
     auto sec = this->sectionMap.find(sectionID);
     if (sec != this->sectionMap.end()){
         auto obj = sec->second.aprilData.find(recID);
@@ -533,7 +533,7 @@ bool GeometryBatch::isValid() {
     return !(destRank == -1 || tag == -1 || comm == nullptr);
 }
 
-void GeometryBatch::addGeometryToBatch(GeometryT &geometry) {
+void GeometryBatch::addGeometryToBatch(Geometry &geometry) {
     geometries.emplace_back(geometry);
     objectCount += 1;
 }
@@ -639,7 +639,7 @@ void GeometryBatch::deserialize(const char *buffer, int bufferSize) {
         localBuffer += vertexCount * 2 * sizeof(double);
         
         // add to batch
-        GeometryT geometry(recID, partitions, vertexCount, coords);
+        Geometry geometry(recID, partitions, vertexCount, coords);
         this->addGeometryToBatch(geometry);
     }
 }

@@ -270,7 +270,7 @@ namespace APRIL
 
     namespace uncompressed
     {
-        DB_STATUS intersectionJoinAPRIL(AprilDataT *aprilR, AprilDataT *aprilS, int &result){
+        DB_STATUS intersectionJoinAPRIL(AprilData *aprilR, AprilData *aprilS, int &result){
             DB_STATUS ret = DBERR_OK;
             // check ALL - ALL
             // printf("AA\n");
@@ -298,7 +298,7 @@ namespace APRIL
             return ret;
         }
         
-        DB_STATUS insideCoveredByJoinAPRIL(AprilDataT *aprilR, AprilDataT *aprilS, int &result){
+        DB_STATUS insideCoveredByJoinAPRIL(AprilData *aprilR, AprilData *aprilS, int &result){
             DB_STATUS ret = DBERR_OK;
             // check ALL - ALL
             if(!insideJoinIntervalLists(aprilR->intervalsALL, aprilR->numIntervalsALL, aprilS->intervalsFULL, aprilS->numIntervalsFULL)){
@@ -317,7 +317,7 @@ namespace APRIL
             return ret;
         }
 
-        DB_STATUS disjointJoinAPRIL(AprilDataT *aprilR, AprilDataT *aprilS, int &result){
+        DB_STATUS disjointJoinAPRIL(AprilData *aprilR, AprilData *aprilS, int &result){
             DB_STATUS ret = DBERR_OK;
             // check ALL - ALL
             if(!intersectionJoinIntervalLists(aprilR->intervalsALL, aprilR->numIntervalsALL, aprilS->intervalsALL, aprilS->numIntervalsALL)){
@@ -342,7 +342,7 @@ namespace APRIL
             return ret;
         }
 
-        DB_STATUS equalJoinAPRIL(AprilDataT *aprilR, AprilDataT *aprilS, int &result){
+        DB_STATUS equalJoinAPRIL(AprilData *aprilR, AprilData *aprilS, int &result){
             DB_STATUS ret = DBERR_OK;
             // check ALL - ALL
             if(!joinIntervalsForMatch(aprilR->intervalsALL, aprilR->numIntervalsALL, aprilS->intervalsALL, aprilS->numIntervalsALL)){
@@ -361,7 +361,7 @@ namespace APRIL
             return ret;
         }
 
-        DB_STATUS meetJoinAPRIL(AprilDataT *aprilR, AprilDataT *aprilS, int &result){
+        DB_STATUS meetJoinAPRIL(AprilData *aprilR, AprilData *aprilS, int &result){
             DB_STATUS ret = DBERR_OK;
             // check ALL - ALL
             if(!intersectionJoinIntervalLists(aprilR->intervalsALL, aprilR->numIntervalsALL, aprilS->intervalsALL, aprilS->numIntervalsALL)){
@@ -386,7 +386,7 @@ namespace APRIL
             return ret;
         }
 
-        DB_STATUS containsCoversJoinAPRIL(AprilDataT *aprilR, AprilDataT *aprilS, int &result){
+        DB_STATUS containsCoversJoinAPRIL(AprilData *aprilR, AprilData *aprilS, int &result){
             DB_STATUS ret = DBERR_OK;
             // check ALL - ALL
             if(!insideJoinIntervalLists(aprilS->intervalsALL, aprilS->numIntervalsALL, aprilR->intervalsALL, aprilR->numIntervalsALL)){
@@ -410,7 +410,7 @@ namespace APRIL
 
         namespace topology
         {
-            DB_STATUS MBRRinSContainmentJoinAPRIL(AprilDataT *aprilR, AprilDataT *aprilS, int &relation) {
+            DB_STATUS MBRRinSContainmentJoinAPRIL(AprilData *aprilR, AprilData *aprilS, int &relation) {
                 DB_STATUS ret = DBERR_OK;
                 // join AA for containment, intersection or disjoint
                 int AAresult = joinIntervalsHybrid(aprilR->intervalsALL, aprilR->numIntervalsALL, aprilS->intervalsALL, aprilS->numIntervalsALL);
@@ -458,7 +458,7 @@ namespace APRIL
                 return ret;
             }
 
-            DB_STATUS MBRSinRContainmentJoinAPRIL(AprilDataT *aprilR, AprilDataT *aprilS, int &relation) {
+            DB_STATUS MBRSinRContainmentJoinAPRIL(AprilData *aprilR, AprilData *aprilS, int &relation) {
                 DB_STATUS ret = DBERR_OK;
                 // join AA for containment, intersection or disjoint
                 int AAresult = joinIntervalsHybrid(aprilS->intervalsALL, aprilS->numIntervalsALL, aprilR->intervalsALL, aprilR->numIntervalsALL);
@@ -504,7 +504,7 @@ namespace APRIL
                 return ret;
             }
             
-            DB_STATUS MBREqualJoinAPRIL(Shape* objR, Shape* objS, AprilDataT *aprilR, AprilDataT *aprilS, int &relation) {
+            DB_STATUS MBREqualJoinAPRIL(Shape* objR, Shape* objS, AprilData *aprilR, AprilData *aprilS, int &relation) {
                 DB_STATUS ret = DBERR_OK;
                 // AA join to look for exact relationship between the lists
                 int AAresult = joinIntervalListsSymmetricalOptimizedTrueHitIntersect(aprilR->intervalsALL, aprilR->numIntervalsALL, aprilS->intervalsALL, aprilS->numIntervalsALL);
@@ -547,7 +547,7 @@ namespace APRIL
                 return ret;
             }
 
-            DB_STATUS MBRIntersectionJoinAPRIL(AprilDataT *aprilR, AprilDataT *aprilS, int &relation) {
+            DB_STATUS MBRIntersectionJoinAPRIL(AprilData *aprilR, AprilData *aprilS, int &relation) {
                 DB_STATUS ret = DBERR_OK;
                 int aprilResult = -1;
                 // use regular APRIL

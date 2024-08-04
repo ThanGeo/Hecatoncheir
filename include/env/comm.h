@@ -39,7 +39,7 @@ namespace comm
          * @param comm 
          * @return DB_STATUS 
          */
-        DB_STATUS serializeAndSendGeometryBatch(GeometryBatchT* batch);
+        DB_STATUS serializeAndSendGeometryBatch(GeometryBatch* batch);
 
         /**
          * @brief Sends an instruction message with tag to the children (agent)

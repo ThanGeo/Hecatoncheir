@@ -91,7 +91,7 @@ namespace parser
     }
 
     static DB_STATUS loadAPRILconfig() {
-        ApproximationInfoT approxInfo(AT_APRIL);
+        ApproximationInfo approxInfo(AT_APRIL);
 
         int N = system_config_pt.get<int>("APRIL.N");
         if (N < 10 || N > 16) {
@@ -130,17 +130,17 @@ namespace parser
         DB_STATUS ret = DBERR_OK;
         // partitioning always before issuing the load datasets action
         if (actionsStmt->performPartitioning) {
-            ActionT action(ACTION_PERFORM_PARTITIONING);
+            Action action(ACTION_PERFORM_PARTITIONING);
             g_config.actions.emplace_back(action);
         }
         // load datasets action
         if (actionsStmt->loadDatasets) {
-            ActionT action(ACTION_LOAD_DATASETS);
+            Action action(ACTION_LOAD_DATASETS);
             g_config.actions.emplace_back(action);
         }
         // create APRIL
         for (int i=0; i<actionsStmt->createApproximations.size(); i++) {
-            ActionT action;
+            Action action;
             ret = statement::getCreateApproximationAction(actionsStmt->createApproximations.at(i), action);
             if (ret != DBERR_OK) {
                 return ret;
@@ -155,17 +155,17 @@ namespace parser
         }
         // load approximations (after any creation and after the datasets have been loaded)
         if (actionsStmt->loadDatasets) {
-            ActionT action(ACTION_LOAD_APRIL);
+            Action action(ACTION_LOAD_APRIL);
             g_config.actions.emplace_back(action);
         }
         // queries
         if (g_config.queryInfo.type != Q_NONE) {
-            ActionT action(ACTION_QUERY);
+            Action action(ACTION_QUERY);
             g_config.actions.emplace_back(action);
         }
         // verification always last (todo)
         if (actionsStmt->performVerification) {
-            ActionT action(ACTION_PERFORM_VERIFICATION);
+            Action action(ACTION_PERFORM_VERIFICATION);
             g_config.actions.emplace_back(action);
         }
         return DBERR_OK;

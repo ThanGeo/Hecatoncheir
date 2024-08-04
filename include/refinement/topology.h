@@ -13,7 +13,7 @@ namespace refinement
          * Entrypoint function for when there is NO intermediate filter.
          * Intermediate filters forward to refine() function and NOT this one.
         */
-        DB_STATUS specializedRefinementEntrypoint(Shape* objR, Shape* objS, int relationCase, QueryOutputT &queryOutput);
+        DB_STATUS specializedRefinementEntrypoint(Shape* objR, Shape* objS, int relationCase, QueryOutput &queryOutput);
 
         /**
          * @brief refines for inside/covered by but is guaranteed intersection (no disjoint)
@@ -107,17 +107,17 @@ namespace refinement
          * Entrypoint function for when there is NO intermediate filter.
          * Intermediate filters forward to refine() function and NOT this one.
         */
-        DB_STATUS refinementEntrypoint(Shape* objR, Shape* objS, QueryTypeE queryType, QueryOutputT &queryOutput);
+        DB_STATUS refinementEntrypoint(Shape* objR, Shape* objS, QueryTypeE queryType, QueryOutput &queryOutput);
 
         /**
          * loads boost geometries and refines for intersection
         */
-        void refineIntersectionJoin(Shape* objR, Shape* objS, QueryOutputT &queryOutput);
+        void refineIntersectionJoin(Shape* objR, Shape* objS, QueryOutput &queryOutput);
         
         /**
          * loads boost geometries and refines for inside
         */
-        void refineInsideJoin(Shape* objR, Shape* objS, QueryOutputT &queryOutput);
+        void refineInsideJoin(Shape* objR, Shape* objS, QueryOutput &queryOutput);
 
         /**
          * Loads geometries and refines for topology based on setup configuration.
@@ -127,32 +127,32 @@ namespace refinement
         /**
          * refinement for the EQUAl topology relation
         */
-        void refineEqualJoin(Shape* objR, Shape* objS, QueryOutputT &queryOutput);
+        void refineEqualJoin(Shape* objR, Shape* objS, QueryOutput &queryOutput);
 
         /**
          * refinement for the DISJOINT topology relation
         */
-        void refineDisjointJoin(Shape* objR, Shape* objS, QueryOutputT &queryOutput);
+        void refineDisjointJoin(Shape* objR, Shape* objS, QueryOutput &queryOutput);
 
         /**
          * refinement for the MEET topology relation
         */
-        void refineMeetJoin(Shape* objR, Shape* objS, QueryOutputT &queryOutput);
+        void refineMeetJoin(Shape* objR, Shape* objS, QueryOutput &queryOutput);
 
         /**
          * refinement for the CONTAINS topology relation
         */
-        void refineContainsJoin(Shape* objR, Shape* objS, QueryOutputT &queryOutput);
+        void refineContainsJoin(Shape* objR, Shape* objS, QueryOutput &queryOutput);
 
         /**
          * refinement for the COVERS topology relation
         */
-        void refineCoversJoin(Shape* objR, Shape* objS, QueryOutputT &queryOutput);
+        void refineCoversJoin(Shape* objR, Shape* objS, QueryOutput &queryOutput);
 
         /**
          * refinement for the COVERED BY topology relation
         */
-        void refineCoveredByJoin(Shape* objR, Shape* objS, QueryOutputT &queryOutput);
+        void refineCoveredByJoin(Shape* objR, Shape* objS, QueryOutput &queryOutput);
 
         /**
          * refinement for the DISJOINT, MEET or INTERSECT topology relations

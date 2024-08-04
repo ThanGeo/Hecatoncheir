@@ -265,7 +265,7 @@ namespace APRIL
             return partialCells;
         }
 
-        static DB_STATUS computeAllIntervalsFromPartialCells(uint32_t cellsPerDim, RasterData &rasterData, std::vector<uint32_t> &partialCells, AprilDataT &aprilData) {
+        static DB_STATUS computeAllIntervalsFromPartialCells(uint32_t cellsPerDim, RasterData &rasterData, std::vector<uint32_t> &partialCells, AprilData &aprilData) {
             uint32_t current_id;
             std::vector<uint32_t> allIntervals;
             uint32_t allStart = *partialCells.begin();
@@ -291,7 +291,7 @@ namespace APRIL
             return DBERR_OK;
         }
 
-        static DB_STATUS computeAllAndFullIntervals(Shape &object, uint32_t cellsPerDim, RasterData &rasterData, std::vector<uint32_t> &partialCells, AprilDataT &aprilData){
+        static DB_STATUS computeAllAndFullIntervals(Shape &object, uint32_t cellsPerDim, RasterData &rasterData, std::vector<uint32_t> &partialCells, AprilData &aprilData){
             int res;
             bool pip_res;
             uint32_t x,y, current_id;
@@ -364,7 +364,7 @@ namespace APRIL
         }
 
         // intervalize shape with area (polygons and rectangles)
-        static DB_STATUS intervalizeRegionShape(Shape object, uint32_t cellsPerDim, AprilDataT &aprilData){
+        static DB_STATUS intervalizeRegionShape(Shape object, uint32_t cellsPerDim, AprilData &aprilData){
             DB_STATUS ret = DBERR_OK;
             clock_t timer;
             RasterData rasterData;
@@ -397,7 +397,7 @@ namespace APRIL
         }
 
         // intervalize shape without area (points and linestrings)
-        static DB_STATUS intervalizeNonRegionShape(Shape object, uint32_t cellsPerDim, AprilDataT &aprilData){
+        static DB_STATUS intervalizeNonRegionShape(Shape object, uint32_t cellsPerDim, AprilData &aprilData){
             DB_STATUS ret = DBERR_OK;
             clock_t timer;
             RasterData rasterData;
@@ -443,7 +443,7 @@ namespace APRIL
                         return ret;
                     }
                     // generate APRIL
-                    AprilDataT aprilData;
+                    AprilData aprilData;
                     ret = intervalizeRegionShape(object, dataset.aprilConfig.getCellsPerDim(), aprilData);
                     if (ret != DBERR_OK || aprilData.numIntervalsALL == 0) {
                         // at least 1 ALL interval is needed for each object, otherwise there is an error
@@ -487,7 +487,7 @@ namespace APRIL
                         return ret;
                     }
                     // generate APRIL
-                    AprilDataT aprilData;
+                    AprilData aprilData;
                     ret = intervalizeNonRegionShape(object, dataset.aprilConfig.getCellsPerDim(), aprilData);
                     if (ret != DBERR_OK || aprilData.numIntervalsALL == 0) {
                         // at least 1 ALL interval is needed for each object, otherwise there is an error
@@ -603,7 +603,7 @@ namespace APRIL
                     // get next object
                     Shape* object = dataset.getObject(objectIT.first);
                     // generate APRIL
-                    AprilDataT aprilData;
+                    AprilData aprilData;
                     ret = intervalizeRegionShape(*object, dataset.aprilConfig.getCellsPerDim(), aprilData);
                     if (ret != DBERR_OK || aprilData.numIntervalsALL == 0) {
                         // at least 1 ALL interval is needed for each object, otherwise there is an error
@@ -643,7 +643,7 @@ namespace APRIL
                     // get next object
                     Shape* object = dataset.getObject(objectIT.first);
                     // generate APRIL
-                    AprilDataT aprilData;
+                    AprilData aprilData;
                     ret = intervalizeNonRegionShape(*object, dataset.aprilConfig.getCellsPerDim(), aprilData);
                     if (ret != DBERR_OK || aprilData.numIntervalsALL == 0) {
                         // at least 1 ALL interval is needed for each object, otherwise there is an error

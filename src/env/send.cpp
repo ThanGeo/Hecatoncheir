@@ -45,7 +45,7 @@ namespace comm
             return DBERR_OK;
         }
 
-        DB_STATUS sendDatasetInfoMessage(SerializedMsgT<char> &datasetInfoMsg, int destRank, int tag, MPI_Comm &comm) {
+        DB_STATUS sendDatasetInfoMessage(SerializedMsg<char> &datasetInfoMsg, int destRank, int tag, MPI_Comm &comm) {
             // check tag validity
             if (tag != MSG_DATASET_INFO) {
                 logger::log_error(DBERR_COMM_INVALID_MSG_TAG, "Dataset info messages must have the appropriate tag. Current tag", tag);

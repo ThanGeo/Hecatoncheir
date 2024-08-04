@@ -2,7 +2,7 @@
 
 namespace pack
 {
-    DB_STATUS packSystemInfo(SerializedMsgT<char> &sysInfoMsg) {
+    DB_STATUS packSystemInfo(SerializedMsg<char> &sysInfoMsg) {
         sysInfoMsg.count = 0;
         sysInfoMsg.count += sizeof(SystemSetupTypeE);     // cluster or local
         sysInfoMsg.count += sizeof(int);                  // partitions per dimension
@@ -46,7 +46,7 @@ namespace pack
     }
 
 
-    DB_STATUS packAPRILInfo(AprilConfigT &aprilConfig, SerializedMsgT<int> &aprilInfoMsg) {
+    DB_STATUS packAPRILInfo(AprilConfig &aprilConfig, SerializedMsg<int> &aprilInfoMsg) {
         aprilInfoMsg.count = 0;
         aprilInfoMsg.count += 3;     // N, compression, partitions
 
@@ -66,7 +66,7 @@ namespace pack
         return DBERR_OK;
     }
 
-    DB_STATUS packQueryInfo(QueryInfoT &queryInfo, SerializedMsgT<int> &queryInfoMsg) {
+    DB_STATUS packQueryInfo(QueryInfo &queryInfo, SerializedMsg<int> &queryInfoMsg) {
         queryInfoMsg.count = 0;
         queryInfoMsg.count += 4;    // query type, MBR, intermediatefilter, refinement
 
@@ -87,7 +87,7 @@ namespace pack
         return DBERR_OK;
     }
 
-    DB_STATUS packDatasetsNicknames(SerializedMsgT<char> &msg) {
+    DB_STATUS packDatasetsNicknames(SerializedMsg<char> &msg) {
         std::string nicknameR = "";
         std::string nicknameS = "";
         msg.count = 0;
@@ -134,7 +134,7 @@ namespace pack
         return DBERR_OK;
     }
 
-    DB_STATUS packQueryResults(SerializedMsgT<int> &msg, QueryOutputT &queryOutput) {
+    DB_STATUS packQueryResults(SerializedMsg<int> &msg, QueryOutput &queryOutput) {
         DB_STATUS ret = DBERR_OK;
         // serialize based on query type
         switch (g_config.queryInfo.type) {
@@ -196,7 +196,7 @@ namespace pack
 
 namespace unpack
 {
-    DB_STATUS unpackSystemInfo(SerializedMsgT<char> &sysInfoMsg) {
+    DB_STATUS unpackSystemInfo(SerializedMsg<char> &sysInfoMsg) {
         char *localBuffer = sysInfoMsg.data;
         // get system setup type
         g_config.options.setupType = *reinterpret_cast<const SystemSetupTypeE*>(localBuffer);
@@ -226,7 +226,7 @@ namespace unpack
         return DBERR_OK;
     }
 
-    DB_STATUS unpackAPRILInfo(SerializedMsgT<int> &aprilInfoMsg) {
+    DB_STATUS unpackAPRILInfo(SerializedMsg<int> &aprilInfoMsg) {
         // N
         int N = aprilInfoMsg.data[0];
         g_config.approximationInfo.aprilConfig.setN(N);
@@ -246,7 +246,7 @@ namespace unpack
         return DBERR_OK;
     }
 
-    DB_STATUS unpackQueryInfo(SerializedMsgT<int> &queryInfoMsg) {
+    DB_STATUS unpackQueryInfo(SerializedMsg<int> &queryInfoMsg) {
         g_config.queryInfo.type = (QueryTypeE) queryInfoMsg.data[0];
         g_config.queryInfo.MBRFilter = queryInfoMsg.data[1];
         g_config.queryInfo.IntermediateFilter = queryInfoMsg.data[2];
@@ -255,7 +255,7 @@ namespace unpack
         return DBERR_OK;
     }
 
-    DB_STATUS unpackQueryResults(SerializedMsgT<int> &queryResultsMsg, QueryTypeE queryType, QueryOutputT &queryOutput) {
+    DB_STATUS unpackQueryResults(SerializedMsg<int> &queryResultsMsg, QueryTypeE queryType, QueryOutput &queryOutput) {
         // total results and mbr results is common
         queryOutput.queryResults = queryResultsMsg.data[0];   
         queryOutput.postMBRFilterCandidates = queryResultsMsg.data[1];    
@@ -290,7 +290,7 @@ namespace unpack
         return DBERR_OK;
     }
 
-    DB_STATUS unpackDatasetsNicknames(SerializedMsgT<char> &msg, std::vector<std::string> &nicknames) {
+    DB_STATUS unpackDatasetsNicknames(SerializedMsg<char> &msg, std::vector<std::string> &nicknames) {
         char *localBuffer = msg.data;
         int length;
         // R

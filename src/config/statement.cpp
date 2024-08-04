@@ -26,7 +26,7 @@ namespace statement
         return DBERR_OK;
     }
 
-    DB_STATUS getCreateApproximationAction(std::string &approximationStr, ActionT &action) {
+    DB_STATUS getCreateApproximationAction(std::string &approximationStr, Action &action) {
         if (approximationStr == "APRIL") {
             action.type = ACTION_CREATE_APRIL;
         } else {

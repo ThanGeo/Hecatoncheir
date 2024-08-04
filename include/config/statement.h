@@ -45,7 +45,7 @@ namespace statement
 
     DB_STATUS getFiletype(std::string &filetypeStr, FileTypeE &filetype);
 
-    DB_STATUS getCreateApproximationAction(std::string &approximationStr, ActionT &actionType);
+    DB_STATUS getCreateApproximationAction(std::string &approximationStr, Action &actionType);
 }
 
 #endif

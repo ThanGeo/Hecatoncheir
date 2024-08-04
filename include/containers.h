@@ -27,7 +27,7 @@
  *********************************** */
 
 // APRIL data
-typedef struct AprilData {
+struct AprilData {
     // APRIL data
     uint numIntervalsALL = 0;
     std::vector<uint32_t> intervalsALL;
@@ -37,10 +37,10 @@ typedef struct AprilData {
     void printALLintervals();
     void printALLcells(uint32_t n);
     void printFULLintervals();
-}AprilDataT;
+};
 
 // APRIL configuration
-typedef struct AprilConfig {
+struct AprilConfig {
     private:
         // Hilbert curve order
         int N = 16;
@@ -58,7 +58,7 @@ typedef struct AprilConfig {
     void setN(int N);
     int getN();
     int getCellsPerDim();
-} AprilConfigT;
+};
 
 
 /*************************************
@@ -821,7 +821,7 @@ namespace shape_factory
     Shape createEmptyRectangleShape();
 }
 
-typedef struct QueryOutput {
+struct QueryOutput {
     // for regular query rsesults
     int queryResults;
     // for topology relations results
@@ -853,11 +853,11 @@ typedef struct QueryOutput {
      * @brief copies the contents of the 'other' object into this struct
      */
     void shallowCopy(QueryOutput &other);
-} QueryOutputT;
+};
 // global query output variable
-extern QueryOutputT g_queryOutput;
+extern QueryOutput g_queryOutput;
 
-typedef struct Section {
+struct Section {
     uint sectionID;
     // axis position indexes
     uint i,j;
@@ -869,10 +869,10 @@ typedef struct Section {
     // double normRasterxMin, normRasteryMin, normRasterxMax, normRasteryMax;
     // APRIL data
     size_t objectCount = 0;
-    std::unordered_map<size_t, AprilDataT> aprilData;
-} SectionT;
+    std::unordered_map<size_t, AprilData> aprilData;
+};
 
-typedef struct DataspaceInfo {
+struct DataspaceInfo {
     double xMinGlobal, yMinGlobal, xMaxGlobal, yMaxGlobal;  // global bounds based on dataset bounds
     double xExtent, yExtent, maxExtent;
     bool boundsSet = false;
@@ -880,7 +880,7 @@ typedef struct DataspaceInfo {
     DataspaceInfo();
     void set(double xMinGlobal, double yMinGlobal, double xMaxGlobal, double yMaxGlobal);
     void clear();
-} DataspaceInfoT;
+};
 
 
 struct Partition {
@@ -929,7 +929,7 @@ struct Dataset{
     // as given by arguments and specified by datasets.ini config file
     std::string nickname;
     // holds the dataset's dataspace info (MBR, extent)
-    DataspaceInfoT dataspaceInfo;
+    DataspaceInfo dataspaceInfo;
     // unique object count
     size_t totalObjects = 0;
     std::unordered_map<size_t, Shape> objects;
@@ -938,8 +938,8 @@ struct Dataset{
     /* approximations */ 
     ApproximationTypeE approxType;
     // APRIL
-    AprilConfigT aprilConfig;
-    std::unordered_map<uint, SectionT> sectionMap;                        // map: k,v = sectionID,(unordered map of k,v = recID,aprilData)
+    AprilConfig aprilConfig;
+    std::unordered_map<uint, Section> sectionMap;                        // map: k,v = sectionID,(unordered map of k,v = recID,aprilData)
     std::unordered_map<size_t,std::vector<uint>> recToSectionIdMap;         // map: k,v = recID,vector<sectionID>: maps recs to sections 
 
     /**
@@ -965,10 +965,10 @@ struct Dataset{
      */
     void deserialize(const char *buffer, int bufferSize);
     // APRIL
-    void addAprilDataToApproximationDataMap(const uint sectionID, const size_t recID, const AprilDataT &aprilData);
+    void addAprilDataToApproximationDataMap(const uint sectionID, const size_t recID, const AprilData &aprilData);
     void addObjectToSectionMap(const uint sectionID, const size_t recID);
     void addIntervalsToAprilData(const uint sectionID, const size_t recID, const int numIntervals, const std::vector<uint32_t> &intervals, const bool ALL);
-    AprilDataT* getAprilDataBySectionAndObjectID(uint sectionID, size_t recID);
+    AprilData* getAprilDataBySectionAndObjectID(uint sectionID, size_t recID);
 };
 
 struct Query{
@@ -978,20 +978,10 @@ struct Query{
     Dataset S;         // S: right dataset
     bool boundsSet = false;
     // double xMinGlobal, yMinGlobal, xMaxGlobal, yMaxGlobal;  // global bounds based on dataset bounds
-    DataspaceInfoT dataspaceInfo;
+    DataspaceInfo dataspaceInfo;
 };
 
-/**
- * @brief returns a list of the common section ids between two objects of two datasets
- * 
- * @param datasetR 
- * @param datasetS 
- * @param idR 
- * @param idS 
- * @return std::vector<uint> 
- * 
- */
-typedef struct DirectoryPaths {
+struct DirectoryPaths {
     std::string configFilePath = "../config.ini";
     const std::string datasetsConfigPath = "../datasets.ini";
     std::string dataPath = "../data/";
@@ -1003,9 +993,9 @@ typedef struct DirectoryPaths {
         this->partitionsPath = dataPath + "partitions/";
         this->approximationPath = dataPath + "approximations/";
     }
-} DirectoryPathsT;
+};
 
-typedef struct PartitioningInfo {
+struct PartitioningInfo {
     PartitioningTypeE type;                 // type of the partitioning technique
     int partitionsPerDimension;             // # of partitions per dimension
     int batchSize;                          // size of each batche, in number of objects
@@ -1018,9 +1008,9 @@ typedef struct PartitioningInfo {
     int getNodeRankForPartitionID(int partitionID) {
         return (partitionID % g_world_size);
     }
-} PartitioningInfoT;
+};
 
-typedef struct Action {
+struct Action {
     ActionTypeE type;
 
     Action(){
@@ -1031,7 +1021,7 @@ typedef struct Action {
         this->type = type;
     }
     
-} ActionT;
+};
 
 struct DatasetInfo {
     private:
@@ -1041,7 +1031,7 @@ struct DatasetInfo {
 
     public:
     std::unordered_map<std::string,Dataset> datasets;
-    DataspaceInfoT dataspaceInfo;
+    DataspaceInfo dataspaceInfo;
     
     Dataset* getDatasetByNickname(std::string &nickname);
 
@@ -1061,9 +1051,9 @@ struct DatasetInfo {
     void updateDataspace();
 };
 
-typedef struct ApproximationInfo {
+struct ApproximationInfo {
     ApproximationTypeE type;   // sets which of the following fields will be used
-    AprilConfigT aprilConfig;  
+    AprilConfig aprilConfig;  
     
     ApproximationInfo() {
         this->type = AT_NONE;
@@ -1072,32 +1062,32 @@ typedef struct ApproximationInfo {
     ApproximationInfo(ApproximationTypeE type) {
         this->type = type;
     }
-} ApproximationInfoT;
+};
 
-typedef struct QueryInfo {
+struct QueryInfo {
     QueryTypeE type = Q_NONE;
     int MBRFilter = 1;
     int IntermediateFilter = 1;
     int Refinement = 1;
-} QueryInfoT;
+};
 
-typedef struct SystemOptions {
+struct SystemOptions {
     SystemSetupTypeE setupType;
     std::string nodefilePath;
     uint nodeCount;
-} SystemOptionsT;
-
-struct Config {
-    DirectoryPathsT dirPaths;
-    SystemOptionsT options;
-    std::vector<ActionT> actions;
-    PartitioningInfoT partitioningInfo;
-    DatasetInfo datasetInfo;
-    ApproximationInfoT approximationInfo;
-    QueryInfoT queryInfo;
 };
 
-typedef struct Geometry {
+struct Config {
+    DirectoryPaths dirPaths;
+    SystemOptions options;
+    std::vector<Action> actions;
+    PartitioningInfo partitioningInfo;
+    DatasetInfo datasetInfo;
+    ApproximationInfo approximationInfo;
+    QueryInfo queryInfo;
+};
+
+struct Geometry {
     size_t recID;
     int partitionCount;
     std::vector<int> partitions;    // tuples of <partition ID, twolayer class>
@@ -1107,12 +1097,12 @@ typedef struct Geometry {
     Geometry(size_t recID, int vertexCount, std::vector<double> &coords);
     Geometry(size_t recID, std::vector<int> &partitions, int vertexCount, std::vector<double> &coords);
     void setPartitions(std::vector<int> &ids, std::vector<TwoLayerClassE> &classes);
-} GeometryT;
+};
 
-typedef struct GeometryBatch {
+struct GeometryBatch {
     // serializable
     size_t objectCount = 0;
-    std::vector<GeometryT> geometries;
+    std::vector<Geometry> geometries;
     // unserializable/unclearable (todo: make const?)
     int destRank = -1;   // destination node rank
     size_t maxObjectCount; 
@@ -1120,7 +1110,7 @@ typedef struct GeometryBatch {
     int tag = -1;        // MPI tag = indicates spatial data type
 
     bool isValid();
-    void addGeometryToBatch(GeometryT &geometry);
+    void addGeometryToBatch(Geometry &geometry);
     void setDestNodeRank(int destRank);
 
     // calculate the size needed for the serialization buffer
@@ -1140,7 +1130,7 @@ typedef struct GeometryBatch {
      */
     void deserialize(const char *buffer, int bufferSize);
 
-} GeometryBatchT;
+};
 
 /**
  * @brief global configuration variable 
@@ -1151,10 +1141,10 @@ extern Config g_config;
  * @brief based on query type in config, it appropriately adds the query output in parallel
  * Used only in parallel sections for OpenMP
  */
-void queryResultReductionFunc(QueryOutputT &in, QueryOutputT &out);
+void queryResultReductionFunc(QueryOutput &in, QueryOutput &out);
 
 // Declare the parallel reduction function
-#pragma omp declare reduction (query_output_reduction: QueryOutputT: queryResultReductionFunc(omp_in, omp_out)) initializer(omp_priv = QueryOutput())
+#pragma omp declare reduction (query_output_reduction: QueryOutput: queryResultReductionFunc(omp_in, omp_out)) initializer(omp_priv = QueryOutput())
 
 
 #endif

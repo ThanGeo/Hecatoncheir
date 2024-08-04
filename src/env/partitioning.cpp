@@ -70,10 +70,10 @@ namespace partitioning
         return DBERR_OK;
     }
 
-    static DB_STATUS initializeBatchMap(std::unordered_map<int,GeometryBatchT> &batchMap) {
+    static DB_STATUS initializeBatchMap(std::unordered_map<int,GeometryBatch> &batchMap) {
         // initialize batches
         for (int i=0; i<g_world_size; i++) {
-            GeometryBatchT batch;
+            GeometryBatch batch;
             batch.destRank = i;
             if (i > 0) {
                 batch.comm = &g_global_comm;
@@ -99,7 +99,7 @@ namespace partitioning
      * @param batchMap 
      * @return DB_STATUS 
      */
-    static DB_STATUS assignGeometryToBatches(GeometryT &geometry, double geoXmin, double geoYmin, double geoXmax, double geoYmax, std::unordered_map<int,GeometryBatchT> &batchMap, int &batchesSent) {
+    static DB_STATUS assignGeometryToBatches(Geometry &geometry, double geoXmin, double geoYmin, double geoXmax, double geoYmax, std::unordered_map<int,GeometryBatch> &batchMap, int &batchesSent) {
         // find partition IDs and the class of the geometry in each partition
         std::vector<int> partitionIDs;
         std::vector<TwoLayerClassE> twoLayerClasses;
@@ -127,11 +127,11 @@ namespace partitioning
                     logger::log_error(DBERR_INVALID_PARAMETER, "Error fetching batch for node", nodeRank);
                     return DBERR_INVALID_PARAMETER;
                 }
-                GeometryBatchT *batch = &it->second;
+                GeometryBatch *batch = &it->second;
 
                 // make a copy of the geometry, to adjust the partitions specifically for this node
                 // remove any partitions that are irrelevant to this noderank
-                GeometryT geometryCopy = geometry;
+                Geometry geometryCopy = geometry;
                 for(auto it = geometryCopy.partitions.begin(); it != geometryCopy.partitions.end();) {
                     int assignedNodeRank = g_config.partitioningInfo.getNodeRankForPartitionID(*it);
                     if (assignedNodeRank != nodeRank) {
@@ -249,7 +249,7 @@ namespace partitioning
     static DB_STATUS loadCSVDatasetAndPartition(std::string &datasetPath) {
         DB_STATUS ret = DBERR_OK;
         // initialize batches
-        std::unordered_map<int,GeometryBatchT> batchMap;
+        std::unordered_map<int,GeometryBatch> batchMap;
         ret = initializeBatchMap(batchMap);
         if (ret != DBERR_OK) {
             return ret;
@@ -331,7 +331,7 @@ namespace partitioning
                     vertexCount += 1;
                 }
                 // create serializable object
-                GeometryT geometry(recID, vertexCount, coords);
+                Geometry geometry(recID, vertexCount, coords);
                 // assign to appropriate batches
                 local_ret = assignGeometryToBatches(geometry, xMin, yMin, xMax, yMax, batchMap, batchesSent);
                 if (ret != DBERR_OK) {
@@ -354,7 +354,7 @@ namespace partitioning
                     #pragma omp cancel parallel
                     ret = DBERR_INVALID_PARAMETER;
                 }
-                GeometryBatchT *batch = &it->second;
+                GeometryBatch *batch = &it->second;
                 if (batch->objectCount > 0) {
                     local_ret = comm::controller::serializeAndSendGeometryBatch(batch);
                     if (local_ret != DBERR_OK) {
@@ -383,7 +383,7 @@ namespace partitioning
                 logger::log_error(DBERR_INVALID_PARAMETER, "Error fetching batch for node", i);
                 return DBERR_INVALID_PARAMETER;
             }
-            GeometryBatchT *batch = &it->second;
+            GeometryBatch *batch = &it->second;
             ret = comm::controller::serializeAndSendGeometryBatch(batch);
             if (ret != DBERR_OK) {
                 return ret;

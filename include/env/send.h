@@ -28,7 +28,7 @@ namespace comm
         /**
          * sends a message containing a dataset's info (must be already correctly serialized in the input parameter)
          */
-        DB_STATUS sendDatasetInfoMessage(SerializedMsgT<char> &datasetInfoMsg, int destRank, int tag, MPI_Comm &comm);
+        DB_STATUS sendDatasetInfoMessage(SerializedMsg<char> &datasetInfoMsg, int destRank, int tag, MPI_Comm &comm);
         
 
         /**
@@ -36,7 +36,7 @@ namespace comm
          * 
          */
         template <typename T>
-        DB_STATUS sendMessage(SerializedMsgT<T> &msg, int destRank, int tag, MPI_Comm &comm) {
+        DB_STATUS sendMessage(SerializedMsg<T> &msg, int destRank, int tag, MPI_Comm &comm) {
             // send the serialized message
             int mpi_ret = MPI_Send(msg.data, msg.count, msg.type, destRank, tag, comm);
             if (mpi_ret != MPI_SUCCESS) {
@@ -65,7 +65,7 @@ namespace comm
          * @return DB_STATUS 
          */
         template <typename T>
-        DB_STATUS broadcastMessage(SerializedMsgT<T> &msg, int tag) {
+        DB_STATUS broadcastMessage(SerializedMsg<T> &msg, int tag) {
             DB_STATUS ret = DBERR_OK;
             // broadcast to all other controllers parallely
             #pragma omp parallel

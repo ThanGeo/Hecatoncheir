@@ -20,7 +20,7 @@ namespace storage
             return DBERR_OK;
         }
 
-        DB_STATUS appendBatchToPartitionFile(FILE* outFile, GeometryBatchT* batch, Dataset* dataset) {
+        DB_STATUS appendBatchToPartitionFile(FILE* outFile, GeometryBatch* batch, Dataset* dataset) {
             // store each geometry
             for(auto &it: batch->geometries) {
                 fwrite(&it.recID, sizeof(size_t), 1, outFile);

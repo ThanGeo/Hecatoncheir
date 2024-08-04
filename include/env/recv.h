@@ -35,7 +35,7 @@ namespace comm
          * @return DB_STATUS 
          */
         template <typename T> 
-        DB_STATUS receiveMessage(MPI_Status &status, MPI_Datatype dataType, MPI_Comm &comm, SerializedMsgT<T> &msgPack) {
+        DB_STATUS receiveMessage(MPI_Status &status, MPI_Datatype dataType, MPI_Comm &comm, SerializedMsg<T> &msgPack) {
             DB_STATUS ret = DBERR_OK;
             // get message size 
             int mpi_ret = MPI_Get_count(&status, dataType, &msgPack.count);
@@ -62,7 +62,7 @@ namespace comm
          * the buffer must be allocated and freed by the caller
         */
         template <typename T>
-        DB_STATUS receiveSerializedMessage(int sourceRank, int sourceTag, MPI_Comm &comm, MPI_Status &status, SerializedMsgT<T> &msg) {
+        DB_STATUS receiveSerializedMessage(int sourceRank, int sourceTag, MPI_Comm &comm, MPI_Status &status, SerializedMsg<T> &msg) {
             int mpi_ret = MPI_Recv(msg.data, msg.count, msg.type, sourceRank, sourceTag, comm, &status);
             if (mpi_ret != MPI_SUCCESS) {
                 logger::log_error(DBERR_COMM_RECV, "Failed to receive serialized message");

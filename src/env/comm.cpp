@@ -2,7 +2,7 @@
 
 namespace comm 
 {
-    static size_t getBatchObjectCountFromMessage(SerializedMsgT<char> &msg) {
+    static size_t getBatchObjectCountFromMessage(SerializedMsg<char> &msg) {
         size_t objectCount = -1;
         memcpy(&objectCount, msg.data, sizeof(size_t));
         return objectCount;
@@ -72,7 +72,7 @@ namespace comm
          * which will be returned to the host
          */
         template <typename T> 
-        static DB_STATUS forwardAndWaitResponse(SerializedMsgT<T> msg, MPI_Status &status) {
+        static DB_STATUS forwardAndWaitResponse(SerializedMsg<T> msg, MPI_Status &status) {
             // receive the message
             DB_STATUS ret = recv::receiveMessage(status, msg.type, g_global_comm, msg);
             if (ret != DBERR_OK) {
@@ -130,7 +130,7 @@ namespace comm
          */
         static DB_STATUS forwardBatchMessage(MPI_Comm sourceComm, int destRank, MPI_Comm destComm, MPI_Status &status, int &continueListening) {
             DB_STATUS ret = DBERR_OK;
-            SerializedMsgT<char> msg(MPI_CHAR);
+            SerializedMsg<char> msg(MPI_CHAR);
             // receive batch message
             ret = recv::receiveMessage(status, msg.type, sourceComm, msg);
             if (ret != DBERR_OK) {
@@ -155,7 +155,7 @@ namespace comm
         }
 
         static DB_STATUS forwardAPRILInfoMessage(MPI_Comm sourceComm, int destRank, MPI_Comm destComm, MPI_Status &status) {
-            SerializedMsgT<int> msg(MPI_INT);
+            SerializedMsg<int> msg(MPI_INT);
             // receive the message
             DB_STATUS ret = recv::receiveMessage(status, msg.type, sourceComm, msg);
             if (ret != DBERR_OK) {
@@ -177,7 +177,7 @@ namespace comm
         }
 
         static DB_STATUS forwardQueryResultsMessage(MPI_Comm sourceComm, int destRank, MPI_Comm destComm, MPI_Status &status) {
-            SerializedMsgT<int> msg(MPI_INT);
+            SerializedMsg<int> msg(MPI_INT);
             // receive the message
             DB_STATUS ret = recv::receiveMessage(status, msg.type, sourceComm, msg);
             if (ret != DBERR_OK) {
@@ -240,7 +240,7 @@ namespace comm
         }
 
         static DB_STATUS forwardQueryInfoMessage(MPI_Comm sourceComm, int destRank, MPI_Comm destComm, MPI_Status &status) {
-            SerializedMsgT<int> msg(MPI_INT);
+            SerializedMsg<int> msg(MPI_INT);
             // receive the message
             DB_STATUS ret = recv::receiveMessage(status, msg.type, sourceComm, msg);
             if (ret != DBERR_OK) {
@@ -267,7 +267,7 @@ namespace comm
     {
         static DB_STATUS deserializeBatchMessageAndStore(char *buffer, int bufferSize, FILE* outFile, Dataset *dataset, int &continueListening) {
             DB_STATUS ret = DBERR_OK;
-            GeometryBatchT batch;
+            GeometryBatch batch;
             // deserialize
             batch.deserialize(buffer, bufferSize);
 
@@ -296,7 +296,7 @@ namespace comm
 
         static DB_STATUS pullSerializedMessageAndHandle(MPI_Status status, FILE* outFile, Dataset *dataset, int &continueListening) {
             int tag = status.MPI_TAG;
-            SerializedMsgT<char> msg(MPI_CHAR);
+            SerializedMsg<char> msg(MPI_CHAR);
             // receive the message
             DB_STATUS ret = recv::receiveMessage(status, msg.type, g_local_comm, msg);
             if (ret != DBERR_OK) {
@@ -323,7 +323,7 @@ namespace comm
             return ret;
         }
 
-        static DB_STATUS generateDatasetFromMessage(SerializedMsgT<char> &datasetInfoMsg, Dataset &dataset) {
+        static DB_STATUS generateDatasetFromMessage(SerializedMsg<char> &datasetInfoMsg, Dataset &dataset) {
             // deserialize message
             dataset.deserialize(datasetInfoMsg.data, datasetInfoMsg.count);
             // generate partition filepath
@@ -337,7 +337,7 @@ namespace comm
         static DB_STATUS listenForDatasetPartitioning(MPI_Status status) {
             Dataset dataset;
             FILE* outFile;
-            SerializedMsgT<char> datasetInfoMsg(MPI_CHAR);
+            SerializedMsg<char> datasetInfoMsg(MPI_CHAR);
             int listen = 1;
             size_t dummy = 0;
 
@@ -473,7 +473,7 @@ STOP_LISTENING:
         }
 
         static DB_STATUS handleSysInfoMessage(MPI_Status status) {
-            SerializedMsgT<char> msg(MPI_CHAR);
+            SerializedMsg<char> msg(MPI_CHAR);
             // receive the message
             DB_STATUS ret = recv::receiveMessage(status, msg.type, g_local_comm, msg);
             if (ret != DBERR_OK) {
@@ -515,7 +515,7 @@ STOP_LISTENING:
         }
 
         static DB_STATUS handleAPRILInfoMessage(MPI_Status status) {
-            SerializedMsgT<int> msg(MPI_INT);
+            SerializedMsg<int> msg(MPI_INT);
             // receive the message
             DB_STATUS ret = recv::receiveMessage(status, msg.type, g_local_comm, msg);
             if (ret != DBERR_OK) {
@@ -556,9 +556,9 @@ STOP_LISTENING:
             return ret;
         }
 
-        static DB_STATUS respondWithQueryResults(QueryOutputT &queryOutput) {
+        static DB_STATUS respondWithQueryResults(QueryOutput &queryOutput) {
             // serialize results
-            SerializedMsgT<int> msg(MPI_INT);
+            SerializedMsg<int> msg(MPI_INT);
             DB_STATUS ret = pack::packQueryResults(msg, queryOutput);
             if (ret != DBERR_OK) {
                 logger::log_error(ret, "Serializing query output failed");
@@ -574,7 +574,7 @@ STOP_LISTENING:
         }
 
         static DB_STATUS handleQueryInfoMessage(MPI_Status status) {
-            SerializedMsgT<int> msg(MPI_INT);
+            SerializedMsg<int> msg(MPI_INT);
             // receive the message
             DB_STATUS ret = recv::receiveMessage(status, msg.type, g_local_comm, msg);
             if (ret != DBERR_OK) {
@@ -587,7 +587,7 @@ STOP_LISTENING:
             }
             // free memory
             free(msg.data);
-            QueryOutputT queryOutput;
+            QueryOutput queryOutput;
             // execute
             ret = twolayer::processQuery(queryOutput);
             if (ret != DBERR_OK) {
@@ -604,7 +604,7 @@ STOP_LISTENING:
         }
 
         static DB_STATUS handleLoadDatasetsMessage(MPI_Status status) {
-            SerializedMsgT<char> msg(MPI_CHAR);
+            SerializedMsg<char> msg(MPI_CHAR);
             std::vector<std::string> nicknames;
             // receive the message
             DB_STATUS ret = recv::receiveMessage(status, msg.type, g_local_comm, msg);
@@ -666,7 +666,7 @@ EXIT_SAFELY:
         }
 
         static DB_STATUS handleLoadAPRILMessage(MPI_Status status) {
-            SerializedMsgT<int> msg(MPI_INT);
+            SerializedMsg<int> msg(MPI_INT);
             // receive the message
             DB_STATUS ret = recv::receiveMessage(status, msg.type, g_local_comm, msg);
             if (ret != DBERR_OK) {
@@ -801,9 +801,9 @@ STOP_LISTENING:
     namespace controller
     {
         
-        DB_STATUS serializeAndSendGeometryBatch(GeometryBatchT* batch) {
+        DB_STATUS serializeAndSendGeometryBatch(GeometryBatch* batch) {
             DB_STATUS ret = DBERR_OK;
-            SerializedMsgT<char> msg(MPI_CHAR);
+            SerializedMsg<char> msg(MPI_CHAR);
             // check if batch is valid
             if (!batch->isValid()) {
                 logger::log_error(DBERR_BATCH_FAILED, "Batch is invalid, check its destRank, tag and comm");
@@ -827,7 +827,7 @@ STOP_LISTENING:
         
 
         DB_STATUS broadcastSysInfo() {
-            SerializedMsgT<char> msgPack(MPI_CHAR);
+            SerializedMsg<char> msgPack(MPI_CHAR);
             // serialize
             DB_STATUS ret = pack::packSystemInfo(msgPack);
             if (ret != DBERR_OK) {
@@ -865,7 +865,7 @@ STOP_LISTENING:
         static DB_STATUS forwardDatasetInfoToAgent(MPI_Status status) {
             DB_STATUS ret = DBERR_OK;
             int tag = status.MPI_TAG;
-            SerializedMsgT<char> datasetInfoMsg(MPI_CHAR);
+            SerializedMsg<char> datasetInfoMsg(MPI_CHAR);
             // receive dataset info message
             ret = recv::receiveMessage(status, datasetInfoMsg.type, g_global_comm, datasetInfoMsg);
             if (ret != DBERR_OK) {
@@ -976,7 +976,7 @@ STOP_LISTENING:
                 case MSG_SYS_INFO:
                     /* char messages */
                     {
-                        SerializedMsgT<char> msg(MPI_CHAR);
+                        SerializedMsg<char> msg(MPI_CHAR);
                         ret = forward::forwardAndWaitResponse(msg, status);
                         if (ret != DBERR_OK) {
                             return ret;
@@ -987,7 +987,7 @@ STOP_LISTENING:
                 case MSG_APRIL_CREATE:
                     /* int messages, wait for response */
                     {
-                        SerializedMsgT<int> msg;
+                        SerializedMsg<int> msg;
                         // ret = forward::forwardAPRILInfoMessage(g_global_comm, AGENT_RANK, g_local_comm, status);
                         ret = forward::forwardAndWaitResponse(msg, status);
                         if (ret != DBERR_OK) {
@@ -1051,7 +1051,7 @@ STOP_LISTENING:
         namespace host
         {
             DB_STATUS broadcastDatasetInfo(Dataset* dataset) {
-                SerializedMsgT<char> msgPack(MPI_CHAR);
+                SerializedMsg<char> msgPack(MPI_CHAR);
                 // serialize
                 msgPack.count = dataset->serialize(&msgPack.data);
                 if (msgPack.count == -1) {
@@ -1120,9 +1120,9 @@ STOP_LISTENING:
                 return ret;
             }
 
-            static DB_STATUS handleQueryResultMessage(MPI_Status &status, MPI_Comm &comm, QueryTypeE queryType, QueryOutputT &queryOutput) {
+            static DB_STATUS handleQueryResultMessage(MPI_Status &status, MPI_Comm &comm, QueryTypeE queryType, QueryOutput &queryOutput) {
                 DB_STATUS ret = DBERR_OK;
-                SerializedMsgT<int> msg;
+                SerializedMsg<int> msg;
                 // receive the serialized message
                 ret = recv::receiveMessage(status, MPI_INT, comm, msg);
                 if (ret != DBERR_OK) {
@@ -1141,7 +1141,7 @@ STOP_LISTENING:
             DB_STATUS gatherResults() {
                 DB_STATUS ret = DBERR_OK;
                 int threadThatFailed = -1;
-                QueryOutputT queryOutput;
+                QueryOutput queryOutput;
                 // use threads to parallelize gathering of results
                 #pragma omp parallel num_threads(g_world_size) reduction(query_output_reduction:queryOutput)
                 {
@@ -1149,7 +1149,7 @@ STOP_LISTENING:
                     int messageFound;
                     MPI_Status status;
                     int tid = omp_get_thread_num();
-                    QueryOutputT localQueryOutput;
+                    QueryOutput localQueryOutput;
 
                     // probe for results
                     if (tid == 0) {
