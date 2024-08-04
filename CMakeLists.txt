@@ -23,6 +23,7 @@ endif()
 
 set(SrcFiles
     src/def.cpp
+    src/containers.cpp
     src/proc.cpp
     src/utils.cpp
     
@@ -50,7 +51,6 @@ set(SrcFiles
     src/TwoLayer/filter.cpp
 
     src/refinement/topology.cpp
-    src/refinement/relate.cpp
 )
 
 # supress warnings

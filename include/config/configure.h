@@ -3,7 +3,6 @@
 
 #include <sys/stat.h>
 
-#include "def.h"
 #include "containers.h"
 #include "env/comm.h"
 #include "statement.h"

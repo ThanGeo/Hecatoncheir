@@ -1,7 +1,7 @@
 #ifndef D_APRIL_FILTER_H
 #define D_APRIL_FILTER_H
 
-#include "def.h"
+#include "containers.h"
 #include "APRIL/join.h"
 #include "refinement/topology.h"
 

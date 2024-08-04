@@ -71,7 +71,7 @@ namespace APRIL
                 }
 
                 //get hilbert cell id
-                d = xy2d(cellsPerDim, x+x_offset.at(i), y+y_offset.at(i));
+                d = hilbert::xy2d(cellsPerDim, x+x_offset.at(i), y+y_offset.at(i));
                 //if it has higher hilbert order, ignore
                 if(d >= current_id){
                     continue;
@@ -258,7 +258,7 @@ namespace APRIL
                 for(uint32_t j=0; j<rasterData.bufferHeight; j++){
                     if(M[i][j] == PARTIAL){			
                         //store into preallocated array
-                        partialCells.emplace_back(xy2d(cellsPerDim, i + rasterData.minCellX, j + rasterData.minCellY));
+                        partialCells.emplace_back(hilbert::xy2d(cellsPerDim, i + rasterData.minCellX, j + rasterData.minCellY));
                     }
                 }
             }
@@ -305,7 +305,7 @@ namespace APRIL
                 current_partial_cell++;
             }
             current_id = *(current_partial_cell) + 1;
-            d2xy(cellsPerDim, current_id, x, y);
+            hilbert::d2xy(cellsPerDim, current_id, x, y);
             current_partial_cell++;
 
             // loop partial cells
@@ -347,7 +347,7 @@ namespace APRIL
                     current_partial_cell++;
                 }
                 current_id = *(current_partial_cell) + 1;
-                d2xy(cellsPerDim, current_id, x, y);
+                hilbert::d2xy(cellsPerDim, current_id, x, y);
                 current_partial_cell++;
             }
 

@@ -1,9 +1,7 @@
 #ifndef D_CONFIG_STATEMENT
 #define D_CONFIG_STATEMENT
 
-#include "def.h"
-
-
+#include "containers.h"
 
 typedef struct ActionsStatement {
     bool performPartitioning = false;

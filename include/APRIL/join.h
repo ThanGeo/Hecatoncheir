@@ -1,7 +1,7 @@
 #ifndef D_APRIL_JOIN_H
 #define D_APRIL_JOIN_H
 
-#include "def.h"
+#include "containers.h"
 #include "refinement/topology.h"
 
 namespace APRIL

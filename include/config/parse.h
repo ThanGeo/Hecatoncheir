@@ -4,7 +4,6 @@
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/ini_parser.hpp>
 
-#include "def.h"
 #include "containers.h"
 #include "env/partitioning.h"
 #include "statement.h"

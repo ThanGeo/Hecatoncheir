@@ -1,7 +1,7 @@
 #ifndef D_CONFIG_SETUP_H
 #define D_CONFIG_SETUP_H
 
-#include "def.h"
+#include "containers.h"
 #include "config/parse.h"
 #include "config/configure.h"
 
