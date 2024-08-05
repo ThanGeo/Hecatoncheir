@@ -30,6 +30,7 @@ static void hostTerminate() {
 static void printResults() {
     logger::log_success("MBR Results:", g_queryOutput.postMBRFilterCandidates);
     switch (g_config.queryInfo.type) {
+        case Q_RANGE:
         case Q_DISJOINT:
         case Q_INTERSECT:
         case Q_INSIDE:
@@ -109,7 +110,7 @@ static DB_STATUS initQueryExecution() {
     if (ret != DBERR_OK) {
         return ret;
     }
-    logger::log_success("Query evaluted in", mpi_timer::getElapsedTime(startTime), "seconds.");
+    logger::log_success("Query evaluated in", mpi_timer::getElapsedTime(startTime), "seconds.");
 
     // print results
     printResults();

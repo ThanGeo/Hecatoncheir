@@ -933,13 +933,20 @@ namespace twolayer
         }
     }
 
-
     DB_STATUS processQuery(QueryOutput &queryOutput) {
         DB_STATUS ret = DBERR_OK;
         // first, reset any query outputs
         g_queryOutput.reset();
         // process based on query type
         switch (g_config.queryInfo.type) {
+            case Q_RANGE:
+                // todo: double check with dimitris. Is the filter the same for range? what about point data?
+                ret = intersectionMBRfilter::evaluate(queryOutput);
+                if (ret != DBERR_OK) {
+                    logger::log_error(ret, "Intersection MBR filter failed");
+                    return ret;
+                }
+                break;
             case Q_INTERSECT:
             case Q_INSIDE:
             case Q_DISJOINT:
@@ -963,7 +970,7 @@ namespace twolayer
                 break;
             default:
                 logger::log_error(DBERR_FEATURE_UNSUPPORTED, "Query type not supported:", mapping::queryTypeIntToStr(g_config.queryInfo.type));
-                break;
+                return DBERR_FEATURE_UNSUPPORTED;
         }
 
         return ret;

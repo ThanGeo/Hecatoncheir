@@ -138,6 +138,7 @@ namespace pack
         DB_STATUS ret = DBERR_OK;
         // serialize based on query type
         switch (g_config.queryInfo.type) {
+            case Q_RANGE:
             case Q_DISJOINT:
             case Q_INTERSECT:
             case Q_INSIDE:
@@ -261,6 +262,7 @@ namespace unpack
         queryOutput.postMBRFilterCandidates = queryResultsMsg.data[1];    
         // unpack based on query type
         switch (queryType) {
+            case Q_RANGE:
             case Q_DISJOINT:
             case Q_INTERSECT:
             case Q_INSIDE:
@@ -286,6 +288,9 @@ namespace unpack
                 queryOutput.setTopologyRelationResult(TR_MEET, queryResultsMsg.data[9]);
                 queryOutput.setTopologyRelationResult(TR_EQUAL, queryResultsMsg.data[10]);
                 break;
+            default:
+                logger::log_error(DBERR_QUERY_INVALID_TYPE, "Invalid query type:", g_config.queryInfo.type);
+                return DBERR_QUERY_INVALID_TYPE;
         }
         return DBERR_OK;
     }

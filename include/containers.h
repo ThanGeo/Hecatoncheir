@@ -836,8 +836,6 @@ struct QueryOutput {
     double mbrFilterTime;
     double iFilterTime;
     double refinementTime;
-    // on the fly april
-    uint rasterizationsDone;
 
     QueryOutput();
 

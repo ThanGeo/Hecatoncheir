@@ -1190,6 +1190,7 @@ STOP_LISTENING:
                     queryOutput.postMBRFilterCandidates += localQueryOutput.postMBRFilterCandidates;
                     queryOutput.refinementCandidates += localQueryOutput.refinementCandidates;
                     switch (g_config.queryInfo.type) {
+                        case Q_RANGE:
                         case Q_DISJOINT:
                         case Q_INTERSECT:
                         case Q_INSIDE:
@@ -1205,6 +1206,11 @@ STOP_LISTENING:
                             for (auto &it : localQueryOutput.topologyRelationsResultMap) {
                                 queryOutput.topologyRelationsResultMap[it.first] += it.second;
                             }
+                            break;
+                        default:
+                            logger::log_error(DBERR_QUERY_INVALID_TYPE, "Invalid query type:", g_config.queryInfo.type);
+                            threadThatFailed = tid;
+                            ret = DBERR_QUERY_INVALID_TYPE;
                             break;
                     }
                 }

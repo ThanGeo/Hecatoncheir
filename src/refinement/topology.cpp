@@ -491,6 +491,7 @@ namespace refinement
         DB_STATUS refinementEntrypoint(Shape* objR, Shape* objS, QueryTypeE queryType, QueryOutput &queryOutput) {
             // switch based on query type
             switch(queryType) {
+                case Q_RANGE:
                 case Q_INTERSECT:
                     refineIntersectionJoin(objR, objS, queryOutput);
                     break;

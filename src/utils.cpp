@@ -171,6 +171,7 @@ namespace mapping
 
     std::string queryTypeIntToStr(QueryTypeE val){
         switch(val) {
+            case Q_RANGE: return "range";
             case Q_INTERSECT: return "intersect";
             case Q_INSIDE: return "inside";
             case Q_DISJOINT: return "disjoint";

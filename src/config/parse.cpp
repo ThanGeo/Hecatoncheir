@@ -8,6 +8,11 @@ namespace parser
 
     // query support map
     QuerySupportMap g_querySupportMap = {
+        {Q_RANGE, {
+            {{DT_POLYGON, DT_LINESTRING}, true},
+            {{DT_POLYGON, DT_POLYGON}, true},
+            // {{DT_POLYGON, DT_POINT}, true},
+        }},
         {Q_INTERSECT, {
             {{DT_POLYGON, DT_LINESTRING}, true},
             {{DT_POLYGON, DT_POLYGON}, true},

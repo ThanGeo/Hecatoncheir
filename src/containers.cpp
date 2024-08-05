@@ -9,6 +9,7 @@ void queryResultReductionFunc(QueryOutput &in, QueryOutput &out) {
     out.postMBRFilterCandidates += in.postMBRFilterCandidates;
     out.refinementCandidates += in.refinementCandidates;
     switch (g_config.queryInfo.type) {
+        case Q_RANGE:
         case Q_DISJOINT:
         case Q_INTERSECT:
         case Q_INSIDE:
@@ -24,6 +25,9 @@ void queryResultReductionFunc(QueryOutput &in, QueryOutput &out) {
             for (auto &it : in.topologyRelationsResultMap) {
                 out.topologyRelationsResultMap[it.first] += it.second;
             }
+            break;
+        default:
+            logger::log_error(DBERR_QUERY_INVALID_TYPE, "Unsupported query type:", g_config.queryInfo.type);
             break;
     }
 }
@@ -51,9 +55,6 @@ QueryOutput::QueryOutput() {
     this->mbrFilterTime = 0;
     this->iFilterTime = 0;
     this->refinementTime = 0;
-
-    // on the fly april
-    this->rasterizationsDone = 0;
 }
 
 void QueryOutput::reset() {
@@ -79,9 +80,6 @@ void QueryOutput::reset() {
     this->mbrFilterTime = 0;
     this->iFilterTime = 0;
     this->refinementTime = 0;
-
-    // on the fly april
-    this->rasterizationsDone = 0;
 }
 
 void QueryOutput::countAPRILresult(int result) {
@@ -152,9 +150,6 @@ void QueryOutput::shallowCopy(QueryOutput &other) {
     this->mbrFilterTime = other.mbrFilterTime;
     this->iFilterTime = other.iFilterTime;
     this->refinementTime = other.refinementTime;
-
-    // on the fly april
-    this->rasterizationsDone = other.rasterizationsDone;
 }
 
 void AprilData::printALLintervals() {

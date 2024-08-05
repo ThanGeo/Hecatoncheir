@@ -278,6 +278,7 @@ namespace APRIL
                 int iFilterResult = INCONCLUSIVE;
                 // use appropriate query function
                 switch (g_config.queryInfo.type) {
+                    case Q_RANGE:
                     case Q_INTERSECT:
                         ret = uncompressed::intersectionJoinAPRIL(aprilR, aprilS, iFilterResult);
                         if (ret != DBERR_OK) {
@@ -331,9 +332,6 @@ namespace APRIL
                 if (iFilterResult != INCONCLUSIVE) {
                     // count APRIL result
                     queryOutput.countAPRILresult(iFilterResult);
-                    // if (iFilterResult == TRUE_HIT) {
-                    //     printf("%d,%d\n", objR->recID, objS->recID);
-                    // }
                     return ret;
                 }
             }
@@ -342,6 +340,7 @@ namespace APRIL
 
             // refine based on query type
             switch (g_config.queryInfo.type) {
+                case Q_RANGE:
                 case Q_INTERSECT:
                     refinement::relate::refineIntersectionJoin(objR, objS, queryOutput);
                     break;
