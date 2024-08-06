@@ -5,8 +5,10 @@
 #include "APRIL/filter.h"
 #include <omp.h>
 
+/** @brief The two-layer MBR filter methods. */
 namespace twolayer
 {
+    /** @brief Begins the query processing based on the system's query configuration. */
     DB_STATUS processQuery(QueryOutput &queryOutput);
 }
 

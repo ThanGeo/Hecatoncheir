@@ -13,7 +13,7 @@ namespace partitioning
         }
     }
     
-    DB_STATUS getPartitionsForMBR(double xMin, double yMin, double xMax, double yMax, std::vector<int> &partitionIDs, std::vector<TwoLayerClassE> &twoLayerClasses){
+    DB_STATUS getPartitionsForMBR(double xMin, double yMin, double xMax, double yMax, std::vector<int> &partitionIDs, std::vector<TwoLayerClass> &twoLayerClasses){
         int minPartitionX = (xMin - g_config.datasetInfo.dataspaceInfo.xMinGlobal) / (g_config.datasetInfo.dataspaceInfo.xExtent / g_config.partitioningInfo.partitionsPerDimension);
         int minPartitionY = (yMin - g_config.datasetInfo.dataspaceInfo.yMinGlobal) / (g_config.datasetInfo.dataspaceInfo.yExtent / g_config.partitioningInfo.partitionsPerDimension);
         int maxPartitionX = (xMax - g_config.datasetInfo.dataspaceInfo.xMinGlobal) / (g_config.datasetInfo.dataspaceInfo.xExtent / g_config.partitioningInfo.partitionsPerDimension);
@@ -88,7 +88,7 @@ namespace partitioning
     }
 
     /**
-     * @brief Assigns a geometry to the appropriate batches based on overlapping partition IDs.
+    @brief Assigns a geometry to the appropriate batches based on overlapping partition IDs.
      * If the batch is full after the insertion, it is sent and cleared before returning
      * 
      * @param geometry 
@@ -102,7 +102,7 @@ namespace partitioning
     static DB_STATUS assignGeometryToBatches(Geometry &geometry, double geoXmin, double geoYmin, double geoXmax, double geoYmax, std::unordered_map<int,GeometryBatch> &batchMap, int &batchesSent) {
         // find partition IDs and the class of the geometry in each partition
         std::vector<int> partitionIDs;
-        std::vector<TwoLayerClassE> twoLayerClasses;
+        std::vector<TwoLayerClass> twoLayerClasses;
         DB_STATUS ret = partitioning::getPartitionsForMBR(geoXmin, geoYmin, geoXmax, geoYmax, partitionIDs, twoLayerClasses);
         if (ret != DBERR_OK) {
             return ret;

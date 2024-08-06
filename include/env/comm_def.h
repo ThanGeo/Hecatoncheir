@@ -5,14 +5,9 @@
 #include <unordered_map>
 
 #define LISTENING_INTERVAL 1
-
-typedef enum NodeType {
-    NODE_HOST,
-    NODE_WORKER
-} NodeTypeE;
-
-/* message types (used as MPI_TAG) */
 #define MSG_BASE 0
+
+/** @enum MsgType @brief Message types. They are used as tags (MPI_TAG values) in the MPI communication messages. */
 typedef enum MsgType {
     /* BASE */
     MSG_ACK = MSG_BASE,
@@ -68,11 +63,15 @@ inline std::unordered_map<MPI_Datatype, std::string> g_MPI_Datatype_map = {{MPI_
                                                                     {MPI_CHAR, "MPI_CHAR"},
                                                                 };
 
+/** @brief Serialized message of template type T that is used for MPI communication. */
 template <typename T> 
 struct SerializedMsg { 
-    MPI_Datatype type;      // mpi datatype of message data
-    int count = 0;             // number of elements in message
-    T *data;                // pointer to the message data
+    // mpi datatype of message data
+    MPI_Datatype type;
+    // number of elements in message
+    int count = 0;
+    // pointer to the message data
+    T *data;
 
     SerializedMsg(MPI_Datatype type) {
         this->type = type;

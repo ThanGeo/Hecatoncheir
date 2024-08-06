@@ -1,3 +1,9 @@
+/**
+ * @file containers.h
+@brief Contains the struct definitions.
+ * 
+ * The struct member functions are defined in 'containers.cpp'.
+ */
 #ifndef D_CONTAINERS_H
 #define D_CONTAINERS_H
 
@@ -14,70 +20,98 @@
 #include "utils.h"
 #include "env/comm_def.h"
 
-/*************************************
+/**
+ * @brief Holds all the APRIL related info for a single object
  * 
+ * This struct contains two lists and their sizes, for APRIL's A-list and F-list.
+ * The intervals' start,end are stored as consecutive numbers. 
+ * Starting from the first position, every two consecutive numbers represent an interval's [start,end).
  * 
- * 
- * 
- *              APRIL
- * 
- * 
- * 
- * 
- *********************************** */
-
-// APRIL data
+ */
 struct AprilData {
-    // APRIL data
+    /** @brief A-list size */
     uint numIntervalsALL = 0;
+    /** 
+    @brief A-list contents
+     * 
+     * All of the object's intervals regardless of cell type (Partial and Full)
+     */
     std::vector<uint32_t> intervalsALL;
+    /** @brief F-list size */
     uint numIntervalsFULL = 0;
+    /** 
+    @brief F-list contents
+     * 
+     * Intervals comprised solely of Full cells i.e. cells covered completely by the original geometry.
+     */
     std::vector<uint32_t> intervalsFULL;
 
+    /**
+    @brief Prints the interval A-list.
+     */
     void printALLintervals();
+    /**
+    @brief Prints the interval A-list as cells instead of intervals.
+     */
     void printALLcells(uint32_t n);
+    /**
+    @brief Prints the interval F-list.
+     */
     void printFULLintervals();
 };
 
-// APRIL configuration
+/**
+ * @brief Contains all relevant APRIL configuration parameters.
+ * 
+ * The objects parameters are set by the configuration file.
+ */
 struct AprilConfig {
     private:
-        // Hilbert curve order
+        /**
+        @brief The Hilbert curve order.
+         * @warning Always in range [10,16].
+         */
         int N = 16;
-        // cells per dimension in Hilbert grid: 2^N
+        /**
+        @brief How many cells are in the Hilbert grid based on the Hilbert curve order.
+         * Always automatically set when defining the order N.
+         */
         int cellsPerDim = pow(2,16);
     public:
-        // compression enabled, disabled
+        /** @brief Whether compressed intervals are enabled (1) or disabled (0) 
+         * @warning Only uncompressed version is supported currently.
+        */
         bool compression = 0;
-        // how many partitions (sections) in the data space
+        /** @brief Number of partitions per dimension in the Hilbert space
+         * @warning Only 1 partition is supported currently.
+         */
         int partitions = 1;
-        // APRIL data file paths
+        /** @brief The A-list intervals filepath on disk. */
         std::string ALL_intervals_path;
+        /** @brief The F-list intervals filepath on disk. */
         std::string FULL_intervals_path;
 
+    /** @brief Sets the Hilbert curve order N. */
     void setN(int N);
+    /** @brief Returns the Hilbert curve order N. */
     int getN();
+    /** @brief Returns the number of cells per dimension in the Hilbert grid. */
     int getCellsPerDim();
 };
 
-
-/*************************************
- * 
- * 
- * 
- * 
- *          DATA STRUCTS
- * 
- * 
- * 
- * 
- *********************************** */
-
+/**
+ * @brief Struct for 2-dimension points with double coordinates x and y (lon, lat).
+ */
 struct Point {
     double x, y;
     Point(double xVal, double yVal) : x(xVal), y(yVal) {}
 };
 
+/**
+ * @brief Struct for Minimum Bounding Rectangles (MBR).
+ * 
+ * It holds the MBR's bottom-left (pMin) and top-right (pMax) points.
+ */
 struct MBR {
     Point pMin;
     Point pMax;
@@ -85,15 +119,25 @@ struct MBR {
     MBR() : pMin(Point(std::numeric_limits<int>::max(), std::numeric_limits<int>::max())), pMax(Point(-std::numeric_limits<int>::max(), -std::numeric_limits<int>::max())) {}
 };
 
-// wrapper struct 
+/**
+ * @brief Wrapper class for the Geometry objects.
+ * 
+ * Contains only the definitions of the functions so that the derived geometry classes can inherit and overload them.
+ * @warning Never should anyone define an object of this type and try to utilize it (undefined behaviour)
+ */
 template<typename GeometryType>
 struct GeometryWrapper {
 public:
+    /**
+    @brief Template field geometry will be set by the derived classes to the appropriate Boost Geometry type 
+     * that represents the the derived class.
+     */
     GeometryType geometry;
 
     GeometryWrapper() {}
     explicit GeometryWrapper(const GeometryType& geom) : geometry(geom) {}
 
+    /** @brief Sets the boost geometry object. */
     void setGeometry(const GeometryType& geom) {
         geometry = geom;
     }
@@ -120,7 +164,6 @@ public:
     }
 
     void modifyBoostPointByIndex(int index, double x, double y) {
-        // Default behavior: Do nothing (for types that don't support modifying points)
         logger::log_error(DBERR_INVALID_OPERATION, "Geometry wrapper can be accessed directly for operation: modifyBoostPointByIndex");
     }
 
@@ -187,7 +230,9 @@ public:
     }
 };
 
-// point
+/**
+@brief Point geometry derived struct. 
+ */
 template<>
 struct GeometryWrapper<bg_point_xy> {
 public:
@@ -195,6 +240,7 @@ public:
     GeometryWrapper(){}
     GeometryWrapper(const bg_point_xy &geom) : geometry(geom) {}
 
+    /** @brief Replaces the geometry (point) with a new one. */
     void addPoint(const double x, const double y) {
         // For points, simply replace the existing point
         geometry = bg_point_xy(x, y);
@@ -603,72 +649,103 @@ public:
     }
 };
 
-/* define forward declared member functions for the wrappers */
-// linestring
+/** Define all forward declared member functions for the wrappers. 
+ * They had to be forward-declared and later defined because of dependencies.
+ */
+
+/** @brief Overloaded method for creating the DE-9IM mask code for Linestring-Polygon cases.*/
 inline std::string GeometryWrapper<bg_linestring>::createMaskCode(const GeometryWrapper<bg_polygon>& other) const {
     boost::geometry::de9im::matrix matrix = boost::geometry::relation(geometry, other.geometry);
     return matrix.str();
 }
+/** @brief Overloaded method for the 'inside' relate predicate query for Linestring-Polygon cases.*/
 inline bool GeometryWrapper<bg_linestring>::inside(const GeometryWrapper<bg_polygon> &other) const {
     return boost::geometry::within(geometry, other.geometry);
 }
+/** @brief Overloaded method for the 'meets' relate predicate query for Linestring-Polygon cases.*/
 inline bool GeometryWrapper<bg_linestring>::meets(const GeometryWrapper<bg_polygon> &other) const {
     return boost::geometry::touches(geometry, other.geometry);
 }
 
-// point
+/** @brief Overloaded method for creating the DE-9IM mask code for Point-Polygon cases.*/
 inline std::string GeometryWrapper<bg_point_xy>::createMaskCode(const GeometryWrapper<bg_polygon>& other) const  {
     boost::geometry::de9im::matrix matrix = boost::geometry::relation(geometry, other.geometry);
     return matrix.str();
 }
+/** @brief Overloaded method for the 'inside' relate predicate query for Point-Linestring cases.*/
 inline bool GeometryWrapper<bg_point_xy>::inside(const GeometryWrapper<bg_linestring> &other) const {
     return boost::geometry::within(geometry, other.geometry);
 }
+/** @brief Overloaded method for the 'inside' relate predicate query for Point-Rectangle cases.*/
 inline bool GeometryWrapper<bg_point_xy>::inside(const GeometryWrapper<bg_rectangle> &other) const {
     return boost::geometry::within(geometry, other.geometry);
 }
+/** @brief Overloaded method for the 'inside' relate predicate query for Point-Polygon cases.*/
 inline bool GeometryWrapper<bg_point_xy>::inside(const GeometryWrapper<bg_polygon> &other) const {
     return boost::geometry::within(geometry, other.geometry);
 }
+/** @brief Overloaded method for the 'meets' relate predicate query for Point-Linestring cases.*/
 inline bool GeometryWrapper<bg_point_xy>::meets(const GeometryWrapper<bg_linestring> &other) const {
     return boost::geometry::touches(geometry, other.geometry);
 }
+/** @brief Overloaded method for the 'meets' relate predicate query for Point-Polygon cases.*/
 inline bool GeometryWrapper<bg_point_xy>::meets(const GeometryWrapper<bg_polygon> &other) const {
     return boost::geometry::touches(geometry, other.geometry);
 }
 
-//rectangle
+/** @brief Overloaded method for the 'equals' relate predicate query for Rectangle-Polygon cases.*/
 inline bool GeometryWrapper<bg_rectangle>::equals(const GeometryWrapper<bg_polygon>& other) const {
     return boost::geometry::equals(geometry, other.geometry);
 }
 
-// define shape wrappers and shape struct
+/** @typedef PointWrapper @brief type definition for the point wrapper*/
 using PointWrapper = GeometryWrapper<bg_point_xy>;
+/** @typedef PolygonWrapper @brief type definition for the polygon wrapper*/
 using PolygonWrapper = GeometryWrapper<bg_polygon>;
+/** @typedef LineStringWrapper @brief type definition for the linestring wrapper*/
 using LineStringWrapper = GeometryWrapper<bg_linestring>;
+/** @typedef RectangleWrapper @brief type definition for the rectangle wrapper*/
 using RectangleWrapper = GeometryWrapper<bg_rectangle>;
 
+/** @typedef ShapeVariant @brief All the allowed Shape variants (geometry wrappers). */
 using ShapeVariant = std::variant<PointWrapper, PolygonWrapper, LineStringWrapper, RectangleWrapper>;
 
+/**
+ * @brief A spatial object. Could be point, linestring, rectangle or polygon, as specified by its 'dataType' field.
+ * 
+ * @details All geometry wrappers are not meant to be visible to the user. Always use this struct for loading, querying or otherwise handling data.
+ * Extensions to the struct's methods require explicit definitions for the geometry types in the derived geometry structs.
+ */
 struct Shape {
-    size_t recID;
-    DataTypeE dataType;
-    MBR mbr;
-    // partition ID -> two layer class of this object in that partition
-    std::unordered_map<int, int> partitions;
-    // shape variant
+private:
+    /**
+    @brief The geometry variant of the Shape object. Access to the object's boost geometry parent field is done through variant
+     * method definitions that utilize this field.
+     * @warning Direct access is not encouraged. See the member method definitions for more.
+     */
     ShapeVariant shape;
+public:
+    /** @brief the object's ID, as read by the data file. */
+    size_t recID;
+    /** @brief the object's geometry type. */
+    enum DataType dataType;
+    /** @brief the object's MBR. */
+    MBR mbr;
+    /** @brief The object's partition index, containing info about the partitions that this object intersects with
+     * and its two-layer index class in each of them.
+     * @param key Partition ID.
+     * @param value The two-layer index class of the object in that partition.
+     */
+    std::unordered_map<int, int> partitions;
 
+    /** @brief Default empty Shape constructor. */
     Shape() {}
 
+    /** @brief Default empty expicit type Shape constructor. */
     template<typename T>
     explicit Shape(T geom) : shape(geom) {}
 
-    /**
-     * utils
-     */
-
-    // adds a point to the shape
+    /** @brief Adds a point to the boost geometry (see derived method definitions). */
     void addPoint(const double x, const double y) {
         // then in boost object
         std::visit([&x, &y](auto&& arg) {
@@ -676,18 +753,25 @@ struct Shape {
         }, shape);
     }
 
+    /** @brief Corrects the geometry object based on the boost geometry standards. */
     void correctGeometry() {
         std::visit([](auto&& arg) {
             arg.correctGeometry();
         }, shape);
     }
 
+    /** @brief Modifies the point specified by 'index' with the new values x,y. (see derived method definitions) 
+     * @param index The position of the point to modify in the geometry object.
+     * @param x The new x value.
+     * @param y The new y value.
+    */
     void modifyBoostPointByIndex(int index, double x, double y) {
         std::visit([index, &x, &y](auto&& arg) {
             arg.modifyBoostPointByIndex(index, x, y);
         }, shape);
     }
 
+    /** @brief Prints the geometry. */
     void printGeometry() {
         printf("id: %zu\n", recID);
         std::visit([](auto&& arg) {
@@ -695,6 +779,7 @@ struct Shape {
         }, shape);
     }
 
+    /** @brief Resets the boost geometry object. */
     void reset() {
         recID = 0;
         dataType = DT_INVALID;
@@ -705,31 +790,30 @@ struct Shape {
         }, shape);
     }
 
+    /** @brief Returns a reference to the point list of the geometry. */
     const std::vector<bg_point_xy>* getReferenceToPoints() {
         return std::visit([](auto&& arg) -> const std::vector<bg_point_xy>* {
             return arg.getReferenceToPoints();
         }, shape);
     }
 
+    /** @brief Returns the point count of the geometry. */
     int getVertexCount() {
         return std::visit([](auto&& arg) -> int {
             return arg.getVertexCount();
         }, shape);
     }
 
-    /**
-     * APRIL
-     */
-
+    /** @brief Performs a point-in-polygon test with the given point (see derived method definitions). */
     bool pipTest(const bg_point_xy& point) const {
         return std::visit([&point](auto&& arg) -> bool {
             return arg.pipTest(point);
         }, shape);
     }
 
-    /**
-     * queries/spatial operations
-     */
+    /** @brief Generates and returns the DE-9IM mask of this geometry (as R) with the input geometry (as S) 
+     * @warning Not all geometry type combinations are supported (see data type support).
+    */
     std::string createMaskCode(const Shape &other) const {
         return std::visit([&other](auto&& arg) -> std::string {
             return std::visit([&arg](auto&& otherArg) -> std::string {
@@ -738,6 +822,9 @@ struct Shape {
         }, shape);
     }
 
+    /** @brief Returns true whether the input geometry intersects (border or area) with this geometry. False otherwise. 
+     * @warning Not all geometry type combinations are supported (see data type support).
+    */
     template<typename OtherBoostGeometryObj>
     bool intersects(const OtherBoostGeometryObj &other) const {
         return std::visit([&other](auto&& arg) -> bool {
@@ -747,6 +834,9 @@ struct Shape {
         }, shape);
     }
 
+    /** @brief Returns true whether the input geometry is disjoint (no common points) with this geometry. False otherwise. 
+     * @warning Not all geometry type combinations are supported (see data type support).
+    */
     template<typename OtherBoostGeometryObj>
     bool disjoint(const OtherBoostGeometryObj &other) const {
         return std::visit([&other](auto&& arg) -> bool {
@@ -756,6 +846,9 @@ struct Shape {
         }, shape);
     }
 
+    /** @brief Returns true whether the geometry is completely inside (no inside-border common points) the input geometry. False otherwise. 
+     * @warning Not all geometry type combinations are supported (see data type support).
+    */
     template<typename OtherBoostGeometryObj>
     bool inside(const OtherBoostGeometryObj &other) const {
         return std::visit([&other](auto&& arg) -> bool {
@@ -765,6 +858,9 @@ struct Shape {
         }, shape);
     }
 
+    /** @brief Returns true whether the geometry is covered by (inside-border common points are allowed) the input geometry. False otherwise. 
+     * @warning Not all geometry type combinations are supported (see data type support).
+    */
     template<typename OtherBoostGeometryObj>
     bool coveredBy(const OtherBoostGeometryObj &other) const {
         return std::visit([&other](auto&& arg) -> bool {
@@ -774,6 +870,9 @@ struct Shape {
         }, shape);
     }
 
+    /** @brief Returns true whether the geometry completely contains (reverse of inside) the input geometry. False otherwise. 
+     * @warning Not all geometry type combinations are supported (see data type support).
+    */
     template<typename OtherBoostGeometryObj>
     bool contains(const OtherBoostGeometryObj &other) const {
         return std::visit([&other](auto&& arg) -> bool {
@@ -783,6 +882,9 @@ struct Shape {
         }, shape);
     }
 
+    /** @brief Returns true whether the geometry covers (reverse of covered by) the input geometry. False otherwise. 
+     * @warning Not all geometry type combinations are supported (see data type support).
+    */
     template<typename OtherBoostGeometryObj>
     bool covers(const OtherBoostGeometryObj &other) const {
         return std::visit([&other](auto&& arg) -> bool {
@@ -792,6 +894,10 @@ struct Shape {
         }, shape);
     }
 
+    /** @brief Returns true whether the geometry meets (touches) the input geometry (their insides do not have common points, but their borders do). 
+     * False otherwise. 
+     * @warning Not all geometry type combinations are supported (see data type support).
+    */
     template<typename OtherBoostGeometryObj>
     bool meets(const OtherBoostGeometryObj &other) const {
         return std::visit([&other](auto&& arg) -> bool {
@@ -801,6 +907,9 @@ struct Shape {
         }, shape);
     }
 
+    /** @brief Returns true whether the geometry is spatially equal the input geometry. False otherwise. 
+     * @warning Not all geometry type combinations are supported (see data type support).
+    */
     template<typename OtherBoostGeometryObj>
     bool equals(const OtherBoostGeometryObj &other) const {
         return std::visit([&other](auto&& arg) -> bool {
@@ -812,6 +921,9 @@ struct Shape {
 
 };
 
+/** @namespace shape_factory
+@brief contains the factory methods for generating geometry wrapper derived objects.
+ */
 namespace shape_factory
 {
     // Create empty shapes
@@ -821,6 +933,9 @@ namespace shape_factory
     Shape createEmptyRectangleShape();
 }
 
+/**
+ * @brief Holds all the query result related information.
+ */
 struct QueryOutput {
     // for regular query rsesults
     int queryResults;
@@ -845,31 +960,35 @@ struct QueryOutput {
     void countMBRresult();
     void countRefinementCandidate();
     void countTopologyRelationResult(int result);
-    int getResultForTopologyRelation(TopologyRelationE relation);
+    int getResultForTopologyRelation(TopologyRelation relation);
     void setTopologyRelationResult(int relation, int result);
     /**
-     * @brief copies the contents of the 'other' object into this struct
+    @brief copies the contents of the 'other' query output object into this struct
      */
     void shallowCopy(QueryOutput &other);
 };
-// global query output variable
+/** @brief The main query output global variable used by the host controller to store the results. */
 extern QueryOutput g_queryOutput;
 
+/** @brief Holds information about sections, i.e. APRIL partitions.
+ */
 struct Section {
     uint sectionID;
-    // axis position indexes
+    // section x,y position indices
     uint i,j;
     //objects that intersect this MBR will be assigned to this area
     double interestxMin, interestyMin, interestxMax, interestyMax;
-    // double normInterestxMin, normInterestyMin, normInterestxMax, normInterestyMax;
     //this MBR defines the rasterization area (widened interest area to include intersecting polygons completely)
     double rasterxMin, rasteryMin, rasterxMax, rasteryMax;
-    // double normRasterxMin, normRasteryMin, normRasterxMax, normRasteryMax;
     // APRIL data
     size_t objectCount = 0;
     std::unordered_map<size_t, AprilData> aprilData;
 };
 
+/** @brief All dataspace related info, filled in after loading the dataset(s).
+ * @param xMinGlobal, yMinGlobal, xMaxGlobal, yMaxGlobal The dataspace's borders (MBR).
+ * @param xExtent, yExtent, maxExtent The dataspace's extent.
+ */
 struct DataspaceInfo {
     double xMinGlobal, yMinGlobal, xMaxGlobal, yMaxGlobal;  // global bounds based on dataset bounds
     double xExtent, yExtent, maxExtent;
@@ -880,47 +999,61 @@ struct DataspaceInfo {
     void clear();
 };
 
-
+/** @brief Holds all necessary partition information. 
+ * @param partitionID The partition's ID in the grid.
+ * @param classIndex Fixed 4 position vector, one for each two-layer index class.
+ */
 struct Partition {
     size_t partitionID;
-    /* 4 positions, one for each class type. Contains the objects of that class for this partition */
+    /** @brief Contains the list of objects (Shape) of each class for this partition */
     std::vector<std::vector<Shape*>> classIndex;
     /**
-     * @brief Constructor: there are only 4 classes (A, B, C, D)
+    @brief Default constructor that defines the 4-position vector. Two-layer index classes: A, B, C, D
      */
     Partition(size_t id) : partitionID(id), classIndex(4) {}
-    std::vector<Shape*>* getContainerClassContents(TwoLayerClassE classType);
+    /** @brief Returns a reference to the partition's contents for the given class type. @param classType Either A, B, C or D. */
+    std::vector<Shape*>* getContainerClassContents(TwoLayerClass classType);
 };
 
+/** @brief Holds all two-layer related index information.
+ * @param partitions A vector containing each individual non-empty partition.
+ * @param partitionMap A map that holds the positions of each partition (by ID) in the 'partitions' vector.
+ */
 struct TwoLayerIndex {
     std::vector<Partition> partitions;
     std::unordered_map<int, size_t> partitionMap;
-    // methods
 private:
+    /** @brief Compares to Shapes by MBR bottom-left point y. */
     static bool compareByY(const Shape* a, const Shape* b) {
         return a->mbr.pMin.y < b->mbr.pMin.y;
     }
 public:
+    /** @brief Returns or creates a new partition with the given ID. */
     Partition* getOrCreatePartition(int partitionID);
     /** 
-     * @brief adds an object to the partition with partitionID, with the specified classType 
-     * @note creates a copy of the object, and returns a pointer to the copied address
-     * @warning input Shape &object has virtually no lifetime
+    @brief Adds an object to a partition with partitionID, with the specified classType 
+     * and returns a pointer to it.
+     * @param[in] partitionID The partition's ID to add the object to.
+     * @param[in] classType The class of the object in that partition.
+     * @param[out] objectRef The returned object reference.
      */
-    void addObject(int partitionID, TwoLayerClassE classType, Shape* objectRef);
+    void addObject(int partitionID, TwoLayerClass classType, Shape* objectRef);
     /**
-     * returns the partition reference to this partition ID
+    @brief Returns the partition reference to this partition ID
      */
     Partition* getPartition(int partitionID);
     /**
-     * sorts all objects in all partitions on the Y axis
+    @brief Sorts all objects in all partitions on the Y axis
      */
     void sortPartitionsOnY();
 };
 
+/**
+ * @brief All dataset related information.
+ */
 struct Dataset{
-    DataTypeE dataType;
-    FileTypeE fileType;
+    DataType dataType;
+    FileType fileType;
     std::string path;
     // derived from the path
     std::string datasetName;
@@ -934,51 +1067,51 @@ struct Dataset{
     // two layer
     TwoLayerIndex twoLayerIndex;
     /* approximations */ 
-    ApproximationTypeE approxType;
+    ApproximationType approxType;
     // APRIL
     AprilConfig aprilConfig;
     std::unordered_map<uint, Section> sectionMap;                        // map: k,v = sectionID,(unordered map of k,v = recID,aprilData)
     std::unordered_map<size_t,std::vector<uint>> recToSectionIdMap;         // map: k,v = recID,vector<sectionID>: maps recs to sections 
 
-    /**
-     * Methods
-    */
-    /**
-     * @brief adds a Shape object into two layer index and the reference map
-     * 
-     */
+    /** @brief Adds a Shape object into the two layer index and the reference map. @note Calculates the partitions and the object's classes in them. */
     void addObject(Shape &object);
 
+    /** @brief Returns a reference to the object with the given ID. */
     Shape* getObject(size_t recID);
 
-    // calculate the size needed for the serialization buffer
+    /** @brief Calculate the size needed for the dataset serialization. */
     int calculateBufferSize();
-    /**
-     * serialize dataset info (only specific stuff)
-     */
+    /** @brief Serializes the dataset object (only the important stuff). */
     int serialize(char **buffer);
-    /**
-     * deserializes a serialized buffer that contains the dataset info, 
-     * into this Dataset object
-     */
+    /** @brief Deserializes the given serialized buffer of the specified size into this Dataset object. @warning Caller is responsible for the validity of the input buffer. */
     void deserialize(const char *buffer, int bufferSize);
-    // APRIL
+    /** @warning UNSUPPORTED */
     void addAprilDataToApproximationDataMap(const uint sectionID, const size_t recID, const AprilData &aprilData);
+    /** @brief Adds the given object ID to the specified section ID. @warning UNSUPPORTED for sections IDs different than 0 (1 partition) */
     void addObjectToSectionMap(const uint sectionID, const size_t recID);
+    /** @brief Adds the given intervals into the given object with recID in the given section with section ID.
+     * @param ALL Specfies whether the input intervals represent the A-list or not (F-list otherwise).
+     */
     void addIntervalsToAprilData(const uint sectionID, const size_t recID, const int numIntervals, const std::vector<uint32_t> &intervals, const bool ALL);
+    /** @brief Returns a reference to the April Data of the given object's ID in section ID */
     AprilData* getAprilDataBySectionAndObjectID(uint sectionID, size_t recID);
 };
 
+/** @brief Holds all query-related information.
+ */
 struct Query{
-    QueryTypeE type;
+    QueryType type;
     int numberOfDatasets;
     Dataset R;         // R: left dataset
     Dataset S;         // S: right dataset
     bool boundsSet = false;
-    // double xMinGlobal, yMinGlobal, xMaxGlobal, yMaxGlobal;  // global bounds based on dataset bounds
     DataspaceInfo dataspaceInfo;
 };
 
+/** @brief Holds all system-related directory paths.
+ * @note They refer to node-local paths.
+ * @warning Hardcoded, tread carefully when altering them.
+ */
 struct DirectoryPaths {
     std::string configFilePath = "../config.ini";
     const std::string datasetsConfigPath = "../datasets.ini";
@@ -993,8 +1126,10 @@ struct DirectoryPaths {
     }
 };
 
+/** @brief Holds all partitioning related information.
+ */
 struct PartitioningInfo {
-    PartitioningTypeE type;                 // type of the partitioning technique
+    PartitioningType type;                 // type of the partitioning technique
     int partitionsPerDimension;             // # of partitions per dimension
     int batchSize;                          // size of each batche, in number of objects
     
@@ -1008,26 +1143,27 @@ struct PartitioningInfo {
     }
 };
 
+/** @brief Defines a system task/job that the host controller is responsible for performing/broadcasting.
+ */
 struct Action {
-    ActionTypeE type;
-
+    ActionType type;
     Action(){
         this->type = ACTION_NONE;
     }
-
-    Action(ActionTypeE type) {
+    Action(ActionType type) {
         this->type = type;
     }
-    
 };
 
+/** @brief Holds the dataset(s) related info in the configuration.
+ */
 struct DatasetInfo {
-    private:
+private:
     Dataset* R;
     Dataset* S;
     int numberOfDatasets;
 
-    public:
+public:
     std::unordered_map<std::string,Dataset> datasets;
     DataspaceInfo dataspaceInfo;
     
@@ -1041,7 +1177,7 @@ struct DatasetInfo {
 
     Dataset* getDatasetS();
     /**
-     * @brief adds a Dataset to the configuration's dataset info
+    @brief adds a Dataset to the configuration's dataset info
      * @warning it has to be an empty dataset BUT its nickname needs to be set
      */
     void addDataset(Dataset &dataset);
@@ -1049,32 +1185,38 @@ struct DatasetInfo {
     void updateDataspace();
 };
 
+/** @brief Holds all approximation related info.
+ */
 struct ApproximationInfo {
-    ApproximationTypeE type;   // sets which of the following fields will be used
+    ApproximationType type;   // sets which of the following fields will be used
     AprilConfig aprilConfig;  
-    
     ApproximationInfo() {
         this->type = AT_NONE;
     }
-
-    ApproximationInfo(ApproximationTypeE type) {
+    ApproximationInfo(ApproximationType type) {
         this->type = type;
     }
 };
 
+/** @brief Holds all the query related info in the configuration.
+ */
 struct QueryInfo {
-    QueryTypeE type = Q_NONE;
+    QueryType type = Q_NONE;
     int MBRFilter = 1;
     int IntermediateFilter = 1;
     int Refinement = 1;
 };
 
+/** @brief Holds all the system related info in the configuration.
+ */
 struct SystemOptions {
-    SystemSetupTypeE setupType;
+    SystemSetupType setupType;
     std::string nodefilePath;
     uint nodeCount;
 };
 
+/** @brief The main configuration struct. Holds all necessary configuration options.
+ */
 struct Config {
     DirectoryPaths dirPaths;
     SystemOptions options;
@@ -1085,6 +1227,9 @@ struct Config {
     QueryInfo queryInfo;
 };
 
+/** @brief Simple Geometry object used only in the data partitioning/broadcasting.
+ * @todo Redundant. Maybe use the Shape struct.
+ */
 struct Geometry {
     size_t recID;
     int partitionCount;
@@ -1094,9 +1239,12 @@ struct Geometry {
 
     Geometry(size_t recID, int vertexCount, std::vector<double> &coords);
     Geometry(size_t recID, std::vector<int> &partitions, int vertexCount, std::vector<double> &coords);
-    void setPartitions(std::vector<int> &ids, std::vector<TwoLayerClassE> &classes);
+    void setPartitions(std::vector<int> &ids, std::vector<TwoLayerClass> &classes);
 };
 
+/**
+ * @brief A batch containing multiple objects for the batch partitioning/broadcasting.
+ */
 struct GeometryBatch {
     // serializable
     size_t objectCount = 0;
@@ -1117,13 +1265,13 @@ struct GeometryBatch {
     void clear();
 
     /**
-     * @brief serializes the geometry batch into the buffer. This method also allocates the buffer's memory.
+    @brief serializes the geometry batch into the buffer. This method also allocates the buffer's memory.
      * Caller is responsible to free.
      */
     int serialize(char **buffer);
 
     /**
-     * @brief fills the struct with data from the input serialized buffer
+    @brief fills the struct with data from the input serialized buffer
      * The caller must free the buffer memory
      */
     void deserialize(const char *buffer, int bufferSize);
@@ -1131,13 +1279,13 @@ struct GeometryBatch {
 };
 
 /**
- * @brief global configuration variable 
+@brief The main global configuration variable.
 */
 extern Config g_config;
 
 /**
- * @brief based on query type in config, it appropriately adds the query output in parallel
- * Used only in parallel sections for OpenMP
+@brief Based on query type in config, it thread-safely appends new results to the query output in parallel.
+ * Used only in parallel sections for OpenMP.
  */
 void queryResultReductionFunc(QueryOutput &in, QueryOutput &out);
 

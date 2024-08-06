@@ -3,10 +3,11 @@
 
 #include "containers.h"
 
+/** @brief Process related methods. */
 namespace proc
 {   
     /**
-     * @brief sets up the processes in the host node
+    @brief Sets up the processes during initialization.
      */
     DB_STATUS setupProcesses();
     

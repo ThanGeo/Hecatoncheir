@@ -5,35 +5,49 @@
 #include "proc.h"
 #include "comm_def.h"
 
+/** @brief System inter- and intra- communication methods. */
 namespace comm
 {
+    /** @brief Methods for sending messages. 
+     * @todo Merge some methods like sendResponse and sendInstruction message (or even more) into a single one for multi-use. */
     namespace send
     {   
-        /**
-         * @brief sends a response that is either ACK or NACK
-         * 
+        /** @brief Sends a response that is either ACK or NACK.
+         * @param[in] destRank The rank of the destination of the message.
+         * @param[in] tag The tag of the message.
+         * @param[in] comm The communicator through which the message will be sent through.
          */
         DB_STATUS sendResponse(int destRank, int tag, MPI_Comm &comm);
 
-        /**
-         * @brief sends a message containing a query result
+        /** @brief Sends a query result.
+         * @param[in] result The result to be sent.
+         * @param[in] destRank The rank of the destination of the message.
+         * @param[in] tag The tag of the message.
+         * @param[in] comm The communicator through which the message will be sent through.
          */
         DB_STATUS sendResult(unsigned long long result, int destRank, int tag, MPI_Comm &comm);
         
-        /**
-         * sends an instruction message to one specific node with destRank.
-        */
+        /** @brief Sends an instruction message.
+         * @param[in] destRank The rank of the destination of the message.
+         * @param[in] tag The tag of the message.
+         * @param[in] comm The communicator through which the message will be sent through.
+         */
         DB_STATUS sendInstructionMessage(int destRank, int tag, MPI_Comm &comm);
         
-        /**
-         * sends a message containing a dataset's info (must be already correctly serialized in the input parameter)
+        /** @brief Sends a message containing dataset info.
+         * @param[in] datasetInfoMsg The already serialized message.
+         * @param[in] destRank The rank of the destination of the message.
+         * @param[in] tag The tag of the message.
+         * @param[in] comm The communicator through which the message will be sent through.
          */
         DB_STATUS sendDatasetInfoMessage(SerializedMsg<char> &datasetInfoMsg, int destRank, int tag, MPI_Comm &comm);
         
 
-        /**
-         * @brief sends a serialized message to destrank with tag through comm
-         * 
+        /** @brief Sends a serialized message of template type T.
+         * @param[in] msg The already serialized message.
+         * @param[in] destRank The rank of the destination of the message.
+         * @param[in] tag The tag of the message.
+         * @param[in] comm The communicator through which the message will be sent through.
          */
         template <typename T>
         DB_STATUS sendMessage(SerializedMsg<T> &msg, int destRank, int tag, MPI_Comm &comm) {
@@ -56,7 +70,7 @@ namespace comm
         DB_STATUS broadcastInstructionMessage(int tag);
 
         /**
-         * @brief broadcasts a serialized/packed message with the given tag to all worker nodes.
+        @brief broadcasts a serialized/packed message with the given tag to all worker nodes.
          * Sending the same message to the agent must be handled separately
          * 
          * @tparam T 

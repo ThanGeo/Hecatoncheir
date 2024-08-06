@@ -242,7 +242,7 @@ static DB_STATUS performActions() {
 
 int main(int argc, char* argv[]) {
     // initialize MPI environment
-    DB_STATUS ret = configure::initMPI(argc, argv);
+    DB_STATUS ret = configurer::initMPI(argc, argv);
     if (ret != DBERR_OK) {
         goto EXIT_SAFELY;
     }

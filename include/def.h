@@ -9,10 +9,13 @@
 #include <boost/geometry/geometries/linestring.hpp>
 #include <boost/geometry/geometries/box.hpp>
 
-// boost geometry
+/** @typedef bg_point_xy @brief boost geometry point definition. */
 typedef boost::geometry::model::d2::point_xy<double> bg_point_xy;
+/** @typedef bg_linestring @brief boost geometry linestring definition. */
 typedef boost::geometry::model::linestring<bg_point_xy> bg_linestring;
+/** @typedef bg_rectangle @brief boost geometry rectangle definition. */
 typedef boost::geometry::model::box<bg_point_xy> bg_rectangle;
+/** @typedef bg_polygon @brief boost geometry polygon definition. */
 typedef boost::geometry::model::polygon<bg_point_xy> bg_polygon;
 
 #define AGENT_PROGRAM_NAME "./agent"
@@ -30,6 +33,7 @@ typedef boost::geometry::model::polygon<bg_point_xy> bg_polygon;
 #define NC "\e[0m"
 
 #define EPS 1e-08
+#define DBBASE 100000
 
 extern int g_world_size;
 extern int g_node_rank;
@@ -39,8 +43,13 @@ extern int g_parent_original_rank;
 extern MPI_Comm g_global_comm;
 extern MPI_Comm g_local_comm;
 
-/* STATUS AND ERROR CODES */
-#define DBBASE 100000
+/** @enum DB_STATUS 
+@brief Flags/states for status reporting. 
+ * 
+ * All functions should return a DB_STATUS value. After each call, there should always be a check whether 
+ * the returned value is DBERR_OK. If not, the error should propagate and the program should terminate safely.
+ * 
+ */
 typedef enum DB_STATUS {
     DBERR_OK = DBBASE + 0,
     DB_FIN,
@@ -96,19 +105,22 @@ typedef enum DB_STATUS {
     DBERR_QUERY_INVALID_TYPE = DBBASE + 7001,
 } DB_STATUS;
 
+/** @enum FileType @brief Data file types. */
 typedef enum FileType {
     FT_INVALID,
     FT_BINARY,
     FT_CSV,
     FT_WKT,
-} FileTypeE;
+} FileType;
 
-typedef enum FilterResult {
+/** @enum FilterResult @brief Possible results for the intermediate filter. */
+enum FilterResult {
     TRUE_NEGATIVE,
     TRUE_HIT,
     INCONCLUSIVE,
-} FilterResultT;
+};
 
+/** @enum QueryType @brief Query types. */
 typedef enum QueryType{
     Q_NONE, // no query
     Q_RANGE,
@@ -121,18 +133,24 @@ typedef enum QueryType{
     Q_COVERS,
     Q_COVERED_BY,
     Q_FIND_RELATION,    // find what type of topological relation is there
-}QueryTypeE;
+}QueryType;
 
-// MBR topology relations
+/** @enum MBRRelationCase 
+@brief Specific relationships between the MBRs of two objects R and S. 
+ * 
+ * Used in the topological MBR filter.
+ * */
 typedef enum MBRRelationCase {
     MBR_R_IN_S,
     MBR_S_IN_R,
     MBR_EQUAL,
     MBR_CROSS,
     MBR_INTERSECT,
-} MBRRelationCaseE;
+} MBRRelationCase;
 
-// topological
+/** @enum TopologyRelation @brief Topological relation related flags. 
+ * 
+ * @details Includes both the types of topological relations and the different refinement cases for the APRIL intermediate filter.  */
 typedef enum TopologyRelation {
     TR_DISJOINT,
     TR_EQUAL,
@@ -142,41 +160,31 @@ typedef enum TopologyRelation {
     TR_COVERS,
     TR_COVERED_BY,
     TR_INTERSECT,
-    // specific refinement cases
-    REFINE_CONTAINS_PLUS = 1000,
-    REFINE_INSIDE_PLUS,
-    REFINE_CONTAINMENT_ONLY,
-    REFINE_NO_CONTAINMENT,
-    REFINE_ALL_NO_EQUAL,
-    REFINE_ALL,
-    /**
-     * @brief SPECIALIZED MBR TOPOLOGY
-     */
-    // MBR(r) inside MBR(s)
-    REFINE_INSIDE_COVEREDBY_TRUEHIT_INTERSECT = 2000,
+
+    REFINE_INSIDE_COVEREDBY_TRUEHIT_INTERSECT = 1000,
     REFINE_DISJOINT_INSIDE_COVEREDBY_MEET_INTERSECT,
-    // MBR(s) inside MBR(r)
+
     REFINE_CONTAINS_COVERS_TRUEHIT_INTERSECT,
     REFINE_DISJOINT_CONTAINS_COVERS_MEET_INTERSECT,
-    // MBR(r) intersects MBR(s)
+
     REFINE_DISJOINT_MEET_INTERSECT,
-    // MBR(r) = MBR(s)
+
     REFINE_COVEREDBY_TRUEHIT_INTERSECT,
     REFINE_COVERS_TRUEHIT_INTERSECT,
     REFINE_COVERS_COVEREDBY_TRUEHIT_INTERSECT,
     REFINE_EQUAL_COVERS_COVEREDBY_TRUEHIT_INTERSECT,
-} TopologyRelationE;
+} TopologyRelation;
 
-// spatial data types
+/** @enum DataType @brief Spatial data types. */
 typedef enum DataType{
     DT_INVALID,
     DT_POINT,
     DT_LINESTRING,
     DT_RECTANGLE,
     DT_POLYGON,
-} DataTypeE;
+} DataType;
 
-// spatial approximations
+/** @enum ApproximationType @brief Spatial approximation types (mostly for polygons). */
 typedef enum ApproximationType{
     AT_NONE,
     // mine
@@ -186,35 +194,29 @@ typedef enum ApproximationType{
     AT_5CCH,
     AT_RA,
     AT_GEOS,
-} ApproximationTypeE;
+} ApproximationType;
 
-typedef enum IntermediateFilterType{
-    IF_NONE,
-    IF_MARK_APRIL_BEGIN,
-    IF_APRIL_STANDARD = IF_MARK_APRIL_BEGIN,
-    IF_APRIL_OPTIMIZED,
-    IF_APRIL_OTF,
-    IF_APRIL_SCALABILITY,
-    IF_MARK_APRIL_END
-} IntermediateFilterTypeE;
-
+/** @enum TwoLayerClass @brief The two-layer index classes. (see paper) */
 typedef enum TwoLayerClass {
     CLASS_A,
     CLASS_B,
     CLASS_C,
     CLASS_D,
-} TwoLayerClassE;
+} TwoLayerClass;
 
-
-// types of possible relationships between interval lists (IL)
-typedef enum IntervalListsRelationship {
-    IL_DISJOINT,        // no containment, no intersection
-    IL_INTERSECT,       // no containment, yes intersection
+/** @enum IntervalListsRelationship @brief Types of possible relationships between interval lists (IL). */
+enum IntervalListsRelationship {
+    // no containment, no intersection
+    IL_DISJOINT,
+    // no containment, yes intersection
+    IL_INTERSECT,
     IL_R_INSIDE_S,
     IL_S_INSIDE_R,
-    IL_MATCH,           // match == symmetrical containment
-} IntervalListsRelationshipE;
+    // match == symmetrical containment
+    IL_MATCH,           
+};
 
+/** @enum ActionType @brief Different actions (jobs/tasks) the host controller will initiate/broadcast. */
 typedef enum ActionType {
     ACTION_NONE,
     ACTION_LOAD_DATASETS,
@@ -223,17 +225,20 @@ typedef enum ActionType {
     ACTION_LOAD_APRIL,
     ACTION_PERFORM_VERIFICATION,
     ACTION_QUERY,
-} ActionTypeE;
+} ActionType;
 
+/** @enum PartitioningType @brief Data partitioning methods. Only round robin is supported currently. 
+ * @todo Two-step partitioning (coarse grid for distribution, fine-grid for partitioning)  */
 typedef enum PartitioningType {
     PARTITIONING_ROUND_ROBIN,
     PARTITIONING_PREFIX_BASED,
-} PartitioningTypeE;
+} PartitioningType;
 
+/** @enum SystemSetupType @brief System type: Cluster or single machine (VM) */
 typedef enum SystemSetupType {
     SYS_LOCAL_MACHINE,
     SYS_CLUSTER,
-} SystemSetupTypeE;
+} SystemSetupType;
 
 
 #endif

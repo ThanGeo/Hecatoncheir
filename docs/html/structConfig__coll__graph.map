@@ -1,0 +1,11 @@
+<map id="Config" name="Config">
+<area shape="rect" id="node1" title="The main configuration struct. Holds all necessary configuration options." alt="" coords="361,184,421,211"/>
+<area shape="rect" id="node2" href="$structApproximationInfo.html" title="Holds all approximation related info." alt="" coords="5,95,132,121"/>
+<area shape="rect" id="node3" href="$structAprilConfig.html" title="Contains all relevant APRIL configuration parameters." alt="" coords="25,5,112,32"/>
+<area shape="rect" id="node4" href="$structDatasetInfo.html" title="Holds the dataset(s) related info in the configuration." alt="" coords="157,95,247,121"/>
+<area shape="rect" id="node5" href="$structDataspaceInfo.html" title="All dataspace related info, filled in after loading the dataset(s)." alt="" coords="149,5,255,32"/>
+<area shape="rect" id="node6" href="$structDirectoryPaths.html" title="Holds all system&#45;related directory paths." alt="" coords="271,95,381,121"/>
+<area shape="rect" id="node7" href="$structPartitioningInfo.html" title="Holds all partitioning related information." alt="" coords="405,95,514,121"/>
+<area shape="rect" id="node8" href="$structQueryInfo.html" title="Holds all the query related info in the configuration." alt="" coords="539,95,617,121"/>
+<area shape="rect" id="node9" href="$structSystemOptions.html" title="Holds all the system related info in the configuration." alt="" coords="642,95,754,121"/>
+</map>

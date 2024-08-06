@@ -1,0 +1,4 @@
+<map id="ApproximationInfo" name="ApproximationInfo">
+<area shape="rect" id="node1" title="Holds all approximation related info." alt="" coords="5,95,132,121"/>
+<area shape="rect" id="node2" href="$structAprilConfig.html" title="Contains all relevant APRIL configuration parameters." alt="" coords="25,5,112,32"/>
+</map>

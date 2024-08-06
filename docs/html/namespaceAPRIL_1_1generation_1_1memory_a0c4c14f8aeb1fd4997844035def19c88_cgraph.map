@@ -1,0 +1,6 @@
+<map id="APRIL::generation::memory::init" name="APRIL::generation::memory::init">
+<area shape="rect" id="node1" title="Generates the APRIL approximations for the given dataset." alt="" coords="5,23,143,65"/>
+<area shape="rect" id="node2" href="$namespacestorage.html#a4562eadd26f908e88c3e4df5310e85a9" title="Generates the APRIL file path for the given dataset from the dataset&#39;s nickname." alt="" coords="191,5,401,32"/>
+<area shape="rect" id="node4" href="$namespacelogger.html#a53f34feeb22a94db295af05b8b2aab5c" title="Error logging function with template arguments. Separates input parameters with spaces...." alt="" coords="453,56,568,83"/>
+<area shape="rect" id="node3" href="$structAprilConfig.html#a04a0fb64aa986657a3b6006482d5a437" title="Returns the Hilbert curve order N." alt="" coords="449,5,572,32"/>
+</map>

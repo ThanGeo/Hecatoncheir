@@ -1,0 +1,9 @@
+<map id="partitioning::partitionDataset" name="partitioning::partitionDataset">
+<area shape="rect" id="node1" title="Initializes the partitioning for the input dataset." alt="" coords="5,124,191,151"/>
+<area shape="rect" id="node2" href="$namespacecomm_1_1controller_1_1host.html#a7acd9cbfb1666431ed71aedf9242836b" title="Gathers responses (ACK/NACK) from workers or the local agent about the last instructed action/job." alt="" coords="253,7,405,49"/>
+<area shape="rect" id="node3" href="$namespacelogger.html#a53f34feeb22a94db295af05b8b2aab5c" title="Error logging function with template arguments. Separates input parameters with spaces...." alt="" coords="716,23,831,49"/>
+<area shape="rect" id="node5" href="$namespacempi__timer.html#a74c246372eadbc66ab89e4c971099ce0" title="Get the elapsed time in seconds, from the given start timestamp." alt="" coords="239,124,420,151"/>
+<area shape="rect" id="node6" href="$namespacelogger.html#a6232124565e7aac3c22650f1717cfa29" title="Success logging function with template arguments. Separates input parameters with spaces...." alt="" coords="260,175,399,201"/>
+<area shape="rect" id="node7" href="$namespacempi__timer.html#ab01f3cdc560e4858245746a406e9b951" title="get the timestamp of the current time" alt="" coords="257,225,402,252"/>
+<area shape="rect" id="node4" href="$namespacecomm_1_1recv.html#a05c8dc740a9a3b0c348ad30f41535fd4" title="Receives a response message." alt="" coords="468,23,668,49"/>
+</map>

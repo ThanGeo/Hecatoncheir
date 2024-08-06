@@ -18,7 +18,7 @@ namespace storage
                     return DBERR_DISK_READ_FAILED;
                 }
                 // read data type
-                elementsRead = fread(&dataset.dataType, sizeof(DataTypeE), 1, pFile);
+                elementsRead = fread(&dataset.dataType, sizeof(DataType), 1, pFile);
                 if (elementsRead != 1) {
                     logger::log_error(DBERR_DISK_READ_FAILED, "Couldn't read the dataset's datatype");
                     return DBERR_DISK_READ_FAILED;

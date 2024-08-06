@@ -3,189 +3,111 @@
 
 #include "containers.h"
 
-
+/** @brief Spatial refinement methods that use the objects' geometries to determine a query's predicate. */
 namespace refinement 
 {
+    /** @brief Find exact topology relationship refinement methods. */
     namespace topology
     {
-
-        /**
-         * Entrypoint function for when there is NO intermediate filter.
-         * Intermediate filters forward to refine() function and NOT this one.
+        /** @brief Entrypoint function for topological relationship refinement, for when there is NO intermediate filter. 
+         * @param[in] objR The first object (left in relation)
+         * @param[in] objS The second object (right in relation)
+         * @param[in] mbrRelationCase How the objects' MBR intersect with each other.
+         * @param[out] queryOutput Where the pair's result will be appended to.
         */
-        DB_STATUS specializedRefinementEntrypoint(Shape* objR, Shape* objS, int relationCase, QueryOutput &queryOutput);
+        DB_STATUS specializedRefinementEntrypoint(Shape* objR, Shape* objS, int mbrRelationCase, QueryOutput &queryOutput);
 
-        /**
-         * @brief refines for inside/covered by but is guaranteed intersection (no disjoint)
-         * 
-         * @param idR 
-         * @param idS 
-         * @return int 
-         */
+        /** @brief Refines for the inside and covered by relation predicates, with the intersection being guaranteed.
+         * @param[in] objR The first object (left in relation)
+         * @param[in] objS The second object (right in relation)
+        */
         int refineInsideCoveredbyTruehitIntersect(Shape* objR, Shape* objS);
 
-
-        /**
-         * @brief refines for disjoint, inside, covered by, meet and intersect
-         * 
-         * @param idR 
-         * @param idS 
-         * @return int 
-         */
+        /** @brief Refines for the disjoint, inside, covered by, meet and intersect relation predicates.
+         * @param[in] objR The first object (left in relation)
+         * @param[in] objS The second object (right in relation)
+        */
         int refineDisjointInsideCoveredbyMeetIntersect(Shape* objR, Shape* objS);
 
-        /**
-         * @brief refines for contains/covers but is guaranteed intersection (no disjoint)
-         * 
-         * @param idR 
-         * @param idS 
-         * @return int 
-         */
+        /** @brief Refines for the contains and covers relation predicates, with the intersection being guaranteed.
+         * @param[in] objR The first object (left in relation)
+         * @param[in] objS The second object (right in relation)
+        */
         int refineContainsCoversTruehitIntersect(Shape* objR, Shape* objS);
 
-        /**
-         * @brief refines for disjoint, contains, covers, meet and intersect
-         * 
-         * @param idR 
-         * @param idS 
-         * @return int 
-         */
+        /** @brief Refines for the disjoint, contains, covers, meet and intersect relation predicates.
+         * @param[in] objR The first object (left in relation)
+         * @param[in] objS The second object (right in relation)
+        */
         int refineDisjointContainsCoversMeetIntersect(Shape* objR, Shape* objS);
 
-        /**
-         * @brief refines for disjoint, meet and intersect
-         * 
-         * @param idR 
-         * @param idS 
-         * @return int 
-         */
+        /** @brief Refines for the disjoint, meet and intersect relation predicates (no containment).
+         * @param[in] objR The first object (left in relation)
+         * @param[in] objS The second object (right in relation)
+        */
         int refineDisjointMeetIntersect(Shape* objR, Shape* objS);
 
-
-        /**
-         * @brief refines for covers/covered by but is guaranteed intersection (no disjoint)
-         * 
-         * @param idR 
-         * @param idS 
-         * @return int 
-         */
+        /** @brief Refines for the covers and covered by relation predicates, with the intersection being guaranteed.
+         * @param[in] objR The first object (left in relation)
+         * @param[in] objS The second object (right in relation)
+        */
         int refineCoversCoveredByTrueHitIntersect(Shape* objR, Shape* objS);
 
-        /**
-         * @brief refines for equal, covers, covered by but is guaranteed intersection (no disjoint)
-         * 
-         * @param idR 
-         * @param idS 
-         * @return int 
-         */
+        /** @brief Refines for the equals, covers and covered by relation predicates, with the intersection being guaranteed.
+         * @param[in] objR The first object (left in relation)
+         * @param[in] objS The second object (right in relation)
+        */
         int refineEqualCoversCoveredByTrueHitIntersect(Shape* objR, Shape* objS);
 
-        /**
-         * @brief refines for covers but is guaranteed intersection (no disjoint)
-         * 
-         * @param idR 
-         * @param idS 
-         * @return int 
-         */
+        /** @brief Refines for the covers relation predicate, with the intersection being guaranteed.
+         * @param[in] objR The first object (left in relation)
+         * @param[in] objS The second object (right in relation)
+        */
         int refineCoversTrueHitIntersect(Shape* objR, Shape* objS);
 
 
-        /**
-         * @brief refines for covered by but is guaranteed intersection (no disjoint)
-         * 
-         * @param idR 
-         * @param idS 
-         * @return int 
-         */
+        /** @brief Refines for the covered relation predicate, with the intersection being guaranteed.
+         * @param[in] objR The first object (left in relation)
+         * @param[in] objS The second object (right in relation)
+        */
         int refineCoveredbyTrueHitIntersect(Shape* objR, Shape* objS);
-        }
+    }
 
-
+    /** @brief Refinement methods for the relate with predicate queries. */
     namespace relate
     {
-        /**
-         * Entrypoint function for when there is NO intermediate filter.
-         * Intermediate filters forward to refine() function and NOT this one.
-        */
-        DB_STATUS refinementEntrypoint(Shape* objR, Shape* objS, QueryTypeE queryType, QueryOutput &queryOutput);
+        /** @brief Entrypoint function for when there is NO intermediate filter. */
+        DB_STATUS refinementEntrypoint(Shape* objR, Shape* objS, QueryType queryType, QueryOutput &queryOutput);
 
-        /**
-         * loads boost geometries and refines for intersection
-        */
+        /** @brief Geometrically refines two objects for intersection. */
         void refineIntersectionJoin(Shape* objR, Shape* objS, QueryOutput &queryOutput);
         
-        /**
-         * loads boost geometries and refines for inside
-        */
+        /** @brief Geometrically refines two objects for 'R inside S'. */
         void refineInsideJoin(Shape* objR, Shape* objS, QueryOutput &queryOutput);
 
-        /**
-         * Loads geometries and refines for topology based on setup configuration.
-        */
-        void refineAllRelations(Shape* objR, Shape* objS);
-
-        /**
-         * refinement for the EQUAl topology relation
-        */
+        /** @brief Geometrically refines two objects for spatial equality. */
         void refineEqualJoin(Shape* objR, Shape* objS, QueryOutput &queryOutput);
 
-        /**
-         * refinement for the DISJOINT topology relation
-        */
+        /** @brief Geometrically refines two objects for whether they are disjoint. */
         void refineDisjointJoin(Shape* objR, Shape* objS, QueryOutput &queryOutput);
 
-        /**
-         * refinement for the MEET topology relation
-        */
+        /** @brief Geometrically refines two objects for whether R and S meet (touch). */
         void refineMeetJoin(Shape* objR, Shape* objS, QueryOutput &queryOutput);
 
-        /**
-         * refinement for the CONTAINS topology relation
-        */
+        /** @brief Geometrically refines two objects for 'R contains S'. */
         void refineContainsJoin(Shape* objR, Shape* objS, QueryOutput &queryOutput);
 
-        /**
-         * refinement for the COVERS topology relation
-        */
+        /** @brief Geometrically refines two objects for 'R covers S'. */
         void refineCoversJoin(Shape* objR, Shape* objS, QueryOutput &queryOutput);
 
-        /**
-         * refinement for the COVERED BY topology relation
-        */
+        /** @brief Geometrically refines two objects for 'R is covered by S'. */
         void refineCoveredByJoin(Shape* objR, Shape* objS, QueryOutput &queryOutput);
 
-        /**
-         * refinement for the DISJOINT, MEET or INTERSECT topology relations
-        */
-        int refineGuaranteedNoContainment(Shape* objR, Shape* objS);
-
-
-        /**
-         * refinement for containment relations and intersect ONLY (Contains, Covers, Covered by, Inside, Intersect)
-        */
-        int refineContainmentsOnly(Shape* objR, Shape* objS);
-
-        /**
-         * refine DISJOINT, COVERS, CONTAINS, INTERSECT only
-        */
-        int refineContainsPlus(Shape* objR, Shape* objS);
-
-
-        /**
-         * refine DISJOINT, COVERED BY, INSIDE, INTERSECT only
-        */
-        int refineInsidePlus(Shape* objR, Shape* objS);
-
-        /**
-         * refine for EQUAl for APRIL
-         */
+        /** @brief Returns true of the two objects are spatially equal. */
         bool isEqual(Shape* objR, Shape* objS);
 
-        /**
-         * refine for EQUAl for APRIL
-         */
+        /** @brief Returns true of the two objects meet (touch). */
         bool isMeet(Shape* objR, Shape* objS);
-
     }
 }
 

@@ -113,7 +113,7 @@ void QueryOutput::countTopologyRelationResult(int relation) {
     this->topologyRelationsResultMap[relation] += 1;
 }
 
-int QueryOutput::getResultForTopologyRelation(TopologyRelationE relation) {
+int QueryOutput::getResultForTopologyRelation(TopologyRelation relation) {
     auto it = topologyRelationsResultMap.find(relation);
     if (it != topologyRelationsResultMap.end()) {
         return it->second;
@@ -188,7 +188,7 @@ int AprilConfig::getCellsPerDim() {
     return cellsPerDim;
 }
 
-std::vector<Shape*>* Partition::getContainerClassContents(TwoLayerClassE classType) {
+std::vector<Shape*>* Partition::getContainerClassContents(TwoLayerClass classType) {
     if (classType < CLASS_A || classType > CLASS_D) {
         logger::log_error(DBERR_OUT_OF_BOUNDS, "class type index out of bounds");
         return nullptr;
@@ -213,7 +213,7 @@ void Dataset::addObject(Shape &object) {
     // insert reference to partition index
     for (auto &partitionIT: object.partitions) {
         int partitionID = partitionIT.first;
-        TwoLayerClassE classType = (TwoLayerClassE) partitionIT.second;
+        TwoLayerClass classType = (TwoLayerClass) partitionIT.second;
         // add to twolayer index
         this->twoLayerIndex.addObject(partitionID, classType, objectRef);
     }
@@ -222,7 +222,7 @@ void Dataset::addObject(Shape &object) {
 int Dataset::calculateBufferSize() {
     int size = 0;
     // dataset data type
-    size += sizeof(DataTypeE);
+    size += sizeof(DataType);
     // dataset nickname: length + string
     size += sizeof(int) + (nickname.length() * sizeof(char));     
     // dataset's dataspace info (MBR)
@@ -247,8 +247,8 @@ int Dataset::serialize(char **buffer) {
     }
 
     // add datatype
-    memcpy(localBuffer + position, &dataType, sizeof(DataTypeE));
-    position += sizeof(DataTypeE);
+    memcpy(localBuffer + position, &dataType, sizeof(DataType));
+    position += sizeof(DataType);
     // add dataset nickname length + string
     int nicknameLength = nickname.length();
     memcpy(localBuffer + position, &nicknameLength, sizeof(int));
@@ -275,8 +275,8 @@ void Dataset::deserialize(const char *buffer, int bufferSize) {
     double xMin, yMin, xMax, yMax;
     
     // dataset data type
-    memcpy(&dataType, buffer + position, sizeof(DataTypeE));
-    position += sizeof(DataTypeE);
+    memcpy(&dataType, buffer + position, sizeof(DataType));
+    position += sizeof(DataType);
     // dataset nickname length + string
     memcpy(&nicknameLength, buffer + position, sizeof(int));
     position += sizeof(int);
@@ -415,7 +415,7 @@ Partition* TwoLayerIndex::getOrCreatePartition(int partitionID) {
     }
 }
 
-void TwoLayerIndex::addObject(int partitionID, TwoLayerClassE classType, Shape* objectRef) {
+void TwoLayerIndex::addObject(int partitionID, TwoLayerClass classType, Shape* objectRef) {
     // get or create new partition entry
     Partition* partition = getOrCreatePartition(partitionID);
     // get or create new class entry of this class type, for this partition
@@ -470,7 +470,7 @@ Dataset* DatasetInfo::getDatasetS() {
     return S;
 }
 /**
- * @brief adds a Dataset to the configuration's dataset info
+@brief adds a Dataset to the configuration's dataset info
  * @warning it has to be an empty dataset BUT its nickname needs to be set
  */
 void DatasetInfo::addDataset(Dataset &dataset) {
@@ -516,7 +516,7 @@ Geometry::Geometry(size_t recID, std::vector<int> &partitions, int vertexCount, 
     this->coords = coords;
 }
 
-void Geometry::setPartitions(std::vector<int> &ids, std::vector<TwoLayerClassE> &classes) {
+void Geometry::setPartitions(std::vector<int> &ids, std::vector<TwoLayerClass> &classes) {
     for (int i=0; i<ids.size(); i++) {
         partitions.emplace_back(ids.at(i));
         partitions.emplace_back(classes.at(i));
@@ -591,7 +591,7 @@ int GeometryBatch::serialize(char **buffer) {
 }
 
 /**
- * @brief fills the struct with data from the input serialized buffer
+@brief fills the struct with data from the input serialized buffer
  * The caller must free the buffer memory
  * @param buffer 
  */

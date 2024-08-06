@@ -4,18 +4,13 @@
 #include "containers.h"
 #include "comm_def.h"
 
-
+/** @brief Methods that pack information for MPI communication into serialized messages. */
 namespace pack
 {
+    /** @brief Packs necessary system info for broadcast like number of partitions, system setup type etc. */
     DB_STATUS packSystemInfo(SerializedMsg<char> &sysInfoMsg);
 
-
-    /**
-     * @brief Prints a message pack
-     * 
-     * @tparam T 
-     * @param msgPack 
-     */
+    /** @brief Prints the contents of a message pack. */
     template <typename T> 
     void printMsgPack(SerializedMsg<T> &msgPack) {
         std::cout << "Message:" << std::endl;
@@ -31,40 +26,37 @@ namespace pack
         }
     }
     
-    /*
-     * packs april info into a serialized message 
-     */
+    /** @brief Packs the april configuration info into a serialized message. */
     DB_STATUS packAPRILInfo(AprilConfig &aprilConfig, SerializedMsg<int> &aprilInfoMsg);
 
-    /**
-     * packs query info into a serialized message
-     */
+    /** @brief Packs the query info into a serialized message. */
     DB_STATUS packQueryInfo(QueryInfo &queryInfo, SerializedMsg<int> &queryInfoMsg);
 
-    /**
-     * packs the loaded dataset nicknames into a serialized message 
-     * (both R and S, or only R if there's no S)
+    /** @brief Packs the loaded dataset nicknames (both R and S, or only R if there's no S)
+     * @note The datasets must be already loaded in the configuration.
      */
     DB_STATUS packDatasetsNicknames(SerializedMsg<char> &msg);
 
-    /**
-     * @brief packs the current contents of the query output global variable into a serialized message
-     * based on query type
-     */
+    /** @brief Packs the query results based on query type.  */
     DB_STATUS packQueryResults(SerializedMsg<int> &msg, QueryOutput &queryOutput);
 }
 
+/** @brief Methos that unpack serialized messages and extract their contents, based on message type. */
 namespace unpack
 {   
-
+    /** @brief Unpacks a system info serialized message. */
     DB_STATUS unpackSystemInfo(SerializedMsg<char> &sysInfoMsg);
 
+    /** @brief Unpacks an APRIL configuration info serialized message. */
     DB_STATUS unpackAPRILInfo(SerializedMsg<int> &aprilInfoMsg);
 
+    /** @brief Unpacks an query info serialized message. */
     DB_STATUS unpackQueryInfo(SerializedMsg<int> &queryInfoMsg);
 
-    DB_STATUS unpackQueryResults(SerializedMsg<int> &queryResultsMsg, QueryTypeE queryType, QueryOutput &queryOutput);
+    /** @brief Unpacks a query results serialized message. */
+    DB_STATUS unpackQueryResults(SerializedMsg<int> &queryResultsMsg, QueryType queryType, QueryOutput &queryOutput);
 
+    /** @brief Unpacks a datasets' nicknames serialized message. */
     DB_STATUS unpackDatasetsNicknames(SerializedMsg<char> &msg, std::vector<std::string> &nicknames);
 }
 

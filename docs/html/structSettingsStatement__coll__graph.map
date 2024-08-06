@@ -1,0 +1,7 @@
+<map id="SettingsStatement" name="SettingsStatement">
+<area shape="rect" id="node1" title="Statement containing all system and user specified parameters for runtime." alt="" coords="221,95,352,121"/>
+<area shape="rect" id="node2" href="$structQueryStatement.html" title="Statement containing the query info." alt="" coords="5,5,123,32"/>
+<area shape="rect" id="node3" href="$structActionsStatement.html" title="Statement containing the requested actions, based on the user and system configuration." alt="" coords="147,5,274,32"/>
+<area shape="rect" id="node4" href="$structDatasetStatement.html" title="Statement containing all the dataset related parameters." alt="" coords="299,5,427,32"/>
+<area shape="rect" id="node5" href="$structSystemOptionsStatement.html" title="Statement containing the distributed system options." alt="" coords="451,5,623,32"/>
+</map>

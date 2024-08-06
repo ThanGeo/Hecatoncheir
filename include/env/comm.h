@@ -15,75 +15,44 @@
 
 #include <omp.h>
 
+/** @brief System inter- and intra- communication methods. */
 namespace comm 
 {
+    /** @brief The agents' communication methods. */
     namespace agent
     {
-        /**
-         * @brief listens for messages from its parent controller
-         * 
-         * @return DB_STATUS 
-         */
+        /** @brief Listen for messages from the parent controller. */
         DB_STATUS listen();
     }
 
-
+    /**  @brief The controllers' communication methods. */
     namespace controller
     {   
         /**
-         * @brief Serializes a geometry batch and sends it to its assigned destination rank, with tag through comm
-         * The batch must contain all of this information
-         * @param batch 
-         * @param destRank 
-         * @param tag 
-         * @param comm 
-         * @return DB_STATUS 
+        @brief Serializes a geometry batch and sends it to the appropriate ranks.
+         * All the information is stored in the batch.
          */
         DB_STATUS serializeAndSendGeometryBatch(GeometryBatch* batch);
 
-        /**
-         * @brief Sends an instruction message with tag to the children (agent)
-         * 
-         * @param tag 
-         * @return DB_STATUS 
-         */
-        DB_STATUS sendInstructionToAgent(int tag);
-
+        /** @brief Broadcasts the configured system options to all participants. */
         DB_STATUS broadcastSysInfo();
-        
 
-        /**
-         * @brief listens (probes) for messages from other controllers and the local agent 
-         * 
-         * @return DB_STATUS 
-         */
+        /** @brief The controller listens (probes) for inbound messages from other controllers or the local agent.*/
         DB_STATUS listen();
         
-        
+        /** @brief The host controller's communication methods. */
         namespace host
         {
-            /**
-             * @brief Packs and sends the dataset info to all worker nodes
-             * 
-             * @param dataset 
-             * @param destRank 
-             * @return DB_STATUS 
-             */
+            /** @brief Packs and broadcasts the dataset info to all worker nodes. */
             DB_STATUS broadcastDatasetInfo(Dataset* dataset);
 
-            /**
-             * gather responses (ACK/NACK) from workers and local agent
-             */
+            /** @brief Gathers responses (ACK/NACK) from workers or the local agent about the last instructed action/job. */
             DB_STATUS gatherResponses();
 
-            /**
-             * gather results by workers and local agent
-             */
+            /** @brief Gathers query results by the workers and the local agent. */
             DB_STATUS gatherResults();
         }
     }
-
-    
 }
 
 

@@ -1,0 +1,4 @@
+<map id="comm::send::sendMessage" name="comm::send::sendMessage">
+<area shape="rect" id="node1" title="Sends a serialized message of template type T." alt="" coords="228,13,411,39"/>
+<area shape="rect" id="node2" href="$namespacecomm_1_1controller.html#acb873f6f6e22c38010feb19302b3fa00" title="Serializes a geometry batch and sends it to the appropriate ranks. All the information is stored in t..." alt="" coords="5,5,180,47"/>
+</map>

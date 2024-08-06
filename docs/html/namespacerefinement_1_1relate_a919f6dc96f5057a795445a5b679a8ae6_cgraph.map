@@ -1,0 +1,4 @@
+<map id="refinement::relate::isEqual" name="refinement::relate::isEqual">
+<area shape="rect" id="node1" title="Returns true of the two objects are spatially equal." alt="" coords="5,5,128,47"/>
+<area shape="rect" id="node2" href="$structShape.html#a2fbb9b9a688078ae99af4c289626df60" title="Returns true whether the geometry is spatially equal the input geometry. False otherwise." alt="" coords="176,13,281,39"/>
+</map>

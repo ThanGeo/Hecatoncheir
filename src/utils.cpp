@@ -68,16 +68,16 @@ bool verifyDirectory(std::string directoryPath) {
     }
 }
 
-std::string getDatasetNameFromPath(std::string &datasetPath) {
-    std::stringstream ss(datasetPath);
+std::string getFileNameFromPath(std::string &filePath) {
+    std::stringstream ss(filePath);
     std::string token;
 
     // set delimiter of directories
-    std::size_t found = datasetPath.find('/');
+    std::size_t found = filePath.find('/');
     char delimiter;
     if (found!=std::string::npos){
         delimiter = '/';
-    } else if (datasetPath.find('\\')) {
+    } else if (filePath.find('\\')) {
         delimiter = '\\';
     } else {
         // no delimiter
@@ -90,8 +90,8 @@ std::string getDatasetNameFromPath(std::string &datasetPath) {
         }
     }
     // last item is stored in variable token
-    std::string datasetName = token.substr(0, token.length() - 4);
-    return datasetName;
+    std::string fileName = token.substr(0, token.length() - 4);
+    return fileName;
 }
 
 bool binarySearchInIntervalVector(std::vector<uint32_t> &vec, uint32_t x){
@@ -148,7 +148,7 @@ namespace mpi_timer
 
 namespace mapping
 {
-    std::string actionIntToStr(ActionTypeE action) {
+    std::string actionIntToStr(ActionType action) {
         switch (action) {
             case ACTION_NONE:
                 return "NONE";
@@ -169,7 +169,7 @@ namespace mapping
         }
     }
 
-    std::string queryTypeIntToStr(QueryTypeE val){
+    std::string queryTypeIntToStr(QueryType val){
         switch(val) {
             case Q_RANGE: return "range";
             case Q_INTERSECT: return "intersect";
@@ -186,7 +186,7 @@ namespace mapping
         }
     }
 
-    QueryTypeE queryTypeStrToInt(std::string &str) {
+    QueryType queryTypeStrToInt(std::string &str) {
         if (str == "range") {
             return Q_RANGE;
         } else if (str == "intersect") {
@@ -212,7 +212,7 @@ namespace mapping
         }
     }
 
-    std::string dataTypeIntToStr(DataTypeE val){
+    std::string dataTypeIntToStr(DataType val){
         switch(val) {
             case DT_POLYGON: return "POLYGON";
             case DT_RECTANGLE: return "RECTANGLE";
@@ -222,7 +222,7 @@ namespace mapping
         }
     }
 
-    DataTypeE dataTypeTextToInt(std::string str){
+    DataType dataTypeTextToInt(std::string str){
         if (str.compare("POLYGON") == 0) return DT_POLYGON;
         else if (str.compare("RECTANGLE") == 0) return DT_RECTANGLE;
         else if (str.compare("POINT") == 0) return DT_POINT;
@@ -231,7 +231,7 @@ namespace mapping
         return DT_INVALID;
     }
 
-    FileTypeE fileTypeTextToInt(std::string str) {
+    FileType fileTypeTextToInt(std::string str) {
         if (str.compare("BINARY") == 0) return FT_BINARY;
         else if (str.compare("CSV") == 0) return FT_CSV;
         else if (str.compare("WKT") == 0) return FT_WKT;

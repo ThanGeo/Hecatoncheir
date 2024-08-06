@@ -70,15 +70,15 @@ namespace parser
         return -1;
     }
 
-    static DB_STATUS verifyDatatypeCombinationForQueryType(QueryTypeE queryType) {
+    static DB_STATUS verifyDatatypeCombinationForQueryType(QueryType queryType) {
         // get number of datasets
         int numberOfDatasets = g_config.datasetInfo.getNumberOfDatasets();
         // find if query type is supported
         auto queryIT = g_querySupportMap.find(queryType);
         if (queryIT != g_querySupportMap.end()) {
-            DataTypeE dataTypeR = g_config.datasetInfo.getDatasetR()->dataType;
+            DataType dataTypeR = g_config.datasetInfo.getDatasetR()->dataType;
             // todo: for queries with one dataset input, handle this accordingly
-            DataTypeE dataTypeS = g_config.datasetInfo.getDatasetS()->dataType;
+            DataType dataTypeS = g_config.datasetInfo.getDatasetS()->dataType;
             const auto& allowedCombinations = queryIT->second;
             auto dataTypesPair = std::make_pair(dataTypeR, dataTypeS);
             auto datatypesIT = allowedCombinations.find(dataTypesPair);
@@ -126,12 +126,12 @@ namespace parser
     }
 
     /**
-     * @brief parses the selected actions and puts them in proper order inside the configuration
+    @brief parses the selected actions and puts them in proper order inside the configuration
      * 
      * @param actionsStmt 
      * @return DB_STATUS 
      */
-    static DB_STATUS parseActions(ActionsStatementT *actionsStmt) {
+    static DB_STATUS parseActions(ActionsStatement *actionsStmt) {
         DB_STATUS ret = DBERR_OK;
         // partitioning always before issuing the load datasets action
         if (actionsStmt->performPartitioning) {
@@ -177,7 +177,7 @@ namespace parser
     }
 
     /**
-     * @brief adjust the number of partitions based on how many nodes are there 
+    @brief adjust the number of partitions based on how many nodes are there 
      * to improve load balancing
      * 
      */
@@ -238,7 +238,7 @@ namespace parser
         return DBERR_OK;
     }
 
-    static DB_STATUS verifyDatasetOptions(DatasetStatementT *datasetStmt) {
+    static DB_STATUS verifyDatasetOptions(DatasetStatement *datasetStmt) {
         if (datasetStmt->datasetCount == 1 && datasetStmt->datasetNicknameR == "") {
             logger::log_error(DBERR_INVALID_PARAMETER, "If only one dataset is specified, the '-R' argument must be used instead of '-S'");
             return DBERR_INVALID_PARAMETER;
@@ -252,7 +252,7 @@ namespace parser
         if (datasetStmt->datasetCount > 0) {
             // R dataset
             // file type
-            FileTypeE fileTypeR = mapping::fileTypeTextToInt(datasetStmt->filetypeR);
+            FileType fileTypeR = mapping::fileTypeTextToInt(datasetStmt->filetypeR);
             if (fileTypeR == FT_INVALID) {
                 logger::log_error(DBERR_INVALID_FILETYPE, "Unkown file type of dataset R:", datasetStmt->filetypeR);
                 return DBERR_INVALID_FILETYPE;
@@ -267,7 +267,7 @@ namespace parser
             if (datasetStmt->datasetCount > 1) {
                 // S dataset
                 // file type
-                FileTypeE fileTypeS = mapping::fileTypeTextToInt(datasetStmt->filetypeS);
+                FileType fileTypeS = mapping::fileTypeTextToInt(datasetStmt->filetypeS);
                 if (fileTypeS == FT_INVALID) {
                     logger::log_error(DBERR_INVALID_FILETYPE, "Unkown file type of dataset S:", datasetStmt->filetypeS);
                     return DBERR_INVALID_FILETYPE;
@@ -284,7 +284,7 @@ namespace parser
         return DBERR_OK;
     }
 
-    static DB_STATUS parseDatasetOptions(DatasetStatementT *datasetStmt) {
+    static DB_STATUS parseDatasetOptions(DatasetStatement *datasetStmt) {
         // check if datasets.ini file exists
         if (!verifyFilepath(g_config.dirPaths.datasetsConfigPath)) {
             logger::log_error(DBERR_MISSING_FILE, "Dataset configuration file 'dataset.ini' missing from Database directory.");
@@ -295,7 +295,7 @@ namespace parser
         if (datasetStmt->datasetNicknameR != "") {
             datasetStmt->datasetPathR = dataset_config_pt.get<std::string>(datasetStmt->datasetNicknameR+".path");
             // dataset data type
-            DataTypeE datatypeR = mapping::dataTypeTextToInt(dataset_config_pt.get<std::string>(datasetStmt->datasetNicknameR+".datatype"));
+            DataType datatypeR = mapping::dataTypeTextToInt(dataset_config_pt.get<std::string>(datasetStmt->datasetNicknameR+".datatype"));
             if (datatypeR == DT_INVALID) {
                 logger::log_error(DBERR_INVALID_DATATYPE, "Unknown data type for dataset R.");
                 return DBERR_INVALID_DATATYPE;
@@ -307,7 +307,7 @@ namespace parser
         if (datasetStmt->datasetNicknameS != "") {
             datasetStmt->datasetPathS = dataset_config_pt.get<std::string>(datasetStmt->datasetNicknameS+".path");
             // dataset data type
-            DataTypeE datatypeS = mapping::dataTypeTextToInt(dataset_config_pt.get<std::string>(datasetStmt->datasetNicknameS+".datatype"));
+            DataType datatypeS = mapping::dataTypeTextToInt(dataset_config_pt.get<std::string>(datasetStmt->datasetNicknameS+".datatype"));
             if (datatypeS == DT_INVALID) {
                 logger::log_error(DBERR_INVALID_DATATYPE, "Unknown data type for dataset S.");
                 return DBERR_INVALID_DATATYPE;
@@ -364,7 +364,7 @@ namespace parser
         }
 
         // set to config
-        ret = configure::setDatasetInfo(datasetStmt);
+        ret = configurer::setDatasetInfo(datasetStmt);
         if (ret != DBERR_OK) {
             return ret;
         }
@@ -372,13 +372,13 @@ namespace parser
         return DBERR_OK;
     }
 
-    static DB_STATUS parseQueryOptions(QueryStatementT *queryStmt) {
+    static DB_STATUS parseQueryOptions(QueryStatement *queryStmt) {
         if (queryStmt->queryType == "") {
             // no query was selected
             return DBERR_OK;
         }
         // get query type int
-        QueryTypeE queryType = mapping::queryTypeStrToInt(queryStmt->queryType);
+        QueryType queryType = mapping::queryTypeStrToInt(queryStmt->queryType);
         if (queryType == -1) {
             logger::log_error(DBERR_INVALID_PARAMETER, "Invalid query type:", queryStmt->queryType);
             return DBERR_INVALID_PARAMETER;
@@ -390,15 +390,15 @@ namespace parser
         }
 
         // set to configuration
-        g_config.queryInfo.type = (QueryTypeE) queryType;
+        g_config.queryInfo.type = (QueryType) queryType;
         
         return DBERR_OK;    
     }
 
     /**
-     * @brief passes the configuration on to the sysOps return object
+    @brief passes the configuration on to the sysOps return object
     */
-    static DB_STATUS parseConfigurationOptions(SystemOptionsStatementT &sysOpsStmt) {
+    static DB_STATUS parseConfigurationOptions(SystemOptionsStatement &sysOpsStmt) {
         // if not set by user, parse from config file
         if (sysOpsStmt.setupType == "") {
             sysOpsStmt.setupType = system_config_pt.get<std::string>("Environment.type");
@@ -435,14 +435,14 @@ namespace parser
                 logger::log_error(DBERR_INVALID_PARAMETER, "Unknown system setup type:", sysOpsStmt.setupType);
                 return DBERR_INVALID_PARAMETER;
             }
-            g_config.options.setupType = (SystemSetupTypeE) setupType;
+            g_config.options.setupType = (SystemSetupType) setupType;
         }
         return DBERR_OK;
     }
 
     DB_STATUS parse(int argc, char *argv[]) {
         char c;
-        SettingsStatementT settingsStmt;
+        SettingsStatement settingsStmt;
         DB_STATUS ret = DBERR_OK;
 
         // after config file has been loaded, parse cmd arguments and overwrite any selected options

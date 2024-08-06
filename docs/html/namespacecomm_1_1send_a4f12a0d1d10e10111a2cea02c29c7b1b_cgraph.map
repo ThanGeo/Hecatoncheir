@@ -1,0 +1,4 @@
+<map id="comm::send::sendMessage" name="comm::send::sendMessage">
+<area shape="rect" id="node1" title="Sends a serialized message of template type T." alt="" coords="5,5,188,32"/>
+<area shape="rect" id="node2" href="$namespacelogger.html#a53f34feeb22a94db295af05b8b2aab5c" title="Error logging function with template arguments. Separates input parameters with spaces...." alt="" coords="236,5,351,32"/>
+</map>

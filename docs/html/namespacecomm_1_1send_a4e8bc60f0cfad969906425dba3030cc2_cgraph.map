@@ -1,0 +1,4 @@
+<map id="comm::send::sendResult" name="comm::send::sendResult">
+<area shape="rect" id="node1" title="Sends a query result." alt="" coords="5,5,173,32"/>
+<area shape="rect" id="node2" href="$namespacelogger.html#a53f34feeb22a94db295af05b8b2aab5c" title="Error logging function with template arguments. Separates input parameters with spaces...." alt="" coords="221,5,336,32"/>
+</map>

@@ -1,0 +1,7 @@
+<map id="Shape::equals" name="Shape::equals">
+<area shape="rect" id="node1" title="Returns true whether the geometry is spatially equal the input geometry. False otherwise." alt="" coords="423,46,528,73"/>
+<area shape="rect" id="node2" href="$namespacerefinement_1_1relate.html#a919f6dc96f5057a795445a5b679a8ae6" title="Returns true of the two objects are spatially equal." alt="" coords="252,5,375,47"/>
+<area shape="rect" id="node3" href="$namespacerefinement_1_1relate.html#addd437649b4408709d16ead7d714ea62" title="Geometrically refines two objects for spatial equality." alt="" coords="252,71,375,112"/>
+<area shape="rect" id="node4" href="$namespaceAPRIL_1_1standard.html#ad2a3e148599958aca40c3f3848ca75cc" title="Standard APRIL intermediate filter that filters two input objects. The join predicate is set in the g..." alt="" coords="5,37,204,79"/>
+<area shape="rect" id="node5" href="$namespacerefinement_1_1relate.html#a079dc098b2d719b263ad2e31ff9690fd" title="Entrypoint function for when there is NO intermediate filter." alt="" coords="29,103,180,144"/>
+</map>

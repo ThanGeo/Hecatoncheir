@@ -1,6 +1,6 @@
 #include "config/configure.h"
 
-namespace configure
+namespace configurer
 {
     DB_STATUS initMPI(int argc, char* argv[]) {
         char c;
@@ -85,7 +85,7 @@ namespace configure
     }
 
 
-    DB_STATUS setDatasetInfo(DatasetStatementT* datasetStmt) {
+    DB_STATUS setDatasetInfo(DatasetStatement* datasetStmt) {
         if (datasetStmt->datasetCount == 0) {
             // no datasets
             g_config.datasetInfo.clear();
@@ -116,7 +116,7 @@ namespace configure
 
             R.path = datasetStmt->datasetPathR;
             R.nickname = datasetStmt->datasetNicknameR;
-            R.datasetName = getDatasetNameFromPath(R.path);
+            R.datasetName = getFileNameFromPath(R.path);
             // add to config
             g_config.datasetInfo.addDataset(R);
             
@@ -134,7 +134,7 @@ namespace configure
 
                 S.path = datasetStmt->datasetPathS;
                 S.nickname = datasetStmt->datasetNicknameS;
-                S.datasetName = getDatasetNameFromPath(S.path);
+                S.datasetName = getFileNameFromPath(S.path);
                 // add to config
                 g_config.datasetInfo.addDataset(S);
             }

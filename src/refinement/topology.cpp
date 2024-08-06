@@ -293,10 +293,10 @@ namespace refinement
         }
 
 
-        DB_STATUS specializedRefinementEntrypoint(Shape* objR, Shape* objS, int relationCase, QueryOutput &queryOutput) {
+        DB_STATUS specializedRefinementEntrypoint(Shape* objR, Shape* objS, int mbrRelationCase, QueryOutput &queryOutput) {
             int refinementResult = -1;
             // switch based on MBR intersection case
-            switch(relationCase) {
+            switch(mbrRelationCase) {
                 case MBR_R_IN_S:
                     refinementResult = refineDisjointInsideCoveredbyMeetIntersect(objR, objS);
                     break;
@@ -310,83 +310,13 @@ namespace refinement
                     refinementResult = refineDisjointMeetIntersect(objR, objS);
                     break;
                 default:
-                    logger::log_error(DBERR_QUERY_INVALID_TYPE, "no refinement support for mbr relation case", relationCase);
+                    logger::log_error(DBERR_QUERY_INVALID_TYPE, "no refinement support for mbr relation case", mbrRelationCase);
                     return DBERR_QUERY_INVALID_TYPE;
             }
             // count result
             queryOutput.countTopologyRelationResult(refinementResult);
 
             return DBERR_OK;
-        }
-
-        int refineGuaranteedNoContainment(Shape* objR, Shape* objS) {
-            // get the mask code
-            std::string code = objR->createMaskCode(*objS);
-            if (compareMasks(code, disjointCode)) {
-                return TR_DISJOINT;
-            }
-            if (compareMasks(code, meetCode1) || compareMasks(code, meetCode2) || compareMasks(code, meetCode3)) {
-                return TR_MEET;
-            }
-            return TR_INTERSECT;
-        }
-
-        int refineContainmentsOnly(Shape* objR, Shape* objS) {
-            // get the mask code
-            std::string code = objR->createMaskCode(*objS);
-            if (compareMasks(code, coversCode1) || compareMasks(code, coversCode2) || 
-                compareMasks(code, coversCode3) || compareMasks(code, coversCode4)) {
-                if (compareMasks(code, containsCode)) {
-                    return TR_CONTAINS;
-                }
-                return TR_COVERS;
-            }
-            if (compareMasks(code, coveredbyCode1) || compareMasks(code, coveredbyCode2) || 
-                compareMasks(code, coveredbyCode3) || compareMasks(code, coveredbyCode4)) {
-                if (compareMasks(code, insideCode)) {
-                    return TR_INSIDE;
-                }
-                return TR_COVERED_BY;
-            }
-            return TR_INTERSECT;
-        }
-
-        int refineContainsPlus(Shape* objR, Shape* objS) {
-            // get the mask code
-            std::string code = objR->createMaskCode(*objS);
-            if (compareMasks(code, disjointCode)) {
-                return TR_DISJOINT;
-            }
-            if (compareMasks(code, coversCode1) || compareMasks(code, coversCode2) || 
-                compareMasks(code, coversCode3) || compareMasks(code, coversCode4)) {
-                if (compareMasks(code, containsCode)) {
-                    return TR_CONTAINS;
-                }
-                return TR_COVERS;
-            }
-            if (compareMasks(code, meetCode1) || compareMasks(code, meetCode2) || compareMasks(code, meetCode3)) {
-                return TR_MEET;
-            }
-            return TR_INTERSECT;
-        }
-
-        int refineInsidePlus(Shape* objR, Shape* objS) {
-            // get the mask code
-            std::string code = objR->createMaskCode(*objS);
-            if (compareMasks(code, disjointCode)) {
-                return TR_DISJOINT;
-            }
-            if (compareMasks(code, coveredbyCode1) || compareMasks(code, coveredbyCode2) || 
-                compareMasks(code, coveredbyCode3) || compareMasks(code, coveredbyCode4)) {
-                if (compareMasks(code, insideCode)) {
-                    return TR_INSIDE;
-                }
-                return TR_COVERED_BY;
-            }
-            if (compareMasks(code, meetCode1) || compareMasks(code, meetCode2) || compareMasks(code, meetCode3)) {
-                return TR_MEET;
-            }
-            return TR_INTERSECT;
         }
     }
 
@@ -488,7 +418,7 @@ namespace refinement
             }
         }
         
-        DB_STATUS refinementEntrypoint(Shape* objR, Shape* objS, QueryTypeE queryType, QueryOutput &queryOutput) {
+        DB_STATUS refinementEntrypoint(Shape* objR, Shape* objS, QueryType queryType, QueryOutput &queryOutput) {
             // switch based on query type
             switch(queryType) {
                 case Q_RANGE:

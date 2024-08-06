@@ -8,26 +8,26 @@
 #include "statement.h"
 #include "parse.h"
 
-namespace configure
+/** @brief System configuration methods. */
+namespace configurer
 {
     /**
-     * @brief initialize MPI environment
-     * 
-     * @return DB_STATUS 
+    @brief Initializes the system's MPI environment.
+     * @param[in] argc Number of user input arguments.
+     * @param[in] argv User input arguments. Contain information about how many nodes to initialize.
      */
     DB_STATUS initMPI(int argc, char* argv[]);
 
-    /**
-     * @brief verifies the required directories and/or creates any missing ones.
-    */
+    /** @brief Verifies the required directories for the system and/or creates any missing ones. */
     DB_STATUS verifySystemDirectories();
-    /**
-     * @brief creates configuration for the system based on the options
-    */
+
+    /** @brief Configures the system based on the parsed options. */
     DB_STATUS createConfiguration();
 
-
-    DB_STATUS setDatasetInfo(DatasetStatementT* datasetStmt);
+    /** @brief Configures the specified dataset info from the input dataset statement. 
+     * @param[in] datasetStmt Contains all dataset related parsed info.
+    */
+    DB_STATUS setDatasetInfo(DatasetStatement* datasetStmt);
 }
 
 #endif

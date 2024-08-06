@@ -4,28 +4,30 @@
 #include "containers.h"
 #include "comm.h"
 
-
+/** @brief Data distribution/partitioning methods. */
 namespace partitioning
 {
-    
-
+    /** @brief Prints all partitions and their assigned node ranks. */
     void printPartitionAssignment();
 
+    /** @brief Initializes the partitioning for the input dataset.
+     * @param[in] dataset Contains the dataset's information but not the contents, 
+     * as the partitioning reads from disk and distributes the data.
+     */
     DB_STATUS partitionDataset(Dataset *dataset);
 
+    /** @brief Calculates the given dataset's metadata about its dataspace.
+     * @param[in] dataset dataset Contains the dataset's information but not the contents.
+     */
     DB_STATUS calculateCSVDatasetDataspaceBounds(Dataset &dataset);
 
     /**
-     * @brief returns a vector containing the IDs of the partitions that intersect with the given MBR
-     * 
-     * @param xMin 
-     * @param yMin 
-     * @param xMax 
-     * @param yMax 
-     * @param partitionIDs 
-     * @return DB_STATUS 
+    @brief Calculates the intersecting partitions for the given MBR.
+     * @param[in] xMin, yMin, xMax, yMax MBR
+     * @param[out] partitionIDs The partition IDs that intersect with the MBR.
+     * @param[out] twoLayerClasses The MBR's two-layer index classification for each individual intersecting partition.
      */
-    DB_STATUS getPartitionsForMBR(double xMin, double yMin, double xMax, double yMax, std::vector<int> &partitionIDs, std::vector<TwoLayerClassE> &twoLayerClasses);
+    DB_STATUS getPartitionsForMBR(double xMin, double yMin, double xMax, double yMax, std::vector<int> &partitionIDs, std::vector<TwoLayerClass> &twoLayerClasses);
 }
 
 #endif

@@ -3,36 +3,37 @@
 
 #include "containers.h"
 
+/** @brief System inter- and intra- communication methods. */
 namespace comm
 {
+    /** @brief Methods for receiving inbound messages. */
     namespace recv
     {
-        /**
-         * receives a response message
-         */
+        /** @brief Receives a response message. 
+         * @param[in] sourceRank The rank of the message's source.
+         * @param[in] sourceTag The tag of the message to receive.
+         * @param[in] comm The communicator through which the message will received from.
+         * @param[out] status Stores the receive operation's status results.
+        */
         DB_STATUS receiveResponse(int sourceRank, int sourceTag, MPI_Comm &comm, MPI_Status &status);
 
         /**
-         * receives a result message
-         */
-        DB_STATUS receiveResult(unsigned long long &result, int sourceRank, int sourceTag, MPI_Comm &comm, MPI_Status &status);
-
-        /**
-         * @brief receive an instruction message from sourceRank with tag.
-         * Instruction messages are always of size 0 (empty) and their tag indicates which instruction to execute.
+        @brief Receives an instruction message.
+         * @param[in] sourceRank The rank of the message's source.
+         * @param[in] sourceTag The tag of the message to receive.
+         * @param[in] comm The communicator through which the message will received from.
+         * @param[out] status Stores the receive operation's status results.
         */
         DB_STATUS receiveInstructionMessage(int sourceRank, int sourceTag, MPI_Comm &comm, MPI_Status &status);
         
         /**
-         * @brief receives a single PROBED message pack of type T (info stored in status)
+        @brief Receives an already probed message.
          * the msgPack MPI datatype parameter must already be set (constructor handles that)
-         * the msgPack data buffer is allocated by this function. The caller is responsible for freeing this memory
-         * 
-         * @tparam T 
-         * @param status 
-         * @param comm 
-         * @param msgPack 
-         * @return DB_STATUS 
+         * @param[in] status Contains the probed message's status info.
+         * @param[in] dataType The message's data type.
+         * @param[in] comm The communicator through which the message should be received.
+         * @param[out] msgPack Where the message will be stored after received successfully.
+         * @note The msgPack data buffer is allocated by this function. The caller is responsible for freeing this memory
          */
         template <typename T> 
         DB_STATUS receiveMessage(MPI_Status &status, MPI_Datatype dataType, MPI_Comm &comm, SerializedMsg<T> &msgPack) {
@@ -56,21 +57,6 @@ namespace comm
 
             return ret;
         }
-
-        /**
-         * @brief receives a serialized message with sourceTag from sourceRank
-         * the buffer must be allocated and freed by the caller
-        */
-        template <typename T>
-        DB_STATUS receiveSerializedMessage(int sourceRank, int sourceTag, MPI_Comm &comm, MPI_Status &status, SerializedMsg<T> &msg) {
-            int mpi_ret = MPI_Recv(msg.data, msg.count, msg.type, sourceRank, sourceTag, comm, &status);
-            if (mpi_ret != MPI_SUCCESS) {
-                logger::log_error(DBERR_COMM_RECV, "Failed to receive serialized message");
-                return DBERR_COMM_RECV;
-            }
-            return DBERR_OK;
-        }
-        
     }
 
 }

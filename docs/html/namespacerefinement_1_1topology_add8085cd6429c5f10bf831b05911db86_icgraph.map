@@ -1,0 +1,4 @@
+<map id="refinement::topology::refineDisjointMeetIntersect" name="refinement::topology::refineDisjointMeetIntersect">
+<area shape="rect" id="node1" title="Refines for the disjoint, meet and intersect relation predicates (no containment)." alt="" coords="275,5,461,47"/>
+<area shape="rect" id="node2" href="$namespacerefinement_1_1topology.html#a1ebebb763f209a69db4c54ff227812c6" title="Entrypoint function for topological relationship refinement, for when there is NO intermediate filter..." alt="" coords="5,5,227,47"/>
+</map>

@@ -427,7 +427,7 @@ namespace APRIL
         namespace disk
         {
             /**
-             * @brief load and intervalize shapes like polygon or rectangle that have area
+            @brief load and intervalize shapes like polygon or rectangle that have area
              */
             static DB_STATUS loadAndIntervalizeRegionShape(Dataset &dataset, FILE* pFile,  FILE* pFileALL, FILE* pFileFULL, Shape object) {
                 DB_STATUS ret = DBERR_OK;
@@ -462,7 +462,7 @@ namespace APRIL
                     }
                 }
                 // update value 
-                ret = storage::writer::updateObjectCountInFile(pFileFULL, objectsInFullFile);
+                ret = storage::writer::partitionFile::updateObjectCountInFile(pFileFULL, objectsInFullFile);
                 if (ret != DBERR_OK) {
                     logger::log_error(ret, "Couldn't update object count value in FULL intervals file");
                     return ret;
@@ -471,7 +471,7 @@ namespace APRIL
             }
 
             /**
-             * @brief intervalize shapes like point or linestring that have no area
+            @brief intervalize shapes like point or linestring that have no area
              */
             static DB_STATUS loadAndIntervalizeNonRegionShape(Dataset &dataset, FILE* pFile,  FILE* pFileALL, FILE* pFileFULL, Shape object) {
                 DB_STATUS ret = DBERR_OK;
@@ -506,7 +506,7 @@ namespace APRIL
                     }
                 }
                 // update value 
-                ret = storage::writer::updateObjectCountInFile(pFileFULL, objectsInFullFile);
+                ret = storage::writer::partitionFile::updateObjectCountInFile(pFileFULL, objectsInFullFile);
                 if (ret != DBERR_OK) {
                     logger::log_error(ret, "Couldn't update object count value in FULL intervals file");
                     return ret;
@@ -593,7 +593,7 @@ namespace APRIL
         namespace memory
         {
             /**
-             * @brief load and intervalize shapes like polygon or rectangle that have area
+            @brief load and intervalize shapes like polygon or rectangle that have area
              */
             static DB_STATUS intervalizeRegionShapes(Dataset &dataset, FILE* pFileALL, FILE* pFileFULL) {
                 DB_STATUS ret = DBERR_OK;
@@ -623,7 +623,7 @@ namespace APRIL
                     }
                 }
                 // update value 
-                ret = storage::writer::updateObjectCountInFile(pFileFULL, objectsInFullFile);
+                ret = storage::writer::partitionFile::updateObjectCountInFile(pFileFULL, objectsInFullFile);
                 if (ret != DBERR_OK) {
                     logger::log_error(ret, "Couldn't update object count value in FULL intervals file");
                     return ret;
@@ -633,7 +633,7 @@ namespace APRIL
 
 
             /**
-             * @brief load and intervalize shapes like polygon or rectangle that have area
+            @brief load and intervalize shapes like polygon or rectangle that have area
              */
             static DB_STATUS intervalizeNonRegionShapes(Dataset &dataset, FILE* pFileALL, FILE* pFileFULL) {
                 DB_STATUS ret = DBERR_OK;
@@ -662,7 +662,7 @@ namespace APRIL
                     }
                 }
                 // update value 
-                ret = storage::writer::updateObjectCountInFile(pFileFULL, objectsInFullFile);
+                ret = storage::writer::partitionFile::updateObjectCountInFile(pFileFULL, objectsInFullFile);
                 if (ret != DBERR_OK) {
                     logger::log_error(ret, "Couldn't update object count value in FULL intervals file");
                     return ret;

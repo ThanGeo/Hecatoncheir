@@ -6,7 +6,7 @@ namespace twolayer
     namespace topologyMBRfilter
     {
         
-        static inline DB_STATUS forwardPair(Shape* objR, Shape* objS, MBRRelationCaseE mbrRelationCase, QueryOutput &queryOutput) {
+        static inline DB_STATUS forwardPair(Shape* objR, Shape* objS, MBRRelationCase mbrRelationCase, QueryOutput &queryOutput) {
             DB_STATUS ret = DBERR_OK;
             if (mbrRelationCase != MBR_CROSS) {
                 // count as MBR filter result

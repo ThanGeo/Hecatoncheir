@@ -226,7 +226,7 @@ namespace APRIL
         }
 
         
-        DB_STATUS IntermediateFilterEntrypoint(Shape* objR, Shape* objS, MBRRelationCaseE mbrRelationCase, QueryOutput &queryOutput) {
+        DB_STATUS IntermediateFilterEntrypoint(Shape* objR, Shape* objS, MBRRelationCase mbrRelationCase, QueryOutput &queryOutput) {
             DB_STATUS ret = DBERR_OK;
             // switch based on how the MBRs intersect, to the appropriate intermediate filter
             switch (mbrRelationCase) {
@@ -280,7 +280,7 @@ namespace APRIL
                 switch (g_config.queryInfo.type) {
                     case Q_RANGE:
                     case Q_INTERSECT:
-                        ret = uncompressed::intersectionJoinAPRIL(aprilR, aprilS, iFilterResult);
+                        ret = uncompressed::standard::intersectionJoinAPRIL(aprilR, aprilS, iFilterResult);
                         if (ret != DBERR_OK) {
                             logger::log_error(ret, "APRIL intersection join failed for pair", objR->recID, "and", objS->recID);
                             return ret;
@@ -288,28 +288,28 @@ namespace APRIL
                         break;
                     case Q_COVERED_BY:   
                     case Q_INSIDE:
-                        ret = uncompressed::insideCoveredByJoinAPRIL(aprilR, aprilS, iFilterResult);
+                        ret = uncompressed::standard::insideCoveredByJoinAPRIL(aprilR, aprilS, iFilterResult);
                         if (ret != DBERR_OK) {
                             logger::log_error(ret, "APRIL inside/covered by join failed for pair", objR->recID, "and", objS->recID);
                             return ret;
                         }
                         break;
                     case Q_DISJOINT:
-                        ret = uncompressed::disjointJoinAPRIL(aprilR, aprilS, iFilterResult);
+                        ret = uncompressed::standard::disjointJoinAPRIL(aprilR, aprilS, iFilterResult);
                         if (ret != DBERR_OK) {
                             logger::log_error(ret, "APRIL disjoint join failed for pair", objR->recID, "and", objS->recID);
                             return ret;
                         }
                         break;
                     case Q_EQUAL:
-                        ret = uncompressed::equalJoinAPRIL(aprilR, aprilS, iFilterResult);
+                        ret = uncompressed::standard::equalJoinAPRIL(aprilR, aprilS, iFilterResult);
                         if (ret != DBERR_OK) {
                             logger::log_error(ret, "APRIL equality join failed for pair", objR->recID, "and", objS->recID);
                             return ret;
                         }
                         break;
                     case Q_MEET:
-                        ret = uncompressed::meetJoinAPRIL(aprilR, aprilS, iFilterResult);
+                        ret = uncompressed::standard::meetJoinAPRIL(aprilR, aprilS, iFilterResult);
                         if (ret != DBERR_OK) {
                             logger::log_error(ret, "APRIL meet join failed for pair", objR->recID, "and", objS->recID);
                             return ret;
@@ -317,7 +317,7 @@ namespace APRIL
                         break;
                     case Q_CONTAINS:
                     case Q_COVERS:
-                        ret = uncompressed::containsCoversJoinAPRIL(aprilR, aprilS, iFilterResult);
+                        ret = uncompressed::standard::containsCoversJoinAPRIL(aprilR, aprilS, iFilterResult);
                         if (ret != DBERR_OK) {
                             logger::log_error(ret, "APRIL contains/covers join failed for pair", objR->recID, "and", objS->recID);
                             return ret;

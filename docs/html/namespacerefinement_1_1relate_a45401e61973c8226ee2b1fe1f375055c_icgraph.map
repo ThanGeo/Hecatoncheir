@@ -1,0 +1,5 @@
+<map id="refinement::relate::refineIntersectionJoin" name="refinement::relate::refineIntersectionJoin">
+<area shape="rect" id="node1" title="Geometrically refines two objects for intersection." alt="" coords="252,39,407,80"/>
+<area shape="rect" id="node2" href="$namespaceAPRIL_1_1standard.html#ad2a3e148599958aca40c3f3848ca75cc" title="Standard APRIL intermediate filter that filters two input objects. The join predicate is set in the g..." alt="" coords="5,5,204,47"/>
+<area shape="rect" id="node3" href="$namespacerefinement_1_1relate.html#a079dc098b2d719b263ad2e31ff9690fd" title="Entrypoint function for when there is NO intermediate filter." alt="" coords="29,71,180,112"/>
+</map>

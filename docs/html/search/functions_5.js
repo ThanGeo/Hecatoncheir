@@ -1,0 +1,21 @@
+var searchData=
+[
+  ['gatherresponses_318',['gatherResponses',['../namespacecomm_1_1controller_1_1host.html#a7acd9cbfb1666431ed71aedf9242836b',1,'comm::controller::host']]],
+  ['gatherresults_319',['gatherResults',['../namespacecomm_1_1controller_1_1host.html#a401617d1f26ebf29b99ae7a892f85459',1,'comm::controller::host']]],
+  ['generateaprilfilepath_320',['generateAPRILFilePath',['../namespacestorage.html#a4562eadd26f908e88c3e4df5310e85a9',1,'storage']]],
+  ['generatepartitionfilepath_321',['generatePartitionFilePath',['../namespacestorage.html#ab83b16f54f40a18e37e8825dd79a2302',1,'storage']]],
+  ['getaprildatabysectionandobjectid_322',['getAprilDataBySectionAndObjectID',['../structDataset.html#a35bb9622b885986f5e7edc7585a5b603',1,'Dataset']]],
+  ['getcellsperdim_323',['getCellsPerDim',['../structAprilConfig.html#a51d25caa3f6d819fb9babafe730772ed',1,'AprilConfig']]],
+  ['getcontainerclasscontents_324',['getContainerClassContents',['../structPartition.html#aed331352644439a199bff28c2eefd8dd',1,'Partition']]],
+  ['getcreateapproximationaction_325',['getCreateApproximationAction',['../namespacestatement.html#abb15700635f14aca0fcb2ac59e878d3c',1,'statement']]],
+  ['getelapsedtime_326',['getElapsedTime',['../namespacempi__timer.html#a74c246372eadbc66ab89e4c971099ce0',1,'mpi_timer']]],
+  ['getfiletype_327',['getFiletype',['../namespacestatement.html#ab925bf63088f3560cc2c9364dc8ff399',1,'statement']]],
+  ['getn_328',['getN',['../structAprilConfig.html#a04a0fb64aa986657a3b6006482d5a437',1,'AprilConfig']]],
+  ['getobject_329',['getObject',['../structDataset.html#a2407297a4ceb58310cfd562510762c93',1,'Dataset']]],
+  ['getorcreatepartition_330',['getOrCreatePartition',['../structTwoLayerIndex.html#a125b80bcfdbc2facdc8ef389a2d364aa',1,'TwoLayerIndex']]],
+  ['getpartition_331',['getPartition',['../structTwoLayerIndex.html#aa3dd7d2a87b5f75c3bce3ec90a4907cb',1,'TwoLayerIndex']]],
+  ['getpartitioningtype_332',['getPartitioningType',['../namespacestatement.html#ad1f9aaf5994af16525159c0593a9e283',1,'statement']]],
+  ['getpartitionsformbr_333',['getPartitionsForMBR',['../namespacepartitioning.html#aaede65d4c117b91af2b01d18b31a64c8',1,'partitioning']]],
+  ['getreferencetopoints_334',['getReferenceToPoints',['../structShape.html#ac7d6917e3c2fca75397c4130325a6754',1,'Shape']]],
+  ['getvertexcount_335',['getVertexCount',['../structShape.html#afdd4dd74fddde32ac5cbdb5c952d418f',1,'Shape']]]
+];

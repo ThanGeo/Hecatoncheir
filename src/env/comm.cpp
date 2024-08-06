@@ -9,7 +9,7 @@ namespace comm
     }
 
     /**
-     * @brief probes for a message in the given communicator with the specified parameters.
+    @brief probes for a message in the given communicator with the specified parameters.
      * if it exists, its info is stored in the status parameters.
      * returns true/false if a message that fits the parameters exists.
      * Does not receive the message, must call MPI_Recv for that.
@@ -21,7 +21,7 @@ namespace comm
     }
 
     /**
-     * @brief probes for a message in the given communicator with the specified parameters
+    @brief probes for a message in the given communicator with the specified parameters
      * and blocks until such a message arrives. 
      * Does not receive the message, must call MPI_Recv for that.
      */
@@ -68,7 +68,7 @@ namespace comm
     {
 
         /**
-         * @brief forwards a message from the Host controller to the Agent and waits for the agent's response
+        @brief forwards a message from the Host controller to the Agent and waits for the agent's response
          * which will be returned to the host
          */
         template <typename T> 
@@ -94,7 +94,7 @@ namespace comm
         }
 
         /**
-         * @brief receives and forwards a message from source to dest
+        @brief receives and forwards a message from source to dest
          * 
          * @param sourceRank 
          * @param sourceTag 
@@ -122,7 +122,7 @@ namespace comm
         }
 
         /**
-         * @brief Forwards a serialized batch message received through sourceComm to destrank, through destComm
+        @brief Forwards a serialized batch message received through sourceComm to destrank, through destComm
          * The message has to be already probed (info stored in status)
          * 
          * @param status 
@@ -274,7 +274,7 @@ namespace comm
             if (batch.objectCount > 0) {
                 // do stuff
                 // logger::log_success("Received batch with", batch.objectCount, "objects");
-                ret = storage::writer::appendBatchToPartitionFile(outFile, &batch, dataset);
+                ret = storage::writer::partitionFile::appendBatchToPartitionFile(outFile, &batch, dataset);
                 if (ret != DBERR_OK) {
                     logger::log_error(DBERR_DISK_WRITE_FAILED, "Failed when writing batch to partition file");
                     return DBERR_DISK_WRITE_FAILED;
@@ -283,7 +283,7 @@ namespace comm
                 // empty batch, set flag to stop listening for this dataset
                 continueListening = 0;
                 // and write total objects in the begining of the partitioned file
-                ret = storage::writer::updateObjectCountInFile(outFile, dataset->totalObjects);
+                ret = storage::writer::partitionFile::updateObjectCountInFile(outFile, dataset->totalObjects);
                 logger::log_success("Saved", dataset->totalObjects,"total objects.");
                 if (ret != DBERR_OK) {
                     logger::log_error(DBERR_DISK_WRITE_FAILED, "Failed when updating partition file object count");
@@ -378,7 +378,7 @@ namespace comm
             fwrite(&dummy, sizeof(size_t), 1, outFile);
 
             // write the dataset info to the partition file
-            ret = storage::writer::appendDatasetInfoToPartitionFile(outFile, &dataset);
+            ret = storage::writer::partitionFile::appendDatasetInfoToPartitionFile(outFile, &dataset);
             if (ret != DBERR_OK) {
                 logger::log_error(ret, "Failed while writing the dataset info to the partition file");
                 goto STOP_LISTENING;
@@ -443,7 +443,7 @@ STOP_LISTENING:
         }
 
         /**
-         * @brief pulls the probed instruction message and based on its tag, performs the requested instruction
+        @brief pulls the probed instruction message and based on its tag, performs the requested instruction
          * 
          * @param status 
          * @return DB_STATUS 
@@ -485,7 +485,7 @@ STOP_LISTENING:
                 return ret;
             }
             // verify local directories
-            ret = configure::verifySystemDirectories();
+            ret = configurer::verifySystemDirectories();
             if (ret != DBERR_OK) {
                 // error
                 logger::log_error(ret, "Failed while verifying system directories.");
@@ -720,7 +720,7 @@ EXIT_SAFELY:
         }
 
         /**
-         * @brief pulls incoming message sent by the local controller 
+        @brief pulls incoming message sent by the local controller 
          * (the one probed last, whose info is stored in the status parameter)
          * Based on the tag of the message, it performs the corresponding request.
          */
@@ -845,19 +845,9 @@ STOP_LISTENING:
 
             return ret;
         }
-        
-        DB_STATUS sendInstructionToAgent(int tag) {
-            // send it to agent
-            DB_STATUS ret = send::sendInstructionMessage(AGENT_RANK, tag, g_local_comm);
-            if (ret != DBERR_OK) {
-                logger::log_error(DBERR_COMM_SEND, "Failed sending instruction to agent");
-                return DBERR_COMM_SEND;
-            }
-            return ret;
-        }
 
         /**
-         * @brief Pulls and forwards a dataset info message to the local agent
+        @brief Pulls and forwards a dataset info message to the local agent
          * 
          * @param status 
          * @return DB_STATUS 
@@ -941,7 +931,7 @@ STOP_LISTENING:
         }
 
         /**
-         * @brief pulls incoming message sent by the host controller 
+        @brief pulls incoming message sent by the host controller 
          * (the one probed last, whose info is stored in the status parameter)
          * Based on the tag of the message, it performs the corresponding request.
          * The controller almost always forwards the message to its local agent.
@@ -1120,7 +1110,7 @@ STOP_LISTENING:
                 return ret;
             }
 
-            static DB_STATUS handleQueryResultMessage(MPI_Status &status, MPI_Comm &comm, QueryTypeE queryType, QueryOutput &queryOutput) {
+            static DB_STATUS handleQueryResultMessage(MPI_Status &status, MPI_Comm &comm, QueryType queryType, QueryOutput &queryOutput) {
                 DB_STATUS ret = DBERR_OK;
                 SerializedMsg<int> msg;
                 // receive the serialized message

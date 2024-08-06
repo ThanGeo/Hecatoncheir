@@ -11,7 +11,7 @@ namespace setup
         }
 
         // configure
-        ret = configure::createConfiguration();
+        ret = configurer::createConfiguration();
         if (ret != DBERR_OK) {
             return ret;
         }

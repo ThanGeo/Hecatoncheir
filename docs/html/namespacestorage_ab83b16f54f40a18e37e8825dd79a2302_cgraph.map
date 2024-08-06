@@ -1,0 +1,4 @@
+<map id="storage::generatePartitionFilePath" name="storage::generatePartitionFilePath">
+<area shape="rect" id="node1" title="Generates the partition filepath for the given dataset, from the dataset&#39;s nickname." alt="" coords="5,5,176,47"/>
+<area shape="rect" id="node2" href="$namespacelogger.html#a53f34feeb22a94db295af05b8b2aab5c" title="Error logging function with template arguments. Separates input parameters with spaces...." alt="" coords="224,13,339,39"/>
+</map>
