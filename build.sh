@@ -94,3 +94,14 @@ echo -e "cd build\nmpirun.mpich -np \$numnodes $hostfile ./controller -t $type -
 echo -e "cd .." >> $runscript
 chmod +x $runscript
 echo -e "-- ${GREEN}Generated program script:${NC} $runscript"
+
+# generate doxygen
+DOC_SCRIPT="documentation.sh"
+# Check if the documentation script exists and is executable
+if [ -f "$DOC_SCRIPT" ] && [ -x "$DOC_SCRIPT" ]; then
+    # execute
+    ./"$DOC_SCRIPT"
+else
+    echo "Error: $DOC_SCRIPT does not exist or is not executable."
+    exit 1
+fi
