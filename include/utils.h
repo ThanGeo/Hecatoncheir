@@ -184,6 +184,7 @@ namespace logger
 namespace mapping
 {
     extern std::string actionIntToStr(ActionType action);
+    std::string twoLayerClassIntToStr(TwoLayerClass classType);
     extern std::string queryTypeIntToStr(QueryType val);
     extern QueryType queryTypeStrToInt(std::string &str);
     extern std::string dataTypeIntToStr(DataType val);

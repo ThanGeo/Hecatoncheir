@@ -265,12 +265,24 @@ namespace comm
 
     namespace agent
     {
+        /** @brief Deserializes a serialized batch message and stores its data on disk and in the proper containers in-memory. 
+         * @param[in] buffer The serialized batch message
+         * @param[in] bufferSize The message's size
+         * @param[in] outFile A file pointer pointing to an already open partition file on disk. Its position should be after the object count/dataset info position.
+         * @param[in] dataset The dataset getting partitioned
+         * @param[out] continueListening If the message is empty (0 objects aster serialization), then it signals the end of the partitioning for the dataset.
+        */
         static DB_STATUS deserializeBatchMessageAndStore(char *buffer, int bufferSize, FILE* outFile, Dataset *dataset, int &continueListening) {
             DB_STATUS ret = DBERR_OK;
             GeometryBatch batch;
-            // deserialize
+            // deserialize the batch
             batch.deserialize(buffer, bufferSize);
-
+            // calculate two layer classes for each object, in each partition
+            ret = partitioning::calculateTwoLayerClasses(batch);
+            if (ret != DBERR_OK) {
+                logger::log_error(ret, "Calculating two layer index classes failed for batch.");
+                return ret;
+            }
             if (batch.objectCount > 0) {
                 // do stuff
                 // logger::log_success("Received batch with", batch.objectCount, "objects");
@@ -363,6 +375,10 @@ namespace comm
                 logger::log_error(ret, "Failed creating the dataset from the dataset info message");
                 goto STOP_LISTENING;
             }
+            // update the grids' dataspace info in the partitioning object 
+            g_config.partitioningMethod->setDistGridDataspace(dataset.dataspaceInfo);
+            g_config.partitioningMethod->setPartGridDataspace(dataset.dataspaceInfo);
+
             // free memory
             free(datasetInfoMsg.data);
             
@@ -484,6 +500,7 @@ STOP_LISTENING:
             if (ret != DBERR_OK) {
                 return ret;
             }
+            // printf("Partitioning info set: Type %d, dPPD %d, pPPD %d\n", g_config.partitioningMethod->getType(), g_config.partitioningMethod->getDistributionPPD(), g_config.partitioningMethod->getPartitioningPPD());
             // verify local directories
             ret = configurer::verifySystemDirectories();
             if (ret != DBERR_OK) {
@@ -809,6 +826,7 @@ STOP_LISTENING:
                 logger::log_error(DBERR_BATCH_FAILED, "Batch is invalid, check its destRank, tag and comm");
                 return DBERR_BATCH_FAILED;
             }
+            // logger::log_success("Sending batch of size", batch->objectCount);
             // serialize (todo: add try/catch for segfauls, mem access etc...)   
             msg.count = batch->serialize(&msg.data);
             if (msg.count == -1) {

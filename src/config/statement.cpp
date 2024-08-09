@@ -5,6 +5,8 @@ namespace statement
     DB_STATUS getPartitioningType(std::string &typeStr, PartitioningType &type) {
         if (typeStr == "RR"){
             type = PARTITIONING_ROUND_ROBIN;
+        } else if (typeStr == "TWOGRID") {
+            type = PARTITIONING_TWO_GRID;
         } else {
             // unknown type
             logger::log_error(DBERR_UNKNOWN_ARGUMENT, "Unknown partitioning type request:", typeStr);

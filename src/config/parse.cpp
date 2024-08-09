@@ -181,9 +181,9 @@ namespace parser
      * to improve load balancing
      * 
      */
-    static int adjustPartitions(int partitionsPerDimension) {
-        int newPartitionsPerDimension = partitionsPerDimension;
-        int modCells = partitionsPerDimension % g_world_size;
+    static int adjustPartitions(int ppdNum) {
+        int newPartitionsPerDimension = ppdNum;
+        int modCells = ppdNum % g_world_size;
         
         if (modCells != 1) {
             newPartitionsPerDimension += modCells + 1;
@@ -192,34 +192,57 @@ namespace parser
     }
 
     static DB_STATUS parsePartitioningOptions() {
-        std::string partitioningTypeStr = system_config_pt.get<std::string>("Partitioning.type");
-        int partitionsPerDimension = system_config_pt.get<int>("Partitioning.partitionsPerDimension");
-        std::string assignmentFuncStr = system_config_pt.get<std::string>("Partitioning.assignmentFunc");
-        int batchSize = system_config_pt.get<int>("Partitioning.batchSize");
-        std::string dataDirPath = system_config_pt.get<std::string>("Partitioning.path");
-
         // set node directory paths
+        std::string dataDirPath = system_config_pt.get<std::string>("Partitioning.path");
         g_config.dirPaths.setNodeDataDirectories(dataDirPath);
 
+        // batch size
+        int batchSize = system_config_pt.get<int>("Partitioning.batchSize");
+        if (batchSize <= 0) {
+            logger::log_error(DBERR_INVALID_PARAMETER, "Batch size needs to be a positive number. Batch Size: ", batchSize);
+            return DBERR_INVALID_PARAMETER;
+        }
+
         // partitioning type
-        DB_STATUS ret = statement::getPartitioningType(partitioningTypeStr, g_config.partitioningInfo.type);
+        std::string partitioningTypeStr = system_config_pt.get<std::string>("Partitioning.type");
+        PartitioningType partitioningType;
+        DB_STATUS ret = statement::getPartitioningType(partitioningTypeStr, partitioningType);
         if (ret != DBERR_OK) {
             logger::log_error(ret, "Unkown partitioning type in config file");
             return ret;
         }
-
-        // partitions per dimension
-        if (partitionsPerDimension < g_world_size) {
-            logger::log_error(DBERR_INVALID_PARAMETER, "Partitions per dimension are not at least as many as the processes:", partitionsPerDimension);
-            return DBERR_INVALID_PARAMETER;
+        // grid dimensions/partitions
+        int ppdNum = system_config_pt.get<int>("Partitioning.ppdNum");
+        if (partitioningType == PARTITIONING_ROUND_ROBIN) {
+            // Round Robin partitioning
+            if (ppdNum < g_world_size) {
+                logger::log_error(DBERR_INVALID_PARAMETER, "RR: Grid's ppd should be at least as many as the number of nodes. ppdNum: ", ppdNum);
+                return DBERR_INVALID_PARAMETER;
+            }
+            // create the round robin partitioning method object into the configuration.
+            g_config.partitioningMethod = new RoundRobinPartitioning(partitioningType, batchSize, ppdNum);
+        } else if (partitioningType == PARTITIONING_TWO_GRID) {
+            // Two-Grid partitioning
+            int dgppdNum = system_config_pt.get<int>("Partitioning.dgppdNum");
+            if (dgppdNum < g_world_size) {
+                logger::log_error(DBERR_INVALID_PARAMETER, "TWOGRID: Distribution grid's ppd should be at least as many as the number of nodes. ppdNum: ", ppdNum);
+                return DBERR_INVALID_PARAMETER;
+            } 
+            if (ppdNum / dgppdNum < g_world_size) {
+                logger::log_error(DBERR_INVALID_PARAMETER, "TWOGRID: Partitioning grid's ppd divided by the distribution grid's ppd should be at least as many as the number of nodes. ppdNum / dgppdNum =", ppdNum / dgppdNum);
+                return DBERR_INVALID_PARAMETER;
+            }
+            ppdNum = ppdNum / dgppdNum;
+            // create the two grid partitioning method object into the configuration.
+            g_config.partitioningMethod = new TwoGridPartitioning(partitioningType, batchSize, dgppdNum, ppdNum);
         }
-        g_config.partitioningInfo.partitionsPerDimension = partitionsPerDimension;
 
         // node assignment to cells
+        std::string assignmentFuncStr = system_config_pt.get<std::string>("Partitioning.assignmentFunc");
         if (assignmentFuncStr == "OP") {
             // optimized, adjust the partitions per num automatically to improve load balancing
-            g_config.partitioningInfo.partitionsPerDimension = adjustPartitions(partitionsPerDimension);
-            // logger::log_task("Adjusted partitions per dimension to", g_config.partitioningInfo.partitionsPerDimension);
+            logger::log_error(DBERR_FEATURE_UNSUPPORTED, "Optimized partition assignment currently unsupported.");
+            return DBERR_FEATURE_UNSUPPORTED;
         } else if(assignmentFuncStr == "ST") {
             // standard, do nothing extra on the grid
         } else {
@@ -227,14 +250,6 @@ namespace parser
             return DBERR_INVALID_PARAMETER;
         }
         // partitioning::printPartitionAssignment();
-
-        // batch size
-        if (batchSize <= 0) {
-            logger::log_error(DBERR_INVALID_PARAMETER, "Batch size needs to be a positive number. Batch Size: ", batchSize);
-            return DBERR_INVALID_PARAMETER;
-        }
-        g_config.partitioningInfo.batchSize = batchSize;
-
         return DBERR_OK;
     }
 

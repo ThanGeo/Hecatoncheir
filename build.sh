@@ -43,7 +43,7 @@ if [ "$systype" = "cluster" ]; then
   # directory where the code should be placed on each node
   DEST_DIR="$SOURCE_DIR"
   echo -e "-- ${GREEN}Host directory: ${NC}" $SOURCE_DIR
-  echo -e "-- ${GREEN}Host directory: ${NC}" $DEST_DIR
+  echo -e "-- ${GREEN}Dest directory: ${NC}" $DEST_DIR
   # make the same directory in the nodes (if it does not exist)
   for node in "${NODES[@]}"; do
     ssh "$node" "mkdir -p '$SOURCE_DIR'"

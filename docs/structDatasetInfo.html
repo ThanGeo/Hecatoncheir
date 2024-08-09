@@ -122,7 +122,7 @@ std::unordered_map&lt; std::string, <a class="el" href="structDataset.html">Data
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock"><p>Holds the dataset(s) related info in the configuration. </p>
 
-<p class="definition">Definition at line <a class="el" href="containers_8h_source.html#l01160">1160</a> of file <a class="el" href="containers_8h_source.html">containers.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="containers_8h_source.html#l01323">1323</a> of file <a class="el" href="containers_8h_source.html">containers.h</a>.</p>
 </div><h2 class="groupheader">Member Function Documentation</h2>
 <a id="a2bf167932686678cb72266aedb190741"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a2bf167932686678cb72266aedb190741">&#9670;&nbsp;</a></span>addDataset()</h2>
@@ -143,19 +143,19 @@ std::unordered_map&lt; std::string, <a class="el" href="structDataset.html">Data
 <p>adds a <a class="el" href="structDataset.html" title="All dataset related information.">Dataset</a> to the configuration's dataset info </p>
 <dl class="section warning"><dt>Warning</dt><dd>it has to be an empty dataset BUT its nickname needs to be set </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="containers_8cpp_source.html#l00476">476</a> of file <a class="el" href="containers_8cpp_source.html">containers.cpp</a>.</p>
-<div class="fragment"><div class="line"><a name="l00476"></a><span class="lineno">  476</span>&#160;                                             {</div>
-<div class="line"><a name="l00477"></a><span class="lineno">  477</span>&#160;    <span class="comment">// add to datasets struct</span></div>
-<div class="line"><a name="l00478"></a><span class="lineno">  478</span>&#160;    datasets.insert(std::make_pair(dataset.nickname, dataset));</div>
-<div class="line"><a name="l00479"></a><span class="lineno">  479</span>&#160;    <span class="keywordflow">if</span> (numberOfDatasets &lt; 1) {</div>
-<div class="line"><a name="l00480"></a><span class="lineno">  480</span>&#160;        <span class="comment">// R is being added</span></div>
-<div class="line"><a name="l00481"></a><span class="lineno">  481</span>&#160;        R = &amp;datasets.find(dataset.nickname)-&gt;second;</div>
-<div class="line"><a name="l00482"></a><span class="lineno">  482</span>&#160;    } <span class="keywordflow">else</span> {</div>
-<div class="line"><a name="l00483"></a><span class="lineno">  483</span>&#160;        <span class="comment">// S is being added</span></div>
-<div class="line"><a name="l00484"></a><span class="lineno">  484</span>&#160;        S = &amp;datasets.find(dataset.nickname)-&gt;second;</div>
-<div class="line"><a name="l00485"></a><span class="lineno">  485</span>&#160;    }</div>
-<div class="line"><a name="l00486"></a><span class="lineno">  486</span>&#160;    numberOfDatasets++;</div>
-<div class="line"><a name="l00487"></a><span class="lineno">  487</span>&#160;}</div>
+<p class="definition">Definition at line <a class="el" href="containers_8cpp_source.html#l00478">478</a> of file <a class="el" href="containers_8cpp_source.html">containers.cpp</a>.</p>
+<div class="fragment"><div class="line"><a name="l00478"></a><span class="lineno">  478</span>&#160;                                             {</div>
+<div class="line"><a name="l00479"></a><span class="lineno">  479</span>&#160;    <span class="comment">// add to datasets struct</span></div>
+<div class="line"><a name="l00480"></a><span class="lineno">  480</span>&#160;    datasets.insert(std::make_pair(dataset.nickname, dataset));</div>
+<div class="line"><a name="l00481"></a><span class="lineno">  481</span>&#160;    <span class="keywordflow">if</span> (numberOfDatasets &lt; 1) {</div>
+<div class="line"><a name="l00482"></a><span class="lineno">  482</span>&#160;        <span class="comment">// R is being added</span></div>
+<div class="line"><a name="l00483"></a><span class="lineno">  483</span>&#160;        R = &amp;datasets.find(dataset.nickname)-&gt;second;</div>
+<div class="line"><a name="l00484"></a><span class="lineno">  484</span>&#160;    } <span class="keywordflow">else</span> {</div>
+<div class="line"><a name="l00485"></a><span class="lineno">  485</span>&#160;        <span class="comment">// S is being added</span></div>
+<div class="line"><a name="l00486"></a><span class="lineno">  486</span>&#160;        S = &amp;datasets.find(dataset.nickname)-&gt;second;</div>
+<div class="line"><a name="l00487"></a><span class="lineno">  487</span>&#160;    }</div>
+<div class="line"><a name="l00488"></a><span class="lineno">  488</span>&#160;    numberOfDatasets++;</div>
+<div class="line"><a name="l00489"></a><span class="lineno">  489</span>&#160;}</div>
 </div><!-- fragment --><div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">

@@ -76,458 +76,652 @@ $(function() {
 <div class="line"><a name="l00003"></a><span class="lineno">    3</span>&#160; </div>
 <div class="line"><a name="l00004"></a><span class="lineno"><a class="line" href="namespacepartitioning.html">    4</a></span>&#160;<span class="keyword">namespace </span><a class="code" href="namespacepartitioning.html">partitioning</a></div>
 <div class="line"><a name="l00005"></a><span class="lineno">    5</span>&#160;{</div>
-<div class="line"><a name="l00006"></a><span class="lineno">    6</span>&#160; </div>
-<div class="line"><a name="l00007"></a><span class="lineno"><a class="line" href="namespacepartitioning.html#afc40bad3d1c1b78245803906af58edf9">    7</a></span>&#160;    <span class="keywordtype">void</span> <a class="code" href="namespacepartitioning.html#afc40bad3d1c1b78245803906af58edf9">printPartitionAssignment</a>() {</div>
-<div class="line"><a name="l00008"></a><span class="lineno">    8</span>&#160;        <span class="keywordflow">for</span> (<span class="keywordtype">int</span> j=0; j&lt;<a class="code" href="containers_8h.html#a93d917fabd28d05357cd3096eb43b641">g_config</a>.partitioningInfo.partitionsPerDimension; j++) {</div>
-<div class="line"><a name="l00009"></a><span class="lineno">    9</span>&#160;            <span class="keywordflow">for</span> (<span class="keywordtype">int</span> i=0; i&lt;<a class="code" href="containers_8h.html#a93d917fabd28d05357cd3096eb43b641">g_config</a>.partitioningInfo.partitionsPerDimension; i++) {</div>
-<div class="line"><a name="l00010"></a><span class="lineno">   10</span>&#160;                printf(<span class="stringliteral">&quot;%d &quot;</span>, <a class="code" href="containers_8h.html#a93d917fabd28d05357cd3096eb43b641">g_config</a>.partitioningInfo.getNodeRankForPartitionID(<a class="code" href="containers_8h.html#a93d917fabd28d05357cd3096eb43b641">g_config</a>.partitioningInfo.getCellID(i,j)));</div>
-<div class="line"><a name="l00011"></a><span class="lineno">   11</span>&#160;            }</div>
-<div class="line"><a name="l00012"></a><span class="lineno">   12</span>&#160;            printf(<span class="stringliteral">&quot;\n&quot;</span>);</div>
-<div class="line"><a name="l00013"></a><span class="lineno">   13</span>&#160;        }</div>
-<div class="line"><a name="l00014"></a><span class="lineno">   14</span>&#160;    }</div>
-<div class="line"><a name="l00015"></a><span class="lineno">   15</span>&#160;    </div>
-<div class="line"><a name="l00016"></a><span class="lineno"><a class="line" href="namespacepartitioning.html#aaede65d4c117b91af2b01d18b31a64c8">   16</a></span>&#160;    DB_STATUS <a class="code" href="namespacepartitioning.html#aaede65d4c117b91af2b01d18b31a64c8">getPartitionsForMBR</a>(<span class="keywordtype">double</span> xMin, <span class="keywordtype">double</span> yMin, <span class="keywordtype">double</span> xMax, <span class="keywordtype">double</span> yMax, std::vector&lt;int&gt; &amp;partitionIDs, std::vector&lt;TwoLayerClass&gt; &amp;twoLayerClasses){</div>
-<div class="line"><a name="l00017"></a><span class="lineno">   17</span>&#160;        <span class="keywordtype">int</span> minPartitionX = (xMin - <a class="code" href="containers_8h.html#a93d917fabd28d05357cd3096eb43b641">g_config</a>.datasetInfo.dataspaceInfo.xMinGlobal) / (<a class="code" href="containers_8h.html#a93d917fabd28d05357cd3096eb43b641">g_config</a>.datasetInfo.dataspaceInfo.xExtent / <a class="code" href="containers_8h.html#a93d917fabd28d05357cd3096eb43b641">g_config</a>.partitioningInfo.partitionsPerDimension);</div>
-<div class="line"><a name="l00018"></a><span class="lineno">   18</span>&#160;        <span class="keywordtype">int</span> minPartitionY = (yMin - <a class="code" href="containers_8h.html#a93d917fabd28d05357cd3096eb43b641">g_config</a>.datasetInfo.dataspaceInfo.yMinGlobal) / (<a class="code" href="containers_8h.html#a93d917fabd28d05357cd3096eb43b641">g_config</a>.datasetInfo.dataspaceInfo.yExtent / <a class="code" href="containers_8h.html#a93d917fabd28d05357cd3096eb43b641">g_config</a>.partitioningInfo.partitionsPerDimension);</div>
-<div class="line"><a name="l00019"></a><span class="lineno">   19</span>&#160;        <span class="keywordtype">int</span> maxPartitionX = (xMax - <a class="code" href="containers_8h.html#a93d917fabd28d05357cd3096eb43b641">g_config</a>.datasetInfo.dataspaceInfo.xMinGlobal) / (<a class="code" href="containers_8h.html#a93d917fabd28d05357cd3096eb43b641">g_config</a>.datasetInfo.dataspaceInfo.xExtent / <a class="code" href="containers_8h.html#a93d917fabd28d05357cd3096eb43b641">g_config</a>.partitioningInfo.partitionsPerDimension);</div>
-<div class="line"><a name="l00020"></a><span class="lineno">   20</span>&#160;        <span class="keywordtype">int</span> maxPartitionY = (yMax - <a class="code" href="containers_8h.html#a93d917fabd28d05357cd3096eb43b641">g_config</a>.datasetInfo.dataspaceInfo.yMinGlobal) / (<a class="code" href="containers_8h.html#a93d917fabd28d05357cd3096eb43b641">g_config</a>.datasetInfo.dataspaceInfo.yExtent / <a class="code" href="containers_8h.html#a93d917fabd28d05357cd3096eb43b641">g_config</a>.partitioningInfo.partitionsPerDimension);</div>
-<div class="line"><a name="l00021"></a><span class="lineno">   21</span>&#160;        </div>
-<div class="line"><a name="l00022"></a><span class="lineno">   22</span>&#160;        <span class="keywordtype">int</span> startPartitionID = <a class="code" href="containers_8h.html#a93d917fabd28d05357cd3096eb43b641">g_config</a>.partitioningInfo.getCellID(minPartitionX, minPartitionY);</div>
-<div class="line"><a name="l00023"></a><span class="lineno">   23</span>&#160;        <span class="keywordtype">int</span> lastPartitionID = <a class="code" href="containers_8h.html#a93d917fabd28d05357cd3096eb43b641">g_config</a>.partitioningInfo.getCellID(maxPartitionX, maxPartitionY);</div>
-<div class="line"><a name="l00024"></a><span class="lineno">   24</span>&#160;        <span class="keywordflow">if</span> (startPartitionID &lt; 0 || startPartitionID &gt; <a class="code" href="containers_8h.html#a93d917fabd28d05357cd3096eb43b641">g_config</a>.partitioningInfo.partitionsPerDimension*<a class="code" href="containers_8h.html#a93d917fabd28d05357cd3096eb43b641">g_config</a>.partitioningInfo.partitionsPerDimension -1) {</div>
-<div class="line"><a name="l00025"></a><span class="lineno">   25</span>&#160;            <a class="code" href="namespacelogger.html#a53f34feeb22a94db295af05b8b2aab5c">logger::log_error</a>(DBERR_INVALID_PARTITION, <span class="stringliteral">&quot;Start partition ID calculated wrong&quot;</span>);</div>
-<div class="line"><a name="l00026"></a><span class="lineno">   26</span>&#160;            <span class="keywordflow">return</span> DBERR_INVALID_PARTITION;</div>
-<div class="line"><a name="l00027"></a><span class="lineno">   27</span>&#160;        }</div>
-<div class="line"><a name="l00028"></a><span class="lineno">   28</span>&#160;        <span class="keywordflow">if</span> (lastPartitionID &lt; 0 || lastPartitionID &gt; <a class="code" href="containers_8h.html#a93d917fabd28d05357cd3096eb43b641">g_config</a>.partitioningInfo.partitionsPerDimension*<a class="code" href="containers_8h.html#a93d917fabd28d05357cd3096eb43b641">g_config</a>.partitioningInfo.partitionsPerDimension -1) {</div>
-<div class="line"><a name="l00029"></a><span class="lineno">   29</span>&#160;            <a class="code" href="namespacelogger.html#a53f34feeb22a94db295af05b8b2aab5c">logger::log_error</a>(DBERR_INVALID_PARTITION, <span class="stringliteral">&quot;Last partition ID calculated wrong: MBR(&quot;</span>, xMin, yMin, xMax, yMax, <span class="stringliteral">&quot;)&quot;</span>);</div>
-<div class="line"><a name="l00030"></a><span class="lineno">   30</span>&#160;            <span class="keywordflow">return</span> DBERR_INVALID_PARTITION;</div>
-<div class="line"><a name="l00031"></a><span class="lineno">   31</span>&#160;        }</div>
-<div class="line"><a name="l00032"></a><span class="lineno">   32</span>&#160; </div>
-<div class="line"><a name="l00033"></a><span class="lineno">   33</span>&#160;        <span class="keywordflow">if</span> (startPartitionID == lastPartitionID) {</div>
-<div class="line"><a name="l00034"></a><span class="lineno">   34</span>&#160;            <span class="comment">// class A only</span></div>
-<div class="line"><a name="l00035"></a><span class="lineno">   35</span>&#160;            twoLayerClasses.emplace_back(CLASS_A);</div>
-<div class="line"><a name="l00036"></a><span class="lineno">   36</span>&#160;            partitionIDs.emplace_back(startPartitionID);</div>
-<div class="line"><a name="l00037"></a><span class="lineno">   37</span>&#160;            <span class="keywordflow">return</span> DBERR_OK;</div>
-<div class="line"><a name="l00038"></a><span class="lineno">   38</span>&#160;        }</div>
-<div class="line"><a name="l00039"></a><span class="lineno">   39</span>&#160;        <span class="comment">// class A</span></div>
-<div class="line"><a name="l00040"></a><span class="lineno">   40</span>&#160;        twoLayerClasses.emplace_back(CLASS_A);</div>
-<div class="line"><a name="l00041"></a><span class="lineno">   41</span>&#160;        partitionIDs.emplace_back(startPartitionID);</div>
-<div class="line"><a name="l00042"></a><span class="lineno">   42</span>&#160;        <span class="comment">// loop overlapping partitions</span></div>
-<div class="line"><a name="l00043"></a><span class="lineno">   43</span>&#160;        <span class="keywordflow">for</span> (<span class="keywordtype">int</span> i=minPartitionX; i&lt;=maxPartitionX; i++) {</div>
-<div class="line"><a name="l00044"></a><span class="lineno">   44</span>&#160;            <span class="keywordflow">if</span> (i != minPartitionX) {</div>
-<div class="line"><a name="l00045"></a><span class="lineno">   45</span>&#160;                <span class="keywordtype">int</span> partitionID = <a class="code" href="containers_8h.html#a93d917fabd28d05357cd3096eb43b641">g_config</a>.partitioningInfo.getCellID(i, minPartitionY);</div>
-<div class="line"><a name="l00046"></a><span class="lineno">   46</span>&#160;                <span class="keywordflow">if</span> (partitionID &lt; 0 || partitionID &gt; <a class="code" href="containers_8h.html#a93d917fabd28d05357cd3096eb43b641">g_config</a>.partitioningInfo.partitionsPerDimension*<a class="code" href="containers_8h.html#a93d917fabd28d05357cd3096eb43b641">g_config</a>.partitioningInfo.partitionsPerDimension -1) {</div>
-<div class="line"><a name="l00047"></a><span class="lineno">   47</span>&#160;                    <a class="code" href="namespacelogger.html#a53f34feeb22a94db295af05b8b2aab5c">logger::log_error</a>(DBERR_INVALID_PARTITION, <span class="stringliteral">&quot;Partition ID calculated wrong&quot;</span>);</div>
-<div class="line"><a name="l00048"></a><span class="lineno">   48</span>&#160;                    <span class="keywordflow">return</span> DBERR_INVALID_PARTITION;</div>
-<div class="line"><a name="l00049"></a><span class="lineno">   49</span>&#160;                }</div>
-<div class="line"><a name="l00050"></a><span class="lineno">   50</span>&#160;                partitionIDs.emplace_back(partitionID);</div>
-<div class="line"><a name="l00051"></a><span class="lineno">   51</span>&#160;                <span class="comment">// class C</span></div>
-<div class="line"><a name="l00052"></a><span class="lineno">   52</span>&#160;                twoLayerClasses.emplace_back(CLASS_C);</div>
-<div class="line"><a name="l00053"></a><span class="lineno">   53</span>&#160;            }</div>
-<div class="line"><a name="l00054"></a><span class="lineno">   54</span>&#160;            <span class="keywordflow">for</span> (<span class="keywordtype">int</span> j=minPartitionY+1; j&lt;=maxPartitionY; j++) {</div>
-<div class="line"><a name="l00055"></a><span class="lineno">   55</span>&#160;                <span class="keywordflow">if</span> (i == minPartitionX) {</div>
-<div class="line"><a name="l00056"></a><span class="lineno">   56</span>&#160;                    <span class="comment">// class B</span></div>
-<div class="line"><a name="l00057"></a><span class="lineno">   57</span>&#160;                    twoLayerClasses.emplace_back(CLASS_B);</div>
-<div class="line"><a name="l00058"></a><span class="lineno">   58</span>&#160;                } <span class="keywordflow">else</span> {</div>
-<div class="line"><a name="l00059"></a><span class="lineno">   59</span>&#160;                    <span class="comment">// class D</span></div>
-<div class="line"><a name="l00060"></a><span class="lineno">   60</span>&#160;                    twoLayerClasses.emplace_back(CLASS_D);</div>
-<div class="line"><a name="l00061"></a><span class="lineno">   61</span>&#160;                }</div>
-<div class="line"><a name="l00062"></a><span class="lineno">   62</span>&#160;                <span class="keywordtype">int</span> partitionID = <a class="code" href="containers_8h.html#a93d917fabd28d05357cd3096eb43b641">g_config</a>.partitioningInfo.getCellID(i, j);</div>
-<div class="line"><a name="l00063"></a><span class="lineno">   63</span>&#160;                <span class="keywordflow">if</span> (partitionID &lt; 0 || partitionID &gt; <a class="code" href="containers_8h.html#a93d917fabd28d05357cd3096eb43b641">g_config</a>.partitioningInfo.partitionsPerDimension*<a class="code" href="containers_8h.html#a93d917fabd28d05357cd3096eb43b641">g_config</a>.partitioningInfo.partitionsPerDimension -1) {</div>
-<div class="line"><a name="l00064"></a><span class="lineno">   64</span>&#160;                    <a class="code" href="namespacelogger.html#a53f34feeb22a94db295af05b8b2aab5c">logger::log_error</a>(DBERR_INVALID_PARTITION, <span class="stringliteral">&quot;Partition ID calculated wrong&quot;</span>);</div>
-<div class="line"><a name="l00065"></a><span class="lineno">   65</span>&#160;                    <span class="keywordflow">return</span> DBERR_INVALID_PARTITION;</div>
-<div class="line"><a name="l00066"></a><span class="lineno">   66</span>&#160;                }</div>
-<div class="line"><a name="l00067"></a><span class="lineno">   67</span>&#160;                partitionIDs.emplace_back(partitionID);</div>
-<div class="line"><a name="l00068"></a><span class="lineno">   68</span>&#160;            }</div>
-<div class="line"><a name="l00069"></a><span class="lineno">   69</span>&#160;        }</div>
-<div class="line"><a name="l00070"></a><span class="lineno">   70</span>&#160;        <span class="keywordflow">return</span> DBERR_OK;</div>
-<div class="line"><a name="l00071"></a><span class="lineno">   71</span>&#160;    }</div>
-<div class="line"><a name="l00072"></a><span class="lineno">   72</span>&#160; </div>
-<div class="line"><a name="l00073"></a><span class="lineno">   73</span>&#160;    <span class="keyword">static</span> DB_STATUS initializeBatchMap(std::unordered_map&lt;int,GeometryBatch&gt; &amp;batchMap) {</div>
-<div class="line"><a name="l00074"></a><span class="lineno">   74</span>&#160;        <span class="comment">// initialize batches</span></div>
-<div class="line"><a name="l00075"></a><span class="lineno">   75</span>&#160;        <span class="keywordflow">for</span> (<span class="keywordtype">int</span> i=0; i&lt;g_world_size; i++) {</div>
-<div class="line"><a name="l00076"></a><span class="lineno">   76</span>&#160;            <a class="code" href="structGeometryBatch.html">GeometryBatch</a> batch;</div>
-<div class="line"><a name="l00077"></a><span class="lineno">   77</span>&#160;            batch.destRank = i;</div>
-<div class="line"><a name="l00078"></a><span class="lineno">   78</span>&#160;            <span class="keywordflow">if</span> (i &gt; 0) {</div>
-<div class="line"><a name="l00079"></a><span class="lineno">   79</span>&#160;                batch.comm = &amp;g_global_comm;</div>
-<div class="line"><a name="l00080"></a><span class="lineno">   80</span>&#160;            } <span class="keywordflow">else</span> {</div>
-<div class="line"><a name="l00081"></a><span class="lineno">   81</span>&#160;                batch.comm = &amp;g_local_comm;</div>
-<div class="line"><a name="l00082"></a><span class="lineno">   82</span>&#160;            }</div>
-<div class="line"><a name="l00083"></a><span class="lineno">   83</span>&#160;            batch.tag = MSG_BATCH_POLYGON;</div>
-<div class="line"><a name="l00084"></a><span class="lineno">   84</span>&#160;            batch.maxObjectCount = <a class="code" href="containers_8h.html#a93d917fabd28d05357cd3096eb43b641">g_config</a>.partitioningInfo.batchSize;</div>
-<div class="line"><a name="l00085"></a><span class="lineno">   85</span>&#160;            batchMap.insert(std::make_pair(i,batch));</div>
-<div class="line"><a name="l00086"></a><span class="lineno">   86</span>&#160;        }</div>
-<div class="line"><a name="l00087"></a><span class="lineno">   87</span>&#160;        <span class="keywordflow">return</span> DBERR_OK;</div>
-<div class="line"><a name="l00088"></a><span class="lineno">   88</span>&#160;    }</div>
-<div class="line"><a name="l00089"></a><span class="lineno">   89</span>&#160; </div>
-<div class="line"><a name="l00102"></a><span class="lineno">  102</span>&#160;    <span class="keyword">static</span> DB_STATUS assignGeometryToBatches(<a class="code" href="structGeometry.html">Geometry</a> &amp;geometry, <span class="keywordtype">double</span> geoXmin, <span class="keywordtype">double</span> geoYmin, <span class="keywordtype">double</span> geoXmax, <span class="keywordtype">double</span> geoYmax, std::unordered_map&lt;int,GeometryBatch&gt; &amp;batchMap, <span class="keywordtype">int</span> &amp;batchesSent) {</div>
-<div class="line"><a name="l00103"></a><span class="lineno">  103</span>&#160;        <span class="comment">// find partition IDs and the class of the geometry in each partition</span></div>
-<div class="line"><a name="l00104"></a><span class="lineno">  104</span>&#160;        std::vector&lt;int&gt; partitionIDs;</div>
-<div class="line"><a name="l00105"></a><span class="lineno">  105</span>&#160;        std::vector&lt;TwoLayerClass&gt; twoLayerClasses;</div>
-<div class="line"><a name="l00106"></a><span class="lineno">  106</span>&#160;        DB_STATUS ret = <a class="code" href="namespacepartitioning.html#aaede65d4c117b91af2b01d18b31a64c8">partitioning::getPartitionsForMBR</a>(geoXmin, geoYmin, geoXmax, geoYmax, partitionIDs, twoLayerClasses);</div>
-<div class="line"><a name="l00107"></a><span class="lineno">  107</span>&#160;        <span class="keywordflow">if</span> (ret != DBERR_OK) {</div>
-<div class="line"><a name="l00108"></a><span class="lineno">  108</span>&#160;            <span class="keywordflow">return</span> ret;</div>
-<div class="line"><a name="l00109"></a><span class="lineno">  109</span>&#160;        }</div>
-<div class="line"><a name="l00110"></a><span class="lineno">  110</span>&#160;        <span class="comment">// set partitions to object</span></div>
-<div class="line"><a name="l00111"></a><span class="lineno">  111</span>&#160;        geometry.setPartitions(partitionIDs, twoLayerClasses);</div>
-<div class="line"><a name="l00112"></a><span class="lineno">  112</span>&#160;        <span class="comment">// find which nodes need to receive this geometry</span></div>
-<div class="line"><a name="l00113"></a><span class="lineno">  113</span>&#160;        std::vector&lt;bool&gt; bitVector(g_world_size, <span class="keyword">false</span>);</div>
-<div class="line"><a name="l00114"></a><span class="lineno">  114</span>&#160;        <span class="comment">// get receiving worker ranks</span></div>
-<div class="line"><a name="l00115"></a><span class="lineno">  115</span>&#160;        <span class="keywordflow">for</span> (<span class="keyword">auto</span> partitionIT = partitionIDs.begin(); partitionIT != partitionIDs.end(); partitionIT++) {</div>
-<div class="line"><a name="l00116"></a><span class="lineno">  116</span>&#160;            <span class="comment">// get node rank</span></div>
-<div class="line"><a name="l00117"></a><span class="lineno">  117</span>&#160;            <span class="keywordtype">int</span> nodeRank = <a class="code" href="containers_8h.html#a93d917fabd28d05357cd3096eb43b641">g_config</a>.partitioningInfo.getNodeRankForPartitionID(*partitionIT);</div>
-<div class="line"><a name="l00118"></a><span class="lineno">  118</span>&#160;            bitVector[nodeRank] = <span class="keyword">true</span>;</div>
-<div class="line"><a name="l00119"></a><span class="lineno">  119</span>&#160;        }</div>
-<div class="line"><a name="l00120"></a><span class="lineno">  120</span>&#160;        <span class="comment">// add to nodes&#39; batches</span></div>
-<div class="line"><a name="l00121"></a><span class="lineno">  121</span>&#160;        <span class="keywordflow">for</span> (<span class="keywordtype">int</span> nodeRank=0; nodeRank&lt;bitVector.size(); nodeRank++) {</div>
-<div class="line"><a name="l00122"></a><span class="lineno">  122</span>&#160;            <span class="keywordflow">if</span> (bitVector.at(nodeRank)) {</div>
-<div class="line"><a name="l00123"></a><span class="lineno">  123</span>&#160;                <span class="comment">// if it has been marked</span></div>
-<div class="line"><a name="l00124"></a><span class="lineno">  124</span>&#160;                <span class="comment">// add geometry to batch</span></div>
-<div class="line"><a name="l00125"></a><span class="lineno">  125</span>&#160;                <span class="keyword">auto</span> it = batchMap.find(nodeRank);</div>
-<div class="line"><a name="l00126"></a><span class="lineno">  126</span>&#160;                <span class="keywordflow">if</span> (it == batchMap.end()) {</div>
-<div class="line"><a name="l00127"></a><span class="lineno">  127</span>&#160;                    <a class="code" href="namespacelogger.html#a53f34feeb22a94db295af05b8b2aab5c">logger::log_error</a>(DBERR_INVALID_PARAMETER, <span class="stringliteral">&quot;Error fetching batch for node&quot;</span>, nodeRank);</div>
-<div class="line"><a name="l00128"></a><span class="lineno">  128</span>&#160;                    <span class="keywordflow">return</span> DBERR_INVALID_PARAMETER;</div>
-<div class="line"><a name="l00129"></a><span class="lineno">  129</span>&#160;                }</div>
-<div class="line"><a name="l00130"></a><span class="lineno">  130</span>&#160;                <a class="code" href="structGeometryBatch.html">GeometryBatch</a> *batch = &amp;it-&gt;second;</div>
-<div class="line"><a name="l00131"></a><span class="lineno">  131</span>&#160; </div>
-<div class="line"><a name="l00132"></a><span class="lineno">  132</span>&#160;                <span class="comment">// make a copy of the geometry, to adjust the partitions specifically for this node</span></div>
-<div class="line"><a name="l00133"></a><span class="lineno">  133</span>&#160;                <span class="comment">// remove any partitions that are irrelevant to this noderank</span></div>
-<div class="line"><a name="l00134"></a><span class="lineno">  134</span>&#160;                <a class="code" href="structGeometry.html">Geometry</a> geometryCopy = geometry;</div>
-<div class="line"><a name="l00135"></a><span class="lineno">  135</span>&#160;                <span class="keywordflow">for</span>(<span class="keyword">auto</span> it = geometryCopy.partitions.begin(); it != geometryCopy.partitions.end();) {</div>
-<div class="line"><a name="l00136"></a><span class="lineno">  136</span>&#160;                    <span class="keywordtype">int</span> assignedNodeRank = <a class="code" href="containers_8h.html#a93d917fabd28d05357cd3096eb43b641">g_config</a>.partitioningInfo.getNodeRankForPartitionID(*it);</div>
-<div class="line"><a name="l00137"></a><span class="lineno">  137</span>&#160;                    <span class="keywordflow">if</span> (assignedNodeRank != nodeRank) {</div>
-<div class="line"><a name="l00138"></a><span class="lineno">  138</span>&#160;                        it = geometryCopy.partitions.erase(it);</div>
-<div class="line"><a name="l00139"></a><span class="lineno">  139</span>&#160;                        it = geometryCopy.partitions.erase(it);</div>
-<div class="line"><a name="l00140"></a><span class="lineno">  140</span>&#160;                        geometryCopy.partitionCount--;</div>
-<div class="line"><a name="l00141"></a><span class="lineno">  141</span>&#160;                    } <span class="keywordflow">else</span> {</div>
-<div class="line"><a name="l00142"></a><span class="lineno">  142</span>&#160;                        it += 2;</div>
-<div class="line"><a name="l00143"></a><span class="lineno">  143</span>&#160;                    }</div>
-<div class="line"><a name="l00144"></a><span class="lineno">  144</span>&#160;                }</div>
-<div class="line"><a name="l00145"></a><span class="lineno">  145</span>&#160;                <span class="comment">// add moddified geometry to this batch</span></div>
-<div class="line"><a name="l00146"></a><span class="lineno">  146</span>&#160;                batch-&gt;addGeometryToBatch(geometryCopy);</div>
-<div class="line"><a name="l00147"></a><span class="lineno">  147</span>&#160;                <span class="comment">// if batch is full, send and reset</span></div>
-<div class="line"><a name="l00148"></a><span class="lineno">  148</span>&#160;                <span class="keywordflow">if</span> (batch-&gt;objectCount &gt;= batch-&gt;maxObjectCount) {</div>
-<div class="line"><a name="l00149"></a><span class="lineno">  149</span>&#160;                    ret = <a class="code" href="namespacecomm_1_1controller.html#acb873f6f6e22c38010feb19302b3fa00">comm::controller::serializeAndSendGeometryBatch</a>(batch);</div>
-<div class="line"><a name="l00150"></a><span class="lineno">  150</span>&#160;                    <span class="keywordflow">if</span> (ret != DBERR_OK) {</div>
-<div class="line"><a name="l00151"></a><span class="lineno">  151</span>&#160;                        <span class="keywordflow">return</span> ret;</div>
-<div class="line"><a name="l00152"></a><span class="lineno">  152</span>&#160;                    }</div>
-<div class="line"><a name="l00153"></a><span class="lineno">  153</span>&#160;                    <span class="comment">// reset</span></div>
-<div class="line"><a name="l00154"></a><span class="lineno">  154</span>&#160;                    batch-&gt;clear();</div>
-<div class="line"><a name="l00155"></a><span class="lineno">  155</span>&#160;                    <span class="comment">// count batch </span></div>
-<div class="line"><a name="l00156"></a><span class="lineno">  156</span>&#160;                    batchesSent += 1;</div>
-<div class="line"><a name="l00157"></a><span class="lineno">  157</span>&#160;                }</div>
-<div class="line"><a name="l00158"></a><span class="lineno">  158</span>&#160; </div>
-<div class="line"><a name="l00159"></a><span class="lineno">  159</span>&#160;            }</div>
-<div class="line"><a name="l00160"></a><span class="lineno">  160</span>&#160;        }</div>
-<div class="line"><a name="l00161"></a><span class="lineno">  161</span>&#160;        <span class="keywordflow">return</span> ret;</div>
-<div class="line"><a name="l00162"></a><span class="lineno">  162</span>&#160;    }</div>
-<div class="line"><a name="l00163"></a><span class="lineno">  163</span>&#160; </div>
-<div class="line"><a name="l00164"></a><span class="lineno"><a class="line" href="namespacepartitioning.html#a873e77ab57aa73ee78177a287a686300">  164</a></span>&#160;    DB_STATUS <a class="code" href="namespacepartitioning.html#a873e77ab57aa73ee78177a287a686300">calculateCSVDatasetDataspaceBounds</a>(<a class="code" href="structDataset.html">Dataset</a> &amp;dataset) {</div>
-<div class="line"><a name="l00165"></a><span class="lineno">  165</span>&#160;        DB_STATUS ret = DBERR_OK;</div>
-<div class="line"><a name="l00166"></a><span class="lineno">  166</span>&#160;        <span class="comment">// open file</span></div>
-<div class="line"><a name="l00167"></a><span class="lineno">  167</span>&#160;        std::ifstream fin(dataset.path);</div>
-<div class="line"><a name="l00168"></a><span class="lineno">  168</span>&#160;        <span class="keywordflow">if</span> (!fin.is_open()) {</div>
-<div class="line"><a name="l00169"></a><span class="lineno">  169</span>&#160;            <a class="code" href="namespacelogger.html#a53f34feeb22a94db295af05b8b2aab5c">logger::log_error</a>(DBERR_MISSING_FILE, <span class="stringliteral">&quot;Failed to open dataset path:&quot;</span>, dataset.path);</div>
-<div class="line"><a name="l00170"></a><span class="lineno">  170</span>&#160;            <span class="keywordflow">return</span> DBERR_MISSING_FILE;</div>
-<div class="line"><a name="l00171"></a><span class="lineno">  171</span>&#160;        }</div>
-<div class="line"><a name="l00172"></a><span class="lineno">  172</span>&#160;        std::string line;</div>
-<div class="line"><a name="l00173"></a><span class="lineno">  173</span>&#160;        <span class="comment">// read total objects (first line of file)</span></div>
-<div class="line"><a name="l00174"></a><span class="lineno">  174</span>&#160;        std::getline(fin, line);</div>
-<div class="line"><a name="l00175"></a><span class="lineno">  175</span>&#160;        fin.close();</div>
-<div class="line"><a name="l00176"></a><span class="lineno">  176</span>&#160;        <span class="keywordtype">size_t</span> objectCount = (size_t) std::stoull(line);</div>
-<div class="line"><a name="l00177"></a><span class="lineno">  177</span>&#160;        <span class="comment">// dataset global bounds</span></div>
-<div class="line"><a name="l00178"></a><span class="lineno">  178</span>&#160;        <span class="keywordtype">double</span> global_xMin = std::numeric_limits&lt;int&gt;::max();</div>
-<div class="line"><a name="l00179"></a><span class="lineno">  179</span>&#160;        <span class="keywordtype">double</span> global_yMin = std::numeric_limits&lt;int&gt;::max();</div>
-<div class="line"><a name="l00180"></a><span class="lineno">  180</span>&#160;        <span class="keywordtype">double</span> global_xMax = -std::numeric_limits&lt;int&gt;::max();</div>
-<div class="line"><a name="l00181"></a><span class="lineno">  181</span>&#160;        <span class="keywordtype">double</span> global_yMax = -std::numeric_limits&lt;int&gt;::max();</div>
-<div class="line"><a name="l00182"></a><span class="lineno">  182</span>&#160;        <span class="comment">// spawn all available threads (processors)</span></div>
-<div class="line"><a name="l00183"></a><span class="lineno">  183</span>&#160;<span class="preprocessor">        #pragma omp parallel firstprivate(line, objectCount) reduction(min:global_xMin) reduction(min:global_yMin) reduction(max:global_xMax)  reduction(max:global_yMax)</span></div>
-<div class="line"><a name="l00184"></a><span class="lineno">  184</span>&#160;        {</div>
-<div class="line"><a name="l00185"></a><span class="lineno">  185</span>&#160;            <span class="keywordtype">size_t</span> recID;</div>
-<div class="line"><a name="l00186"></a><span class="lineno">  186</span>&#160;            <span class="keywordtype">double</span> x,y;</div>
-<div class="line"><a name="l00187"></a><span class="lineno">  187</span>&#160;            DB_STATUS local_ret = DBERR_OK;</div>
-<div class="line"><a name="l00188"></a><span class="lineno">  188</span>&#160;            <span class="keywordtype">int</span> tid = omp_get_thread_num();</div>
-<div class="line"><a name="l00189"></a><span class="lineno">  189</span>&#160;            <span class="keywordtype">int</span> totalThreads = omp_get_num_threads();</div>
-<div class="line"><a name="l00190"></a><span class="lineno">  190</span>&#160;            <span class="comment">// calculate which lines this thread will handle</span></div>
-<div class="line"><a name="l00191"></a><span class="lineno">  191</span>&#160;            <span class="keywordtype">size_t</span> linesPerThread = (objectCount / totalThreads);</div>
-<div class="line"><a name="l00192"></a><span class="lineno">  192</span>&#160;            <span class="keywordtype">size_t</span> fromLine = 1 + (tid * linesPerThread);          <span class="comment">// first line is object count</span></div>
-<div class="line"><a name="l00193"></a><span class="lineno">  193</span>&#160;            <span class="keywordtype">size_t</span> toLine = 1 + ((tid + 1) * linesPerThread);    <span class="comment">// exclusive</span></div>
-<div class="line"><a name="l00194"></a><span class="lineno">  194</span>&#160;            <span class="keywordflow">if</span> (tid == totalThreads - 1) {</div>
-<div class="line"><a name="l00195"></a><span class="lineno">  195</span>&#160;                toLine = objectCount+1;</div>
-<div class="line"><a name="l00196"></a><span class="lineno">  196</span>&#160;            }</div>
-<div class="line"><a name="l00197"></a><span class="lineno">  197</span>&#160;            <span class="comment">// open file</span></div>
-<div class="line"><a name="l00198"></a><span class="lineno">  198</span>&#160;            std::ifstream fin(dataset.path);</div>
-<div class="line"><a name="l00199"></a><span class="lineno">  199</span>&#160;            <span class="keywordflow">if</span> (!fin.is_open()) {</div>
-<div class="line"><a name="l00200"></a><span class="lineno">  200</span>&#160;                <a class="code" href="namespacelogger.html#a53f34feeb22a94db295af05b8b2aab5c">logger::log_error</a>(DBERR_MISSING_FILE, <span class="stringliteral">&quot;Failed to open dataset path:&quot;</span>, dataset.path);</div>
-<div class="line"><a name="l00201"></a><span class="lineno">  201</span>&#160;<span class="preprocessor">                #pragma omp cancel parallel</span></div>
-<div class="line"><a name="l00202"></a><span class="lineno">  202</span>&#160;                ret = DBERR_MISSING_FILE;</div>
-<div class="line"><a name="l00203"></a><span class="lineno">  203</span>&#160;            }</div>
-<div class="line"><a name="l00204"></a><span class="lineno">  204</span>&#160;            <span class="comment">// jump to start line</span></div>
-<div class="line"><a name="l00205"></a><span class="lineno">  205</span>&#160;            <span class="keywordflow">for</span> (<span class="keywordtype">size_t</span> i=0; i&lt;fromLine; i++) {</div>
-<div class="line"><a name="l00206"></a><span class="lineno">  206</span>&#160;                fin.ignore(std::numeric_limits&lt;std::streamsize&gt;::max(), <span class="charliteral">&#39;\n&#39;</span>);</div>
-<div class="line"><a name="l00207"></a><span class="lineno">  207</span>&#160;            }</div>
-<div class="line"><a name="l00208"></a><span class="lineno">  208</span>&#160;            <span class="comment">// loop</span></div>
-<div class="line"><a name="l00209"></a><span class="lineno">  209</span>&#160;            <span class="keywordtype">size_t</span> currentLine = fromLine;</div>
-<div class="line"><a name="l00210"></a><span class="lineno">  210</span>&#160;            std::string token;</div>
-<div class="line"><a name="l00211"></a><span class="lineno">  211</span>&#160;            <span class="keywordflow">while</span> (<span class="keyword">true</span>) {</div>
-<div class="line"><a name="l00212"></a><span class="lineno">  212</span>&#160;                <span class="comment">// next object</span></div>
-<div class="line"><a name="l00213"></a><span class="lineno">  213</span>&#160;                std::getline(fin, line);                </div>
-<div class="line"><a name="l00214"></a><span class="lineno">  214</span>&#160;                std::stringstream ss(line);</div>
-<div class="line"><a name="l00215"></a><span class="lineno">  215</span>&#160;                <span class="comment">// recID</span></div>
-<div class="line"><a name="l00216"></a><span class="lineno">  216</span>&#160;                std::getline(ss, token, <span class="charliteral">&#39;,&#39;</span>);</div>
-<div class="line"><a name="l00217"></a><span class="lineno">  217</span>&#160;                recID = (size_t) std::stoull(token);</div>
-<div class="line"><a name="l00218"></a><span class="lineno">  218</span>&#160;                <span class="comment">// Read the coords x,y</span></div>
-<div class="line"><a name="l00219"></a><span class="lineno">  219</span>&#160;                <span class="keywordflow">while</span> (std::getline(ss, token, <span class="charliteral">&#39;,&#39;</span>)) {</div>
-<div class="line"><a name="l00220"></a><span class="lineno">  220</span>&#160;                    std::stringstream coordStream(token);</div>
-<div class="line"><a name="l00221"></a><span class="lineno">  221</span>&#160;                    <span class="comment">// Split the x and y values</span></div>
-<div class="line"><a name="l00222"></a><span class="lineno">  222</span>&#160;                    std::getline(coordStream, token, <span class="charliteral">&#39; &#39;</span>);</div>
-<div class="line"><a name="l00223"></a><span class="lineno">  223</span>&#160;                    x = std::stof(token);</div>
-<div class="line"><a name="l00224"></a><span class="lineno">  224</span>&#160;                    std::getline(coordStream, token, <span class="charliteral">&#39; &#39;</span>);</div>
-<div class="line"><a name="l00225"></a><span class="lineno">  225</span>&#160;                    y = std::stof(token);</div>
-<div class="line"><a name="l00226"></a><span class="lineno">  226</span>&#160;                    <span class="comment">// bounds</span></div>
-<div class="line"><a name="l00227"></a><span class="lineno">  227</span>&#160;                    global_xMin = std::min(global_xMin, x);</div>
-<div class="line"><a name="l00228"></a><span class="lineno">  228</span>&#160;                    global_yMin = std::min(global_yMin, y);</div>
-<div class="line"><a name="l00229"></a><span class="lineno">  229</span>&#160;                    global_xMax = std::max(global_xMax, x);</div>
-<div class="line"><a name="l00230"></a><span class="lineno">  230</span>&#160;                    global_yMax = std::max(global_yMax, y);</div>
-<div class="line"><a name="l00231"></a><span class="lineno">  231</span>&#160;                }</div>
-<div class="line"><a name="l00232"></a><span class="lineno">  232</span>&#160;                currentLine += 1;</div>
-<div class="line"><a name="l00233"></a><span class="lineno">  233</span>&#160;                <span class="keywordflow">if</span> (currentLine &gt;= toLine) {</div>
-<div class="line"><a name="l00234"></a><span class="lineno">  234</span>&#160;                    <span class="comment">// the last line for this thread has been read</span></div>
-<div class="line"><a name="l00235"></a><span class="lineno">  235</span>&#160;                    <span class="keywordflow">break</span>;</div>
-<div class="line"><a name="l00236"></a><span class="lineno">  236</span>&#160;                }</div>
-<div class="line"><a name="l00237"></a><span class="lineno">  237</span>&#160;            }</div>
-<div class="line"><a name="l00238"></a><span class="lineno">  238</span>&#160;            <span class="comment">// close file</span></div>
-<div class="line"><a name="l00239"></a><span class="lineno">  239</span>&#160;            fin.close();</div>
-<div class="line"><a name="l00240"></a><span class="lineno">  240</span>&#160;        }</div>
-<div class="line"><a name="l00241"></a><span class="lineno">  241</span>&#160;        <span class="keywordflow">if</span> (ret != DBERR_OK) {</div>
-<div class="line"><a name="l00242"></a><span class="lineno">  242</span>&#160;            <span class="keywordflow">return</span> ret;</div>
-<div class="line"><a name="l00243"></a><span class="lineno">  243</span>&#160;        }</div>
-<div class="line"><a name="l00244"></a><span class="lineno">  244</span>&#160;        <span class="comment">// set extent</span></div>
-<div class="line"><a name="l00245"></a><span class="lineno">  245</span>&#160;        dataset.dataspaceInfo.set(global_xMin, global_yMin, global_xMax, global_yMax);</div>
-<div class="line"><a name="l00246"></a><span class="lineno">  246</span>&#160;        <span class="keywordflow">return</span> ret;</div>
-<div class="line"><a name="l00247"></a><span class="lineno">  247</span>&#160;    }</div>
-<div class="line"><a name="l00248"></a><span class="lineno">  248</span>&#160; </div>
-<div class="line"><a name="l00249"></a><span class="lineno">  249</span>&#160;    <span class="keyword">static</span> DB_STATUS loadCSVDatasetAndPartition(std::string &amp;datasetPath) {</div>
-<div class="line"><a name="l00250"></a><span class="lineno">  250</span>&#160;        DB_STATUS ret = DBERR_OK;</div>
-<div class="line"><a name="l00251"></a><span class="lineno">  251</span>&#160;        <span class="comment">// initialize batches</span></div>
-<div class="line"><a name="l00252"></a><span class="lineno">  252</span>&#160;        std::unordered_map&lt;int,GeometryBatch&gt; batchMap;</div>
-<div class="line"><a name="l00253"></a><span class="lineno">  253</span>&#160;        ret = initializeBatchMap(batchMap);</div>
-<div class="line"><a name="l00254"></a><span class="lineno">  254</span>&#160;        <span class="keywordflow">if</span> (ret != DBERR_OK) {</div>
-<div class="line"><a name="l00255"></a><span class="lineno">  255</span>&#160;            <span class="keywordflow">return</span> ret;</div>
-<div class="line"><a name="l00256"></a><span class="lineno">  256</span>&#160;        }</div>
-<div class="line"><a name="l00257"></a><span class="lineno">  257</span>&#160;        <span class="comment">// open file</span></div>
-<div class="line"><a name="l00258"></a><span class="lineno">  258</span>&#160;        std::ifstream fin(datasetPath);</div>
-<div class="line"><a name="l00259"></a><span class="lineno">  259</span>&#160;        <span class="keywordflow">if</span> (!fin.is_open()) {</div>
-<div class="line"><a name="l00260"></a><span class="lineno">  260</span>&#160;            <a class="code" href="namespacelogger.html#a53f34feeb22a94db295af05b8b2aab5c">logger::log_error</a>(DBERR_MISSING_FILE, <span class="stringliteral">&quot;Failed to open dataset path:&quot;</span>, datasetPath);</div>
-<div class="line"><a name="l00261"></a><span class="lineno">  261</span>&#160;            <span class="keywordflow">return</span> DBERR_MISSING_FILE;</div>
-<div class="line"><a name="l00262"></a><span class="lineno">  262</span>&#160;        }</div>
-<div class="line"><a name="l00263"></a><span class="lineno">  263</span>&#160;        std::string line;</div>
-<div class="line"><a name="l00264"></a><span class="lineno">  264</span>&#160;        <span class="comment">// read total objects (first line of file)</span></div>
-<div class="line"><a name="l00265"></a><span class="lineno">  265</span>&#160;        std::getline(fin, line);</div>
-<div class="line"><a name="l00266"></a><span class="lineno">  266</span>&#160;        fin.close();</div>
-<div class="line"><a name="l00267"></a><span class="lineno">  267</span>&#160;        <span class="keywordtype">size_t</span> objectCount = (size_t) std::stoull(line);</div>
-<div class="line"><a name="l00268"></a><span class="lineno">  268</span>&#160;        <a class="code" href="namespacelogger.html#a3ea3081359ed78462f4100ac868c5771">logger::log_task</a>(<span class="stringliteral">&quot;Partitioning&quot;</span>, objectCount, <span class="stringliteral">&quot;objects...&quot;</span>);</div>
-<div class="line"><a name="l00269"></a><span class="lineno">  269</span>&#160;        <span class="comment">// count how many batches have been sent in total</span></div>
-<div class="line"><a name="l00270"></a><span class="lineno">  270</span>&#160;        <span class="keywordtype">int</span> batchesSent = 0;</div>
-<div class="line"><a name="l00271"></a><span class="lineno">  271</span>&#160;<span class="preprocessor">        #pragma omp parallel firstprivate(batchMap, line, objectCount) reduction(+:batchesSent)</span></div>
-<div class="line"><a name="l00272"></a><span class="lineno">  272</span>&#160;        {</div>
-<div class="line"><a name="l00273"></a><span class="lineno">  273</span>&#160;            <span class="keywordtype">size_t</span> recID;</div>
-<div class="line"><a name="l00274"></a><span class="lineno">  274</span>&#160;            <span class="keywordtype">int</span> partitionID;</div>
-<div class="line"><a name="l00275"></a><span class="lineno">  275</span>&#160;            <span class="keywordtype">int</span> vertexCount;</div>
-<div class="line"><a name="l00276"></a><span class="lineno">  276</span>&#160;            <span class="keywordtype">double</span> x,y;</div>
-<div class="line"><a name="l00277"></a><span class="lineno">  277</span>&#160;            <span class="keywordtype">double</span> xMin, yMin, xMax, yMax;</div>
-<div class="line"><a name="l00278"></a><span class="lineno">  278</span>&#160;            DB_STATUS local_ret = DBERR_OK;</div>
-<div class="line"><a name="l00279"></a><span class="lineno">  279</span>&#160;            <span class="keywordtype">int</span> tid = omp_get_thread_num();</div>
-<div class="line"><a name="l00280"></a><span class="lineno">  280</span>&#160;            <span class="keywordtype">int</span> totalThreads = omp_get_num_threads();</div>
-<div class="line"><a name="l00281"></a><span class="lineno">  281</span>&#160;            <span class="comment">// calculate which lines this thread will handle</span></div>
-<div class="line"><a name="l00282"></a><span class="lineno">  282</span>&#160;            <span class="keywordtype">size_t</span> linesPerThread = (objectCount / totalThreads);</div>
-<div class="line"><a name="l00283"></a><span class="lineno">  283</span>&#160;            <span class="keywordtype">size_t</span> fromLine = 1 + (tid * linesPerThread);          <span class="comment">// first line is object count</span></div>
-<div class="line"><a name="l00284"></a><span class="lineno">  284</span>&#160;            <span class="keywordtype">size_t</span> toLine = 1 + ((tid + 1) * linesPerThread);    <span class="comment">// exclusive</span></div>
-<div class="line"><a name="l00285"></a><span class="lineno">  285</span>&#160;            <span class="keywordflow">if</span> (tid == totalThreads - 1) {</div>
-<div class="line"><a name="l00286"></a><span class="lineno">  286</span>&#160;                toLine = objectCount+1;</div>
-<div class="line"><a name="l00287"></a><span class="lineno">  287</span>&#160;            }</div>
-<div class="line"><a name="l00288"></a><span class="lineno">  288</span>&#160;            <span class="comment">// open file</span></div>
-<div class="line"><a name="l00289"></a><span class="lineno">  289</span>&#160;            std::ifstream fin(datasetPath);</div>
-<div class="line"><a name="l00290"></a><span class="lineno">  290</span>&#160;            <span class="keywordflow">if</span> (!fin.is_open()) {</div>
-<div class="line"><a name="l00291"></a><span class="lineno">  291</span>&#160;                <a class="code" href="namespacelogger.html#a53f34feeb22a94db295af05b8b2aab5c">logger::log_error</a>(DBERR_MISSING_FILE, <span class="stringliteral">&quot;Failed to open dataset path:&quot;</span>, datasetPath);</div>
-<div class="line"><a name="l00292"></a><span class="lineno">  292</span>&#160;<span class="preprocessor">                #pragma omp cancel parallel</span></div>
-<div class="line"><a name="l00293"></a><span class="lineno">  293</span>&#160;                ret = DBERR_MISSING_FILE;</div>
-<div class="line"><a name="l00294"></a><span class="lineno">  294</span>&#160;            }</div>
-<div class="line"><a name="l00295"></a><span class="lineno">  295</span>&#160;            <span class="comment">// jump to start line</span></div>
-<div class="line"><a name="l00296"></a><span class="lineno">  296</span>&#160;            <span class="keywordflow">for</span> (<span class="keywordtype">size_t</span> i=0; i&lt;fromLine; i++) {</div>
-<div class="line"><a name="l00297"></a><span class="lineno">  297</span>&#160;                fin.ignore(std::numeric_limits&lt;std::streamsize&gt;::max(), <span class="charliteral">&#39;\n&#39;</span>);</div>
-<div class="line"><a name="l00298"></a><span class="lineno">  298</span>&#160;            }</div>
-<div class="line"><a name="l00299"></a><span class="lineno">  299</span>&#160;            <span class="comment">// loop</span></div>
-<div class="line"><a name="l00300"></a><span class="lineno">  300</span>&#160;            <span class="keywordtype">size_t</span> currentLine = fromLine;</div>
-<div class="line"><a name="l00301"></a><span class="lineno">  301</span>&#160;            std::string token;</div>
-<div class="line"><a name="l00302"></a><span class="lineno">  302</span>&#160;            <span class="keywordflow">while</span> (<span class="keyword">true</span>) {</div>
-<div class="line"><a name="l00303"></a><span class="lineno">  303</span>&#160;                <span class="comment">// next object</span></div>
-<div class="line"><a name="l00304"></a><span class="lineno">  304</span>&#160;                std::getline(fin, line);                </div>
-<div class="line"><a name="l00305"></a><span class="lineno">  305</span>&#160;                std::stringstream ss(line);</div>
-<div class="line"><a name="l00306"></a><span class="lineno">  306</span>&#160;                xMin = std::numeric_limits&lt;int&gt;::max();</div>
-<div class="line"><a name="l00307"></a><span class="lineno">  307</span>&#160;                yMin = std::numeric_limits&lt;int&gt;::max();</div>
-<div class="line"><a name="l00308"></a><span class="lineno">  308</span>&#160;                xMax = -std::numeric_limits&lt;int&gt;::max();</div>
-<div class="line"><a name="l00309"></a><span class="lineno">  309</span>&#160;                yMax = -std::numeric_limits&lt;int&gt;::max();</div>
-<div class="line"><a name="l00310"></a><span class="lineno">  310</span>&#160;                <span class="comment">// recID</span></div>
-<div class="line"><a name="l00311"></a><span class="lineno">  311</span>&#160;                std::getline(ss, token, <span class="charliteral">&#39;,&#39;</span>);</div>
-<div class="line"><a name="l00312"></a><span class="lineno">  312</span>&#160;                recID = (size_t) std::stoull(token);</div>
-<div class="line"><a name="l00313"></a><span class="lineno">  313</span>&#160;                <span class="comment">// Read the coords x,y</span></div>
-<div class="line"><a name="l00314"></a><span class="lineno">  314</span>&#160;                vertexCount = 0;</div>
-<div class="line"><a name="l00315"></a><span class="lineno">  315</span>&#160;                std::vector&lt;double&gt; coords;</div>
-<div class="line"><a name="l00316"></a><span class="lineno">  316</span>&#160;                <span class="keywordflow">while</span> (std::getline(ss, token, <span class="charliteral">&#39;,&#39;</span>)) {</div>
-<div class="line"><a name="l00317"></a><span class="lineno">  317</span>&#160;                    std::stringstream coordStream(token);</div>
-<div class="line"><a name="l00318"></a><span class="lineno">  318</span>&#160;                    <span class="comment">// Split the x and y values</span></div>
-<div class="line"><a name="l00319"></a><span class="lineno">  319</span>&#160;                    std::getline(coordStream, token, <span class="charliteral">&#39; &#39;</span>);</div>
-<div class="line"><a name="l00320"></a><span class="lineno">  320</span>&#160;                    x = std::stof(token);</div>
-<div class="line"><a name="l00321"></a><span class="lineno">  321</span>&#160;                    std::getline(coordStream, token, <span class="charliteral">&#39; &#39;</span>);</div>
-<div class="line"><a name="l00322"></a><span class="lineno">  322</span>&#160;                    y = std::stof(token);</div>
-<div class="line"><a name="l00323"></a><span class="lineno">  323</span>&#160;                    <span class="comment">// store</span></div>
-<div class="line"><a name="l00324"></a><span class="lineno">  324</span>&#160;                    coords.emplace_back(x);</div>
-<div class="line"><a name="l00325"></a><span class="lineno">  325</span>&#160;                    coords.emplace_back(y);</div>
-<div class="line"><a name="l00326"></a><span class="lineno">  326</span>&#160;                    <span class="comment">// MBR</span></div>
-<div class="line"><a name="l00327"></a><span class="lineno">  327</span>&#160;                    xMin = std::min(xMin, x);</div>
-<div class="line"><a name="l00328"></a><span class="lineno">  328</span>&#160;                    yMin = std::min(yMin, y);</div>
-<div class="line"><a name="l00329"></a><span class="lineno">  329</span>&#160;                    xMax = std::max(xMax, x);</div>
-<div class="line"><a name="l00330"></a><span class="lineno">  330</span>&#160;                    yMax = std::max(yMax, y);</div>
-<div class="line"><a name="l00331"></a><span class="lineno">  331</span>&#160;                    vertexCount += 1;</div>
-<div class="line"><a name="l00332"></a><span class="lineno">  332</span>&#160;                }</div>
-<div class="line"><a name="l00333"></a><span class="lineno">  333</span>&#160;                <span class="comment">// create serializable object</span></div>
-<div class="line"><a name="l00334"></a><span class="lineno">  334</span>&#160;                <a class="code" href="structGeometry.html">Geometry</a> geometry(recID, vertexCount, coords);</div>
-<div class="line"><a name="l00335"></a><span class="lineno">  335</span>&#160;                <span class="comment">// assign to appropriate batches</span></div>
-<div class="line"><a name="l00336"></a><span class="lineno">  336</span>&#160;                local_ret = assignGeometryToBatches(geometry, xMin, yMin, xMax, yMax, batchMap, batchesSent);</div>
-<div class="line"><a name="l00337"></a><span class="lineno">  337</span>&#160;                <span class="keywordflow">if</span> (ret != DBERR_OK) {</div>
-<div class="line"><a name="l00338"></a><span class="lineno">  338</span>&#160;<span class="preprocessor">                    #pragma omp cancel parallel</span></div>
-<div class="line"><a name="l00339"></a><span class="lineno">  339</span>&#160;                    ret = local_ret;</div>
-<div class="line"><a name="l00340"></a><span class="lineno">  340</span>&#160;                    <span class="keywordflow">break</span>;</div>
-<div class="line"><a name="l00341"></a><span class="lineno">  341</span>&#160;                }</div>
-<div class="line"><a name="l00342"></a><span class="lineno">  342</span>&#160;                currentLine += 1;</div>
-<div class="line"><a name="l00343"></a><span class="lineno">  343</span>&#160;                <span class="keywordflow">if</span> (currentLine &gt;= toLine) {</div>
-<div class="line"><a name="l00344"></a><span class="lineno">  344</span>&#160;                    <span class="comment">// the last line for this thread has been read</span></div>
-<div class="line"><a name="l00345"></a><span class="lineno">  345</span>&#160;                    <span class="keywordflow">break</span>;</div>
-<div class="line"><a name="l00346"></a><span class="lineno">  346</span>&#160;                }</div>
-<div class="line"><a name="l00347"></a><span class="lineno">  347</span>&#160;            }</div>
-<div class="line"><a name="l00348"></a><span class="lineno">  348</span>&#160;            <span class="comment">// send any remaining non-empty batches</span></div>
-<div class="line"><a name="l00349"></a><span class="lineno">  349</span>&#160;            <span class="keywordflow">for</span> (<span class="keywordtype">int</span> i=0; i&lt;g_world_size; i++) {</div>
-<div class="line"><a name="l00350"></a><span class="lineno">  350</span>&#160;                <span class="comment">// fetch batch</span></div>
-<div class="line"><a name="l00351"></a><span class="lineno">  351</span>&#160;                <span class="keyword">auto</span> it = batchMap.find(i);</div>
-<div class="line"><a name="l00352"></a><span class="lineno">  352</span>&#160;                <span class="keywordflow">if</span> (it == batchMap.end()) {</div>
-<div class="line"><a name="l00353"></a><span class="lineno">  353</span>&#160;                    <a class="code" href="namespacelogger.html#a53f34feeb22a94db295af05b8b2aab5c">logger::log_error</a>(DBERR_INVALID_PARAMETER, <span class="stringliteral">&quot;Error fetching batch for node&quot;</span>, i);</div>
-<div class="line"><a name="l00354"></a><span class="lineno">  354</span>&#160;<span class="preprocessor">                    #pragma omp cancel parallel</span></div>
-<div class="line"><a name="l00355"></a><span class="lineno">  355</span>&#160;                    ret = DBERR_INVALID_PARAMETER;</div>
-<div class="line"><a name="l00356"></a><span class="lineno">  356</span>&#160;                }</div>
-<div class="line"><a name="l00357"></a><span class="lineno">  357</span>&#160;                <a class="code" href="structGeometryBatch.html">GeometryBatch</a> *batch = &amp;it-&gt;second;</div>
-<div class="line"><a name="l00358"></a><span class="lineno">  358</span>&#160;                <span class="keywordflow">if</span> (batch-&gt;objectCount &gt; 0) {</div>
-<div class="line"><a name="l00359"></a><span class="lineno">  359</span>&#160;                    local_ret = <a class="code" href="namespacecomm_1_1controller.html#acb873f6f6e22c38010feb19302b3fa00">comm::controller::serializeAndSendGeometryBatch</a>(batch);</div>
-<div class="line"><a name="l00360"></a><span class="lineno">  360</span>&#160;                    <span class="keywordflow">if</span> (local_ret != DBERR_OK) {</div>
-<div class="line"><a name="l00361"></a><span class="lineno">  361</span>&#160;<span class="preprocessor">                        #pragma omp cancel parallel</span></div>
-<div class="line"><a name="l00362"></a><span class="lineno">  362</span>&#160;                        ret = local_ret;</div>
-<div class="line"><a name="l00363"></a><span class="lineno">  363</span>&#160;                        <span class="keywordflow">break</span>;</div>
-<div class="line"><a name="l00364"></a><span class="lineno">  364</span>&#160;                    }</div>
-<div class="line"><a name="l00365"></a><span class="lineno">  365</span>&#160;                    <span class="comment">// empty the batch</span></div>
-<div class="line"><a name="l00366"></a><span class="lineno">  366</span>&#160;                    batch-&gt;clear();</div>
-<div class="line"><a name="l00367"></a><span class="lineno">  367</span>&#160;                    <span class="comment">// count the batch</span></div>
-<div class="line"><a name="l00368"></a><span class="lineno">  368</span>&#160;                    batchesSent += 1;</div>
-<div class="line"><a name="l00369"></a><span class="lineno">  369</span>&#160;                }</div>
-<div class="line"><a name="l00370"></a><span class="lineno">  370</span>&#160;            }</div>
-<div class="line"><a name="l00371"></a><span class="lineno">  371</span>&#160;            <span class="comment">// close file</span></div>
-<div class="line"><a name="l00372"></a><span class="lineno">  372</span>&#160;            fin.close();</div>
-<div class="line"><a name="l00373"></a><span class="lineno">  373</span>&#160;        }</div>
-<div class="line"><a name="l00374"></a><span class="lineno">  374</span>&#160;        <span class="comment">// check if it finished successfully</span></div>
-<div class="line"><a name="l00375"></a><span class="lineno">  375</span>&#160;        <span class="keywordflow">if</span> (ret != DBERR_OK) {</div>
-<div class="line"><a name="l00376"></a><span class="lineno">  376</span>&#160;            <span class="keywordflow">return</span> ret;</div>
-<div class="line"><a name="l00377"></a><span class="lineno">  377</span>&#160;        }</div>
-<div class="line"><a name="l00378"></a><span class="lineno">  378</span>&#160;        <span class="comment">// send an empty pack to each worker to signal the end of the partitioning for this dataset</span></div>
-<div class="line"><a name="l00379"></a><span class="lineno">  379</span>&#160;        <span class="keywordflow">for</span> (<span class="keywordtype">int</span> i=0; i&lt;g_world_size; i++) {</div>
-<div class="line"><a name="l00380"></a><span class="lineno">  380</span>&#160;            <span class="comment">// fetch batch (it is guaranteed to be empty)</span></div>
-<div class="line"><a name="l00381"></a><span class="lineno">  381</span>&#160;            <span class="keyword">auto</span> it = batchMap.find(i);</div>
-<div class="line"><a name="l00382"></a><span class="lineno">  382</span>&#160;            <span class="keywordflow">if</span> (it == batchMap.end()) {</div>
-<div class="line"><a name="l00383"></a><span class="lineno">  383</span>&#160;                <a class="code" href="namespacelogger.html#a53f34feeb22a94db295af05b8b2aab5c">logger::log_error</a>(DBERR_INVALID_PARAMETER, <span class="stringliteral">&quot;Error fetching batch for node&quot;</span>, i);</div>
-<div class="line"><a name="l00384"></a><span class="lineno">  384</span>&#160;                <span class="keywordflow">return</span> DBERR_INVALID_PARAMETER;</div>
-<div class="line"><a name="l00385"></a><span class="lineno">  385</span>&#160;            }</div>
-<div class="line"><a name="l00386"></a><span class="lineno">  386</span>&#160;            <a class="code" href="structGeometryBatch.html">GeometryBatch</a> *batch = &amp;it-&gt;second;</div>
-<div class="line"><a name="l00387"></a><span class="lineno">  387</span>&#160;            ret = <a class="code" href="namespacecomm_1_1controller.html#acb873f6f6e22c38010feb19302b3fa00">comm::controller::serializeAndSendGeometryBatch</a>(batch);</div>
-<div class="line"><a name="l00388"></a><span class="lineno">  388</span>&#160;            <span class="keywordflow">if</span> (ret != DBERR_OK) {</div>
-<div class="line"><a name="l00389"></a><span class="lineno">  389</span>&#160;                <span class="keywordflow">return</span> ret;</div>
-<div class="line"><a name="l00390"></a><span class="lineno">  390</span>&#160;            }</div>
-<div class="line"><a name="l00391"></a><span class="lineno">  391</span>&#160;        }</div>
-<div class="line"><a name="l00392"></a><span class="lineno">  392</span>&#160;        <span class="comment">// logger::log_success(&quot;Sent&quot;, batchesSent, &quot;non-empty batches.&quot;);</span></div>
-<div class="line"><a name="l00393"></a><span class="lineno">  393</span>&#160;        <span class="keywordflow">return</span> ret;</div>
-<div class="line"><a name="l00394"></a><span class="lineno">  394</span>&#160;    }</div>
-<div class="line"><a name="l00395"></a><span class="lineno">  395</span>&#160; </div>
-<div class="line"><a name="l00396"></a><span class="lineno">  396</span>&#160;    <span class="keyword">static</span> DB_STATUS performPartitioningCSV(<a class="code" href="structDataset.html">Dataset</a> &amp;dataset) {</div>
-<div class="line"><a name="l00397"></a><span class="lineno">  397</span>&#160;        DB_STATUS ret = DBERR_OK;  </div>
-<div class="line"><a name="l00398"></a><span class="lineno">  398</span>&#160; </div>
-<div class="line"><a name="l00399"></a><span class="lineno">  399</span>&#160;        <span class="comment">// first, issue the partitioning instruction</span></div>
-<div class="line"><a name="l00400"></a><span class="lineno">  400</span>&#160;        ret = comm::broadcast::broadcastInstructionMessage(MSG_INSTR_PARTITIONING_INIT);</div>
-<div class="line"><a name="l00401"></a><span class="lineno">  401</span>&#160;        <span class="keywordflow">if</span> (ret != DBERR_OK) {</div>
-<div class="line"><a name="l00402"></a><span class="lineno">  402</span>&#160;            <span class="keywordflow">return</span> ret;</div>
-<div class="line"><a name="l00403"></a><span class="lineno">  403</span>&#160;        }</div>
-<div class="line"><a name="l00404"></a><span class="lineno">  404</span>&#160;        </div>
-<div class="line"><a name="l00405"></a><span class="lineno">  405</span>&#160;        <span class="comment">// broadcast the dataset info to the nodes</span></div>
-<div class="line"><a name="l00406"></a><span class="lineno">  406</span>&#160;        ret = <a class="code" href="namespacecomm_1_1controller_1_1host.html#a0311bb6b9dffa1af0415761b6675c19c">comm::controller::host::broadcastDatasetInfo</a>(&amp;dataset);</div>
-<div class="line"><a name="l00407"></a><span class="lineno">  407</span>&#160;        <span class="keywordflow">if</span> (ret != DBERR_OK) {</div>
-<div class="line"><a name="l00408"></a><span class="lineno">  408</span>&#160;            <span class="keywordflow">return</span> ret;</div>
-<div class="line"><a name="l00409"></a><span class="lineno">  409</span>&#160;        }</div>
-<div class="line"><a name="l00410"></a><span class="lineno">  410</span>&#160;       </div>
-<div class="line"><a name="l00411"></a><span class="lineno">  411</span>&#160;        <span class="comment">// finally, load data and partition to workers</span></div>
-<div class="line"><a name="l00412"></a><span class="lineno">  412</span>&#160;        ret = loadCSVDatasetAndPartition(dataset.path);</div>
-<div class="line"><a name="l00413"></a><span class="lineno">  413</span>&#160;        <span class="keywordflow">if</span> (ret != DBERR_OK) {</div>
-<div class="line"><a name="l00414"></a><span class="lineno">  414</span>&#160;            <span class="keywordflow">return</span> ret;</div>
-<div class="line"><a name="l00415"></a><span class="lineno">  415</span>&#160;        }</div>
-<div class="line"><a name="l00416"></a><span class="lineno">  416</span>&#160; </div>
-<div class="line"><a name="l00417"></a><span class="lineno">  417</span>&#160;        <span class="keywordflow">return</span> ret;</div>
-<div class="line"><a name="l00418"></a><span class="lineno">  418</span>&#160;    }</div>
-<div class="line"><a name="l00419"></a><span class="lineno">  419</span>&#160; </div>
-<div class="line"><a name="l00420"></a><span class="lineno"><a class="line" href="namespacepartitioning.html#a5f7aef01c8b2d7c6a89ee75018c45591">  420</a></span>&#160;    DB_STATUS <a class="code" href="namespacepartitioning.html#a5f7aef01c8b2d7c6a89ee75018c45591">partitionDataset</a>(<a class="code" href="structDataset.html">Dataset</a> *dataset) {</div>
-<div class="line"><a name="l00421"></a><span class="lineno">  421</span>&#160;        <span class="keywordtype">double</span> startTime;</div>
-<div class="line"><a name="l00422"></a><span class="lineno">  422</span>&#160;        DB_STATUS ret;</div>
-<div class="line"><a name="l00423"></a><span class="lineno">  423</span>&#160;        <span class="comment">// time</span></div>
-<div class="line"><a name="l00424"></a><span class="lineno">  424</span>&#160;        startTime = <a class="code" href="namespacempi__timer.html#ab01f3cdc560e4858245746a406e9b951">mpi_timer::markTime</a>();</div>
-<div class="line"><a name="l00425"></a><span class="lineno">  425</span>&#160;        <span class="keywordflow">switch</span> (dataset-&gt;fileType) {</div>
-<div class="line"><a name="l00426"></a><span class="lineno">  426</span>&#160;            <span class="comment">// perform the partitioning</span></div>
-<div class="line"><a name="l00427"></a><span class="lineno">  427</span>&#160;            <span class="keywordflow">case</span> FT_CSV:</div>
-<div class="line"><a name="l00428"></a><span class="lineno">  428</span>&#160;                <span class="comment">// csv dataset</span></div>
-<div class="line"><a name="l00429"></a><span class="lineno">  429</span>&#160;                ret = performPartitioningCSV(*dataset);</div>
-<div class="line"><a name="l00430"></a><span class="lineno">  430</span>&#160;                <span class="keywordflow">if</span> (ret != DBERR_OK) {</div>
-<div class="line"><a name="l00431"></a><span class="lineno">  431</span>&#160;                    <a class="code" href="namespacelogger.html#a53f34feeb22a94db295af05b8b2aab5c">logger::log_error</a>(DBERR_PARTITIONING_FAILED, <span class="stringliteral">&quot;Partitioning failed for dataset&quot;</span>, dataset-&gt;nickname);</div>
-<div class="line"><a name="l00432"></a><span class="lineno">  432</span>&#160;                    <span class="keywordflow">return</span> ret;</div>
-<div class="line"><a name="l00433"></a><span class="lineno">  433</span>&#160;                }</div>
-<div class="line"><a name="l00434"></a><span class="lineno">  434</span>&#160;                <span class="keywordflow">break</span>;</div>
-<div class="line"><a name="l00435"></a><span class="lineno">  435</span>&#160;            <span class="keywordflow">case</span> FT_BINARY:</div>
-<div class="line"><a name="l00436"></a><span class="lineno">  436</span>&#160;            <span class="keywordflow">case</span> FT_WKT:</div>
-<div class="line"><a name="l00437"></a><span class="lineno">  437</span>&#160;            <span class="keywordflow">default</span>:</div>
-<div class="line"><a name="l00438"></a><span class="lineno">  438</span>&#160;                <a class="code" href="namespacelogger.html#a53f34feeb22a94db295af05b8b2aab5c">logger::log_error</a>(DBERR_FEATURE_UNSUPPORTED, <span class="stringliteral">&quot;Unsupported data file type:&quot;</span>, dataset-&gt;fileType);</div>
-<div class="line"><a name="l00439"></a><span class="lineno">  439</span>&#160;                <span class="keywordflow">break</span>;</div>
-<div class="line"><a name="l00440"></a><span class="lineno">  440</span>&#160;        }</div>
-<div class="line"><a name="l00441"></a><span class="lineno">  441</span>&#160; </div>
-<div class="line"><a name="l00442"></a><span class="lineno">  442</span>&#160;        <span class="comment">// wait for response by workers+agent that all is ok</span></div>
-<div class="line"><a name="l00443"></a><span class="lineno">  443</span>&#160;        ret = <a class="code" href="namespacecomm_1_1controller_1_1host.html#a7acd9cbfb1666431ed71aedf9242836b">comm::controller::host::gatherResponses</a>();</div>
-<div class="line"><a name="l00444"></a><span class="lineno">  444</span>&#160;        <span class="keywordflow">if</span> (ret != DBERR_OK) {</div>
-<div class="line"><a name="l00445"></a><span class="lineno">  445</span>&#160;            <span class="keywordflow">return</span> ret;</div>
-<div class="line"><a name="l00446"></a><span class="lineno">  446</span>&#160;        }</div>
-<div class="line"><a name="l00447"></a><span class="lineno">  447</span>&#160;        <a class="code" href="namespacelogger.html#a6232124565e7aac3c22650f1717cfa29">logger::log_success</a>(<span class="stringliteral">&quot;Partitioning for dataset&quot;</span>, dataset-&gt;nickname, <span class="stringliteral">&quot;finished in&quot;</span>, <a class="code" href="namespacempi__timer.html#a74c246372eadbc66ab89e4c971099ce0">mpi_timer::getElapsedTime</a>(startTime), <span class="stringliteral">&quot;seconds.&quot;</span>);</div>
-<div class="line"><a name="l00448"></a><span class="lineno">  448</span>&#160;                </div>
-<div class="line"><a name="l00449"></a><span class="lineno">  449</span>&#160;        <span class="keywordflow">return</span> DBERR_OK;</div>
-<div class="line"><a name="l00450"></a><span class="lineno">  450</span>&#160;    }</div>
-<div class="line"><a name="l00451"></a><span class="lineno">  451</span>&#160;    </div>
-<div class="line"><a name="l00452"></a><span class="lineno">  452</span>&#160;}</div>
+<div class="line"><a name="l00006"></a><span class="lineno"><a class="line" href="namespacepartitioning.html#afc40bad3d1c1b78245803906af58edf9">    6</a></span>&#160;    <span class="keywordtype">void</span> <a class="code" href="namespacepartitioning.html#afc40bad3d1c1b78245803906af58edf9">printPartitionAssignment</a>() {</div>
+<div class="line"><a name="l00007"></a><span class="lineno">    7</span>&#160;        <span class="keywordflow">for</span> (<span class="keywordtype">int</span> j=0; j&lt;<a class="code" href="containers_8h.html#a93d917fabd28d05357cd3096eb43b641">g_config</a>.partitioningMethod-&gt;<a class="code" href="structPartitioningMethod.html#a03f1ef0f2cdcc9ac6a5b30c170630dc7">getDistributionPPD</a>(); j++) {</div>
+<div class="line"><a name="l00008"></a><span class="lineno">    8</span>&#160;            <span class="keywordflow">for</span> (<span class="keywordtype">int</span> i=0; i&lt;<a class="code" href="containers_8h.html#a93d917fabd28d05357cd3096eb43b641">g_config</a>.partitioningMethod-&gt;<a class="code" href="structPartitioningMethod.html#a03f1ef0f2cdcc9ac6a5b30c170630dc7">getDistributionPPD</a>(); i++) {</div>
+<div class="line"><a name="l00009"></a><span class="lineno">    9</span>&#160;                printf(<span class="stringliteral">&quot;%d &quot;</span>, <a class="code" href="containers_8h.html#a93d917fabd28d05357cd3096eb43b641">g_config</a>.partitioningMethod-&gt;<a class="code" href="structPartitioningMethod.html#a92842b964a0385e0a8dad13e91d8b9c7">getNodeRankForPartitionID</a>(<a class="code" href="containers_8h.html#a93d917fabd28d05357cd3096eb43b641">g_config</a>.partitioningMethod-&gt;<a class="code" href="structPartitioningMethod.html#a24e4e9f5c9920b6929663d73e080c121">getDistributionGridPartitionID</a>(i,j)));</div>
+<div class="line"><a name="l00010"></a><span class="lineno">   10</span>&#160;            }</div>
+<div class="line"><a name="l00011"></a><span class="lineno">   11</span>&#160;            printf(<span class="stringliteral">&quot;\n&quot;</span>);</div>
+<div class="line"><a name="l00012"></a><span class="lineno">   12</span>&#160;        }</div>
+<div class="line"><a name="l00013"></a><span class="lineno">   13</span>&#160;    }</div>
+<div class="line"><a name="l00014"></a><span class="lineno">   14</span>&#160;    </div>
+<div class="line"><a name="l00021"></a><span class="lineno">   21</span>&#160;    <span class="keyword">static</span> DB_STATUS getPartitionsForMBR(<span class="keywordtype">double</span> xMin, <span class="keywordtype">double</span> yMin, <span class="keywordtype">double</span> xMax, <span class="keywordtype">double</span> yMax, std::vector&lt;int&gt; &amp;partitionIDs){</div>
+<div class="line"><a name="l00022"></a><span class="lineno">   22</span>&#160;        <span class="keywordtype">int</span> minPartitionX = (xMin - <a class="code" href="containers_8h.html#a93d917fabd28d05357cd3096eb43b641">g_config</a>.datasetInfo.dataspaceInfo.xMinGlobal) / (<a class="code" href="containers_8h.html#a93d917fabd28d05357cd3096eb43b641">g_config</a>.datasetInfo.dataspaceInfo.xExtent / <a class="code" href="containers_8h.html#a93d917fabd28d05357cd3096eb43b641">g_config</a>.partitioningMethod-&gt;<a class="code" href="structPartitioningMethod.html#a03f1ef0f2cdcc9ac6a5b30c170630dc7">getDistributionPPD</a>());</div>
+<div class="line"><a name="l00023"></a><span class="lineno">   23</span>&#160;        <span class="keywordtype">int</span> minPartitionY = (yMin - <a class="code" href="containers_8h.html#a93d917fabd28d05357cd3096eb43b641">g_config</a>.datasetInfo.dataspaceInfo.yMinGlobal) / (<a class="code" href="containers_8h.html#a93d917fabd28d05357cd3096eb43b641">g_config</a>.datasetInfo.dataspaceInfo.yExtent / <a class="code" href="containers_8h.html#a93d917fabd28d05357cd3096eb43b641">g_config</a>.partitioningMethod-&gt;<a class="code" href="structPartitioningMethod.html#a03f1ef0f2cdcc9ac6a5b30c170630dc7">getDistributionPPD</a>());</div>
+<div class="line"><a name="l00024"></a><span class="lineno">   24</span>&#160;        <span class="keywordtype">int</span> maxPartitionX = (xMax - <a class="code" href="containers_8h.html#a93d917fabd28d05357cd3096eb43b641">g_config</a>.datasetInfo.dataspaceInfo.xMinGlobal) / (<a class="code" href="containers_8h.html#a93d917fabd28d05357cd3096eb43b641">g_config</a>.datasetInfo.dataspaceInfo.xExtent / <a class="code" href="containers_8h.html#a93d917fabd28d05357cd3096eb43b641">g_config</a>.partitioningMethod-&gt;<a class="code" href="structPartitioningMethod.html#a03f1ef0f2cdcc9ac6a5b30c170630dc7">getDistributionPPD</a>());</div>
+<div class="line"><a name="l00025"></a><span class="lineno">   25</span>&#160;        <span class="keywordtype">int</span> maxPartitionY = (yMax - <a class="code" href="containers_8h.html#a93d917fabd28d05357cd3096eb43b641">g_config</a>.datasetInfo.dataspaceInfo.yMinGlobal) / (<a class="code" href="containers_8h.html#a93d917fabd28d05357cd3096eb43b641">g_config</a>.datasetInfo.dataspaceInfo.yExtent / <a class="code" href="containers_8h.html#a93d917fabd28d05357cd3096eb43b641">g_config</a>.partitioningMethod-&gt;<a class="code" href="structPartitioningMethod.html#a03f1ef0f2cdcc9ac6a5b30c170630dc7">getDistributionPPD</a>());</div>
+<div class="line"><a name="l00026"></a><span class="lineno">   26</span>&#160;        </div>
+<div class="line"><a name="l00027"></a><span class="lineno">   27</span>&#160;        <span class="keywordtype">int</span> startPartitionID = <a class="code" href="containers_8h.html#a93d917fabd28d05357cd3096eb43b641">g_config</a>.partitioningMethod-&gt;<a class="code" href="structPartitioningMethod.html#a24e4e9f5c9920b6929663d73e080c121">getDistributionGridPartitionID</a>(minPartitionX, minPartitionY);</div>
+<div class="line"><a name="l00028"></a><span class="lineno">   28</span>&#160;        <span class="keywordtype">int</span> lastPartitionID = <a class="code" href="containers_8h.html#a93d917fabd28d05357cd3096eb43b641">g_config</a>.partitioningMethod-&gt;<a class="code" href="structPartitioningMethod.html#a24e4e9f5c9920b6929663d73e080c121">getDistributionGridPartitionID</a>(maxPartitionX, maxPartitionY);</div>
+<div class="line"><a name="l00029"></a><span class="lineno">   29</span>&#160;        <span class="keywordflow">if</span> (startPartitionID &lt; 0 || startPartitionID &gt; <a class="code" href="containers_8h.html#a93d917fabd28d05357cd3096eb43b641">g_config</a>.partitioningMethod-&gt;<a class="code" href="structPartitioningMethod.html#a03f1ef0f2cdcc9ac6a5b30c170630dc7">getDistributionPPD</a>() * <a class="code" href="containers_8h.html#a93d917fabd28d05357cd3096eb43b641">g_config</a>.partitioningMethod-&gt;<a class="code" href="structPartitioningMethod.html#a03f1ef0f2cdcc9ac6a5b30c170630dc7">getDistributionPPD</a>() -1) {</div>
+<div class="line"><a name="l00030"></a><span class="lineno">   30</span>&#160;            <a class="code" href="namespacelogger.html#a53f34feeb22a94db295af05b8b2aab5c">logger::log_error</a>(DBERR_INVALID_PARTITION, <span class="stringliteral">&quot;Start partition ID calculated wrong&quot;</span>);</div>
+<div class="line"><a name="l00031"></a><span class="lineno">   31</span>&#160;            <span class="keywordflow">return</span> DBERR_INVALID_PARTITION;</div>
+<div class="line"><a name="l00032"></a><span class="lineno">   32</span>&#160;        }</div>
+<div class="line"><a name="l00033"></a><span class="lineno">   33</span>&#160;        <span class="keywordflow">if</span> (lastPartitionID &lt; 0 || lastPartitionID &gt; <a class="code" href="containers_8h.html#a93d917fabd28d05357cd3096eb43b641">g_config</a>.partitioningMethod-&gt;<a class="code" href="structPartitioningMethod.html#a03f1ef0f2cdcc9ac6a5b30c170630dc7">getDistributionPPD</a>() * <a class="code" href="containers_8h.html#a93d917fabd28d05357cd3096eb43b641">g_config</a>.partitioningMethod-&gt;<a class="code" href="structPartitioningMethod.html#a03f1ef0f2cdcc9ac6a5b30c170630dc7">getDistributionPPD</a>() -1) {</div>
+<div class="line"><a name="l00034"></a><span class="lineno">   34</span>&#160;            <a class="code" href="namespacelogger.html#a53f34feeb22a94db295af05b8b2aab5c">logger::log_error</a>(DBERR_INVALID_PARTITION, <span class="stringliteral">&quot;Last partition ID calculated wrong: MBR(&quot;</span>, xMin, yMin, xMax, yMax, <span class="stringliteral">&quot;)&quot;</span>);</div>
+<div class="line"><a name="l00035"></a><span class="lineno">   35</span>&#160;            <span class="keywordflow">return</span> DBERR_INVALID_PARTITION;</div>
+<div class="line"><a name="l00036"></a><span class="lineno">   36</span>&#160;        }</div>
+<div class="line"><a name="l00037"></a><span class="lineno">   37</span>&#160;        <span class="comment">// create the distribution grid partition list for the object</span></div>
+<div class="line"><a name="l00038"></a><span class="lineno">   38</span>&#160;        <span class="keywordflow">for</span> (<span class="keywordtype">int</span> i=minPartitionX; i&lt;=maxPartitionX; i++) {</div>
+<div class="line"><a name="l00039"></a><span class="lineno">   39</span>&#160;            <span class="keywordflow">for</span> (<span class="keywordtype">int</span> j=minPartitionY; j&lt;=maxPartitionY; j++) {</div>
+<div class="line"><a name="l00040"></a><span class="lineno">   40</span>&#160;                <span class="keywordtype">int</span> partitionID = <a class="code" href="containers_8h.html#a93d917fabd28d05357cd3096eb43b641">g_config</a>.partitioningMethod-&gt;<a class="code" href="structPartitioningMethod.html#a24e4e9f5c9920b6929663d73e080c121">getDistributionGridPartitionID</a>(i, j);</div>
+<div class="line"><a name="l00041"></a><span class="lineno">   41</span>&#160;                partitionIDs.emplace_back(partitionID);</div>
+<div class="line"><a name="l00042"></a><span class="lineno">   42</span>&#160;            }</div>
+<div class="line"><a name="l00043"></a><span class="lineno">   43</span>&#160;        }</div>
+<div class="line"><a name="l00044"></a><span class="lineno">   44</span>&#160;        <span class="keywordflow">return</span> DBERR_OK;</div>
+<div class="line"><a name="l00045"></a><span class="lineno">   45</span>&#160;    }</div>
+<div class="line"><a name="l00046"></a><span class="lineno">   46</span>&#160; </div>
+<div class="line"><a name="l00047"></a><span class="lineno">   47</span>&#160;    <span class="keyword">static</span> DB_STATUS initializeBatchMap(std::unordered_map&lt;int,GeometryBatch&gt; &amp;batchMap) {</div>
+<div class="line"><a name="l00048"></a><span class="lineno">   48</span>&#160;        <span class="comment">// initialize batches</span></div>
+<div class="line"><a name="l00049"></a><span class="lineno">   49</span>&#160;        <span class="keywordflow">for</span> (<span class="keywordtype">int</span> i=0; i&lt;g_world_size; i++) {</div>
+<div class="line"><a name="l00050"></a><span class="lineno">   50</span>&#160;            <a class="code" href="structGeometryBatch.html">GeometryBatch</a> batch;</div>
+<div class="line"><a name="l00051"></a><span class="lineno">   51</span>&#160;            batch.destRank = i;</div>
+<div class="line"><a name="l00052"></a><span class="lineno">   52</span>&#160;            <span class="keywordflow">if</span> (i &gt; 0) {</div>
+<div class="line"><a name="l00053"></a><span class="lineno">   53</span>&#160;                batch.comm = &amp;g_global_comm;</div>
+<div class="line"><a name="l00054"></a><span class="lineno">   54</span>&#160;            } <span class="keywordflow">else</span> {</div>
+<div class="line"><a name="l00055"></a><span class="lineno">   55</span>&#160;                batch.comm = &amp;g_local_comm;</div>
+<div class="line"><a name="l00056"></a><span class="lineno">   56</span>&#160;            }</div>
+<div class="line"><a name="l00057"></a><span class="lineno">   57</span>&#160;            batch.tag = MSG_BATCH_POLYGON;</div>
+<div class="line"><a name="l00058"></a><span class="lineno">   58</span>&#160;            batch.maxObjectCount = <a class="code" href="containers_8h.html#a93d917fabd28d05357cd3096eb43b641">g_config</a>.partitioningMethod-&gt;<a class="code" href="structPartitioningMethod.html#a816f21ad060ff6aa69a4bd462acada8a">getBatchSize</a>();</div>
+<div class="line"><a name="l00059"></a><span class="lineno">   59</span>&#160;            batchMap.insert(std::make_pair(i,batch));</div>
+<div class="line"><a name="l00060"></a><span class="lineno">   60</span>&#160;        }</div>
+<div class="line"><a name="l00061"></a><span class="lineno">   61</span>&#160;        <span class="keywordflow">return</span> DBERR_OK;</div>
+<div class="line"><a name="l00062"></a><span class="lineno">   62</span>&#160;    }</div>
+<div class="line"><a name="l00063"></a><span class="lineno">   63</span>&#160; </div>
+<div class="line"><a name="l00067"></a><span class="lineno">   67</span>&#160;    <span class="keyword">static</span> DB_STATUS assignGeometryToBatches(<a class="code" href="structGeometry.html">Geometry</a> &amp;geometry, <span class="keywordtype">double</span> geoXmin, <span class="keywordtype">double</span> geoYmin, <span class="keywordtype">double</span> geoXmax, <span class="keywordtype">double</span> geoYmax, std::unordered_map&lt;int,GeometryBatch&gt; &amp;batchMap, <span class="keywordtype">int</span> &amp;batchesSent) {</div>
+<div class="line"><a name="l00068"></a><span class="lineno">   68</span>&#160;        <span class="comment">// printf(&quot;Handling geometry with id %ld\n&quot;, geometry.recID);</span></div>
+<div class="line"><a name="l00069"></a><span class="lineno">   69</span>&#160;        <span class="comment">// find partition IDs and the class of the geometry in each distribution partition</span></div>
+<div class="line"><a name="l00070"></a><span class="lineno">   70</span>&#160;        std::vector&lt;int&gt; partitionIDs;</div>
+<div class="line"><a name="l00071"></a><span class="lineno">   71</span>&#160;        DB_STATUS ret = partitioning::getPartitionsForMBR(geoXmin, geoYmin, geoXmax, geoYmax, partitionIDs);</div>
+<div class="line"><a name="l00072"></a><span class="lineno">   72</span>&#160;        <span class="keywordflow">if</span> (ret != DBERR_OK) {</div>
+<div class="line"><a name="l00073"></a><span class="lineno">   73</span>&#160;            <span class="keywordflow">return</span> ret;</div>
+<div class="line"><a name="l00074"></a><span class="lineno">   74</span>&#160;        }</div>
+<div class="line"><a name="l00075"></a><span class="lineno">   75</span>&#160;        <span class="comment">// set partitions to object</span></div>
+<div class="line"><a name="l00076"></a><span class="lineno">   76</span>&#160;        geometry.setPartitions(partitionIDs);</div>
+<div class="line"><a name="l00077"></a><span class="lineno">   77</span>&#160;        <span class="comment">// find which nodes need to receive this geometry</span></div>
+<div class="line"><a name="l00078"></a><span class="lineno">   78</span>&#160;        std::vector&lt;bool&gt; bitVector(g_world_size, <span class="keyword">false</span>);</div>
+<div class="line"><a name="l00079"></a><span class="lineno">   79</span>&#160;        <span class="comment">// get receiving worker ranks</span></div>
+<div class="line"><a name="l00080"></a><span class="lineno">   80</span>&#160;        <span class="keywordflow">for</span> (<span class="keyword">auto</span> partitionIT = partitionIDs.begin(); partitionIT != partitionIDs.end(); partitionIT++) {</div>
+<div class="line"><a name="l00081"></a><span class="lineno">   81</span>&#160;            <span class="comment">// get node rank from distribution grid</span></div>
+<div class="line"><a name="l00082"></a><span class="lineno">   82</span>&#160;            <span class="keywordtype">int</span> nodeRank = <a class="code" href="containers_8h.html#a93d917fabd28d05357cd3096eb43b641">g_config</a>.partitioningMethod-&gt;<a class="code" href="structPartitioningMethod.html#a92842b964a0385e0a8dad13e91d8b9c7">getNodeRankForPartitionID</a>(*partitionIT);</div>
+<div class="line"><a name="l00083"></a><span class="lineno">   83</span>&#160;            bitVector[nodeRank] = <span class="keyword">true</span>;</div>
+<div class="line"><a name="l00084"></a><span class="lineno">   84</span>&#160;        }</div>
+<div class="line"><a name="l00085"></a><span class="lineno">   85</span>&#160;        <span class="comment">// add to nodes&#39; batches</span></div>
+<div class="line"><a name="l00086"></a><span class="lineno">   86</span>&#160;        <span class="keywordflow">for</span> (<span class="keywordtype">int</span> nodeRank=0; nodeRank&lt;bitVector.size(); nodeRank++) {</div>
+<div class="line"><a name="l00087"></a><span class="lineno">   87</span>&#160;            <span class="keywordflow">if</span> (bitVector.at(nodeRank)) {</div>
+<div class="line"><a name="l00088"></a><span class="lineno">   88</span>&#160;                <span class="comment">// if it has been marked</span></div>
+<div class="line"><a name="l00089"></a><span class="lineno">   89</span>&#160;                <span class="comment">// add geometry to batch</span></div>
+<div class="line"><a name="l00090"></a><span class="lineno">   90</span>&#160;                <span class="keyword">auto</span> it = batchMap.find(nodeRank);</div>
+<div class="line"><a name="l00091"></a><span class="lineno">   91</span>&#160;                <span class="keywordflow">if</span> (it == batchMap.end()) {</div>
+<div class="line"><a name="l00092"></a><span class="lineno">   92</span>&#160;                    <a class="code" href="namespacelogger.html#a53f34feeb22a94db295af05b8b2aab5c">logger::log_error</a>(DBERR_INVALID_PARAMETER, <span class="stringliteral">&quot;Error fetching batch for node&quot;</span>, nodeRank);</div>
+<div class="line"><a name="l00093"></a><span class="lineno">   93</span>&#160;                    <span class="keywordflow">return</span> DBERR_INVALID_PARAMETER;</div>
+<div class="line"><a name="l00094"></a><span class="lineno">   94</span>&#160;                }</div>
+<div class="line"><a name="l00095"></a><span class="lineno">   95</span>&#160;                <a class="code" href="structGeometryBatch.html">GeometryBatch</a> *batch = &amp;it-&gt;second;</div>
+<div class="line"><a name="l00096"></a><span class="lineno">   96</span>&#160; </div>
+<div class="line"><a name="l00097"></a><span class="lineno">   97</span>&#160;                <span class="comment">// make a copy of the geometry, to adjust the partitions specifically for this node</span></div>
+<div class="line"><a name="l00098"></a><span class="lineno">   98</span>&#160;                <span class="comment">// remove any partitions that are irrelevant to this noderank</span></div>
+<div class="line"><a name="l00099"></a><span class="lineno">   99</span>&#160;                <a class="code" href="structGeometry.html">Geometry</a> geometryCopy = geometry;</div>
+<div class="line"><a name="l00100"></a><span class="lineno">  100</span>&#160;                <span class="keywordflow">for</span>(<span class="keyword">auto</span> it = geometryCopy.partitions.begin(); it != geometryCopy.partitions.end();) {</div>
+<div class="line"><a name="l00101"></a><span class="lineno">  101</span>&#160;                    <span class="keywordtype">int</span> assignedNodeRank = <a class="code" href="containers_8h.html#a93d917fabd28d05357cd3096eb43b641">g_config</a>.partitioningMethod-&gt;<a class="code" href="structPartitioningMethod.html#a92842b964a0385e0a8dad13e91d8b9c7">getNodeRankForPartitionID</a>(*it);</div>
+<div class="line"><a name="l00102"></a><span class="lineno">  102</span>&#160;                    <span class="keywordflow">if</span> (assignedNodeRank != nodeRank) {</div>
+<div class="line"><a name="l00103"></a><span class="lineno">  103</span>&#160;                        it = geometryCopy.partitions.erase(it);</div>
+<div class="line"><a name="l00104"></a><span class="lineno">  104</span>&#160;                        it = geometryCopy.partitions.erase(it);</div>
+<div class="line"><a name="l00105"></a><span class="lineno">  105</span>&#160;                        geometryCopy.partitionCount--;</div>
+<div class="line"><a name="l00106"></a><span class="lineno">  106</span>&#160;                    } <span class="keywordflow">else</span> {</div>
+<div class="line"><a name="l00107"></a><span class="lineno">  107</span>&#160;                        it += 2;</div>
+<div class="line"><a name="l00108"></a><span class="lineno">  108</span>&#160;                    }</div>
+<div class="line"><a name="l00109"></a><span class="lineno">  109</span>&#160;                }</div>
+<div class="line"><a name="l00110"></a><span class="lineno">  110</span>&#160;                <span class="comment">// add moddified geometry to this batch</span></div>
+<div class="line"><a name="l00111"></a><span class="lineno">  111</span>&#160;                batch-&gt;addGeometryToBatch(geometryCopy);</div>
+<div class="line"><a name="l00112"></a><span class="lineno">  112</span>&#160;                <span class="comment">// printf(&quot;Added geometry %ld to batch\n&quot;, geometryCopy.recID);</span></div>
+<div class="line"><a name="l00113"></a><span class="lineno">  113</span>&#160;                <span class="comment">// if batch is full, send and reset</span></div>
+<div class="line"><a name="l00114"></a><span class="lineno">  114</span>&#160;                <span class="keywordflow">if</span> (batch-&gt;objectCount &gt;= batch-&gt;maxObjectCount) {</div>
+<div class="line"><a name="l00115"></a><span class="lineno">  115</span>&#160;                    ret = <a class="code" href="namespacecomm_1_1controller.html#acb873f6f6e22c38010feb19302b3fa00">comm::controller::serializeAndSendGeometryBatch</a>(batch);</div>
+<div class="line"><a name="l00116"></a><span class="lineno">  116</span>&#160;                    <span class="keywordflow">if</span> (ret != DBERR_OK) {</div>
+<div class="line"><a name="l00117"></a><span class="lineno">  117</span>&#160;                        <span class="keywordflow">return</span> ret;</div>
+<div class="line"><a name="l00118"></a><span class="lineno">  118</span>&#160;                    }</div>
+<div class="line"><a name="l00119"></a><span class="lineno">  119</span>&#160;                    <span class="comment">// reset</span></div>
+<div class="line"><a name="l00120"></a><span class="lineno">  120</span>&#160;                    batch-&gt;clear();</div>
+<div class="line"><a name="l00121"></a><span class="lineno">  121</span>&#160;                    <span class="comment">// count batch </span></div>
+<div class="line"><a name="l00122"></a><span class="lineno">  122</span>&#160;                    batchesSent += 1;</div>
+<div class="line"><a name="l00123"></a><span class="lineno">  123</span>&#160;                }</div>
+<div class="line"><a name="l00124"></a><span class="lineno">  124</span>&#160;            }</div>
+<div class="line"><a name="l00125"></a><span class="lineno">  125</span>&#160;        }</div>
+<div class="line"><a name="l00126"></a><span class="lineno">  126</span>&#160;        <span class="keywordflow">return</span> ret;</div>
+<div class="line"><a name="l00127"></a><span class="lineno">  127</span>&#160;    }</div>
+<div class="line"><a name="l00128"></a><span class="lineno">  128</span>&#160; </div>
+<div class="line"><a name="l00129"></a><span class="lineno"><a class="line" href="namespacepartitioning.html#a873e77ab57aa73ee78177a287a686300">  129</a></span>&#160;    DB_STATUS <a class="code" href="namespacepartitioning.html#a873e77ab57aa73ee78177a287a686300">calculateCSVDatasetDataspaceBounds</a>(<a class="code" href="structDataset.html">Dataset</a> &amp;dataset) {</div>
+<div class="line"><a name="l00130"></a><span class="lineno">  130</span>&#160;        DB_STATUS ret = DBERR_OK;</div>
+<div class="line"><a name="l00131"></a><span class="lineno">  131</span>&#160;        <span class="comment">// open file</span></div>
+<div class="line"><a name="l00132"></a><span class="lineno">  132</span>&#160;        std::ifstream fin(dataset.path);</div>
+<div class="line"><a name="l00133"></a><span class="lineno">  133</span>&#160;        <span class="keywordflow">if</span> (!fin.is_open()) {</div>
+<div class="line"><a name="l00134"></a><span class="lineno">  134</span>&#160;            <a class="code" href="namespacelogger.html#a53f34feeb22a94db295af05b8b2aab5c">logger::log_error</a>(DBERR_MISSING_FILE, <span class="stringliteral">&quot;Failed to open dataset path:&quot;</span>, dataset.path);</div>
+<div class="line"><a name="l00135"></a><span class="lineno">  135</span>&#160;            <span class="keywordflow">return</span> DBERR_MISSING_FILE;</div>
+<div class="line"><a name="l00136"></a><span class="lineno">  136</span>&#160;        }</div>
+<div class="line"><a name="l00137"></a><span class="lineno">  137</span>&#160;        std::string line;</div>
+<div class="line"><a name="l00138"></a><span class="lineno">  138</span>&#160;        <span class="comment">// read total objects (first line of file)</span></div>
+<div class="line"><a name="l00139"></a><span class="lineno">  139</span>&#160;        std::getline(fin, line);</div>
+<div class="line"><a name="l00140"></a><span class="lineno">  140</span>&#160;        fin.close();</div>
+<div class="line"><a name="l00141"></a><span class="lineno">  141</span>&#160;        <span class="keywordtype">size_t</span> objectCount = (size_t) std::stoull(line);</div>
+<div class="line"><a name="l00142"></a><span class="lineno">  142</span>&#160;        <span class="comment">// dataset global bounds</span></div>
+<div class="line"><a name="l00143"></a><span class="lineno">  143</span>&#160;        <span class="keywordtype">double</span> global_xMin = std::numeric_limits&lt;int&gt;::max();</div>
+<div class="line"><a name="l00144"></a><span class="lineno">  144</span>&#160;        <span class="keywordtype">double</span> global_yMin = std::numeric_limits&lt;int&gt;::max();</div>
+<div class="line"><a name="l00145"></a><span class="lineno">  145</span>&#160;        <span class="keywordtype">double</span> global_xMax = -std::numeric_limits&lt;int&gt;::max();</div>
+<div class="line"><a name="l00146"></a><span class="lineno">  146</span>&#160;        <span class="keywordtype">double</span> global_yMax = -std::numeric_limits&lt;int&gt;::max();</div>
+<div class="line"><a name="l00147"></a><span class="lineno">  147</span>&#160;        <span class="comment">// spawn all available threads (processors)</span></div>
+<div class="line"><a name="l00148"></a><span class="lineno">  148</span>&#160;<span class="preprocessor">        #pragma omp parallel firstprivate(line, objectCount) reduction(min:global_xMin) reduction(min:global_yMin) reduction(max:global_xMax)  reduction(max:global_yMax)</span></div>
+<div class="line"><a name="l00149"></a><span class="lineno">  149</span>&#160;        {</div>
+<div class="line"><a name="l00150"></a><span class="lineno">  150</span>&#160;            <span class="keywordtype">size_t</span> recID;</div>
+<div class="line"><a name="l00151"></a><span class="lineno">  151</span>&#160;            <span class="keywordtype">double</span> x,y;</div>
+<div class="line"><a name="l00152"></a><span class="lineno">  152</span>&#160;            DB_STATUS local_ret = DBERR_OK;</div>
+<div class="line"><a name="l00153"></a><span class="lineno">  153</span>&#160;            <span class="keywordtype">int</span> tid = omp_get_thread_num();</div>
+<div class="line"><a name="l00154"></a><span class="lineno">  154</span>&#160;            <span class="keywordtype">int</span> totalThreads = omp_get_num_threads();</div>
+<div class="line"><a name="l00155"></a><span class="lineno">  155</span>&#160;            <span class="comment">// calculate which lines this thread will handle</span></div>
+<div class="line"><a name="l00156"></a><span class="lineno">  156</span>&#160;            <span class="keywordtype">size_t</span> linesPerThread = (objectCount / totalThreads);</div>
+<div class="line"><a name="l00157"></a><span class="lineno">  157</span>&#160;            <span class="keywordtype">size_t</span> fromLine = 1 + (tid * linesPerThread);          <span class="comment">// first line is object count</span></div>
+<div class="line"><a name="l00158"></a><span class="lineno">  158</span>&#160;            <span class="keywordtype">size_t</span> toLine = 1 + ((tid + 1) * linesPerThread);    <span class="comment">// exclusive</span></div>
+<div class="line"><a name="l00159"></a><span class="lineno">  159</span>&#160;            <span class="keywordflow">if</span> (tid == totalThreads - 1) {</div>
+<div class="line"><a name="l00160"></a><span class="lineno">  160</span>&#160;                toLine = objectCount+1;</div>
+<div class="line"><a name="l00161"></a><span class="lineno">  161</span>&#160;            }</div>
+<div class="line"><a name="l00162"></a><span class="lineno">  162</span>&#160;            <span class="comment">// open file</span></div>
+<div class="line"><a name="l00163"></a><span class="lineno">  163</span>&#160;            std::ifstream fin(dataset.path);</div>
+<div class="line"><a name="l00164"></a><span class="lineno">  164</span>&#160;            <span class="keywordflow">if</span> (!fin.is_open()) {</div>
+<div class="line"><a name="l00165"></a><span class="lineno">  165</span>&#160;                <a class="code" href="namespacelogger.html#a53f34feeb22a94db295af05b8b2aab5c">logger::log_error</a>(DBERR_MISSING_FILE, <span class="stringliteral">&quot;Failed to open dataset path:&quot;</span>, dataset.path);</div>
+<div class="line"><a name="l00166"></a><span class="lineno">  166</span>&#160;<span class="preprocessor">                #pragma omp cancel parallel</span></div>
+<div class="line"><a name="l00167"></a><span class="lineno">  167</span>&#160;                ret = DBERR_MISSING_FILE;</div>
+<div class="line"><a name="l00168"></a><span class="lineno">  168</span>&#160;            }</div>
+<div class="line"><a name="l00169"></a><span class="lineno">  169</span>&#160;            <span class="comment">// jump to start line</span></div>
+<div class="line"><a name="l00170"></a><span class="lineno">  170</span>&#160;            <span class="keywordflow">for</span> (<span class="keywordtype">size_t</span> i=0; i&lt;fromLine; i++) {</div>
+<div class="line"><a name="l00171"></a><span class="lineno">  171</span>&#160;                fin.ignore(std::numeric_limits&lt;std::streamsize&gt;::max(), <span class="charliteral">&#39;\n&#39;</span>);</div>
+<div class="line"><a name="l00172"></a><span class="lineno">  172</span>&#160;            }</div>
+<div class="line"><a name="l00173"></a><span class="lineno">  173</span>&#160;            <span class="comment">// loop</span></div>
+<div class="line"><a name="l00174"></a><span class="lineno">  174</span>&#160;            <span class="keywordtype">size_t</span> currentLine = fromLine;</div>
+<div class="line"><a name="l00175"></a><span class="lineno">  175</span>&#160;            std::string token;</div>
+<div class="line"><a name="l00176"></a><span class="lineno">  176</span>&#160;            <span class="keywordflow">while</span> (<span class="keyword">true</span>) {</div>
+<div class="line"><a name="l00177"></a><span class="lineno">  177</span>&#160;                <span class="comment">// next object</span></div>
+<div class="line"><a name="l00178"></a><span class="lineno">  178</span>&#160;                std::getline(fin, line);                </div>
+<div class="line"><a name="l00179"></a><span class="lineno">  179</span>&#160;                std::stringstream ss(line);</div>
+<div class="line"><a name="l00180"></a><span class="lineno">  180</span>&#160;                <span class="comment">// recID</span></div>
+<div class="line"><a name="l00181"></a><span class="lineno">  181</span>&#160;                std::getline(ss, token, <span class="charliteral">&#39;,&#39;</span>);</div>
+<div class="line"><a name="l00182"></a><span class="lineno">  182</span>&#160;                recID = (size_t) std::stoull(token);</div>
+<div class="line"><a name="l00183"></a><span class="lineno">  183</span>&#160;                <span class="comment">// Read the coords x,y</span></div>
+<div class="line"><a name="l00184"></a><span class="lineno">  184</span>&#160;                <span class="keywordflow">while</span> (std::getline(ss, token, <span class="charliteral">&#39;,&#39;</span>)) {</div>
+<div class="line"><a name="l00185"></a><span class="lineno">  185</span>&#160;                    std::stringstream coordStream(token);</div>
+<div class="line"><a name="l00186"></a><span class="lineno">  186</span>&#160;                    <span class="comment">// Split the x and y values</span></div>
+<div class="line"><a name="l00187"></a><span class="lineno">  187</span>&#160;                    std::getline(coordStream, token, <span class="charliteral">&#39; &#39;</span>);</div>
+<div class="line"><a name="l00188"></a><span class="lineno">  188</span>&#160;                    x = std::stof(token);</div>
+<div class="line"><a name="l00189"></a><span class="lineno">  189</span>&#160;                    std::getline(coordStream, token, <span class="charliteral">&#39; &#39;</span>);</div>
+<div class="line"><a name="l00190"></a><span class="lineno">  190</span>&#160;                    y = std::stof(token);</div>
+<div class="line"><a name="l00191"></a><span class="lineno">  191</span>&#160;                    <span class="comment">// bounds</span></div>
+<div class="line"><a name="l00192"></a><span class="lineno">  192</span>&#160;                    global_xMin = std::min(global_xMin, x);</div>
+<div class="line"><a name="l00193"></a><span class="lineno">  193</span>&#160;                    global_yMin = std::min(global_yMin, y);</div>
+<div class="line"><a name="l00194"></a><span class="lineno">  194</span>&#160;                    global_xMax = std::max(global_xMax, x);</div>
+<div class="line"><a name="l00195"></a><span class="lineno">  195</span>&#160;                    global_yMax = std::max(global_yMax, y);</div>
+<div class="line"><a name="l00196"></a><span class="lineno">  196</span>&#160;                }</div>
+<div class="line"><a name="l00197"></a><span class="lineno">  197</span>&#160;                currentLine += 1;</div>
+<div class="line"><a name="l00198"></a><span class="lineno">  198</span>&#160;                <span class="keywordflow">if</span> (currentLine &gt;= toLine) {</div>
+<div class="line"><a name="l00199"></a><span class="lineno">  199</span>&#160;                    <span class="comment">// the last line for this thread has been read</span></div>
+<div class="line"><a name="l00200"></a><span class="lineno">  200</span>&#160;                    <span class="keywordflow">break</span>;</div>
+<div class="line"><a name="l00201"></a><span class="lineno">  201</span>&#160;                }</div>
+<div class="line"><a name="l00202"></a><span class="lineno">  202</span>&#160;            }</div>
+<div class="line"><a name="l00203"></a><span class="lineno">  203</span>&#160;            <span class="comment">// close file</span></div>
+<div class="line"><a name="l00204"></a><span class="lineno">  204</span>&#160;            fin.close();</div>
+<div class="line"><a name="l00205"></a><span class="lineno">  205</span>&#160;        }</div>
+<div class="line"><a name="l00206"></a><span class="lineno">  206</span>&#160;        <span class="keywordflow">if</span> (ret != DBERR_OK) {</div>
+<div class="line"><a name="l00207"></a><span class="lineno">  207</span>&#160;            <span class="keywordflow">return</span> ret;</div>
+<div class="line"><a name="l00208"></a><span class="lineno">  208</span>&#160;        }</div>
+<div class="line"><a name="l00209"></a><span class="lineno">  209</span>&#160;        <span class="comment">// set extent</span></div>
+<div class="line"><a name="l00210"></a><span class="lineno">  210</span>&#160;        dataset.dataspaceInfo.set(global_xMin, global_yMin, global_xMax, global_yMax);</div>
+<div class="line"><a name="l00211"></a><span class="lineno">  211</span>&#160;        <span class="keywordflow">return</span> ret;</div>
+<div class="line"><a name="l00212"></a><span class="lineno">  212</span>&#160;    }</div>
+<div class="line"><a name="l00213"></a><span class="lineno">  213</span>&#160; </div>
+<div class="line"><a name="l00214"></a><span class="lineno">  214</span>&#160;    <span class="keyword">static</span> DB_STATUS loadCSVDatasetAndPartition(std::string &amp;datasetPath) {</div>
+<div class="line"><a name="l00215"></a><span class="lineno">  215</span>&#160;        DB_STATUS ret = DBERR_OK;</div>
+<div class="line"><a name="l00216"></a><span class="lineno">  216</span>&#160;        <span class="comment">// initialize batches</span></div>
+<div class="line"><a name="l00217"></a><span class="lineno">  217</span>&#160;        std::unordered_map&lt;int,GeometryBatch&gt; batchMap;</div>
+<div class="line"><a name="l00218"></a><span class="lineno">  218</span>&#160;        ret = initializeBatchMap(batchMap);</div>
+<div class="line"><a name="l00219"></a><span class="lineno">  219</span>&#160;        <span class="keywordflow">if</span> (ret != DBERR_OK) {</div>
+<div class="line"><a name="l00220"></a><span class="lineno">  220</span>&#160;            <span class="keywordflow">return</span> ret;</div>
+<div class="line"><a name="l00221"></a><span class="lineno">  221</span>&#160;        }</div>
+<div class="line"><a name="l00222"></a><span class="lineno">  222</span>&#160;        <span class="comment">// open file</span></div>
+<div class="line"><a name="l00223"></a><span class="lineno">  223</span>&#160;        std::ifstream fin(datasetPath);</div>
+<div class="line"><a name="l00224"></a><span class="lineno">  224</span>&#160;        <span class="keywordflow">if</span> (!fin.is_open()) {</div>
+<div class="line"><a name="l00225"></a><span class="lineno">  225</span>&#160;            <a class="code" href="namespacelogger.html#a53f34feeb22a94db295af05b8b2aab5c">logger::log_error</a>(DBERR_MISSING_FILE, <span class="stringliteral">&quot;Failed to open dataset path:&quot;</span>, datasetPath);</div>
+<div class="line"><a name="l00226"></a><span class="lineno">  226</span>&#160;            <span class="keywordflow">return</span> DBERR_MISSING_FILE;</div>
+<div class="line"><a name="l00227"></a><span class="lineno">  227</span>&#160;        }</div>
+<div class="line"><a name="l00228"></a><span class="lineno">  228</span>&#160;        std::string line;</div>
+<div class="line"><a name="l00229"></a><span class="lineno">  229</span>&#160;        <span class="comment">// read total objects (first line of file)</span></div>
+<div class="line"><a name="l00230"></a><span class="lineno">  230</span>&#160;        std::getline(fin, line);</div>
+<div class="line"><a name="l00231"></a><span class="lineno">  231</span>&#160;        fin.close();</div>
+<div class="line"><a name="l00232"></a><span class="lineno">  232</span>&#160;        <span class="keywordtype">size_t</span> objectCount = (size_t) std::stoull(line);</div>
+<div class="line"><a name="l00233"></a><span class="lineno">  233</span>&#160;        <span class="comment">// count how many batches have been sent in total</span></div>
+<div class="line"><a name="l00234"></a><span class="lineno">  234</span>&#160;        <span class="keywordtype">int</span> batchesSent = 0;</div>
+<div class="line"><a name="l00235"></a><span class="lineno">  235</span>&#160;<span class="preprocessor">        #pragma omp parallel firstprivate(batchMap, line, objectCount) reduction(+:batchesSent)</span></div>
+<div class="line"><a name="l00236"></a><span class="lineno">  236</span>&#160;        {</div>
+<div class="line"><a name="l00237"></a><span class="lineno">  237</span>&#160;            <span class="keywordtype">size_t</span> recID;</div>
+<div class="line"><a name="l00238"></a><span class="lineno">  238</span>&#160;            <span class="keywordtype">int</span> partitionID;</div>
+<div class="line"><a name="l00239"></a><span class="lineno">  239</span>&#160;            <span class="keywordtype">int</span> vertexCount;</div>
+<div class="line"><a name="l00240"></a><span class="lineno">  240</span>&#160;            <span class="keywordtype">double</span> x,y;</div>
+<div class="line"><a name="l00241"></a><span class="lineno">  241</span>&#160;            <span class="keywordtype">double</span> xMin, yMin, xMax, yMax;</div>
+<div class="line"><a name="l00242"></a><span class="lineno">  242</span>&#160;            DB_STATUS local_ret = DBERR_OK;</div>
+<div class="line"><a name="l00243"></a><span class="lineno">  243</span>&#160;            <span class="keywordtype">int</span> tid = omp_get_thread_num();</div>
+<div class="line"><a name="l00244"></a><span class="lineno">  244</span>&#160;            <span class="keywordtype">int</span> totalThreads = omp_get_num_threads();</div>
+<div class="line"><a name="l00245"></a><span class="lineno">  245</span>&#160;            <span class="comment">// calculate which lines this thread will handle</span></div>
+<div class="line"><a name="l00246"></a><span class="lineno">  246</span>&#160;            <span class="keywordtype">size_t</span> linesPerThread = (objectCount / totalThreads);</div>
+<div class="line"><a name="l00247"></a><span class="lineno">  247</span>&#160;            <span class="keywordtype">size_t</span> fromLine = 1 + (tid * linesPerThread);          <span class="comment">// first line is object count</span></div>
+<div class="line"><a name="l00248"></a><span class="lineno">  248</span>&#160;            <span class="keywordtype">size_t</span> toLine = 1 + ((tid + 1) * linesPerThread);    <span class="comment">// exclusive</span></div>
+<div class="line"><a name="l00249"></a><span class="lineno">  249</span>&#160;            <span class="keywordflow">if</span> (tid == totalThreads - 1) {</div>
+<div class="line"><a name="l00250"></a><span class="lineno">  250</span>&#160;                toLine = objectCount+1;</div>
+<div class="line"><a name="l00251"></a><span class="lineno">  251</span>&#160;            }</div>
+<div class="line"><a name="l00252"></a><span class="lineno">  252</span>&#160;            <span class="comment">// logger::log_task(&quot;will handle lines&quot;, fromLine, &quot;to&quot;, toLine);</span></div>
+<div class="line"><a name="l00253"></a><span class="lineno">  253</span>&#160;            <span class="comment">// open file</span></div>
+<div class="line"><a name="l00254"></a><span class="lineno">  254</span>&#160;            std::ifstream fin(datasetPath);</div>
+<div class="line"><a name="l00255"></a><span class="lineno">  255</span>&#160;            <span class="keywordflow">if</span> (!fin.is_open()) {</div>
+<div class="line"><a name="l00256"></a><span class="lineno">  256</span>&#160;                <a class="code" href="namespacelogger.html#a53f34feeb22a94db295af05b8b2aab5c">logger::log_error</a>(DBERR_MISSING_FILE, <span class="stringliteral">&quot;Failed to open dataset path:&quot;</span>, datasetPath);</div>
+<div class="line"><a name="l00257"></a><span class="lineno">  257</span>&#160;<span class="preprocessor">                #pragma omp cancel parallel</span></div>
+<div class="line"><a name="l00258"></a><span class="lineno">  258</span>&#160;                ret = DBERR_MISSING_FILE;</div>
+<div class="line"><a name="l00259"></a><span class="lineno">  259</span>&#160;            }</div>
+<div class="line"><a name="l00260"></a><span class="lineno">  260</span>&#160;            <span class="comment">// jump to start line</span></div>
+<div class="line"><a name="l00261"></a><span class="lineno">  261</span>&#160;            <span class="keywordflow">for</span> (<span class="keywordtype">size_t</span> i=0; i&lt;fromLine; i++) {</div>
+<div class="line"><a name="l00262"></a><span class="lineno">  262</span>&#160;                fin.ignore(std::numeric_limits&lt;std::streamsize&gt;::max(), <span class="charliteral">&#39;\n&#39;</span>);</div>
+<div class="line"><a name="l00263"></a><span class="lineno">  263</span>&#160;            }</div>
+<div class="line"><a name="l00264"></a><span class="lineno">  264</span>&#160;            <span class="comment">// loop</span></div>
+<div class="line"><a name="l00265"></a><span class="lineno">  265</span>&#160;            <span class="keywordtype">size_t</span> currentLine = fromLine;</div>
+<div class="line"><a name="l00266"></a><span class="lineno">  266</span>&#160;            std::string token;</div>
+<div class="line"><a name="l00267"></a><span class="lineno">  267</span>&#160;            <span class="keywordflow">while</span> (<span class="keyword">true</span>) {</div>
+<div class="line"><a name="l00268"></a><span class="lineno">  268</span>&#160;                <span class="comment">// printf(&quot;Parsing line %ld/%ld\n&quot;, currentLine, toLine);</span></div>
+<div class="line"><a name="l00269"></a><span class="lineno">  269</span>&#160;                <span class="comment">// next object</span></div>
+<div class="line"><a name="l00270"></a><span class="lineno">  270</span>&#160;                std::getline(fin, line);                </div>
+<div class="line"><a name="l00271"></a><span class="lineno">  271</span>&#160;                std::stringstream ss(line);</div>
+<div class="line"><a name="l00272"></a><span class="lineno">  272</span>&#160;                xMin = std::numeric_limits&lt;int&gt;::max();</div>
+<div class="line"><a name="l00273"></a><span class="lineno">  273</span>&#160;                yMin = std::numeric_limits&lt;int&gt;::max();</div>
+<div class="line"><a name="l00274"></a><span class="lineno">  274</span>&#160;                xMax = -std::numeric_limits&lt;int&gt;::max();</div>
+<div class="line"><a name="l00275"></a><span class="lineno">  275</span>&#160;                yMax = -std::numeric_limits&lt;int&gt;::max();</div>
+<div class="line"><a name="l00276"></a><span class="lineno">  276</span>&#160;                <span class="comment">// recID</span></div>
+<div class="line"><a name="l00277"></a><span class="lineno">  277</span>&#160;                std::getline(ss, token, <span class="charliteral">&#39;,&#39;</span>);</div>
+<div class="line"><a name="l00278"></a><span class="lineno">  278</span>&#160;                recID = (size_t) std::stoull(token);</div>
+<div class="line"><a name="l00279"></a><span class="lineno">  279</span>&#160;                <span class="comment">// Read the coords x,y</span></div>
+<div class="line"><a name="l00280"></a><span class="lineno">  280</span>&#160;                vertexCount = 0;</div>
+<div class="line"><a name="l00281"></a><span class="lineno">  281</span>&#160;                std::vector&lt;double&gt; coords;</div>
+<div class="line"><a name="l00282"></a><span class="lineno">  282</span>&#160;                <span class="keywordflow">while</span> (std::getline(ss, token, <span class="charliteral">&#39;,&#39;</span>)) {</div>
+<div class="line"><a name="l00283"></a><span class="lineno">  283</span>&#160;                    std::stringstream coordStream(token);</div>
+<div class="line"><a name="l00284"></a><span class="lineno">  284</span>&#160;                    <span class="comment">// Split the x and y values</span></div>
+<div class="line"><a name="l00285"></a><span class="lineno">  285</span>&#160;                    std::getline(coordStream, token, <span class="charliteral">&#39; &#39;</span>);</div>
+<div class="line"><a name="l00286"></a><span class="lineno">  286</span>&#160;                    x = std::stof(token);</div>
+<div class="line"><a name="l00287"></a><span class="lineno">  287</span>&#160;                    std::getline(coordStream, token, <span class="charliteral">&#39; &#39;</span>);</div>
+<div class="line"><a name="l00288"></a><span class="lineno">  288</span>&#160;                    y = std::stof(token);</div>
+<div class="line"><a name="l00289"></a><span class="lineno">  289</span>&#160;                    <span class="comment">// store</span></div>
+<div class="line"><a name="l00290"></a><span class="lineno">  290</span>&#160;                    coords.emplace_back(x);</div>
+<div class="line"><a name="l00291"></a><span class="lineno">  291</span>&#160;                    coords.emplace_back(y);</div>
+<div class="line"><a name="l00292"></a><span class="lineno">  292</span>&#160;                    <span class="comment">// MBR</span></div>
+<div class="line"><a name="l00293"></a><span class="lineno">  293</span>&#160;                    xMin = std::min(xMin, x);</div>
+<div class="line"><a name="l00294"></a><span class="lineno">  294</span>&#160;                    yMin = std::min(yMin, y);</div>
+<div class="line"><a name="l00295"></a><span class="lineno">  295</span>&#160;                    xMax = std::max(xMax, x);</div>
+<div class="line"><a name="l00296"></a><span class="lineno">  296</span>&#160;                    yMax = std::max(yMax, y);</div>
+<div class="line"><a name="l00297"></a><span class="lineno">  297</span>&#160;                    vertexCount += 1;</div>
+<div class="line"><a name="l00298"></a><span class="lineno">  298</span>&#160;                }</div>
+<div class="line"><a name="l00299"></a><span class="lineno">  299</span>&#160;                <span class="comment">// create serializable object</span></div>
+<div class="line"><a name="l00300"></a><span class="lineno">  300</span>&#160;                <a class="code" href="structGeometry.html">Geometry</a> geometry(recID, vertexCount, coords);</div>
+<div class="line"><a name="l00301"></a><span class="lineno">  301</span>&#160;                <span class="comment">// assign to appropriate batches</span></div>
+<div class="line"><a name="l00302"></a><span class="lineno">  302</span>&#160;                local_ret = assignGeometryToBatches(geometry, xMin, yMin, xMax, yMax, batchMap, batchesSent);</div>
+<div class="line"><a name="l00303"></a><span class="lineno">  303</span>&#160;                <span class="keywordflow">if</span> (ret != DBERR_OK) {</div>
+<div class="line"><a name="l00304"></a><span class="lineno">  304</span>&#160;<span class="preprocessor">                    #pragma omp cancel parallel</span></div>
+<div class="line"><a name="l00305"></a><span class="lineno">  305</span>&#160;                    ret = local_ret;</div>
+<div class="line"><a name="l00306"></a><span class="lineno">  306</span>&#160;                    <span class="keywordflow">break</span>;</div>
+<div class="line"><a name="l00307"></a><span class="lineno">  307</span>&#160;                }</div>
+<div class="line"><a name="l00308"></a><span class="lineno">  308</span>&#160;                currentLine += 1;</div>
+<div class="line"><a name="l00309"></a><span class="lineno">  309</span>&#160;                <span class="keywordflow">if</span> (currentLine &gt;= toLine) {</div>
+<div class="line"><a name="l00310"></a><span class="lineno">  310</span>&#160;                    <span class="comment">// the last line for this thread has been read</span></div>
+<div class="line"><a name="l00311"></a><span class="lineno">  311</span>&#160;                    <span class="keywordflow">break</span>;</div>
+<div class="line"><a name="l00312"></a><span class="lineno">  312</span>&#160;                }</div>
+<div class="line"><a name="l00313"></a><span class="lineno">  313</span>&#160;            }</div>
+<div class="line"><a name="l00314"></a><span class="lineno">  314</span>&#160;            <span class="comment">// send any remaining non-empty batches</span></div>
+<div class="line"><a name="l00315"></a><span class="lineno">  315</span>&#160;            <span class="keywordflow">for</span> (<span class="keywordtype">int</span> i=0; i&lt;g_world_size; i++) {</div>
+<div class="line"><a name="l00316"></a><span class="lineno">  316</span>&#160;                <span class="comment">// fetch batch</span></div>
+<div class="line"><a name="l00317"></a><span class="lineno">  317</span>&#160;                <span class="keyword">auto</span> it = batchMap.find(i);</div>
+<div class="line"><a name="l00318"></a><span class="lineno">  318</span>&#160;                <span class="keywordflow">if</span> (it == batchMap.end()) {</div>
+<div class="line"><a name="l00319"></a><span class="lineno">  319</span>&#160;                    <a class="code" href="namespacelogger.html#a53f34feeb22a94db295af05b8b2aab5c">logger::log_error</a>(DBERR_INVALID_PARAMETER, <span class="stringliteral">&quot;Error fetching batch for node&quot;</span>, i);</div>
+<div class="line"><a name="l00320"></a><span class="lineno">  320</span>&#160;<span class="preprocessor">                    #pragma omp cancel parallel</span></div>
+<div class="line"><a name="l00321"></a><span class="lineno">  321</span>&#160;                    ret = DBERR_INVALID_PARAMETER;</div>
+<div class="line"><a name="l00322"></a><span class="lineno">  322</span>&#160;                }</div>
+<div class="line"><a name="l00323"></a><span class="lineno">  323</span>&#160;                <a class="code" href="structGeometryBatch.html">GeometryBatch</a> *batch = &amp;it-&gt;second;</div>
+<div class="line"><a name="l00324"></a><span class="lineno">  324</span>&#160;                <span class="keywordflow">if</span> (batch-&gt;objectCount &gt; 0) {</div>
+<div class="line"><a name="l00325"></a><span class="lineno">  325</span>&#160;                    local_ret = <a class="code" href="namespacecomm_1_1controller.html#acb873f6f6e22c38010feb19302b3fa00">comm::controller::serializeAndSendGeometryBatch</a>(batch);</div>
+<div class="line"><a name="l00326"></a><span class="lineno">  326</span>&#160;                    <span class="keywordflow">if</span> (local_ret != DBERR_OK) {</div>
+<div class="line"><a name="l00327"></a><span class="lineno">  327</span>&#160;<span class="preprocessor">                        #pragma omp cancel parallel</span></div>
+<div class="line"><a name="l00328"></a><span class="lineno">  328</span>&#160;                        ret = local_ret;</div>
+<div class="line"><a name="l00329"></a><span class="lineno">  329</span>&#160;                        <span class="keywordflow">break</span>;</div>
+<div class="line"><a name="l00330"></a><span class="lineno">  330</span>&#160;                    }</div>
+<div class="line"><a name="l00331"></a><span class="lineno">  331</span>&#160;                    <span class="comment">// empty the batch</span></div>
+<div class="line"><a name="l00332"></a><span class="lineno">  332</span>&#160;                    batch-&gt;clear();</div>
+<div class="line"><a name="l00333"></a><span class="lineno">  333</span>&#160;                    <span class="comment">// count the batch</span></div>
+<div class="line"><a name="l00334"></a><span class="lineno">  334</span>&#160;                    batchesSent += 1;</div>
+<div class="line"><a name="l00335"></a><span class="lineno">  335</span>&#160;                }</div>
+<div class="line"><a name="l00336"></a><span class="lineno">  336</span>&#160;            }</div>
+<div class="line"><a name="l00337"></a><span class="lineno">  337</span>&#160;            <span class="comment">// close file</span></div>
+<div class="line"><a name="l00338"></a><span class="lineno">  338</span>&#160;            fin.close();</div>
+<div class="line"><a name="l00339"></a><span class="lineno">  339</span>&#160;        }</div>
+<div class="line"><a name="l00340"></a><span class="lineno">  340</span>&#160;        <span class="comment">// check if it finished successfully</span></div>
+<div class="line"><a name="l00341"></a><span class="lineno">  341</span>&#160;        <span class="keywordflow">if</span> (ret != DBERR_OK) {</div>
+<div class="line"><a name="l00342"></a><span class="lineno">  342</span>&#160;            <span class="keywordflow">return</span> ret;</div>
+<div class="line"><a name="l00343"></a><span class="lineno">  343</span>&#160;        }</div>
+<div class="line"><a name="l00344"></a><span class="lineno">  344</span>&#160;        <span class="comment">// send an empty pack to each worker to signal the end of the partitioning for this dataset</span></div>
+<div class="line"><a name="l00345"></a><span class="lineno">  345</span>&#160;        <span class="keywordflow">for</span> (<span class="keywordtype">int</span> i=0; i&lt;g_world_size; i++) {</div>
+<div class="line"><a name="l00346"></a><span class="lineno">  346</span>&#160;            <span class="comment">// fetch batch (it is guaranteed to be empty)</span></div>
+<div class="line"><a name="l00347"></a><span class="lineno">  347</span>&#160;            <span class="keyword">auto</span> it = batchMap.find(i);</div>
+<div class="line"><a name="l00348"></a><span class="lineno">  348</span>&#160;            <span class="keywordflow">if</span> (it == batchMap.end()) {</div>
+<div class="line"><a name="l00349"></a><span class="lineno">  349</span>&#160;                <a class="code" href="namespacelogger.html#a53f34feeb22a94db295af05b8b2aab5c">logger::log_error</a>(DBERR_INVALID_PARAMETER, <span class="stringliteral">&quot;Error fetching batch for node&quot;</span>, i);</div>
+<div class="line"><a name="l00350"></a><span class="lineno">  350</span>&#160;                <span class="keywordflow">return</span> DBERR_INVALID_PARAMETER;</div>
+<div class="line"><a name="l00351"></a><span class="lineno">  351</span>&#160;            }</div>
+<div class="line"><a name="l00352"></a><span class="lineno">  352</span>&#160;            <a class="code" href="structGeometryBatch.html">GeometryBatch</a> *batch = &amp;it-&gt;second;</div>
+<div class="line"><a name="l00353"></a><span class="lineno">  353</span>&#160;            ret = <a class="code" href="namespacecomm_1_1controller.html#acb873f6f6e22c38010feb19302b3fa00">comm::controller::serializeAndSendGeometryBatch</a>(batch);</div>
+<div class="line"><a name="l00354"></a><span class="lineno">  354</span>&#160;            <span class="keywordflow">if</span> (ret != DBERR_OK) {</div>
+<div class="line"><a name="l00355"></a><span class="lineno">  355</span>&#160;                <span class="keywordflow">return</span> ret;</div>
+<div class="line"><a name="l00356"></a><span class="lineno">  356</span>&#160;            }</div>
+<div class="line"><a name="l00357"></a><span class="lineno">  357</span>&#160;        }</div>
+<div class="line"><a name="l00358"></a><span class="lineno">  358</span>&#160;        <span class="comment">// logger::log_success(&quot;Sent&quot;, batchesSent, &quot;non-empty batches.&quot;);</span></div>
+<div class="line"><a name="l00359"></a><span class="lineno">  359</span>&#160;        <span class="keywordflow">return</span> ret;</div>
+<div class="line"><a name="l00360"></a><span class="lineno">  360</span>&#160;    }</div>
+<div class="line"><a name="l00361"></a><span class="lineno">  361</span>&#160; </div>
+<div class="line"><a name="l00362"></a><span class="lineno">  362</span>&#160;    <span class="keyword">static</span> DB_STATUS performPartitioningCSV(<a class="code" href="structDataset.html">Dataset</a> &amp;dataset) {</div>
+<div class="line"><a name="l00363"></a><span class="lineno">  363</span>&#160;        DB_STATUS ret = DBERR_OK;  </div>
+<div class="line"><a name="l00364"></a><span class="lineno">  364</span>&#160; </div>
+<div class="line"><a name="l00365"></a><span class="lineno">  365</span>&#160;        <span class="comment">// first, issue the partitioning instruction</span></div>
+<div class="line"><a name="l00366"></a><span class="lineno">  366</span>&#160;        ret = comm::broadcast::broadcastInstructionMessage(MSG_INSTR_PARTITIONING_INIT);</div>
+<div class="line"><a name="l00367"></a><span class="lineno">  367</span>&#160;        <span class="keywordflow">if</span> (ret != DBERR_OK) {</div>
+<div class="line"><a name="l00368"></a><span class="lineno">  368</span>&#160;            <span class="keywordflow">return</span> ret;</div>
+<div class="line"><a name="l00369"></a><span class="lineno">  369</span>&#160;        }</div>
+<div class="line"><a name="l00370"></a><span class="lineno">  370</span>&#160;        </div>
+<div class="line"><a name="l00371"></a><span class="lineno">  371</span>&#160;        <span class="comment">// broadcast the dataset info to the nodes</span></div>
+<div class="line"><a name="l00372"></a><span class="lineno">  372</span>&#160;        ret = <a class="code" href="namespacecomm_1_1controller_1_1host.html#a0311bb6b9dffa1af0415761b6675c19c">comm::controller::host::broadcastDatasetInfo</a>(&amp;dataset);</div>
+<div class="line"><a name="l00373"></a><span class="lineno">  373</span>&#160;        <span class="keywordflow">if</span> (ret != DBERR_OK) {</div>
+<div class="line"><a name="l00374"></a><span class="lineno">  374</span>&#160;            <span class="keywordflow">return</span> ret;</div>
+<div class="line"><a name="l00375"></a><span class="lineno">  375</span>&#160;        }</div>
+<div class="line"><a name="l00376"></a><span class="lineno">  376</span>&#160;       </div>
+<div class="line"><a name="l00377"></a><span class="lineno">  377</span>&#160;        <span class="comment">// finally, load data and partition to workers</span></div>
+<div class="line"><a name="l00378"></a><span class="lineno">  378</span>&#160;        ret = loadCSVDatasetAndPartition(dataset.path);</div>
+<div class="line"><a name="l00379"></a><span class="lineno">  379</span>&#160;        <span class="keywordflow">if</span> (ret != DBERR_OK) {</div>
+<div class="line"><a name="l00380"></a><span class="lineno">  380</span>&#160;            <span class="keywordflow">return</span> ret;</div>
+<div class="line"><a name="l00381"></a><span class="lineno">  381</span>&#160;        }</div>
+<div class="line"><a name="l00382"></a><span class="lineno">  382</span>&#160; </div>
+<div class="line"><a name="l00383"></a><span class="lineno">  383</span>&#160;        <span class="keywordflow">return</span> ret;</div>
+<div class="line"><a name="l00384"></a><span class="lineno">  384</span>&#160;    }</div>
+<div class="line"><a name="l00385"></a><span class="lineno">  385</span>&#160; </div>
+<div class="line"><a name="l00386"></a><span class="lineno"><a class="line" href="namespacepartitioning.html#a5f7aef01c8b2d7c6a89ee75018c45591">  386</a></span>&#160;    DB_STATUS <a class="code" href="namespacepartitioning.html#a5f7aef01c8b2d7c6a89ee75018c45591">partitionDataset</a>(<a class="code" href="structDataset.html">Dataset</a> *dataset) {</div>
+<div class="line"><a name="l00387"></a><span class="lineno">  387</span>&#160;        <span class="keywordtype">double</span> startTime;</div>
+<div class="line"><a name="l00388"></a><span class="lineno">  388</span>&#160;        DB_STATUS ret;</div>
+<div class="line"><a name="l00389"></a><span class="lineno">  389</span>&#160;        <span class="comment">// time</span></div>
+<div class="line"><a name="l00390"></a><span class="lineno">  390</span>&#160;        startTime = <a class="code" href="namespacempi__timer.html#ab01f3cdc560e4858245746a406e9b951">mpi_timer::markTime</a>();</div>
+<div class="line"><a name="l00391"></a><span class="lineno">  391</span>&#160;        <span class="keywordflow">switch</span> (dataset-&gt;fileType) {</div>
+<div class="line"><a name="l00392"></a><span class="lineno">  392</span>&#160;            <span class="comment">// perform the partitioning</span></div>
+<div class="line"><a name="l00393"></a><span class="lineno">  393</span>&#160;            <span class="keywordflow">case</span> FT_CSV:</div>
+<div class="line"><a name="l00394"></a><span class="lineno">  394</span>&#160;                <span class="comment">// csv dataset</span></div>
+<div class="line"><a name="l00395"></a><span class="lineno">  395</span>&#160;                ret = performPartitioningCSV(*dataset);</div>
+<div class="line"><a name="l00396"></a><span class="lineno">  396</span>&#160;                <span class="keywordflow">if</span> (ret != DBERR_OK) {</div>
+<div class="line"><a name="l00397"></a><span class="lineno">  397</span>&#160;                    <a class="code" href="namespacelogger.html#a53f34feeb22a94db295af05b8b2aab5c">logger::log_error</a>(DBERR_PARTITIONING_FAILED, <span class="stringliteral">&quot;Partitioning failed for dataset&quot;</span>, dataset-&gt;nickname);</div>
+<div class="line"><a name="l00398"></a><span class="lineno">  398</span>&#160;                    <span class="keywordflow">return</span> ret;</div>
+<div class="line"><a name="l00399"></a><span class="lineno">  399</span>&#160;                }</div>
+<div class="line"><a name="l00400"></a><span class="lineno">  400</span>&#160;                <span class="keywordflow">break</span>;</div>
+<div class="line"><a name="l00401"></a><span class="lineno">  401</span>&#160;            <span class="keywordflow">case</span> FT_BINARY:</div>
+<div class="line"><a name="l00402"></a><span class="lineno">  402</span>&#160;            <span class="keywordflow">case</span> FT_WKT:</div>
+<div class="line"><a name="l00403"></a><span class="lineno">  403</span>&#160;            <span class="keywordflow">default</span>:</div>
+<div class="line"><a name="l00404"></a><span class="lineno">  404</span>&#160;                <a class="code" href="namespacelogger.html#a53f34feeb22a94db295af05b8b2aab5c">logger::log_error</a>(DBERR_FEATURE_UNSUPPORTED, <span class="stringliteral">&quot;Unsupported data file type:&quot;</span>, dataset-&gt;fileType);</div>
+<div class="line"><a name="l00405"></a><span class="lineno">  405</span>&#160;                <span class="keywordflow">break</span>;</div>
+<div class="line"><a name="l00406"></a><span class="lineno">  406</span>&#160;        }</div>
+<div class="line"><a name="l00407"></a><span class="lineno">  407</span>&#160; </div>
+<div class="line"><a name="l00408"></a><span class="lineno">  408</span>&#160;        <span class="comment">// wait for response by workers+agent that all is ok</span></div>
+<div class="line"><a name="l00409"></a><span class="lineno">  409</span>&#160;        ret = <a class="code" href="namespacecomm_1_1controller_1_1host.html#a7acd9cbfb1666431ed71aedf9242836b">comm::controller::host::gatherResponses</a>();</div>
+<div class="line"><a name="l00410"></a><span class="lineno">  410</span>&#160;        <span class="keywordflow">if</span> (ret != DBERR_OK) {</div>
+<div class="line"><a name="l00411"></a><span class="lineno">  411</span>&#160;            <span class="keywordflow">return</span> ret;</div>
+<div class="line"><a name="l00412"></a><span class="lineno">  412</span>&#160;        }</div>
+<div class="line"><a name="l00413"></a><span class="lineno">  413</span>&#160;        <a class="code" href="namespacelogger.html#a6232124565e7aac3c22650f1717cfa29">logger::log_success</a>(<span class="stringliteral">&quot;Partitioning for dataset&quot;</span>, dataset-&gt;nickname, <span class="stringliteral">&quot;finished in&quot;</span>, <a class="code" href="namespacempi__timer.html#a74c246372eadbc66ab89e4c971099ce0">mpi_timer::getElapsedTime</a>(startTime), <span class="stringliteral">&quot;seconds.&quot;</span>);</div>
+<div class="line"><a name="l00414"></a><span class="lineno">  414</span>&#160;                </div>
+<div class="line"><a name="l00415"></a><span class="lineno">  415</span>&#160;        <span class="keywordflow">return</span> DBERR_OK;</div>
+<div class="line"><a name="l00416"></a><span class="lineno">  416</span>&#160;    }</div>
+<div class="line"><a name="l00417"></a><span class="lineno">  417</span>&#160; </div>
+<div class="line"><a name="l00418"></a><span class="lineno">  418</span>&#160;    <span class="keyword">static</span> TwoLayerClass getTwoLayerClassForMBRandPartition(<span class="keywordtype">double</span> mbrXmin, <span class="keywordtype">double</span> mbrYmin, <span class="keywordtype">double</span> partitionXmin, <span class="keywordtype">double</span> partitionYmin) {</div>
+<div class="line"><a name="l00419"></a><span class="lineno">  419</span>&#160;        <span class="keywordflow">if</span> (mbrXmin &lt; partitionXmin) {</div>
+<div class="line"><a name="l00420"></a><span class="lineno">  420</span>&#160;            <span class="comment">// before in X axis</span></div>
+<div class="line"><a name="l00421"></a><span class="lineno">  421</span>&#160;            <span class="keywordflow">if</span> (mbrYmin &lt; partitionYmin) {</div>
+<div class="line"><a name="l00422"></a><span class="lineno">  422</span>&#160;                <span class="comment">// before in Y axis, class D</span></div>
+<div class="line"><a name="l00423"></a><span class="lineno">  423</span>&#160;                <span class="keywordflow">return</span> CLASS_D;</div>
+<div class="line"><a name="l00424"></a><span class="lineno">  424</span>&#160;            } <span class="keywordflow">else</span> {</div>
+<div class="line"><a name="l00425"></a><span class="lineno">  425</span>&#160;                <span class="comment">// after in Y axis, class C</span></div>
+<div class="line"><a name="l00426"></a><span class="lineno">  426</span>&#160;                <span class="keywordflow">return</span> CLASS_C;</div>
+<div class="line"><a name="l00427"></a><span class="lineno">  427</span>&#160;            }</div>
+<div class="line"><a name="l00428"></a><span class="lineno">  428</span>&#160;        } <span class="keywordflow">else</span> {</div>
+<div class="line"><a name="l00429"></a><span class="lineno">  429</span>&#160;            <span class="comment">// after in X axis</span></div>
+<div class="line"><a name="l00430"></a><span class="lineno">  430</span>&#160;            <span class="keywordflow">if</span> (mbrYmin &lt; partitionYmin) {</div>
+<div class="line"><a name="l00431"></a><span class="lineno">  431</span>&#160;                <span class="comment">// before in Y axis, class B</span></div>
+<div class="line"><a name="l00432"></a><span class="lineno">  432</span>&#160;                <span class="keywordflow">return</span> CLASS_B;</div>
+<div class="line"><a name="l00433"></a><span class="lineno">  433</span>&#160;            } <span class="keywordflow">else</span> {</div>
+<div class="line"><a name="l00434"></a><span class="lineno">  434</span>&#160;                <span class="comment">// after in Y axis, class A</span></div>
+<div class="line"><a name="l00435"></a><span class="lineno">  435</span>&#160;                <span class="keywordflow">return</span> CLASS_A;</div>
+<div class="line"><a name="l00436"></a><span class="lineno">  436</span>&#160;            }</div>
+<div class="line"><a name="l00437"></a><span class="lineno">  437</span>&#160;        }</div>
+<div class="line"><a name="l00438"></a><span class="lineno">  438</span>&#160;    }</div>
+<div class="line"><a name="l00439"></a><span class="lineno">  439</span>&#160; </div>
+<div class="line"><a name="l00440"></a><span class="lineno">  440</span>&#160;    <span class="keyword">namespace </span>two_grid</div>
+<div class="line"><a name="l00441"></a><span class="lineno">  441</span>&#160;    {</div>
+<div class="line"><a name="l00444"></a><span class="lineno">  444</span>&#160;        <span class="keyword">static</span> DB_STATUS setPartitionClassesForGeometry(<a class="code" href="structGeometry.html">Geometry</a> &amp;geometry){</div>
+<div class="line"><a name="l00445"></a><span class="lineno">  445</span>&#160;            <span class="comment">// get object&#39;s MBR</span></div>
+<div class="line"><a name="l00446"></a><span class="lineno">  446</span>&#160;            <span class="keywordtype">double</span> xMin = std::numeric_limits&lt;int&gt;::max();</div>
+<div class="line"><a name="l00447"></a><span class="lineno">  447</span>&#160;            <span class="keywordtype">double</span> yMin = std::numeric_limits&lt;int&gt;::max();</div>
+<div class="line"><a name="l00448"></a><span class="lineno">  448</span>&#160;            <span class="keywordtype">double</span> xMax = -std::numeric_limits&lt;int&gt;::max();</div>
+<div class="line"><a name="l00449"></a><span class="lineno">  449</span>&#160;            <span class="keywordtype">double</span> yMax = -std::numeric_limits&lt;int&gt;::max();</div>
+<div class="line"><a name="l00450"></a><span class="lineno">  450</span>&#160;            <span class="keywordflow">for</span> (<span class="keywordtype">int</span> i=0; i&lt;geometry.coords.size(); i+= 2) {</div>
+<div class="line"><a name="l00451"></a><span class="lineno">  451</span>&#160;                xMin = std::min(xMin, geometry.coords[i]);</div>
+<div class="line"><a name="l00452"></a><span class="lineno">  452</span>&#160;                yMin = std::min(yMin, geometry.coords[i+1]);</div>
+<div class="line"><a name="l00453"></a><span class="lineno">  453</span>&#160;                xMax = std::max(xMax, geometry.coords[i]);</div>
+<div class="line"><a name="l00454"></a><span class="lineno">  454</span>&#160;                yMax = std::max(yMax, geometry.coords[i+1]);</div>
+<div class="line"><a name="l00455"></a><span class="lineno">  455</span>&#160;            }             </div>
+<div class="line"><a name="l00456"></a><span class="lineno">  456</span>&#160;            <span class="comment">// vector for the new partitions</span></div>
+<div class="line"><a name="l00457"></a><span class="lineno">  457</span>&#160;            std::vector&lt;int&gt; newPartitions;</div>
+<div class="line"><a name="l00458"></a><span class="lineno">  458</span>&#160;            <span class="comment">// for each distribution partition</span></div>
+<div class="line"><a name="l00459"></a><span class="lineno">  459</span>&#160;            <span class="keywordflow">for</span> (<span class="keywordtype">int</span> i=0; i &lt; geometry.partitionCount; i++) {</div>
+<div class="line"><a name="l00460"></a><span class="lineno">  460</span>&#160;                <span class="comment">// get the partition ID, no two layer class set yet</span></div>
+<div class="line"><a name="l00461"></a><span class="lineno">  461</span>&#160;                <span class="keywordtype">int</span> distPartitionID = geometry.partitions[i*2];</div>
+<div class="line"><a name="l00462"></a><span class="lineno">  462</span>&#160;                <span class="comment">// get the partition&#39;s indices</span></div>
+<div class="line"><a name="l00463"></a><span class="lineno">  463</span>&#160;                <span class="keywordtype">int</span> distPartitionIndexX, distPartitionIndexY;</div>
+<div class="line"><a name="l00464"></a><span class="lineno">  464</span>&#160;                <a class="code" href="containers_8h.html#a93d917fabd28d05357cd3096eb43b641">g_config</a>.partitioningMethod-&gt;<a class="code" href="structPartitioningMethod.html#a04292609dafc7bb0bb3d9ed936f6c048">getDistributionGridPartitionIndices</a>(distPartitionID, distPartitionIndexX, distPartitionIndexY);</div>
+<div class="line"><a name="l00465"></a><span class="lineno">  465</span>&#160;                <span class="comment">// get the global partition&#39;s extents</span></div>
+<div class="line"><a name="l00466"></a><span class="lineno">  466</span>&#160;                <span class="comment">// printf(&quot;Distribution grid partition ID: %d (%d,%d)\n&quot;, distPartitionID, distPartitionIndexX, distPartitionIndexY);</span></div>
+<div class="line"><a name="l00467"></a><span class="lineno">  467</span>&#160;                <span class="comment">// calculate the partition&#39;s bounds in the distribution grid</span></div>
+<div class="line"><a name="l00468"></a><span class="lineno">  468</span>&#160;                <span class="keywordtype">double</span> distPartitionXmin = <a class="code" href="containers_8h.html#a93d917fabd28d05357cd3096eb43b641">g_config</a>.partitioningMethod-&gt;<a class="code" href="structPartitioningMethod.html#adbdfe8ff3a0d48c23e69e581035a7f7e">distGridDataspaceInfo</a>.xMinGlobal + (distPartitionIndexX * <a class="code" href="containers_8h.html#a93d917fabd28d05357cd3096eb43b641">g_config</a>.partitioningMethod-&gt;getDistPartionExtentX());</div>
+<div class="line"><a name="l00469"></a><span class="lineno">  469</span>&#160;                <span class="keywordtype">double</span> distPartitionYmin = <a class="code" href="containers_8h.html#a93d917fabd28d05357cd3096eb43b641">g_config</a>.partitioningMethod-&gt;<a class="code" href="structPartitioningMethod.html#adbdfe8ff3a0d48c23e69e581035a7f7e">distGridDataspaceInfo</a>.yMinGlobal + (distPartitionIndexY * <a class="code" href="containers_8h.html#a93d917fabd28d05357cd3096eb43b641">g_config</a>.partitioningMethod-&gt;getDistPartionExtentY());</div>
+<div class="line"><a name="l00470"></a><span class="lineno">  470</span>&#160;                <span class="keywordtype">double</span> distPartitionXmax = <a class="code" href="containers_8h.html#a93d917fabd28d05357cd3096eb43b641">g_config</a>.partitioningMethod-&gt;<a class="code" href="structPartitioningMethod.html#adbdfe8ff3a0d48c23e69e581035a7f7e">distGridDataspaceInfo</a>.xMinGlobal + ((distPartitionIndexX+1) * <a class="code" href="containers_8h.html#a93d917fabd28d05357cd3096eb43b641">g_config</a>.partitioningMethod-&gt;getDistPartionExtentX());</div>
+<div class="line"><a name="l00471"></a><span class="lineno">  471</span>&#160;                <span class="keywordtype">double</span> distPartitionYmax = <a class="code" href="containers_8h.html#a93d917fabd28d05357cd3096eb43b641">g_config</a>.partitioningMethod-&gt;<a class="code" href="structPartitioningMethod.html#adbdfe8ff3a0d48c23e69e581035a7f7e">distGridDataspaceInfo</a>.yMinGlobal + ((distPartitionIndexY+1) * <a class="code" href="containers_8h.html#a93d917fabd28d05357cd3096eb43b641">g_config</a>.partitioningMethod-&gt;getDistPartionExtentY());</div>
+<div class="line"><a name="l00472"></a><span class="lineno">  472</span>&#160;                <span class="comment">// printf(&quot;Distribution grid partition bounds: (%f,%f),(%f,%f),(%f,%f),(%f,%f)\n&quot;, distPartitionXmin, distPartitionYmin, distPartitionXmax, distPartitionYmin, distPartitionXmax, distPartitionYmax, distPartitionXmin, distPartitionYmax);</span></div>
+<div class="line"><a name="l00473"></a><span class="lineno">  473</span>&#160;                TwoLayerClass objectClassInDistributionPartition = getTwoLayerClassForMBRandPartition(xMin, yMin, distPartitionXmin, distPartitionYmin);</div>
+<div class="line"><a name="l00474"></a><span class="lineno">  474</span>&#160;                <span class="comment">// printf(&quot;Object class in parent partition: %s\n&quot;, mapping::twoLayerClassIntToStr(objectClassInDistributionPartition).c_str());</span></div>
+<div class="line"><a name="l00475"></a><span class="lineno">  475</span>&#160;                <span class="comment">// get the indices of the start/end part partitions</span></div>
+<div class="line"><a name="l00476"></a><span class="lineno">  476</span>&#160;                <span class="keywordtype">int</span> localPartitionXstart = (xMin - distPartitionXmin) / <a class="code" href="containers_8h.html#a93d917fabd28d05357cd3096eb43b641">g_config</a>.partitioningMethod-&gt;getPartPartionExtentX();</div>
+<div class="line"><a name="l00477"></a><span class="lineno">  477</span>&#160;                <span class="keywordtype">int</span> localPartitionYstart = (yMin - distPartitionYmin) / <a class="code" href="containers_8h.html#a93d917fabd28d05357cd3096eb43b641">g_config</a>.partitioningMethod-&gt;getPartPartionExtentY();</div>
+<div class="line"><a name="l00478"></a><span class="lineno">  478</span>&#160;                <span class="keywordtype">int</span> localPartitionXend = (xMax - distPartitionXmin) / <a class="code" href="containers_8h.html#a93d917fabd28d05357cd3096eb43b641">g_config</a>.partitioningMethod-&gt;getPartPartionExtentX();</div>
+<div class="line"><a name="l00479"></a><span class="lineno">  479</span>&#160;                <span class="keywordtype">int</span> localPartitionYend = (yMax - distPartitionYmin) / <a class="code" href="containers_8h.html#a93d917fabd28d05357cd3096eb43b641">g_config</a>.partitioningMethod-&gt;getPartPartionExtentY();</div>
+<div class="line"><a name="l00480"></a><span class="lineno">  480</span>&#160;                <span class="comment">// printf(&quot;Local partition start/end: (%d,%d),(%d,%d)\n&quot;, localPartitionXstart, localPartitionYstart, localPartitionXend, localPartitionYend);</span></div>
+<div class="line"><a name="l00481"></a><span class="lineno">  481</span>&#160;                <span class="comment">// adjust (todo: check whether any of these happen, discard the rest)</span></div>
+<div class="line"><a name="l00482"></a><span class="lineno">  482</span>&#160;                <span class="keywordflow">if</span> (localPartitionXstart &lt; 0) {</div>
+<div class="line"><a name="l00483"></a><span class="lineno">  483</span>&#160;                    localPartitionXstart = 0;</div>
+<div class="line"><a name="l00484"></a><span class="lineno">  484</span>&#160;                }</div>
+<div class="line"><a name="l00485"></a><span class="lineno">  485</span>&#160;                <span class="keywordflow">else</span> <span class="keywordflow">if</span> (localPartitionXstart &gt; <a class="code" href="containers_8h.html#a93d917fabd28d05357cd3096eb43b641">g_config</a>.partitioningMethod-&gt;<a class="code" href="structPartitioningMethod.html#a5b9ca4e6c27d0d815d779bcff4902124">getPartitioningPPD</a>()-1) {</div>
+<div class="line"><a name="l00486"></a><span class="lineno">  486</span>&#160;                    localPartitionXstart = <a class="code" href="containers_8h.html#a93d917fabd28d05357cd3096eb43b641">g_config</a>.partitioningMethod-&gt;<a class="code" href="structPartitioningMethod.html#a5b9ca4e6c27d0d815d779bcff4902124">getPartitioningPPD</a>()-1;</div>
+<div class="line"><a name="l00487"></a><span class="lineno">  487</span>&#160;                }</div>
+<div class="line"><a name="l00488"></a><span class="lineno">  488</span>&#160;                <span class="keywordflow">if</span> (localPartitionYstart &lt; 0) {</div>
+<div class="line"><a name="l00489"></a><span class="lineno">  489</span>&#160;                    localPartitionYstart = 0;</div>
+<div class="line"><a name="l00490"></a><span class="lineno">  490</span>&#160;                }</div>
+<div class="line"><a name="l00491"></a><span class="lineno">  491</span>&#160;                <span class="keywordflow">else</span> <span class="keywordflow">if</span> (localPartitionYstart &gt; <a class="code" href="containers_8h.html#a93d917fabd28d05357cd3096eb43b641">g_config</a>.partitioningMethod-&gt;<a class="code" href="structPartitioningMethod.html#a5b9ca4e6c27d0d815d779bcff4902124">getPartitioningPPD</a>()-1) {</div>
+<div class="line"><a name="l00492"></a><span class="lineno">  492</span>&#160;                    localPartitionYstart = <a class="code" href="containers_8h.html#a93d917fabd28d05357cd3096eb43b641">g_config</a>.partitioningMethod-&gt;<a class="code" href="structPartitioningMethod.html#a5b9ca4e6c27d0d815d779bcff4902124">getPartitioningPPD</a>()-1;</div>
+<div class="line"><a name="l00493"></a><span class="lineno">  493</span>&#160;                }</div>
+<div class="line"><a name="l00494"></a><span class="lineno">  494</span>&#160;                <span class="keywordflow">if</span> (localPartitionXend &lt; 0) {</div>
+<div class="line"><a name="l00495"></a><span class="lineno">  495</span>&#160;                    localPartitionXend = 0;</div>
+<div class="line"><a name="l00496"></a><span class="lineno">  496</span>&#160;                }</div>
+<div class="line"><a name="l00497"></a><span class="lineno">  497</span>&#160;                <span class="keywordflow">else</span> <span class="keywordflow">if</span> (localPartitionXend &gt; <a class="code" href="containers_8h.html#a93d917fabd28d05357cd3096eb43b641">g_config</a>.partitioningMethod-&gt;<a class="code" href="structPartitioningMethod.html#a5b9ca4e6c27d0d815d779bcff4902124">getPartitioningPPD</a>()-1) {</div>
+<div class="line"><a name="l00498"></a><span class="lineno">  498</span>&#160;                    localPartitionXend = <a class="code" href="containers_8h.html#a93d917fabd28d05357cd3096eb43b641">g_config</a>.partitioningMethod-&gt;<a class="code" href="structPartitioningMethod.html#a5b9ca4e6c27d0d815d779bcff4902124">getPartitioningPPD</a>()-1;</div>
+<div class="line"><a name="l00499"></a><span class="lineno">  499</span>&#160;                }</div>
+<div class="line"><a name="l00500"></a><span class="lineno">  500</span>&#160;                <span class="keywordflow">if</span> (localPartitionYend &lt; 0) {</div>
+<div class="line"><a name="l00501"></a><span class="lineno">  501</span>&#160;                    localPartitionYend = 0;</div>
+<div class="line"><a name="l00502"></a><span class="lineno">  502</span>&#160;                }</div>
+<div class="line"><a name="l00503"></a><span class="lineno">  503</span>&#160;                <span class="keywordflow">else</span> <span class="keywordflow">if</span> (localPartitionYend &gt; <a class="code" href="containers_8h.html#a93d917fabd28d05357cd3096eb43b641">g_config</a>.partitioningMethod-&gt;<a class="code" href="structPartitioningMethod.html#a5b9ca4e6c27d0d815d779bcff4902124">getPartitioningPPD</a>()-1) {</div>
+<div class="line"><a name="l00504"></a><span class="lineno">  504</span>&#160;                    localPartitionYend = <a class="code" href="containers_8h.html#a93d917fabd28d05357cd3096eb43b641">g_config</a>.partitioningMethod-&gt;<a class="code" href="structPartitioningMethod.html#a5b9ca4e6c27d0d815d779bcff4902124">getPartitioningPPD</a>()-1;</div>
+<div class="line"><a name="l00505"></a><span class="lineno">  505</span>&#160;                }</div>
+<div class="line"><a name="l00506"></a><span class="lineno">  506</span>&#160;                <span class="comment">// printf(&quot;After adjustment: Local partition start/end: (%d,%d),(%d,%d)\n&quot;, localPartitionXstart, localPartitionYstart, localPartitionXend, localPartitionYend);</span></div>
+<div class="line"><a name="l00507"></a><span class="lineno">  507</span>&#160;                <span class="keywordtype">int</span> totalNewPartitions = (localPartitionXend - localPartitionXstart + 1) * (localPartitionYend - localPartitionYstart + 1);</div>
+<div class="line"><a name="l00508"></a><span class="lineno">  508</span>&#160;                <span class="comment">// vector for the new partitions</span></div>
+<div class="line"><a name="l00509"></a><span class="lineno">  509</span>&#160;                newPartitions.reserve(newPartitions.size() + totalNewPartitions*2);</div>
+<div class="line"><a name="l00510"></a><span class="lineno">  510</span>&#160;                <span class="comment">// first partition inherits the class of the parent partition</span></div>
+<div class="line"><a name="l00511"></a><span class="lineno">  511</span>&#160;                newPartitions.emplace_back(<a class="code" href="containers_8h.html#a93d917fabd28d05357cd3096eb43b641">g_config</a>.partitioningMethod-&gt;<a class="code" href="structPartitioningMethod.html#ae519f21f1ff209c8c10aceacbfe595d9">getPartitioningGridPartitionID</a>(distPartitionIndexX, distPartitionIndexY, localPartitionXstart, localPartitionYstart));</div>
+<div class="line"><a name="l00512"></a><span class="lineno">  512</span>&#160;                newPartitions.emplace_back(objectClassInDistributionPartition);</div>
+<div class="line"><a name="l00513"></a><span class="lineno">  513</span>&#160;                <span class="comment">// for each local partition, get the object&#39;s class</span></div>
+<div class="line"><a name="l00514"></a><span class="lineno">  514</span>&#160;                <span class="keywordflow">for</span> (<span class="keywordtype">int</span> indexI=localPartitionXstart; indexI &lt;= localPartitionXend; indexI++) {</div>
+<div class="line"><a name="l00515"></a><span class="lineno">  515</span>&#160;                    <span class="keywordflow">if</span> (indexI != localPartitionXstart) {</div>
+<div class="line"><a name="l00516"></a><span class="lineno">  516</span>&#160;                        <span class="comment">// next partitions on X axis</span></div>
+<div class="line"><a name="l00517"></a><span class="lineno">  517</span>&#160;                        <span class="comment">// add partition ID</span></div>
+<div class="line"><a name="l00518"></a><span class="lineno">  518</span>&#160;                        newPartitions.emplace_back(<a class="code" href="containers_8h.html#a93d917fabd28d05357cd3096eb43b641">g_config</a>.partitioningMethod-&gt;<a class="code" href="structPartitioningMethod.html#ae519f21f1ff209c8c10aceacbfe595d9">getPartitioningGridPartitionID</a>(distPartitionIndexX, distPartitionIndexY, indexI, localPartitionYstart));</div>
+<div class="line"><a name="l00519"></a><span class="lineno">  519</span>&#160;                        <span class="keywordflow">if</span> (objectClassInDistributionPartition == CLASS_B) {</div>
+<div class="line"><a name="l00520"></a><span class="lineno">  520</span>&#160;                            <span class="comment">// if in parent partition it is B, </span></div>
+<div class="line"><a name="l00521"></a><span class="lineno">  521</span>&#160;                            <span class="comment">// then in the next partition on the X axis would be D </span></div>
+<div class="line"><a name="l00522"></a><span class="lineno">  522</span>&#160;                            <span class="comment">// (as the object would be before this partition in both axes)</span></div>
+<div class="line"><a name="l00523"></a><span class="lineno">  523</span>&#160;                            newPartitions.emplace_back(CLASS_D);</div>
+<div class="line"><a name="l00524"></a><span class="lineno">  524</span>&#160;                            <span class="comment">// printf(&quot;Instant object class: %s\n&quot;, mapping::twoLayerClassIntToStr(CLASS_D).c_str());</span></div>
+<div class="line"><a name="l00525"></a><span class="lineno">  525</span>&#160;                        } <span class="keywordflow">else</span> {</div>
+<div class="line"><a name="l00526"></a><span class="lineno">  526</span>&#160;                            <span class="comment">// otherwise its C</span></div>
+<div class="line"><a name="l00527"></a><span class="lineno">  527</span>&#160;                            newPartitions.emplace_back(CLASS_C);</div>
+<div class="line"><a name="l00528"></a><span class="lineno">  528</span>&#160;                            <span class="comment">// printf(&quot;Instant object class: %s\n&quot;, mapping::twoLayerClassIntToStr(CLASS_C).c_str());</span></div>
+<div class="line"><a name="l00529"></a><span class="lineno">  529</span>&#160;                        }</div>
+<div class="line"><a name="l00530"></a><span class="lineno">  530</span>&#160;                        <span class="comment">// validity prints</span></div>
+<div class="line"><a name="l00531"></a><span class="lineno">  531</span>&#160;                        <span class="comment">// double currentPartitionXmin = distPartitionXmin + (indexI * g_config.partitioningMethod-&gt;getPartPartionExtentX());</span></div>
+<div class="line"><a name="l00532"></a><span class="lineno">  532</span>&#160;                        <span class="comment">// double currentPartitionYmin = distPartitionYmin + (localPartitionYstart * g_config.partitioningMethod-&gt;getPartPartionExtentY());</span></div>
+<div class="line"><a name="l00533"></a><span class="lineno">  533</span>&#160;                        <span class="comment">// double currentPartitionXmax = distPartitionXmin + ((indexI+1) * g_config.partitioningMethod-&gt;getPartPartionExtentX());//debug only, remove after</span></div>
+<div class="line"><a name="l00534"></a><span class="lineno">  534</span>&#160;                        <span class="comment">// double currentPartitionYmax = distPartitionYmin + ((localPartitionYstart+1) * g_config.partitioningMethod-&gt;getPartPartionExtentY());//debug only, remove after</span></div>
+<div class="line"><a name="l00535"></a><span class="lineno">  535</span>&#160;                        <span class="comment">// TwoLayerClass objectClassInPartition = getTwoLayerClassForMBRandPartition(xMin, yMin, currentPartitionXmin, currentPartitionYmin);</span></div>
+<div class="line"><a name="l00536"></a><span class="lineno">  536</span>&#160;                        <span class="comment">// printf(&quot;Local partition: (%d,%d)\n&quot;, indexI, localPartitionYstart);</span></div>
+<div class="line"><a name="l00537"></a><span class="lineno">  537</span>&#160;                        <span class="comment">// printf(&quot;Local partition bounds: (%f,%f),(%f,%f),(%f,%f),(%f,%f)\n&quot;, currentPartitionXmin, currentPartitionYmin, currentPartitionXmax, currentPartitionYmin, currentPartitionXmax, currentPartitionYmax, currentPartitionXmin, currentPartitionYmax);</span></div>
+<div class="line"><a name="l00538"></a><span class="lineno">  538</span>&#160;                        <span class="comment">// printf(&quot;Calculated object class: %s\n&quot;, mapping::twoLayerClassIntToStr(objectClassInPartition).c_str());</span></div>
+<div class="line"><a name="l00539"></a><span class="lineno">  539</span>&#160;                    }</div>
+<div class="line"><a name="l00540"></a><span class="lineno">  540</span>&#160;                    <span class="keywordflow">for</span> (<span class="keywordtype">int</span> indexJ=localPartitionYstart+1; indexJ &lt;= localPartitionYend; indexJ++) {</div>
+<div class="line"><a name="l00541"></a><span class="lineno">  541</span>&#160;                        <span class="comment">// next partitions on Y axis</span></div>
+<div class="line"><a name="l00542"></a><span class="lineno">  542</span>&#160;                        <span class="comment">// add partition ID</span></div>
+<div class="line"><a name="l00543"></a><span class="lineno">  543</span>&#160;                        newPartitions.emplace_back(<a class="code" href="containers_8h.html#a93d917fabd28d05357cd3096eb43b641">g_config</a>.partitioningMethod-&gt;<a class="code" href="structPartitioningMethod.html#ae519f21f1ff209c8c10aceacbfe595d9">getPartitioningGridPartitionID</a>(distPartitionIndexX, distPartitionIndexY, indexI, indexJ));</div>
+<div class="line"><a name="l00544"></a><span class="lineno">  544</span>&#160;                        <span class="keywordflow">if</span> (indexI == localPartitionXstart) {</div>
+<div class="line"><a name="l00545"></a><span class="lineno">  545</span>&#160;                            <span class="keywordflow">if</span> (objectClassInDistributionPartition == CLASS_C) {</div>
+<div class="line"><a name="l00546"></a><span class="lineno">  546</span>&#160;                                <span class="comment">// if in parent partition it is C, </span></div>
+<div class="line"><a name="l00547"></a><span class="lineno">  547</span>&#160;                                <span class="comment">// then in the next partition on the Y axis would be D </span></div>
+<div class="line"><a name="l00548"></a><span class="lineno">  548</span>&#160;                                <span class="comment">// (as the object would be before this partition in both axes)</span></div>
+<div class="line"><a name="l00549"></a><span class="lineno">  549</span>&#160;                                newPartitions.emplace_back(CLASS_D);</div>
+<div class="line"><a name="l00550"></a><span class="lineno">  550</span>&#160;                                <span class="comment">// printf(&quot;Instant object class: %s\n&quot;, mapping::twoLayerClassIntToStr(CLASS_D).c_str());</span></div>
+<div class="line"><a name="l00551"></a><span class="lineno">  551</span>&#160;                            } <span class="keywordflow">else</span> {</div>
+<div class="line"><a name="l00552"></a><span class="lineno">  552</span>&#160;                                <span class="comment">// otherwise its B</span></div>
+<div class="line"><a name="l00553"></a><span class="lineno">  553</span>&#160;                                newPartitions.emplace_back(CLASS_B);</div>
+<div class="line"><a name="l00554"></a><span class="lineno">  554</span>&#160;                                <span class="comment">// printf(&quot;Instant object class: %s\n&quot;, mapping::twoLayerClassIntToStr(CLASS_B).c_str());</span></div>
+<div class="line"><a name="l00555"></a><span class="lineno">  555</span>&#160;                            }</div>
+<div class="line"><a name="l00556"></a><span class="lineno">  556</span>&#160;                        } <span class="keywordflow">else</span> {</div>
+<div class="line"><a name="l00557"></a><span class="lineno">  557</span>&#160;                            <span class="comment">// D always</span></div>
+<div class="line"><a name="l00558"></a><span class="lineno">  558</span>&#160;                            newPartitions.emplace_back(CLASS_D);</div>
+<div class="line"><a name="l00559"></a><span class="lineno">  559</span>&#160;                            <span class="comment">// printf(&quot;Instant object class: %s\n&quot;, mapping::twoLayerClassIntToStr(CLASS_D).c_str());</span></div>
+<div class="line"><a name="l00560"></a><span class="lineno">  560</span>&#160;                        }</div>
+<div class="line"><a name="l00561"></a><span class="lineno">  561</span>&#160;                    }</div>
+<div class="line"><a name="l00562"></a><span class="lineno">  562</span>&#160;                }</div>
+<div class="line"><a name="l00563"></a><span class="lineno">  563</span>&#160;            }</div>
+<div class="line"><a name="l00564"></a><span class="lineno">  564</span>&#160;            <span class="comment">// replace into object</span></div>
+<div class="line"><a name="l00565"></a><span class="lineno">  565</span>&#160;            geometry.partitions = newPartitions;</div>
+<div class="line"><a name="l00566"></a><span class="lineno">  566</span>&#160;            geometry.partitionCount = newPartitions.size() / 2;</div>
+<div class="line"><a name="l00567"></a><span class="lineno">  567</span>&#160;            </div>
+<div class="line"><a name="l00568"></a><span class="lineno">  568</span>&#160;            <span class="keywordflow">return</span> DBERR_OK;</div>
+<div class="line"><a name="l00569"></a><span class="lineno">  569</span>&#160;        }</div>
+<div class="line"><a name="l00570"></a><span class="lineno">  570</span>&#160;    }</div>
+<div class="line"><a name="l00571"></a><span class="lineno">  571</span>&#160; </div>
+<div class="line"><a name="l00572"></a><span class="lineno">  572</span>&#160;    <span class="keyword">namespace </span>round_robin</div>
+<div class="line"><a name="l00573"></a><span class="lineno">  573</span>&#160;    {</div>
+<div class="line"><a name="l00575"></a><span class="lineno">  575</span>&#160;        <span class="keyword">static</span> DB_STATUS setPartitionClassesForGeometry(<a class="code" href="structGeometry.html">Geometry</a> &amp;geometry){</div>
+<div class="line"><a name="l00576"></a><span class="lineno">  576</span>&#160;            <span class="comment">// get object&#39;s MBR</span></div>
+<div class="line"><a name="l00577"></a><span class="lineno">  577</span>&#160;            <span class="keywordtype">double</span> xMin = std::numeric_limits&lt;int&gt;::max();</div>
+<div class="line"><a name="l00578"></a><span class="lineno">  578</span>&#160;            <span class="keywordtype">double</span> yMin = std::numeric_limits&lt;int&gt;::max();</div>
+<div class="line"><a name="l00579"></a><span class="lineno">  579</span>&#160;            <span class="keywordtype">double</span> xMax = -std::numeric_limits&lt;int&gt;::max();</div>
+<div class="line"><a name="l00580"></a><span class="lineno">  580</span>&#160;            <span class="keywordtype">double</span> yMax = -std::numeric_limits&lt;int&gt;::max();</div>
+<div class="line"><a name="l00581"></a><span class="lineno">  581</span>&#160;            <span class="keywordflow">for</span> (<span class="keywordtype">int</span> i=0; i&lt;geometry.coords.size(); i+= 2) {</div>
+<div class="line"><a name="l00582"></a><span class="lineno">  582</span>&#160;                xMin = std::min(xMin, geometry.coords[i]);</div>
+<div class="line"><a name="l00583"></a><span class="lineno">  583</span>&#160;                yMin = std::min(yMin, geometry.coords[i+1]);</div>
+<div class="line"><a name="l00584"></a><span class="lineno">  584</span>&#160;                xMax = std::max(xMax, geometry.coords[i]);</div>
+<div class="line"><a name="l00585"></a><span class="lineno">  585</span>&#160;                yMax = std::max(yMax, geometry.coords[i+1]);</div>
+<div class="line"><a name="l00586"></a><span class="lineno">  586</span>&#160;            }</div>
+<div class="line"><a name="l00587"></a><span class="lineno">  587</span>&#160;            <span class="comment">// for each distribution partition</span></div>
+<div class="line"><a name="l00588"></a><span class="lineno">  588</span>&#160;            <span class="keywordflow">for</span> (<span class="keywordtype">int</span> i=0; i &lt; geometry.partitionCount; i++) {</div>
+<div class="line"><a name="l00589"></a><span class="lineno">  589</span>&#160;                <span class="comment">// get the partition ID, no two layer class set yet</span></div>
+<div class="line"><a name="l00590"></a><span class="lineno">  590</span>&#160;                <span class="keywordtype">int</span> distPartitionID = geometry.partitions[i*2];</div>
+<div class="line"><a name="l00591"></a><span class="lineno">  591</span>&#160;                <span class="comment">// get the partition&#39;s indices</span></div>
+<div class="line"><a name="l00592"></a><span class="lineno">  592</span>&#160;                <span class="keywordtype">int</span> distPartitionIndexX, distPartitionIndexY;</div>
+<div class="line"><a name="l00593"></a><span class="lineno">  593</span>&#160;                <a class="code" href="containers_8h.html#a93d917fabd28d05357cd3096eb43b641">g_config</a>.partitioningMethod-&gt;<a class="code" href="structPartitioningMethod.html#a04292609dafc7bb0bb3d9ed936f6c048">getDistributionGridPartitionIndices</a>(distPartitionID, distPartitionIndexX, distPartitionIndexY);</div>
+<div class="line"><a name="l00594"></a><span class="lineno">  594</span>&#160;                    <span class="comment">// calculate the partition&#39;s bottom left point coordinates in the distribution grid to get the object&#39;s class</span></div>
+<div class="line"><a name="l00595"></a><span class="lineno">  595</span>&#160;                <span class="keywordtype">double</span> distPartitionXmin = <a class="code" href="containers_8h.html#a93d917fabd28d05357cd3096eb43b641">g_config</a>.partitioningMethod-&gt;<a class="code" href="structPartitioningMethod.html#adbdfe8ff3a0d48c23e69e581035a7f7e">distGridDataspaceInfo</a>.xMinGlobal + (distPartitionIndexX * <a class="code" href="containers_8h.html#a93d917fabd28d05357cd3096eb43b641">g_config</a>.partitioningMethod-&gt;getDistPartionExtentX());</div>
+<div class="line"><a name="l00596"></a><span class="lineno">  596</span>&#160;                <span class="keywordtype">double</span> distPartitionYmin = <a class="code" href="containers_8h.html#a93d917fabd28d05357cd3096eb43b641">g_config</a>.partitioningMethod-&gt;<a class="code" href="structPartitioningMethod.html#adbdfe8ff3a0d48c23e69e581035a7f7e">distGridDataspaceInfo</a>.yMinGlobal + (distPartitionIndexY * <a class="code" href="containers_8h.html#a93d917fabd28d05357cd3096eb43b641">g_config</a>.partitioningMethod-&gt;getDistPartionExtentY());</div>
+<div class="line"><a name="l00597"></a><span class="lineno">  597</span>&#160;                <span class="comment">// get the object&#39;s class</span></div>
+<div class="line"><a name="l00598"></a><span class="lineno">  598</span>&#160;                TwoLayerClass objectClass = getTwoLayerClassForMBRandPartition(xMin, yMin, distPartitionXmin, distPartitionYmin);</div>
+<div class="line"><a name="l00599"></a><span class="lineno">  599</span>&#160;                <span class="comment">// fill in the partition&#39;s two layer class data</span></div>
+<div class="line"><a name="l00600"></a><span class="lineno">  600</span>&#160;                geometry.partitions.at((i*2)+1) = objectClass;</div>
+<div class="line"><a name="l00601"></a><span class="lineno">  601</span>&#160;            }</div>
+<div class="line"><a name="l00602"></a><span class="lineno">  602</span>&#160;            <span class="keywordflow">return</span> DBERR_OK;</div>
+<div class="line"><a name="l00603"></a><span class="lineno">  603</span>&#160;        }</div>
+<div class="line"><a name="l00604"></a><span class="lineno">  604</span>&#160;    }</div>
+<div class="line"><a name="l00605"></a><span class="lineno">  605</span>&#160; </div>
+<div class="line"><a name="l00606"></a><span class="lineno"><a class="line" href="namespacepartitioning.html#a031d7bd07faaa2b5d6b6f242b31e15fc">  606</a></span>&#160;    DB_STATUS <a class="code" href="namespacepartitioning.html#a031d7bd07faaa2b5d6b6f242b31e15fc">calculateTwoLayerClasses</a>(<a class="code" href="structGeometryBatch.html">GeometryBatch</a> &amp;batch) {</div>
+<div class="line"><a name="l00607"></a><span class="lineno">  607</span>&#160;        DB_STATUS ret = DBERR_OK;</div>
+<div class="line"><a name="l00608"></a><span class="lineno">  608</span>&#160; </div>
+<div class="line"><a name="l00611"></a><span class="lineno">  611</span>&#160;        <span class="keywordflow">switch</span> (<a class="code" href="containers_8h.html#a93d917fabd28d05357cd3096eb43b641">g_config</a>.partitioningMethod-&gt;<a class="code" href="structPartitioningMethod.html#a2b42e27fbcac6136d0709c087bd2a42b">type</a>) {</div>
+<div class="line"><a name="l00612"></a><span class="lineno">  612</span>&#160;            <span class="keywordflow">case</span> PARTITIONING_ROUND_ROBIN:</div>
+<div class="line"><a name="l00613"></a><span class="lineno">  613</span>&#160;                <span class="keywordflow">for</span> (<span class="keyword">auto</span> &amp;it : batch.geometries) {</div>
+<div class="line"><a name="l00614"></a><span class="lineno">  614</span>&#160;                    <span class="comment">// determine the two layer classes for each partition of the object in the fine grid</span></div>
+<div class="line"><a name="l00615"></a><span class="lineno">  615</span>&#160;                    ret = round_robin::setPartitionClassesForGeometry(it);</div>
+<div class="line"><a name="l00616"></a><span class="lineno">  616</span>&#160;                    <span class="keywordflow">if</span> (ret != DBERR_OK) {</div>
+<div class="line"><a name="l00617"></a><span class="lineno">  617</span>&#160;                        <a class="code" href="namespacelogger.html#a53f34feeb22a94db295af05b8b2aab5c">logger::log_error</a>(ret, <span class="stringliteral">&quot;Setting partition classes for object with ID&quot;</span>, it.recID, <span class="stringliteral">&quot;failed.&quot;</span>);</div>
+<div class="line"><a name="l00618"></a><span class="lineno">  618</span>&#160;                        <span class="keywordflow">return</span> ret;</div>
+<div class="line"><a name="l00619"></a><span class="lineno">  619</span>&#160;                    }</div>
+<div class="line"><a name="l00620"></a><span class="lineno">  620</span>&#160;                }</div>
+<div class="line"><a name="l00621"></a><span class="lineno">  621</span>&#160;                <span class="keywordflow">break</span>;</div>
+<div class="line"><a name="l00622"></a><span class="lineno">  622</span>&#160;            <span class="keywordflow">case</span> PARTITIONING_TWO_GRID:</div>
+<div class="line"><a name="l00623"></a><span class="lineno">  623</span>&#160;                <span class="keywordflow">for</span> (<span class="keyword">auto</span> &amp;it : batch.geometries) {</div>
+<div class="line"><a name="l00624"></a><span class="lineno">  624</span>&#160;                    <span class="comment">// determine the two layer classes for each partition of the object in the fine grid</span></div>
+<div class="line"><a name="l00625"></a><span class="lineno">  625</span>&#160;                    ret = two_grid::setPartitionClassesForGeometry(it);</div>
+<div class="line"><a name="l00626"></a><span class="lineno">  626</span>&#160;                    <span class="keywordflow">if</span> (ret != DBERR_OK) {</div>
+<div class="line"><a name="l00627"></a><span class="lineno">  627</span>&#160;                        <a class="code" href="namespacelogger.html#a53f34feeb22a94db295af05b8b2aab5c">logger::log_error</a>(ret, <span class="stringliteral">&quot;Setting partition classes for object with ID&quot;</span>, it.recID, <span class="stringliteral">&quot;failed.&quot;</span>);</div>
+<div class="line"><a name="l00628"></a><span class="lineno">  628</span>&#160;                        <span class="keywordflow">return</span> ret;</div>
+<div class="line"><a name="l00629"></a><span class="lineno">  629</span>&#160;                    }</div>
+<div class="line"><a name="l00630"></a><span class="lineno">  630</span>&#160;                }</div>
+<div class="line"><a name="l00631"></a><span class="lineno">  631</span>&#160;                <span class="keywordflow">break</span>;</div>
+<div class="line"><a name="l00632"></a><span class="lineno">  632</span>&#160;            <span class="keywordflow">default</span>:</div>
+<div class="line"><a name="l00633"></a><span class="lineno">  633</span>&#160;                <a class="code" href="namespacelogger.html#a53f34feeb22a94db295af05b8b2aab5c">logger::log_error</a>(DBERR_INVALID_PARAMETER, <span class="stringliteral">&quot;Unknown partitioning method type:&quot;</span>, <a class="code" href="containers_8h.html#a93d917fabd28d05357cd3096eb43b641">g_config</a>.partitioningMethod-&gt;<a class="code" href="structPartitioningMethod.html#a2b42e27fbcac6136d0709c087bd2a42b">type</a>);</div>
+<div class="line"><a name="l00634"></a><span class="lineno">  634</span>&#160;                <span class="keywordflow">return</span> DBERR_INVALID_PARAMETER;</div>
+<div class="line"><a name="l00635"></a><span class="lineno">  635</span>&#160;        }</div>
+<div class="line"><a name="l00636"></a><span class="lineno">  636</span>&#160; </div>
+<div class="line"><a name="l00637"></a><span class="lineno">  637</span>&#160;        <span class="keywordflow">return</span> ret;</div>
+<div class="line"><a name="l00638"></a><span class="lineno">  638</span>&#160;    }</div>
+<div class="line"><a name="l00639"></a><span class="lineno">  639</span>&#160;        </div>
+<div class="line"><a name="l00640"></a><span class="lineno">  640</span>&#160;}</div>
 <div class="ttc" id="acontainers_8h_html_a93d917fabd28d05357cd3096eb43b641"><div class="ttname"><a href="containers_8h.html#a93d917fabd28d05357cd3096eb43b641">g_config</a></div><div class="ttdeci">Config g_config</div><div class="ttdoc">The main global configuration variable.</div><div class="ttdef"><b>Definition:</b> <a href="containers_8cpp_source.html#l00003">containers.cpp:3</a></div></div>
-<div class="ttc" id="anamespacecomm_1_1controller_1_1host_html_a0311bb6b9dffa1af0415761b6675c19c"><div class="ttname"><a href="namespacecomm_1_1controller_1_1host.html#a0311bb6b9dffa1af0415761b6675c19c">comm::controller::host::broadcastDatasetInfo</a></div><div class="ttdeci">DB_STATUS broadcastDatasetInfo(Dataset *dataset)</div><div class="ttdoc">Packs and broadcasts the dataset info to all worker nodes.</div><div class="ttdef"><b>Definition:</b> <a href="comm_8cpp_source.html#l01043">comm.cpp:1043</a></div></div>
-<div class="ttc" id="anamespacecomm_1_1controller_1_1host_html_a7acd9cbfb1666431ed71aedf9242836b"><div class="ttname"><a href="namespacecomm_1_1controller_1_1host.html#a7acd9cbfb1666431ed71aedf9242836b">comm::controller::host::gatherResponses</a></div><div class="ttdeci">DB_STATUS gatherResponses()</div><div class="ttdoc">Gathers responses (ACK/NACK) from workers or the local agent about the last instructed action/job.</div><div class="ttdef"><b>Definition:</b> <a href="comm_8cpp_source.html#l01062">comm.cpp:1062</a></div></div>
-<div class="ttc" id="anamespacecomm_1_1controller_html_acb873f6f6e22c38010feb19302b3fa00"><div class="ttname"><a href="namespacecomm_1_1controller.html#acb873f6f6e22c38010feb19302b3fa00">comm::controller::serializeAndSendGeometryBatch</a></div><div class="ttdeci">DB_STATUS serializeAndSendGeometryBatch(GeometryBatch *batch)</div><div class="ttdoc">Serializes a geometry batch and sends it to the appropriate ranks. All the information is stored in t...</div><div class="ttdef"><b>Definition:</b> <a href="comm_8cpp_source.html#l00804">comm.cpp:804</a></div></div>
-<div class="ttc" id="anamespacelogger_html_a3ea3081359ed78462f4100ac868c5771"><div class="ttname"><a href="namespacelogger.html#a3ea3081359ed78462f4100ac868c5771">logger::log_task</a></div><div class="ttdeci">void log_task(T first, Args... rest)</div><div class="ttdoc">Task logging function with template arguments. Separates input parameters with spaces....</div><div class="ttdef"><b>Definition:</b> <a href="utils_8h_source.html#l00138">utils.h:138</a></div></div>
+<div class="ttc" id="anamespacecomm_1_1controller_1_1host_html_a0311bb6b9dffa1af0415761b6675c19c"><div class="ttname"><a href="namespacecomm_1_1controller_1_1host.html#a0311bb6b9dffa1af0415761b6675c19c">comm::controller::host::broadcastDatasetInfo</a></div><div class="ttdeci">DB_STATUS broadcastDatasetInfo(Dataset *dataset)</div><div class="ttdoc">Packs and broadcasts the dataset info to all worker nodes.</div><div class="ttdef"><b>Definition:</b> <a href="comm_8cpp_source.html#l01056">comm.cpp:1056</a></div></div>
+<div class="ttc" id="anamespacecomm_1_1controller_1_1host_html_a7acd9cbfb1666431ed71aedf9242836b"><div class="ttname"><a href="namespacecomm_1_1controller_1_1host.html#a7acd9cbfb1666431ed71aedf9242836b">comm::controller::host::gatherResponses</a></div><div class="ttdeci">DB_STATUS gatherResponses()</div><div class="ttdoc">Gathers responses (ACK/NACK) from workers or the local agent about the last instructed action/job.</div><div class="ttdef"><b>Definition:</b> <a href="comm_8cpp_source.html#l01075">comm.cpp:1075</a></div></div>
+<div class="ttc" id="anamespacecomm_1_1controller_html_acb873f6f6e22c38010feb19302b3fa00"><div class="ttname"><a href="namespacecomm_1_1controller.html#acb873f6f6e22c38010feb19302b3fa00">comm::controller::serializeAndSendGeometryBatch</a></div><div class="ttdeci">DB_STATUS serializeAndSendGeometryBatch(GeometryBatch *batch)</div><div class="ttdoc">Serializes a geometry batch and sends it to the appropriate ranks. All the information is stored in t...</div><div class="ttdef"><b>Definition:</b> <a href="comm_8cpp_source.html#l00816">comm.cpp:816</a></div></div>
 <div class="ttc" id="anamespacelogger_html_a53f34feeb22a94db295af05b8b2aab5c"><div class="ttname"><a href="namespacelogger.html#a53f34feeb22a94db295af05b8b2aab5c">logger::log_error</a></div><div class="ttdeci">void log_error(int errorCode, T first, Args... rest)</div><div class="ttdoc">Error logging function with template arguments. Separates input parameters with spaces....</div><div class="ttdef"><b>Definition:</b> <a href="utils_8h_source.html#l00096">utils.h:96</a></div></div>
 <div class="ttc" id="anamespacelogger_html_a6232124565e7aac3c22650f1717cfa29"><div class="ttname"><a href="namespacelogger.html#a6232124565e7aac3c22650f1717cfa29">logger::log_success</a></div><div class="ttdeci">void log_success(T first, Args... rest)</div><div class="ttdoc">Success logging function with template arguments. Separates input parameters with spaces....</div><div class="ttdef"><b>Definition:</b> <a href="utils_8h_source.html#l00117">utils.h:117</a></div></div>
 <div class="ttc" id="anamespacempi__timer_html_a74c246372eadbc66ab89e4c971099ce0"><div class="ttname"><a href="namespacempi__timer.html#a74c246372eadbc66ab89e4c971099ce0">mpi_timer::getElapsedTime</a></div><div class="ttdeci">double getElapsedTime(double startTime)</div><div class="ttdoc">Get the elapsed time in seconds, from the given start timestamp.</div><div class="ttdef"><b>Definition:</b> <a href="utils_8cpp_source.html#l00144">utils.cpp:144</a></div></div>
 <div class="ttc" id="anamespacempi__timer_html_ab01f3cdc560e4858245746a406e9b951"><div class="ttname"><a href="namespacempi__timer.html#ab01f3cdc560e4858245746a406e9b951">mpi_timer::markTime</a></div><div class="ttdeci">double markTime()</div><div class="ttdoc">get the timestamp of the current time</div><div class="ttdef"><b>Definition:</b> <a href="utils_8cpp_source.html#l00140">utils.cpp:140</a></div></div>
 <div class="ttc" id="anamespacepartitioning_html"><div class="ttname"><a href="namespacepartitioning.html">partitioning</a></div><div class="ttdoc">Data distribution/partitioning methods.</div><div class="ttdef"><b>Definition:</b> <a href="partitioning_8cpp_source.html#l00004">partitioning.cpp:5</a></div></div>
-<div class="ttc" id="anamespacepartitioning_html_a5f7aef01c8b2d7c6a89ee75018c45591"><div class="ttname"><a href="namespacepartitioning.html#a5f7aef01c8b2d7c6a89ee75018c45591">partitioning::partitionDataset</a></div><div class="ttdeci">DB_STATUS partitionDataset(Dataset *dataset)</div><div class="ttdoc">Initializes the partitioning for the input dataset.</div><div class="ttdef"><b>Definition:</b> <a href="partitioning_8cpp_source.html#l00420">partitioning.cpp:420</a></div></div>
-<div class="ttc" id="anamespacepartitioning_html_a873e77ab57aa73ee78177a287a686300"><div class="ttname"><a href="namespacepartitioning.html#a873e77ab57aa73ee78177a287a686300">partitioning::calculateCSVDatasetDataspaceBounds</a></div><div class="ttdeci">DB_STATUS calculateCSVDatasetDataspaceBounds(Dataset &amp;dataset)</div><div class="ttdoc">Calculates the given dataset's metadata about its dataspace.</div><div class="ttdef"><b>Definition:</b> <a href="partitioning_8cpp_source.html#l00164">partitioning.cpp:164</a></div></div>
-<div class="ttc" id="anamespacepartitioning_html_aaede65d4c117b91af2b01d18b31a64c8"><div class="ttname"><a href="namespacepartitioning.html#aaede65d4c117b91af2b01d18b31a64c8">partitioning::getPartitionsForMBR</a></div><div class="ttdeci">DB_STATUS getPartitionsForMBR(double xMin, double yMin, double xMax, double yMax, std::vector&lt; int &gt; &amp;partitionIDs, std::vector&lt; TwoLayerClass &gt; &amp;twoLayerClasses)</div><div class="ttdoc">Calculates the intersecting partitions for the given MBR.</div><div class="ttdef"><b>Definition:</b> <a href="partitioning_8cpp_source.html#l00016">partitioning.cpp:16</a></div></div>
-<div class="ttc" id="anamespacepartitioning_html_afc40bad3d1c1b78245803906af58edf9"><div class="ttname"><a href="namespacepartitioning.html#afc40bad3d1c1b78245803906af58edf9">partitioning::printPartitionAssignment</a></div><div class="ttdeci">void printPartitionAssignment()</div><div class="ttdoc">Prints all partitions and their assigned node ranks.</div><div class="ttdef"><b>Definition:</b> <a href="partitioning_8cpp_source.html#l00007">partitioning.cpp:7</a></div></div>
+<div class="ttc" id="anamespacepartitioning_html_a031d7bd07faaa2b5d6b6f242b31e15fc"><div class="ttname"><a href="namespacepartitioning.html#a031d7bd07faaa2b5d6b6f242b31e15fc">partitioning::calculateTwoLayerClasses</a></div><div class="ttdeci">DB_STATUS calculateTwoLayerClasses(GeometryBatch &amp;batch)</div><div class="ttdoc">Calculates all partition two-layer classes for a given batch, based on the partitioning method specif...</div><div class="ttdef"><b>Definition:</b> <a href="partitioning_8cpp_source.html#l00606">partitioning.cpp:606</a></div></div>
+<div class="ttc" id="anamespacepartitioning_html_a5f7aef01c8b2d7c6a89ee75018c45591"><div class="ttname"><a href="namespacepartitioning.html#a5f7aef01c8b2d7c6a89ee75018c45591">partitioning::partitionDataset</a></div><div class="ttdeci">DB_STATUS partitionDataset(Dataset *dataset)</div><div class="ttdoc">Initializes the partitioning for the input dataset.</div><div class="ttdef"><b>Definition:</b> <a href="partitioning_8cpp_source.html#l00386">partitioning.cpp:386</a></div></div>
+<div class="ttc" id="anamespacepartitioning_html_a873e77ab57aa73ee78177a287a686300"><div class="ttname"><a href="namespacepartitioning.html#a873e77ab57aa73ee78177a287a686300">partitioning::calculateCSVDatasetDataspaceBounds</a></div><div class="ttdeci">DB_STATUS calculateCSVDatasetDataspaceBounds(Dataset &amp;dataset)</div><div class="ttdoc">Calculates the given dataset's metadata about its dataspace.</div><div class="ttdef"><b>Definition:</b> <a href="partitioning_8cpp_source.html#l00129">partitioning.cpp:129</a></div></div>
+<div class="ttc" id="anamespacepartitioning_html_afc40bad3d1c1b78245803906af58edf9"><div class="ttname"><a href="namespacepartitioning.html#afc40bad3d1c1b78245803906af58edf9">partitioning::printPartitionAssignment</a></div><div class="ttdeci">void printPartitionAssignment()</div><div class="ttdoc">Prints all partitions and their assigned node ranks.</div><div class="ttdef"><b>Definition:</b> <a href="partitioning_8cpp_source.html#l00006">partitioning.cpp:6</a></div></div>
 <div class="ttc" id="astructDataset_html"><div class="ttname"><a href="structDataset.html">Dataset</a></div><div class="ttdoc">All dataset related information.</div><div class="ttdef"><b>Definition:</b> <a href="containers_8h_source.html#l01054">containers.h:1054</a></div></div>
-<div class="ttc" id="astructGeometryBatch_html"><div class="ttname"><a href="structGeometryBatch.html">GeometryBatch</a></div><div class="ttdoc">A batch containing multiple objects for the batch partitioning/broadcasting.</div><div class="ttdef"><b>Definition:</b> <a href="containers_8h_source.html#l01248">containers.h:1248</a></div></div>
-<div class="ttc" id="astructGeometry_html"><div class="ttname"><a href="structGeometry.html">Geometry</a></div><div class="ttdoc">Simple Geometry object used only in the data partitioning/broadcasting.</div><div class="ttdef"><b>Definition:</b> <a href="containers_8h_source.html#l01233">containers.h:1233</a></div></div>
+<div class="ttc" id="astructGeometryBatch_html"><div class="ttname"><a href="structGeometryBatch.html">GeometryBatch</a></div><div class="ttdoc">A batch containing multiple objects for the batch partitioning/broadcasting.</div><div class="ttdef"><b>Definition:</b> <a href="containers_8h_source.html#l01413">containers.h:1413</a></div></div>
+<div class="ttc" id="astructGeometry_html"><div class="ttname"><a href="structGeometry.html">Geometry</a></div><div class="ttdoc">Simple Geometry object used only in the data partitioning/broadcasting.</div><div class="ttdef"><b>Definition:</b> <a href="containers_8h_source.html#l01397">containers.h:1397</a></div></div>
+<div class="ttc" id="astructPartitioningMethod_html_a03f1ef0f2cdcc9ac6a5b30c170630dc7"><div class="ttname"><a href="structPartitioningMethod.html#a03f1ef0f2cdcc9ac6a5b30c170630dc7">PartitioningMethod::getDistributionPPD</a></div><div class="ttdeci">virtual int getDistributionPPD()=0</div><div class="ttdoc">Abstract method. Returns the number of partitions per dimension in the data distribution grid.</div></div>
+<div class="ttc" id="astructPartitioningMethod_html_a04292609dafc7bb0bb3d9ed936f6c048"><div class="ttname"><a href="structPartitioningMethod.html#a04292609dafc7bb0bb3d9ed936f6c048">PartitioningMethod::getDistributionGridPartitionIndices</a></div><div class="ttdeci">void getDistributionGridPartitionIndices(int partitionID, int &amp;i, int &amp;j)</div><div class="ttdoc">Abstract method. Gets the partition's indices for the given partition ID , as defined by the derived ...</div><div class="ttdef"><b>Definition:</b> <a href="containers_8h_source.html#l01157">containers.h:1157</a></div></div>
+<div class="ttc" id="astructPartitioningMethod_html_a24e4e9f5c9920b6929663d73e080c121"><div class="ttname"><a href="structPartitioningMethod.html#a24e4e9f5c9920b6929663d73e080c121">PartitioningMethod::getDistributionGridPartitionID</a></div><div class="ttdeci">virtual int getDistributionGridPartitionID(int i, int j)=0</div><div class="ttdoc">Abstract method. Returns the partition ID in the distribution grid for the given indices,...</div></div>
+<div class="ttc" id="astructPartitioningMethod_html_a2b42e27fbcac6136d0709c087bd2a42b"><div class="ttname"><a href="structPartitioningMethod.html#a2b42e27fbcac6136d0709c087bd2a42b">PartitioningMethod::type</a></div><div class="ttdeci">PartitioningType type</div><div class="ttdoc">The partitioning technique.</div><div class="ttdef"><b>Definition:</b> <a href="containers_8h_source.html#l01132">containers.h:1132</a></div></div>
+<div class="ttc" id="astructPartitioningMethod_html_a5b9ca4e6c27d0d815d779bcff4902124"><div class="ttname"><a href="structPartitioningMethod.html#a5b9ca4e6c27d0d815d779bcff4902124">PartitioningMethod::getPartitioningPPD</a></div><div class="ttdeci">virtual int getPartitioningPPD()=0</div><div class="ttdoc">Abstract method. Returns the number of partitions per dimension in the partitioning grid.</div></div>
+<div class="ttc" id="astructPartitioningMethod_html_a816f21ad060ff6aa69a4bd462acada8a"><div class="ttname"><a href="structPartitioningMethod.html#a816f21ad060ff6aa69a4bd462acada8a">PartitioningMethod::getBatchSize</a></div><div class="ttdeci">int getBatchSize()</div><div class="ttdoc">Returns the batch size.</div><div class="ttdef"><b>Definition:</b> <a href="containers_8h_source.html#l01152">containers.h:1152</a></div></div>
+<div class="ttc" id="astructPartitioningMethod_html_a92842b964a0385e0a8dad13e91d8b9c7"><div class="ttname"><a href="structPartitioningMethod.html#a92842b964a0385e0a8dad13e91d8b9c7">PartitioningMethod::getNodeRankForPartitionID</a></div><div class="ttdeci">int getNodeRankForPartitionID(int partitionID)</div><div class="ttdoc">Returns the node's rank that's responsible for this partition.</div><div class="ttdef"><b>Definition:</b> <a href="containers_8h_source.html#l01173">containers.h:1173</a></div></div>
+<div class="ttc" id="astructPartitioningMethod_html_adbdfe8ff3a0d48c23e69e581035a7f7e"><div class="ttname"><a href="structPartitioningMethod.html#adbdfe8ff3a0d48c23e69e581035a7f7e">PartitioningMethod::distGridDataspaceInfo</a></div><div class="ttdeci">DataspaceInfo distGridDataspaceInfo</div><div class="ttdoc">The distribution (coarse) grid's dataspace info.</div><div class="ttdef"><b>Definition:</b> <a href="containers_8h_source.html#l01138">containers.h:1138</a></div></div>
+<div class="ttc" id="astructPartitioningMethod_html_ae519f21f1ff209c8c10aceacbfe595d9"><div class="ttname"><a href="structPartitioningMethod.html#ae519f21f1ff209c8c10aceacbfe595d9">PartitioningMethod::getPartitioningGridPartitionID</a></div><div class="ttdeci">virtual int getPartitioningGridPartitionID(int distI, int distJ, int partI, int partJ)=0</div><div class="ttdoc">Abstract method. Returns the partition ID in the partitioning grid for the given indices,...</div></div>
 </div><!-- fragment --></div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>

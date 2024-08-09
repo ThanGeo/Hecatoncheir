@@ -386,9 +386,11 @@ void DataspaceInfo::set(double xMinGlobal, double yMinGlobal, double xMaxGlobal,
     this->xExtent = this->xMaxGlobal - this->xMinGlobal;
     this->yExtent = this->yMaxGlobal - this->yMinGlobal;
     this->maxExtent = std::max(this->xExtent, this->yExtent);
-    // printf("Dataset bounds: (%f,%f),(%f,%f)\n", this->xMinGlobal, this->yMinGlobal, this->xMaxGlobal, this->yMaxGlobal);
+    // printf("-------------------------\n");
+    // printf("Dataspace bounds: (%f,%f),(%f,%f)\n", this->xMinGlobal, this->yMinGlobal, this->xMaxGlobal, this->yMaxGlobal);
     // printf("xExtent: %f, yExtent: %f\n", this->xExtent, this->yExtent);
     // printf("Max extent: %f\n", this->maxExtent);
+    // printf("-------------------------\n");
 }
 
 void DataspaceInfo::clear() {
@@ -524,6 +526,14 @@ void Geometry::setPartitions(std::vector<int> &ids, std::vector<TwoLayerClass> &
     this->partitionCount = ids.size();
 }
 
+void Geometry::setPartitions(std::vector<int> &ids) {
+    for (int i=0; i<ids.size(); i++) {
+        partitions.emplace_back(ids.at(i));
+        partitions.emplace_back(CLASS_NONE);
+    }
+    this->partitionCount = ids.size();
+}
+
 bool GeometryBatch::isValid() {
     return !(destRank == -1 || tag == -1 || comm == nullptr);
 }
@@ -637,6 +647,93 @@ void GeometryBatch::deserialize(const char *buffer, int bufferSize) {
         Geometry geometry(recID, partitions, vertexCount, coords);
         this->addGeometryToBatch(geometry);
     }
+}
+
+int TwoGridPartitioning::getDistributionGridPartitionID(int i, int j) {
+    return (i + (j * distPartitionsPerDim));
+}
+
+int TwoGridPartitioning::getPartitioningGridPartitionID(int distI, int distJ, int partI, int partJ) {
+    int globalI = (distI * partPartitionsPerDim) + partI;
+    int globalJ = (distJ * partPartitionsPerDim) + partJ;
+    // printf("Getting ID for coarse indices (%d,%d) and fine indices (%d,%d), with coarse cellsPerDim %d, fine cellsPerDim %d and global cellsPerDim %d. ID: %d\n", distI, distJ, partI, partJ, distPartitionsPerDim, partPartitionsPerDim, globalPartitionsPerDim, (globalI + (globalJ * globalPartitionsPerDim)));
+    return (globalI + (globalJ * globalPartitionsPerDim));
+}
+
+void TwoGridPartitioning::getPartitioningGridPartitionIndices(int partitionID, int &i, int &j) {
+    j = partitionID / partPartitionsPerDim;
+    i = partitionID % partPartitionsPerDim;
+}
+
+int TwoGridPartitioning::getDistributionPPD() {
+    return distPartitionsPerDim; 
+}
+
+int TwoGridPartitioning::getPartitioningPPD() {
+    return partPartitionsPerDim; 
+}
+
+void TwoGridPartitioning::setPartGridDataspace(double xMin, double yMin, double xMax, double yMax) {
+    partGridDataspaceInfo.set(xMin, yMin, xMax, yMax);
+    partPartitionExtentX = partGridDataspaceInfo.xExtent / partPartitionsPerDim;
+    partPartitionExtentY = partGridDataspaceInfo.yExtent / partPartitionsPerDim;
+}
+
+void TwoGridPartitioning::setPartGridDataspace(DataspaceInfo &otherDataspaceInfo) {
+    partGridDataspaceInfo = otherDataspaceInfo;
+}
+
+double TwoGridPartitioning::getPartPartionExtentX() {
+    return partPartitionExtentX;
+}
+
+double TwoGridPartitioning::getPartPartionExtentY() {
+    return partPartitionExtentY;
+}
+
+/** @brief Get the grid's partition ID (from parent). */
+int RoundRobinPartitioning::getDistributionGridPartitionID(int i, int j) {
+    return (i + (j * distPartitionsPerDim));
+}
+
+/** @brief Get the grid's partition ID (from parent). */
+int RoundRobinPartitioning::getPartitioningGridPartitionID(int distI, int distJ, int partI, int partJ) {
+    if (distI != partI || distJ != partJ) {
+        logger::log_error(DBERR_INVALID_PARAMETER, "For Round Robin partitioning, distribution and partitioning partition indices must match. Dist:", distI, distJ, "Part:", partI, partJ);
+        return -1;
+    }
+    return (distI + (distJ * distPartitionsPerDim));
+}
+
+void RoundRobinPartitioning::getPartitioningGridPartitionIndices(int partitionID, int &i, int &j) {
+    j = partitionID / distPartitionsPerDim;
+    i = partitionID % distPartitionsPerDim;
+}
+
+/** @brief Returns the distribution (coarse) grid's partitions per dimension number. */
+int RoundRobinPartitioning::getDistributionPPD() {
+    return distPartitionsPerDim; 
+}
+
+/** @brief Returns the partitioning (fine) grid's partitions per dimension number. */
+int RoundRobinPartitioning::getPartitioningPPD() {
+    return distPartitionsPerDim; 
+}
+
+void RoundRobinPartitioning::setPartGridDataspace(double xMin, double yMin, double xMax, double yMax) {
+    distGridDataspaceInfo.set(xMin, yMin, xMax, yMax);
+}
+
+void RoundRobinPartitioning::setPartGridDataspace(DataspaceInfo &otherDataspaceInfo) {
+    distGridDataspaceInfo = otherDataspaceInfo;
+}
+
+double RoundRobinPartitioning::getPartPartionExtentX() {
+    return distPartitionExtentX;
+}
+
+double RoundRobinPartitioning::getPartPartionExtentY() {
+    return distPartitionExtentY;
 }
 
 namespace shape_factory

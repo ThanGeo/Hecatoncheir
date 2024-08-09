@@ -1,4 +1,5 @@
 var searchData=
 [
-  ['datatype_429',['dataType',['../structShape.html#a7eb2a79856c5f04997051590cfb1fc30',1,'Shape']]]
+  ['classindex_462',['classIndex',['../structPartition.html#ae373cfcbd8a107fa63323de8ad0bb324',1,'Partition']]],
+  ['compression_463',['compression',['../structAprilConfig.html#aa9cb5efd0181f683977e172f8923094f',1,'AprilConfig']]]
 ];

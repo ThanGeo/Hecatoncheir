@@ -123,53 +123,53 @@ template&lt;typename T &gt; </td></tr>
 <p>Packs the loaded dataset nicknames (both R and S, or only R if there's no S) </p>
 <dl class="section note"><dt>Note</dt><dd>The datasets must be already loaded in the configuration. </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="pack_8cpp_source.html#l00090">90</a> of file <a class="el" href="pack_8cpp_source.html">pack.cpp</a>.</p>
-<div class="fragment"><div class="line"><a name="l00090"></a><span class="lineno">   90</span>&#160;                                                              {</div>
-<div class="line"><a name="l00091"></a><span class="lineno">   91</span>&#160;        std::string nicknameR = <span class="stringliteral">&quot;&quot;</span>;</div>
-<div class="line"><a name="l00092"></a><span class="lineno">   92</span>&#160;        std::string nicknameS = <span class="stringliteral">&quot;&quot;</span>;</div>
-<div class="line"><a name="l00093"></a><span class="lineno">   93</span>&#160;        msg.count = 0;</div>
-<div class="line"><a name="l00094"></a><span class="lineno">   94</span>&#160; </div>
-<div class="line"><a name="l00095"></a><span class="lineno">   95</span>&#160;        <span class="comment">// get dataset R</span></div>
-<div class="line"><a name="l00096"></a><span class="lineno">   96</span>&#160;        <a class="code" href="structDataset.html">Dataset</a>* R = <a class="code" href="containers_8h.html#a93d917fabd28d05357cd3096eb43b641">g_config</a>.datasetInfo.getDatasetR();</div>
-<div class="line"><a name="l00097"></a><span class="lineno">   97</span>&#160;        <span class="keywordflow">if</span> (R == <span class="keyword">nullptr</span>) {</div>
-<div class="line"><a name="l00098"></a><span class="lineno">   98</span>&#160;            <span class="keywordflow">return</span> DBERR_OK;</div>
-<div class="line"><a name="l00099"></a><span class="lineno">   99</span>&#160;        }</div>
-<div class="line"><a name="l00100"></a><span class="lineno">  100</span>&#160;        <span class="comment">// count for buffer size</span></div>
-<div class="line"><a name="l00101"></a><span class="lineno">  101</span>&#160;        msg.count += <span class="keyword">sizeof</span>(int) + R-&gt;nickname.length() * <span class="keyword">sizeof</span>(int);</div>
-<div class="line"><a name="l00102"></a><span class="lineno">  102</span>&#160;        <span class="comment">// keep nickname</span></div>
-<div class="line"><a name="l00103"></a><span class="lineno">  103</span>&#160;        nicknameR = R-&gt;nickname;</div>
-<div class="line"><a name="l00104"></a><span class="lineno">  104</span>&#160;        <span class="comment">// get dataset S</span></div>
-<div class="line"><a name="l00105"></a><span class="lineno">  105</span>&#160;        <a class="code" href="structDataset.html">Dataset</a>* S = <a class="code" href="containers_8h.html#a93d917fabd28d05357cd3096eb43b641">g_config</a>.datasetInfo.getDatasetS();</div>
-<div class="line"><a name="l00106"></a><span class="lineno">  106</span>&#160;        <span class="keywordflow">if</span> (S != <span class="keyword">nullptr</span>) {</div>
-<div class="line"><a name="l00107"></a><span class="lineno">  107</span>&#160;            <span class="comment">// count for buffer size</span></div>
-<div class="line"><a name="l00108"></a><span class="lineno">  108</span>&#160;            msg.count += <span class="keyword">sizeof</span>(int) + S-&gt;nickname.length() * <span class="keyword">sizeof</span>(int);</div>
-<div class="line"><a name="l00109"></a><span class="lineno">  109</span>&#160;            <span class="comment">// keep nickname</span></div>
-<div class="line"><a name="l00110"></a><span class="lineno">  110</span>&#160;            nicknameS = S-&gt;nickname;</div>
-<div class="line"><a name="l00111"></a><span class="lineno">  111</span>&#160;        }</div>
-<div class="line"><a name="l00112"></a><span class="lineno">  112</span>&#160;        <span class="comment">// allocate space</span></div>
-<div class="line"><a name="l00113"></a><span class="lineno">  113</span>&#160;        msg.data = (<span class="keywordtype">char</span>*) malloc(msg.count * <span class="keyword">sizeof</span>(<span class="keywordtype">char</span>));</div>
-<div class="line"><a name="l00114"></a><span class="lineno">  114</span>&#160;        <span class="keywordflow">if</span> (msg.data == NULL) {</div>
-<div class="line"><a name="l00115"></a><span class="lineno">  115</span>&#160;            <span class="comment">// malloc failed</span></div>
-<div class="line"><a name="l00116"></a><span class="lineno">  116</span>&#160;            <a class="code" href="namespacelogger.html#a53f34feeb22a94db295af05b8b2aab5c">logger::log_error</a>(DBERR_MALLOC_FAILED, <span class="stringliteral">&quot;Malloc for pack system info failed&quot;</span>);</div>
-<div class="line"><a name="l00117"></a><span class="lineno">  117</span>&#160;            <span class="keywordflow">return</span> DBERR_MALLOC_FAILED;</div>
-<div class="line"><a name="l00118"></a><span class="lineno">  118</span>&#160;        }</div>
-<div class="line"><a name="l00119"></a><span class="lineno">  119</span>&#160;        </div>
-<div class="line"><a name="l00120"></a><span class="lineno">  120</span>&#160;        <span class="keywordtype">char</span>* localBuffer = msg.data;</div>
-<div class="line"><a name="l00121"></a><span class="lineno">  121</span>&#160;        <span class="comment">// store in buffer</span></div>
-<div class="line"><a name="l00122"></a><span class="lineno">  122</span>&#160;        *<span class="keyword">reinterpret_cast&lt;</span><span class="keywordtype">int</span>*<span class="keyword">&gt;</span>(localBuffer) = nicknameR.length();</div>
-<div class="line"><a name="l00123"></a><span class="lineno">  123</span>&#160;        localBuffer += <span class="keyword">sizeof</span>(int);</div>
-<div class="line"><a name="l00124"></a><span class="lineno">  124</span>&#160;        std::memcpy(localBuffer, nicknameR.data(), nicknameR.length() * <span class="keyword">sizeof</span>(<span class="keywordtype">char</span>));</div>
-<div class="line"><a name="l00125"></a><span class="lineno">  125</span>&#160;        localBuffer += nicknameR.length() * <span class="keyword">sizeof</span>(char);</div>
-<div class="line"><a name="l00126"></a><span class="lineno">  126</span>&#160; </div>
-<div class="line"><a name="l00127"></a><span class="lineno">  127</span>&#160;        *<span class="keyword">reinterpret_cast&lt;</span><span class="keywordtype">int</span>*<span class="keyword">&gt;</span>(localBuffer) = nicknameS.length();</div>
-<div class="line"><a name="l00128"></a><span class="lineno">  128</span>&#160;        localBuffer += <span class="keyword">sizeof</span>(int);</div>
-<div class="line"><a name="l00129"></a><span class="lineno">  129</span>&#160;        <span class="keywordflow">if</span> (nicknameS.length() &gt; 0) {</div>
-<div class="line"><a name="l00130"></a><span class="lineno">  130</span>&#160;            std::memcpy(localBuffer, nicknameS.data(), nicknameS.length() * <span class="keyword">sizeof</span>(<span class="keywordtype">char</span>));</div>
-<div class="line"><a name="l00131"></a><span class="lineno">  131</span>&#160;            localBuffer += nicknameS.length() * <span class="keyword">sizeof</span>(char);</div>
-<div class="line"><a name="l00132"></a><span class="lineno">  132</span>&#160;        }</div>
-<div class="line"><a name="l00133"></a><span class="lineno">  133</span>&#160; </div>
-<div class="line"><a name="l00134"></a><span class="lineno">  134</span>&#160;        <span class="keywordflow">return</span> DBERR_OK;</div>
-<div class="line"><a name="l00135"></a><span class="lineno">  135</span>&#160;    }</div>
+<p class="definition">Definition at line <a class="el" href="pack_8cpp_source.html#l00092">92</a> of file <a class="el" href="pack_8cpp_source.html">pack.cpp</a>.</p>
+<div class="fragment"><div class="line"><a name="l00092"></a><span class="lineno">   92</span>&#160;                                                              {</div>
+<div class="line"><a name="l00093"></a><span class="lineno">   93</span>&#160;        std::string nicknameR = <span class="stringliteral">&quot;&quot;</span>;</div>
+<div class="line"><a name="l00094"></a><span class="lineno">   94</span>&#160;        std::string nicknameS = <span class="stringliteral">&quot;&quot;</span>;</div>
+<div class="line"><a name="l00095"></a><span class="lineno">   95</span>&#160;        msg.count = 0;</div>
+<div class="line"><a name="l00096"></a><span class="lineno">   96</span>&#160; </div>
+<div class="line"><a name="l00097"></a><span class="lineno">   97</span>&#160;        <span class="comment">// get dataset R</span></div>
+<div class="line"><a name="l00098"></a><span class="lineno">   98</span>&#160;        <a class="code" href="structDataset.html">Dataset</a>* R = <a class="code" href="containers_8h.html#a93d917fabd28d05357cd3096eb43b641">g_config</a>.datasetInfo.getDatasetR();</div>
+<div class="line"><a name="l00099"></a><span class="lineno">   99</span>&#160;        <span class="keywordflow">if</span> (R == <span class="keyword">nullptr</span>) {</div>
+<div class="line"><a name="l00100"></a><span class="lineno">  100</span>&#160;            <span class="keywordflow">return</span> DBERR_OK;</div>
+<div class="line"><a name="l00101"></a><span class="lineno">  101</span>&#160;        }</div>
+<div class="line"><a name="l00102"></a><span class="lineno">  102</span>&#160;        <span class="comment">// count for buffer size</span></div>
+<div class="line"><a name="l00103"></a><span class="lineno">  103</span>&#160;        msg.count += <span class="keyword">sizeof</span>(int) + R-&gt;nickname.length() * <span class="keyword">sizeof</span>(int);</div>
+<div class="line"><a name="l00104"></a><span class="lineno">  104</span>&#160;        <span class="comment">// keep nickname</span></div>
+<div class="line"><a name="l00105"></a><span class="lineno">  105</span>&#160;        nicknameR = R-&gt;nickname;</div>
+<div class="line"><a name="l00106"></a><span class="lineno">  106</span>&#160;        <span class="comment">// get dataset S</span></div>
+<div class="line"><a name="l00107"></a><span class="lineno">  107</span>&#160;        <a class="code" href="structDataset.html">Dataset</a>* S = <a class="code" href="containers_8h.html#a93d917fabd28d05357cd3096eb43b641">g_config</a>.datasetInfo.getDatasetS();</div>
+<div class="line"><a name="l00108"></a><span class="lineno">  108</span>&#160;        <span class="keywordflow">if</span> (S != <span class="keyword">nullptr</span>) {</div>
+<div class="line"><a name="l00109"></a><span class="lineno">  109</span>&#160;            <span class="comment">// count for buffer size</span></div>
+<div class="line"><a name="l00110"></a><span class="lineno">  110</span>&#160;            msg.count += <span class="keyword">sizeof</span>(int) + S-&gt;nickname.length() * <span class="keyword">sizeof</span>(int);</div>
+<div class="line"><a name="l00111"></a><span class="lineno">  111</span>&#160;            <span class="comment">// keep nickname</span></div>
+<div class="line"><a name="l00112"></a><span class="lineno">  112</span>&#160;            nicknameS = S-&gt;nickname;</div>
+<div class="line"><a name="l00113"></a><span class="lineno">  113</span>&#160;        }</div>
+<div class="line"><a name="l00114"></a><span class="lineno">  114</span>&#160;        <span class="comment">// allocate space</span></div>
+<div class="line"><a name="l00115"></a><span class="lineno">  115</span>&#160;        msg.data = (<span class="keywordtype">char</span>*) malloc(msg.count * <span class="keyword">sizeof</span>(<span class="keywordtype">char</span>));</div>
+<div class="line"><a name="l00116"></a><span class="lineno">  116</span>&#160;        <span class="keywordflow">if</span> (msg.data == NULL) {</div>
+<div class="line"><a name="l00117"></a><span class="lineno">  117</span>&#160;            <span class="comment">// malloc failed</span></div>
+<div class="line"><a name="l00118"></a><span class="lineno">  118</span>&#160;            <a class="code" href="namespacelogger.html#a53f34feeb22a94db295af05b8b2aab5c">logger::log_error</a>(DBERR_MALLOC_FAILED, <span class="stringliteral">&quot;Malloc for pack system info failed&quot;</span>);</div>
+<div class="line"><a name="l00119"></a><span class="lineno">  119</span>&#160;            <span class="keywordflow">return</span> DBERR_MALLOC_FAILED;</div>
+<div class="line"><a name="l00120"></a><span class="lineno">  120</span>&#160;        }</div>
+<div class="line"><a name="l00121"></a><span class="lineno">  121</span>&#160;        </div>
+<div class="line"><a name="l00122"></a><span class="lineno">  122</span>&#160;        <span class="keywordtype">char</span>* localBuffer = msg.data;</div>
+<div class="line"><a name="l00123"></a><span class="lineno">  123</span>&#160;        <span class="comment">// store in buffer</span></div>
+<div class="line"><a name="l00124"></a><span class="lineno">  124</span>&#160;        *<span class="keyword">reinterpret_cast&lt;</span><span class="keywordtype">int</span>*<span class="keyword">&gt;</span>(localBuffer) = nicknameR.length();</div>
+<div class="line"><a name="l00125"></a><span class="lineno">  125</span>&#160;        localBuffer += <span class="keyword">sizeof</span>(int);</div>
+<div class="line"><a name="l00126"></a><span class="lineno">  126</span>&#160;        std::memcpy(localBuffer, nicknameR.data(), nicknameR.length() * <span class="keyword">sizeof</span>(<span class="keywordtype">char</span>));</div>
+<div class="line"><a name="l00127"></a><span class="lineno">  127</span>&#160;        localBuffer += nicknameR.length() * <span class="keyword">sizeof</span>(char);</div>
+<div class="line"><a name="l00128"></a><span class="lineno">  128</span>&#160; </div>
+<div class="line"><a name="l00129"></a><span class="lineno">  129</span>&#160;        *<span class="keyword">reinterpret_cast&lt;</span><span class="keywordtype">int</span>*<span class="keyword">&gt;</span>(localBuffer) = nicknameS.length();</div>
+<div class="line"><a name="l00130"></a><span class="lineno">  130</span>&#160;        localBuffer += <span class="keyword">sizeof</span>(int);</div>
+<div class="line"><a name="l00131"></a><span class="lineno">  131</span>&#160;        <span class="keywordflow">if</span> (nicknameS.length() &gt; 0) {</div>
+<div class="line"><a name="l00132"></a><span class="lineno">  132</span>&#160;            std::memcpy(localBuffer, nicknameS.data(), nicknameS.length() * <span class="keyword">sizeof</span>(<span class="keywordtype">char</span>));</div>
+<div class="line"><a name="l00133"></a><span class="lineno">  133</span>&#160;            localBuffer += nicknameS.length() * <span class="keyword">sizeof</span>(char);</div>
+<div class="line"><a name="l00134"></a><span class="lineno">  134</span>&#160;        }</div>
+<div class="line"><a name="l00135"></a><span class="lineno">  135</span>&#160; </div>
+<div class="line"><a name="l00136"></a><span class="lineno">  136</span>&#160;        <span class="keywordflow">return</span> DBERR_OK;</div>
+<div class="line"><a name="l00137"></a><span class="lineno">  137</span>&#160;    }</div>
 <div class="ttc" id="acontainers_8h_html_a93d917fabd28d05357cd3096eb43b641"><div class="ttname"><a href="containers_8h.html#a93d917fabd28d05357cd3096eb43b641">g_config</a></div><div class="ttdeci">Config g_config</div><div class="ttdoc">The main global configuration variable.</div><div class="ttdef"><b>Definition:</b> <a href="containers_8cpp_source.html#l00003">containers.cpp:3</a></div></div>
 <div class="ttc" id="anamespacelogger_html_a53f34feeb22a94db295af05b8b2aab5c"><div class="ttname"><a href="namespacelogger.html#a53f34feeb22a94db295af05b8b2aab5c">logger::log_error</a></div><div class="ttdeci">void log_error(int errorCode, T first, Args... rest)</div><div class="ttdoc">Error logging function with template arguments. Separates input parameters with spaces....</div><div class="ttdef"><b>Definition:</b> <a href="utils_8h_source.html#l00096">utils.h:96</a></div></div>
 <div class="ttc" id="astructDataset_html"><div class="ttname"><a href="structDataset.html">Dataset</a></div><div class="ttdoc">All dataset related information.</div><div class="ttdef"><b>Definition:</b> <a href="containers_8h_source.html#l01054">containers.h:1054</a></div></div>

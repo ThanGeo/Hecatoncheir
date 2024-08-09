@@ -1126,22 +1126,185 @@ struct DirectoryPaths {
     }
 };
 
-/** @brief Holds all partitioning related information.
- */
-struct PartitioningInfo {
-    PartitioningType type;                 // type of the partitioning technique
-    int partitionsPerDimension;             // # of partitions per dimension
-    int batchSize;                          // size of each batche, in number of objects
-    
-    // cell enumeration function
-    int getCellID(int i, int j) {
-        return (i + (j * partitionsPerDimension));
+/** @brief Base class for the partitioning methods (abstract class). */
+struct PartitioningMethod {
+    /** @brief The partitioning technique */
+    PartitioningType type;
+    /** @brief The number of partitions per dimension */
+    int distPartitionsPerDim;
+    /** @brief The batch size for the data distribution, in number of objects. */             
+    int batchSize;
+    /** @brief The distribution (coarse) grid's dataspace info. */
+    DataspaceInfo distGridDataspaceInfo;
+    // The X,Y extents of a single partition in the distribution grid
+    double distPartitionExtentX;
+    double distPartitionExtentY;
+
+    /** @brief Base constructor. */
+    PartitioningMethod(PartitioningType pType, int pBatchSize, int partitionsPerDimensionNum) : type(pType), batchSize(pBatchSize), distPartitionsPerDim(partitionsPerDimensionNum) {}
+
+    /** @brief Returns the partitioning method's type. */
+    PartitioningType getType() {
+        return type;
     }
-    // node assignment function
+
+    /** @brief Returns the batch size. */
+    int getBatchSize() {
+        return batchSize;
+    }
+
+    /** @brief Abstract method. Gets the partition's indices for the given partition ID , as defined by the derived partitioning method. */
+    void getDistributionGridPartitionIndices(int partitionID, int &i, int &j) {
+        j = partitionID / distPartitionsPerDim;
+        i = partitionID % distPartitionsPerDim;
+    }
+
+    /** @brief Abstract method. Gets the partition's indices for the given partition ID , as defined by the derived partitioning method. */
+    virtual void getPartitioningGridPartitionIndices(int partitionID, int &i, int &j) = 0;
+
+    /** @brief Abstract method. Returns the partition ID in the distribution grid for the given indices, as defined by the derived partitioning method. */
+    virtual int getDistributionGridPartitionID(int i, int j) = 0;
+
+    /** @brief Abstract method. Returns the partition ID in the partitioning grid for the given indices, as defined by the derived partitioning method. */
+    virtual int getPartitioningGridPartitionID(int distI, int distJ, int partI, int partJ) = 0;
+
+    /** @brief Returns the node's rank that's responsible for this partition. 
+     * @warning Should only be called by the host controller and the input partitionID should be of the outermost (distribution) grid. */
     int getNodeRankForPartitionID(int partitionID) {
         return (partitionID % g_world_size);
     }
+
+    /** @brief Abstract method. Returns the number of partitions per dimension in the data distribution grid. */
+    virtual int getDistributionPPD() = 0;
+
+    /** @brief Abstract method. Returns the number of partitions per dimension in the partitioning grid. */
+    virtual int getPartitioningPPD() = 0;
+
+    /** @brief Sets the distribution grid's dataspace info. (bounds and extent) */
+    void setDistGridDataspace(double xMin, double yMin, double xMax, double yMax) {
+        distGridDataspaceInfo.set(xMin, yMin, xMax, yMax);
+        distPartitionExtentX = distGridDataspaceInfo.xExtent / distPartitionsPerDim;
+        distPartitionExtentY = distGridDataspaceInfo.yExtent / distPartitionsPerDim;
+    }
+
+     /** @brief Sets the distribution grid's dataspace info. (bounds and extent) */
+    void setDistGridDataspace(DataspaceInfo &otherDataspaceInfo) {
+        distGridDataspaceInfo = otherDataspaceInfo;
+        distPartitionExtentX = distGridDataspaceInfo.xExtent / distPartitionsPerDim;
+        distPartitionExtentY = distGridDataspaceInfo.yExtent / distPartitionsPerDim;
+    }
+
+    /** @brief Abstract method. Sets the partitioning grid's dataspace info. */
+    virtual void setPartGridDataspace(double xMin, double yMin, double xMax, double yMax) = 0;
+
+    /** @brief Set the fine grid's dataspace info. */
+    virtual void setPartGridDataspace(DataspaceInfo &otherDataspaceInfo) = 0;
+
+    double getDistPartionExtentX() {
+        return distPartitionExtentX;
+    }
+
+    double getDistPartionExtentY() {
+        return distPartitionExtentY;
+    }
+
+    virtual double getPartPartionExtentX() = 0;
+    virtual double getPartPartionExtentY() = 0;
 };
+
+/** @brief Two Grid partitioning method. Uses a distribution grid for data distribution and a partitioning grid for the actual partitioning. */
+struct TwoGridPartitioning : public PartitioningMethod {
+private:
+    /** @brief The partitioning (fine) grid's number of partitions per dimension */
+    int partPartitionsPerDim;
+    /** @brief The global grid's number of partitions per dimension. = dPPD * pPPD */
+    int globalPartitionsPerDim;
+public:
+    /** @brief The fine grid's dataspace info. */
+    DataspaceInfo partGridDataspaceInfo;
+    // The X,Y extents of a single partition in the partitioning grid 
+    double partPartitionExtentX;
+    double partPartitionExtentY;
+
+    /** @brief Round robing partitioning constructor. */
+    TwoGridPartitioning(PartitioningType type, int batchSize, int partitionsPerDim, int fPartitionsPerDim) : PartitioningMethod(type, batchSize, partitionsPerDim), partPartitionsPerDim(fPartitionsPerDim) {
+        globalPartitionsPerDim = partPartitionsPerDim * distPartitionsPerDim;
+    }
+
+    /** @brief Get the distribution grid's partition ID (from parent) for the given indices. */
+    int getDistributionGridPartitionID(int i, int j) override;
+
+    /** @brief Get the partitioning grid's partition ID (from parent) for the given distribution grid AND partitioning grid indices. */
+    int getPartitioningGridPartitionID(int distI, int distJ, int partI, int partJ) override;
+
+    void getPartitioningGridPartitionIndices(int partitionID, int &i, int &j) override;
+
+    /** @brief Returns the distribution (coarse) grid's partitions per dimension number. */
+    int getDistributionPPD() override;
+
+    /** @brief Returns the partitioning (fine) grid's partitions per dimension number. */
+    int getPartitioningPPD() override;
+
+    /** @brief Set the fine grid's dataspace info. */
+    void setPartGridDataspace(double xMin, double yMin, double xMax, double yMax) override;
+
+    /** @brief Set the fine grid's dataspace info. */
+    void setPartGridDataspace(DataspaceInfo &otherDataspaceInfo) override;
+
+    double getPartPartionExtentX() override;
+    double getPartPartionExtentY() override;
+};
+
+/** @brief Simple round-robin partitioning method. Uses a single grid for the distribution and the partitioning. 
+ * @note It doesn't matter which method will be used to get a partition's ID, since there is a single grid.  */
+struct RoundRobinPartitioning : public PartitioningMethod {
+public:
+    /** @brief Round robing partitioning constructor. */
+    RoundRobinPartitioning(PartitioningType type, int batchSize, int partitionsPerDim) : PartitioningMethod(type, batchSize, partitionsPerDim) {}
+
+    /** @brief Get the grid's partition ID (from parent). */
+    int getDistributionGridPartitionID(int i, int j) override;
+
+    /** @brief Get the grid's partition ID (from parent). */
+    int getPartitioningGridPartitionID(int distI, int distJ, int partI, int partJ) override;
+
+    void getPartitioningGridPartitionIndices(int partitionID, int &i, int &j) override;
+
+    /** @brief Returns the distribution (coarse) grid's partitions per dimension number. */
+    int getDistributionPPD() override;
+
+    /** @brief Returns the partitioning (fine) grid's partitions per dimension number. */
+    int getPartitioningPPD() override;
+
+    /** @brief Dist grid = part grid. */
+    void setPartGridDataspace(double xMin, double yMin, double xMax, double yMax) override;
+
+    /** @brief Dist grid = part grid. */
+    void setPartGridDataspace(DataspaceInfo &otherDataspaceInfo) override;
+
+    double getPartPartionExtentX() override;
+    double getPartPartionExtentY() override;
+};
+
+/** @brief Holds all partitioning related information.
+ */
+// struct PartitioningInfo {
+//     /** @brief The partitioning technique */
+//     PartitioningType type;                 
+//     /** @brief The number of partitions per dimension */
+//     int ppdNum;                
+//     /** @brief The batch size for the data distribution, in number of objects. */             
+//     int batchSize;                         
+    
+//     // cell enumeration function
+//     int getCellID(int i, int j) {
+//         return (i + (j * ppdNum));
+//     }
+//     // node assignment function
+//     int getNodeRankForPartitionID(int partitionID) {
+//         return (partitionID % g_world_size);
+//     }
+// };
 
 /** @brief Defines a system task/job that the host controller is responsible for performing/broadcasting.
  */
@@ -1221,7 +1384,8 @@ struct Config {
     DirectoryPaths dirPaths;
     SystemOptions options;
     std::vector<Action> actions;
-    PartitioningInfo partitioningInfo;
+    // PartitioningInfo partitioningInfo;
+    PartitioningMethod *partitioningMethod;
     DatasetInfo datasetInfo;
     ApproximationInfo approximationInfo;
     QueryInfo queryInfo;
@@ -1239,6 +1403,7 @@ struct Geometry {
 
     Geometry(size_t recID, int vertexCount, std::vector<double> &coords);
     Geometry(size_t recID, std::vector<int> &partitions, int vertexCount, std::vector<double> &coords);
+    void setPartitions(std::vector<int> &ids);
     void setPartitions(std::vector<int> &ids, std::vector<TwoLayerClass> &classes);
 };
 

@@ -4,8 +4,8 @@ namespace pack
 {
     DB_STATUS packSystemInfo(SerializedMsg<char> &sysInfoMsg) {
         sysInfoMsg.count = 0;
-        sysInfoMsg.count += sizeof(SystemSetupType);     // cluster or local
-        sysInfoMsg.count += sizeof(int);                  // partitions per dimension
+        sysInfoMsg.count += sizeof(SystemSetupType);      // cluster or local
+        sysInfoMsg.count += 2*sizeof(int);                  // dist + part partitions per dimension
         sysInfoMsg.count += sizeof(int);                  // partitioning type
         sysInfoMsg.count += sizeof(int) + g_config.dirPaths.dataPath.length() * sizeof(char);   // data directory path length + string
         sysInfoMsg.count += 3 * sizeof(int);              // MBRFilter, IFilter, Refinement
@@ -24,10 +24,12 @@ namespace pack
         *reinterpret_cast<SystemSetupType*>(localBuffer) = g_config.options.setupType;
         localBuffer += sizeof(SystemSetupType);
 
-        *reinterpret_cast<int*>(localBuffer) = g_config.partitioningInfo.partitionsPerDimension;
+        *reinterpret_cast<int*>(localBuffer) = g_config.partitioningMethod->getDistributionPPD();
+        localBuffer += sizeof(int);
+        *reinterpret_cast<int*>(localBuffer) = g_config.partitioningMethod->getPartitioningPPD();
         localBuffer += sizeof(int);
 
-        *reinterpret_cast<PartitioningType*>(localBuffer) = g_config.partitioningInfo.type;
+        *reinterpret_cast<PartitioningType*>(localBuffer) = g_config.partitioningMethod->getType();
         localBuffer += sizeof(PartitioningType);
 
         *reinterpret_cast<int*>(localBuffer) = g_config.dirPaths.dataPath.length();
@@ -198,16 +200,31 @@ namespace pack
 namespace unpack
 {
     DB_STATUS unpackSystemInfo(SerializedMsg<char> &sysInfoMsg) {
+        PartitioningType partitioningType;
+        int partPartitionsPerDim, distPartitionsPerDim;
         char *localBuffer = sysInfoMsg.data;
         // get system setup type
         g_config.options.setupType = *reinterpret_cast<const SystemSetupType*>(localBuffer);
         localBuffer += sizeof(SystemSetupType);
-        // get partitions per dimension
-        g_config.partitioningInfo.partitionsPerDimension = *reinterpret_cast<const int*>(localBuffer);
+        // get dist+part partitions per dimension
+        distPartitionsPerDim = *reinterpret_cast<const int*>(localBuffer);
         localBuffer += sizeof(int);
-        // get partitioning type
-        g_config.partitioningInfo.type = *reinterpret_cast<const PartitioningType*>(localBuffer);
+        partPartitionsPerDim = *reinterpret_cast<const int*>(localBuffer);
+        localBuffer += sizeof(int);
+        // get dist+part partitioning type
+        partitioningType = *reinterpret_cast<const PartitioningType*>(localBuffer);
         localBuffer += sizeof(PartitioningType);
+        // set partitioning method
+        if (partitioningType == PARTITIONING_ROUND_ROBIN) {
+            // batch size to zero, since its irrelevant
+            g_config.partitioningMethod = new RoundRobinPartitioning(partitioningType, 0, partPartitionsPerDim);
+        } else if (partitioningType == PARTITIONING_TWO_GRID) {
+            // batch size to zero and distribution ppd to zero, both irrelevant to worker
+            g_config.partitioningMethod = new TwoGridPartitioning(partitioningType, 0, distPartitionsPerDim, partPartitionsPerDim);
+        } else {
+            logger::log_error(DBERR_INVALID_PARAMETER, "Unknown partitioning type while unpacking system info:", partitioningType);
+            return DBERR_INVALID_PARAMETER;
+        }
         // get datapath length + string
         // and set the paths
         int length;

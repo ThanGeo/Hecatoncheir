@@ -21,13 +21,9 @@ namespace partitioning
      */
     DB_STATUS calculateCSVDatasetDataspaceBounds(Dataset &dataset);
 
-    /**
-    @brief Calculates the intersecting partitions for the given MBR.
-     * @param[in] xMin, yMin, xMax, yMax MBR
-     * @param[out] partitionIDs The partition IDs that intersect with the MBR.
-     * @param[out] twoLayerClasses The MBR's two-layer index classification for each individual intersecting partition.
-     */
-    DB_STATUS getPartitionsForMBR(double xMin, double yMin, double xMax, double yMax, std::vector<int> &partitionIDs, std::vector<TwoLayerClass> &twoLayerClasses);
+
+    /** @brief Calculates all partition two-layer classes for a given batch, based on the partitioning method specified in the global configuration. */
+    DB_STATUS calculateTwoLayerClasses(GeometryBatch &batch);
 }
 
 #endif

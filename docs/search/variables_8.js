@@ -1,4 +1,5 @@
 var searchData=
 [
-  ['partitions_440',['partitions',['../structAprilConfig.html#aa5c6709f24bcb627b5885d34d0e5e746',1,'AprilConfig::partitions()'],['../structShape.html#a95e226d6e00a785e8e26067f10f4194d',1,'Shape::partitions()']]]
+  ['numintervalsall_475',['numIntervalsALL',['../structAprilData.html#a6953d20b44f87555bb35e894278f999b',1,'AprilData']]],
+  ['numintervalsfull_476',['numIntervalsFULL',['../structAprilData.html#ab02c90f05b91dc00e862397ebef5d7b1',1,'AprilData']]]
 ];

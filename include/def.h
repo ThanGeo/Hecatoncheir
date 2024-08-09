@@ -202,6 +202,7 @@ typedef enum TwoLayerClass {
     CLASS_B,
     CLASS_C,
     CLASS_D,
+    CLASS_NONE = 777,
 } TwoLayerClass;
 
 /** @enum IntervalListsRelationship @brief Types of possible relationships between interval lists (IL). */
@@ -227,11 +228,14 @@ typedef enum ActionType {
     ACTION_QUERY,
 } ActionType;
 
-/** @enum PartitioningType @brief Data partitioning methods. Only round robin is supported currently. 
- * @todo Two-step partitioning (coarse grid for distribution, fine-grid for partitioning)  */
+/** @enum PartitioningType @brief Data partitioning methods. Only round robin is supported currently. */
 typedef enum PartitioningType {
+    /** @brief The grid's cells are assigned to the nodes in a round-robin fashion. */
     PARTITIONING_ROUND_ROBIN,
+    /** @brief Prefix-based assignment. @warning UNSUPPORTED. */
     PARTITIONING_PREFIX_BASED,
+    /** @brief A distribution grid is used to distribute the data, then a fine-grid is used at each local node for the partitioning. */
+    PARTITIONING_TWO_GRID,
 } PartitioningType;
 
 /** @enum SystemSetupType @brief System type: Cluster or single machine (VM) */

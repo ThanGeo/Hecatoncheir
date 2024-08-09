@@ -92,6 +92,13 @@ $(function() {
 </ul>
 
 
+<h3><a id="index_b"></a>- b -</h3><ul>
+<li>batchSize
+: <a class="el" href="structPartitioningMethod.html#ac27d552ac93ac38c861ba160d7a3d02e">PartitioningMethod</a>
+</li>
+</ul>
+
+
 <h3><a id="index_c"></a>- c -</h3><ul>
 <li>calculateBufferSize()
 : <a class="el" href="structDataset.html#af83cba15f19a6dad7259c0db5d71a172">Dataset</a>
@@ -134,6 +141,12 @@ $(function() {
 <li>disjoint()
 : <a class="el" href="structShape.html#afc85b84821bc9afe7042853334cded88">Shape</a>
 </li>
+<li>distGridDataspaceInfo
+: <a class="el" href="structPartitioningMethod.html#adbdfe8ff3a0d48c23e69e581035a7f7e">PartitioningMethod</a>
+</li>
+<li>distPartitionsPerDim
+: <a class="el" href="structPartitioningMethod.html#aea4645ae36d8ce941dcfc708febd0ab7">PartitioningMethod</a>
+</li>
 </ul>
 
 
@@ -159,14 +172,33 @@ $(function() {
 <li>getAprilDataBySectionAndObjectID()
 : <a class="el" href="structDataset.html#a35bb9622b885986f5e7edc7585a5b603">Dataset</a>
 </li>
+<li>getBatchSize()
+: <a class="el" href="structPartitioningMethod.html#a816f21ad060ff6aa69a4bd462acada8a">PartitioningMethod</a>
+</li>
 <li>getCellsPerDim()
 : <a class="el" href="structAprilConfig.html#a51d25caa3f6d819fb9babafe730772ed">AprilConfig</a>
 </li>
 <li>getContainerClassContents()
 : <a class="el" href="structPartition.html#aed331352644439a199bff28c2eefd8dd">Partition</a>
 </li>
+<li>getDistributionGridPartitionID()
+: <a class="el" href="structPartitioningMethod.html#a24e4e9f5c9920b6929663d73e080c121">PartitioningMethod</a>
+, <a class="el" href="structRoundRobinPartitioning.html#a25a682de7f1280b099c7e9b539267615">RoundRobinPartitioning</a>
+, <a class="el" href="structTwoGridPartitioning.html#a9d811335f18c19054832325e487ce5e6">TwoGridPartitioning</a>
+</li>
+<li>getDistributionGridPartitionIndices()
+: <a class="el" href="structPartitioningMethod.html#a04292609dafc7bb0bb3d9ed936f6c048">PartitioningMethod</a>
+</li>
+<li>getDistributionPPD()
+: <a class="el" href="structPartitioningMethod.html#a03f1ef0f2cdcc9ac6a5b30c170630dc7">PartitioningMethod</a>
+, <a class="el" href="structRoundRobinPartitioning.html#aa32d287e9a3e4846c416cf9c85b95b15">RoundRobinPartitioning</a>
+, <a class="el" href="structTwoGridPartitioning.html#a80fdcd5221abbb9276c64b0e9e75a607">TwoGridPartitioning</a>
+</li>
 <li>getN()
 : <a class="el" href="structAprilConfig.html#a04a0fb64aa986657a3b6006482d5a437">AprilConfig</a>
+</li>
+<li>getNodeRankForPartitionID()
+: <a class="el" href="structPartitioningMethod.html#a92842b964a0385e0a8dad13e91d8b9c7">PartitioningMethod</a>
 </li>
 <li>getObject()
 : <a class="el" href="structDataset.html#a2407297a4ceb58310cfd562510762c93">Dataset</a>
@@ -177,8 +209,26 @@ $(function() {
 <li>getPartition()
 : <a class="el" href="structTwoLayerIndex.html#aa3dd7d2a87b5f75c3bce3ec90a4907cb">TwoLayerIndex</a>
 </li>
+<li>getPartitioningGridPartitionID()
+: <a class="el" href="structPartitioningMethod.html#ae519f21f1ff209c8c10aceacbfe595d9">PartitioningMethod</a>
+, <a class="el" href="structRoundRobinPartitioning.html#a2c28c9a10f699ecc255ce6ebbb290ac6">RoundRobinPartitioning</a>
+, <a class="el" href="structTwoGridPartitioning.html#a669edef38cffda03b5555a4bf245ef55">TwoGridPartitioning</a>
+</li>
+<li>getPartitioningGridPartitionIndices()
+: <a class="el" href="structPartitioningMethod.html#a3c915919fadcc86924da7e6a442424e6">PartitioningMethod</a>
+, <a class="el" href="structRoundRobinPartitioning.html#a3dbff2390c90b08a0433833809a52362">RoundRobinPartitioning</a>
+, <a class="el" href="structTwoGridPartitioning.html#a0a6ecdc9adf0fb19cf1d37dd061ad82e">TwoGridPartitioning</a>
+</li>
+<li>getPartitioningPPD()
+: <a class="el" href="structPartitioningMethod.html#a5b9ca4e6c27d0d815d779bcff4902124">PartitioningMethod</a>
+, <a class="el" href="structRoundRobinPartitioning.html#aaf1f6444ac6f4cb80f4534f0405ea0b3">RoundRobinPartitioning</a>
+, <a class="el" href="structTwoGridPartitioning.html#a97af24ce877c8959203a7dac9e7a1282">TwoGridPartitioning</a>
+</li>
 <li>getReferenceToPoints()
 : <a class="el" href="structShape.html#ac7d6917e3c2fca75397c4130325a6754">Shape</a>
+</li>
+<li>getType()
+: <a class="el" href="structPartitioningMethod.html#a78ac6f79fb4bd638e501b60f1e4f9c79">PartitioningMethod</a>
 </li>
 <li>getVertexCount()
 : <a class="el" href="structShape.html#afdd4dd74fddde32ac5cbdb5c952d418f">Shape</a>
@@ -230,8 +280,14 @@ $(function() {
 
 
 <h3><a id="index_p"></a>- p -</h3><ul>
+<li>partGridDataspaceInfo
+: <a class="el" href="structTwoGridPartitioning.html#a688bf2456fefd2227b4eb2b4b3d92bf0">TwoGridPartitioning</a>
+</li>
 <li>Partition()
 : <a class="el" href="structPartition.html#aaec5d9eda2ce2f195a86dd3bbff79960">Partition</a>
+</li>
+<li>PartitioningMethod()
+: <a class="el" href="structPartitioningMethod.html#a2cae9e36aefa1c49219c1abdbd224df0">PartitioningMethod</a>
 </li>
 <li>partitions
 : <a class="el" href="structAprilConfig.html#aa5c6709f24bcb627b5885d34d0e5e746">AprilConfig</a>
@@ -262,6 +318,9 @@ $(function() {
 <li>reset()
 : <a class="el" href="structShape.html#a092686033218ceb6e70f18c7431f90df">Shape</a>
 </li>
+<li>RoundRobinPartitioning()
+: <a class="el" href="structRoundRobinPartitioning.html#a27ed17aaaa3d3326251078bd5bfe6361">RoundRobinPartitioning</a>
+</li>
 </ul>
 
 
@@ -270,11 +329,19 @@ $(function() {
 : <a class="el" href="structDataset.html#a344e3c2482dc7864cc18d26cd3efb4d5">Dataset</a>
 , <a class="el" href="structGeometryBatch.html#a1a77b6794324fff22b403f55ee701c78">GeometryBatch</a>
 </li>
+<li>setDistGridDataspace()
+: <a class="el" href="structPartitioningMethod.html#a31e26f3e07d5277477f1ed9c93836f39">PartitioningMethod</a>
+</li>
 <li>setGeometry()
 : <a class="el" href="structGeometryWrapper.html#a0405c68965f969686992358e7b9d6396">GeometryWrapper&lt; GeometryType &gt;</a>
 </li>
 <li>setN()
 : <a class="el" href="structAprilConfig.html#a7baedff4347e713ba9ccd4df651a2e8e">AprilConfig</a>
+</li>
+<li>setPartGridDataspace()
+: <a class="el" href="structPartitioningMethod.html#a72ee086f8d426db4023e95730ea1c0e0">PartitioningMethod</a>
+, <a class="el" href="structRoundRobinPartitioning.html#a79b26d963c3a6541c396b75da45ae777">RoundRobinPartitioning</a>
+, <a class="el" href="structTwoGridPartitioning.html#a40f046c48392f51792f8a7b0a0249693">TwoGridPartitioning</a>
 </li>
 <li>shallowCopy()
 : <a class="el" href="structQueryOutput.html#a16251ecb2a7115a158be28d6c6c97be2">QueryOutput</a>
@@ -284,6 +351,16 @@ $(function() {
 </li>
 <li>sortPartitionsOnY()
 : <a class="el" href="structTwoLayerIndex.html#a463011f73b3067ff44e1aeabb21bb034">TwoLayerIndex</a>
+</li>
+</ul>
+
+
+<h3><a id="index_t"></a>- t -</h3><ul>
+<li>TwoGridPartitioning()
+: <a class="el" href="structTwoGridPartitioning.html#a014bf8979af974c6b41f888d7e8de5e8">TwoGridPartitioning</a>
+</li>
+<li>type
+: <a class="el" href="structPartitioningMethod.html#a2b42e27fbcac6136d0709c087bd2a42b">PartitioningMethod</a>
 </li>
 </ul>
 </div><!-- contents -->

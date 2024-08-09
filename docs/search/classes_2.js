@@ -1,8 +1,8 @@
 var searchData=
 [
-  ['dataset_227',['Dataset',['../structDataset.html',1,'']]],
-  ['datasetinfo_228',['DatasetInfo',['../structDatasetInfo.html',1,'']]],
-  ['datasetstatement_229',['DatasetStatement',['../structDatasetStatement.html',1,'']]],
-  ['dataspaceinfo_230',['DataspaceInfo',['../structDataspaceInfo.html',1,'']]],
-  ['directorypaths_231',['DirectoryPaths',['../structDirectoryPaths.html',1,'']]]
+  ['dataset_245',['Dataset',['../structDataset.html',1,'']]],
+  ['datasetinfo_246',['DatasetInfo',['../structDatasetInfo.html',1,'']]],
+  ['datasetstatement_247',['DatasetStatement',['../structDatasetStatement.html',1,'']]],
+  ['dataspaceinfo_248',['DataspaceInfo',['../structDataspaceInfo.html',1,'']]],
+  ['directorypaths_249',['DirectoryPaths',['../structDirectoryPaths.html',1,'']]]
 ];

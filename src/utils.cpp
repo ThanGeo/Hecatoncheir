@@ -169,6 +169,21 @@ namespace mapping
         }
     }
 
+    std::string twoLayerClassIntToStr(TwoLayerClass classType) {
+        switch (classType) {
+            case CLASS_A:
+                return "A";
+            case CLASS_B:
+                return "B";
+            case CLASS_C:
+                return "C";
+            case CLASS_D:
+                return "D";
+            default:
+                return "NO CLASS";
+        }
+    }
+
     std::string queryTypeIntToStr(QueryType val){
         switch(val) {
             case Q_RANGE: return "range";
