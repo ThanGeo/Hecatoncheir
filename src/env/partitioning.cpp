@@ -605,27 +605,39 @@ namespace partitioning
 
     DB_STATUS calculateTwoLayerClasses(GeometryBatch &batch) {
         DB_STATUS ret = DBERR_OK;
-
-        /** @todo parallelize */
-
+        // classify based on partitioning method
         switch (g_config.partitioningMethod->type) {
             case PARTITIONING_ROUND_ROBIN:
-                for (auto &it : batch.geometries) {
-                    // determine the two layer classes for each partition of the object in the fine grid
-                    ret = round_robin::setPartitionClassesForGeometry(it);
-                    if (ret != DBERR_OK) {
-                        logger::log_error(ret, "Setting partition classes for object with ID", it.recID, "failed.");
-                        return ret;
+                #pragma omp parallel num_threads(2)
+                {
+                    int tid = omp_get_thread_num();
+                    DB_STATUS local_ret = DBERR_OK;
+                    #pragma omp for
+                    for (int i=0; i<batch.geometries.size(); i++) {
+                        // determine the two layer classes for each partition of the object in the fine grid
+                        local_ret = round_robin::setPartitionClassesForGeometry(batch.geometries[i]);
+                        if (local_ret != DBERR_OK) {
+                            logger::log_error(ret, "Setting partition classes for object with ID", batch.geometries[i].recID, "failed.");
+                            #pragma omp cancel for
+                            ret = local_ret;
+                        }
                     }
                 }
                 break;
             case PARTITIONING_TWO_GRID:
-                for (auto &it : batch.geometries) {
-                    // determine the two layer classes for each partition of the object in the fine grid
-                    ret = two_grid::setPartitionClassesForGeometry(it);
-                    if (ret != DBERR_OK) {
-                        logger::log_error(ret, "Setting partition classes for object with ID", it.recID, "failed.");
-                        return ret;
+                #pragma omp parallel num_threads(2)
+                {
+                    int tid = omp_get_thread_num();
+                    DB_STATUS local_ret = DBERR_OK;
+                    #pragma omp for
+                    for (int i=0; i<batch.geometries.size(); i++) {
+                        // determine the two layer classes for each partition of the object in the fine grid
+                        local_ret = two_grid::setPartitionClassesForGeometry(batch.geometries[i]);
+                        if (local_ret != DBERR_OK) {
+                            logger::log_error(ret, "Setting partition classes for object with ID", batch.geometries[i].recID, "failed.");
+                            #pragma omp cancel for
+                            ret = local_ret;
+                        }
                     }
                 }
                 break;
@@ -634,6 +646,10 @@ namespace partitioning
                 return DBERR_INVALID_PARAMETER;
         }
 
+        // check if parallel classification compleleted successfully
+        if (ret != DBERR_OK) {
+            logger::log_error(ret, "Two layer classification for batch failed.");
+        }
         return ret;
     }
         
