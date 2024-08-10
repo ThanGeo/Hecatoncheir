@@ -9,5 +9,6 @@ var searchData=
   ['log_5fsuccess_118',['log_success',['../namespacelogger.html#a6232124565e7aac3c22650f1717cfa29',1,'logger']]],
   ['log_5ftask_119',['log_task',['../namespacelogger.html#a3ea3081359ed78462f4100ac868c5771',1,'logger']]],
   ['log_5ftask_5fsingle_5fnode_120',['log_task_single_node',['../namespacelogger.html#a6f20b8b7a537d050a79cb0a7b6670907',1,'logger']]],
-  ['logger_121',['logger',['../namespacelogger.html',1,'']]]
+  ['log_5fwarning_121',['log_warning',['../namespacelogger.html#a5ddd1088c3461c6f019d64d6a3aeb026',1,'logger']]],
+  ['logger_122',['logger',['../namespacelogger.html',1,'']]]
 ];

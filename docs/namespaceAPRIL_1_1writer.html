@@ -79,21 +79,128 @@ $(function() {
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="func-members"></a>
 Functions</h2></td></tr>
-<tr class="memitem:a407477d6babab201c767de8584161aa1"><td class="memItemLeft" align="right" valign="top">DB_STATUS&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespaceAPRIL_1_1writer.html#a407477d6babab201c767de8584161aa1">saveAPRIL</a> (FILE *pFileALL, FILE *pFileFULL, size_t recID, uint sectionID, <a class="el" href="structAprilData.html">AprilData</a> *aprilData)</td></tr>
-<tr class="memdesc:a407477d6babab201c767de8584161aa1"><td class="mdescLeft">&#160;</td><td class="mdescRight">Saves the <a class="el" href="namespaceAPRIL.html" title="APRIL related methods.">APRIL</a> data of an object on disk, using the given file pointers.  <a href="namespaceAPRIL_1_1writer.html#a407477d6babab201c767de8584161aa1">More...</a><br /></td></tr>
-<tr class="separator:a407477d6babab201c767de8584161aa1"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a4e37845d20ded52b2c86dda2f275aa13"><td class="memItemLeft" align="right" valign="top">DB_STATUS&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespaceAPRIL_1_1writer.html#a4e37845d20ded52b2c86dda2f275aa13">saveAPRILForObject</a> (FILE *pFileALL, FILE *pFileFULL, size_t recID, uint sectionID, <a class="el" href="structAprilData.html">AprilData</a> *aprilData)</td></tr>
+<tr class="memdesc:a4e37845d20ded52b2c86dda2f275aa13"><td class="mdescLeft">&#160;</td><td class="mdescRight">Saves the <a class="el" href="namespaceAPRIL.html" title="APRIL related methods.">APRIL</a> data of an object on disk, using the given file pointers.  <a href="namespaceAPRIL_1_1writer.html#a4e37845d20ded52b2c86dda2f275aa13">More...</a><br /></td></tr>
+<tr class="separator:a4e37845d20ded52b2c86dda2f275aa13"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:abc696cb76fd7e57c526d1162755fd1f1"><td class="memItemLeft" align="right" valign="top">DB_STATUS&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespaceAPRIL_1_1writer.html#abc696cb76fd7e57c526d1162755fd1f1">saveAPRILForDataset</a> (FILE *pFileALL, FILE *pFileFULL, <a class="el" href="structDataset.html">Dataset</a> &amp;dataset)</td></tr>
+<tr class="memdesc:abc696cb76fd7e57c526d1162755fd1f1"><td class="mdescLeft">&#160;</td><td class="mdescRight">Saves the <a class="el" href="namespaceAPRIL.html" title="APRIL related methods.">APRIL</a> data of an object on disk, using the given file pointers.  <a href="namespaceAPRIL_1_1writer.html#abc696cb76fd7e57c526d1162755fd1f1">More...</a><br /></td></tr>
+<tr class="separator:abc696cb76fd7e57c526d1162755fd1f1"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock"><p>Methods for storing <a class="el" href="namespaceAPRIL.html" title="APRIL related methods.">APRIL</a> on disk. </p>
 </div><h2 class="groupheader">Function Documentation</h2>
-<a id="a407477d6babab201c767de8584161aa1"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a407477d6babab201c767de8584161aa1">&#9670;&nbsp;</a></span>saveAPRIL()</h2>
+<a id="abc696cb76fd7e57c526d1162755fd1f1"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#abc696cb76fd7e57c526d1162755fd1f1">&#9670;&nbsp;</a></span>saveAPRILForDataset()</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">DB_STATUS APRIL::writer::saveAPRIL </td>
+          <td class="memname">DB_STATUS APRIL::writer::saveAPRILForDataset </td>
+          <td>(</td>
+          <td class="paramtype">FILE *&#160;</td>
+          <td class="paramname"><em>pFileALL</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">FILE *&#160;</td>
+          <td class="paramname"><em>pFileFULL</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="structDataset.html">Dataset</a> &amp;&#160;</td>
+          <td class="paramname"><em>dataset</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Saves the <a class="el" href="namespaceAPRIL.html" title="APRIL related methods.">APRIL</a> data of an object on disk, using the given file pointers. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramdir">[in]</td><td class="paramname">pFileALL</td><td>File pointer to the already opened A-list file. </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">pFileFULL</td><td>File pointer to the already opened F-list file. </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">dataset</td><td><a class="el" href="structDataset.html" title="All dataset related information.">Dataset</a> containing a filled section map with the <a class="el" href="namespaceAPRIL.html" title="APRIL related methods.">APRIL</a> data to save. </td></tr>
+  </table>
+  </dd>
+</dl>
+
+<p class="definition">Definition at line <a class="el" href="storage_8cpp_source.html#l00052">52</a> of file <a class="el" href="storage_8cpp_source.html">storage.cpp</a>.</p>
+<div class="fragment"><div class="line"><a name="l00052"></a><span class="lineno">   52</span>&#160;                                                                                         {</div>
+<div class="line"><a name="l00053"></a><span class="lineno">   53</span>&#160;            <span class="keywordflow">for</span> (<span class="keyword">auto</span> &amp;secIT : dataset.<a class="code" href="structDataset.html#ad3b176a14bd5857ccb6752922f3203bd">sectionMap</a>) {</div>
+<div class="line"><a name="l00054"></a><span class="lineno">   54</span>&#160;                <span class="keywordflow">for</span> (<span class="keyword">auto</span> &amp;objIT : secIT.second.aprilData) {</div>
+<div class="line"><a name="l00055"></a><span class="lineno">   55</span>&#160;                    <span class="comment">// ALL intervals</span></div>
+<div class="line"><a name="l00056"></a><span class="lineno">   56</span>&#160;                    <span class="keywordtype">size_t</span> elementsWritten = fwrite(&amp;objIT.first, <span class="keyword">sizeof</span>(<span class="keywordtype">size_t</span>), 1, pFileALL);</div>
+<div class="line"><a name="l00057"></a><span class="lineno">   57</span>&#160;                    <span class="keywordflow">if</span> (elementsWritten != 1) {</div>
+<div class="line"><a name="l00058"></a><span class="lineno">   58</span>&#160;                        <a class="code" href="namespacelogger.html#a53f34feeb22a94db295af05b8b2aab5c">logger::log_error</a>(DBERR_DISK_WRITE_FAILED, <span class="stringliteral">&quot;Writing recID failed for object with ID&quot;</span>, objIT.first);</div>
+<div class="line"><a name="l00059"></a><span class="lineno">   59</span>&#160;                        <span class="keywordflow">return</span> DBERR_DISK_WRITE_FAILED;</div>
+<div class="line"><a name="l00060"></a><span class="lineno">   60</span>&#160;                    }</div>
+<div class="line"><a name="l00061"></a><span class="lineno">   61</span>&#160;                    <span class="comment">// buffered write for section id and numIntervals</span></div>
+<div class="line"><a name="l00062"></a><span class="lineno">   62</span>&#160;                    <span class="keywordtype">int</span> buf[2];</div>
+<div class="line"><a name="l00063"></a><span class="lineno">   63</span>&#160;                    buf[0] = secIT.first;</div>
+<div class="line"><a name="l00064"></a><span class="lineno">   64</span>&#160;                    buf[1] = objIT.second.numIntervalsALL;</div>
+<div class="line"><a name="l00065"></a><span class="lineno">   65</span>&#160;                    elementsWritten = fwrite(buf, <span class="keyword">sizeof</span>(<span class="keywordtype">int</span>), 2, pFileALL);</div>
+<div class="line"><a name="l00066"></a><span class="lineno">   66</span>&#160;                    <span class="keywordflow">if</span> (elementsWritten != 2) {</div>
+<div class="line"><a name="l00067"></a><span class="lineno">   67</span>&#160;                        <a class="code" href="namespacelogger.html#a53f34feeb22a94db295af05b8b2aab5c">logger::log_error</a>(DBERR_DISK_WRITE_FAILED, <span class="stringliteral">&quot;Writing sectionID and numIntervalsALL failed for object with ID&quot;</span>, objIT.first);</div>
+<div class="line"><a name="l00068"></a><span class="lineno">   68</span>&#160;                        <span class="keywordflow">return</span> DBERR_DISK_WRITE_FAILED;</div>
+<div class="line"><a name="l00069"></a><span class="lineno">   69</span>&#160;                    }</div>
+<div class="line"><a name="l00070"></a><span class="lineno">   70</span>&#160;                    elementsWritten = fwrite(&amp;objIT.second.intervalsALL.data()[0], <span class="keyword">sizeof</span>(uint32_t), objIT.second.numIntervalsALL * 2, pFileALL);</div>
+<div class="line"><a name="l00071"></a><span class="lineno">   71</span>&#160;                    <span class="keywordflow">if</span> (elementsWritten != objIT.second.numIntervalsALL * 2) {</div>
+<div class="line"><a name="l00072"></a><span class="lineno">   72</span>&#160;                        <a class="code" href="namespacelogger.html#a53f34feeb22a94db295af05b8b2aab5c">logger::log_error</a>(DBERR_DISK_WRITE_FAILED, <span class="stringliteral">&quot;Writing ALL intervals failed for object with ID&quot;</span>, objIT.first);</div>
+<div class="line"><a name="l00073"></a><span class="lineno">   73</span>&#160;                        <span class="keywordflow">return</span> DBERR_DISK_WRITE_FAILED;</div>
+<div class="line"><a name="l00074"></a><span class="lineno">   74</span>&#160;                    }</div>
+<div class="line"><a name="l00075"></a><span class="lineno">   75</span>&#160;                    <span class="comment">// logger::log_success(&quot;Object:&quot;, recID, &quot;saved&quot;, aprilData-&gt;numIntervalsALL * 2, &quot;uint32_t elements for ALL intervals&quot;);</span></div>
+<div class="line"><a name="l00076"></a><span class="lineno">   76</span>&#160;                    <span class="comment">// FULL intervals (if any)</span></div>
+<div class="line"><a name="l00077"></a><span class="lineno">   77</span>&#160;                    <span class="keywordflow">if</span>(objIT.second.numIntervalsFULL &gt; 0){</div>
+<div class="line"><a name="l00078"></a><span class="lineno">   78</span>&#160;                        elementsWritten = fwrite(&amp;objIT.first, <span class="keyword">sizeof</span>(<span class="keywordtype">size_t</span>), 1, pFileFULL);</div>
+<div class="line"><a name="l00079"></a><span class="lineno">   79</span>&#160;                        <span class="keywordflow">if</span> (elementsWritten != 1) {</div>
+<div class="line"><a name="l00080"></a><span class="lineno">   80</span>&#160;                            <a class="code" href="namespacelogger.html#a53f34feeb22a94db295af05b8b2aab5c">logger::log_error</a>(DBERR_DISK_WRITE_FAILED, <span class="stringliteral">&quot;Writing recID failed for object with ID&quot;</span>, objIT.first);</div>
+<div class="line"><a name="l00081"></a><span class="lineno">   81</span>&#160;                            <span class="keywordflow">return</span> DBERR_DISK_WRITE_FAILED;</div>
+<div class="line"><a name="l00082"></a><span class="lineno">   82</span>&#160;                        }</div>
+<div class="line"><a name="l00083"></a><span class="lineno">   83</span>&#160;                        buf[1] = objIT.second.numIntervalsFULL;</div>
+<div class="line"><a name="l00084"></a><span class="lineno">   84</span>&#160;                        elementsWritten = fwrite(buf, <span class="keyword">sizeof</span>(<span class="keywordtype">int</span>), 2, pFileFULL);</div>
+<div class="line"><a name="l00085"></a><span class="lineno">   85</span>&#160;                        <span class="keywordflow">if</span> (elementsWritten != 2) {</div>
+<div class="line"><a name="l00086"></a><span class="lineno">   86</span>&#160;                            <a class="code" href="namespacelogger.html#a53f34feeb22a94db295af05b8b2aab5c">logger::log_error</a>(DBERR_DISK_WRITE_FAILED, <span class="stringliteral">&quot;Writing sectionID and numIntervalsFULL failed for object with ID&quot;</span>, objIT.first);</div>
+<div class="line"><a name="l00087"></a><span class="lineno">   87</span>&#160;                            <span class="keywordflow">return</span> DBERR_DISK_WRITE_FAILED;</div>
+<div class="line"><a name="l00088"></a><span class="lineno">   88</span>&#160;                        }</div>
+<div class="line"><a name="l00089"></a><span class="lineno">   89</span>&#160;                        elementsWritten = fwrite(&amp;objIT.second.intervalsFULL.data()[0], <span class="keyword">sizeof</span>(uint32_t), objIT.second.numIntervalsFULL * 2, pFileFULL);</div>
+<div class="line"><a name="l00090"></a><span class="lineno">   90</span>&#160;                        <span class="keywordflow">if</span> (elementsWritten != objIT.second.numIntervalsFULL * 2) {</div>
+<div class="line"><a name="l00091"></a><span class="lineno">   91</span>&#160;                            <a class="code" href="namespacelogger.html#a53f34feeb22a94db295af05b8b2aab5c">logger::log_error</a>(DBERR_DISK_WRITE_FAILED, <span class="stringliteral">&quot;Writing FULL intervals failed for object with ID&quot;</span>, objIT.first);</div>
+<div class="line"><a name="l00092"></a><span class="lineno">   92</span>&#160;                            <span class="keywordflow">return</span> DBERR_DISK_WRITE_FAILED;</div>
+<div class="line"><a name="l00093"></a><span class="lineno">   93</span>&#160;                        }</div>
+<div class="line"><a name="l00094"></a><span class="lineno">   94</span>&#160;                    }</div>
+<div class="line"><a name="l00095"></a><span class="lineno">   95</span>&#160;                }</div>
+<div class="line"><a name="l00096"></a><span class="lineno">   96</span>&#160;            }</div>
+<div class="line"><a name="l00097"></a><span class="lineno">   97</span>&#160;            <span class="keywordflow">return</span> DBERR_OK;</div>
+<div class="line"><a name="l00098"></a><span class="lineno">   98</span>&#160;        }</div>
+<div class="ttc" id="anamespacelogger_html_a53f34feeb22a94db295af05b8b2aab5c"><div class="ttname"><a href="namespacelogger.html#a53f34feeb22a94db295af05b8b2aab5c">logger::log_error</a></div><div class="ttdeci">void log_error(int errorCode, T first, Args... rest)</div><div class="ttdoc">Error logging function with template arguments. Separates input parameters with spaces....</div><div class="ttdef"><b>Definition:</b> <a href="utils_8h_source.html#l00096">utils.h:96</a></div></div>
+<div class="ttc" id="astructDataset_html_ad3b176a14bd5857ccb6752922f3203bd"><div class="ttname"><a href="structDataset.html#ad3b176a14bd5857ccb6752922f3203bd">Dataset::sectionMap</a></div><div class="ttdeci">std::unordered_map&lt; uint, Section &gt; sectionMap</div><div class="ttdef"><b>Definition:</b> <a href="containers_8h_source.html#l01072">containers.h:1072</a></div></div>
+</div><!-- fragment --><div class="dynheader">
+Here is the call graph for this function:</div>
+<div class="dyncontent">
+<div class="center"><img src="namespaceAPRIL_1_1writer_abc696cb76fd7e57c526d1162755fd1f1_cgraph.png" border="0" usemap="#anamespaceAPRIL_1_1writer_abc696cb76fd7e57c526d1162755fd1f1_cgraph" alt=""/></div>
+<map name="anamespaceAPRIL_1_1writer_abc696cb76fd7e57c526d1162755fd1f1_cgraph" id="anamespaceAPRIL_1_1writer_abc696cb76fd7e57c526d1162755fd1f1_cgraph">
+<area shape="rect" title="Saves the APRIL data of an object on disk, using the given file pointers." alt="" coords="5,5,200,47"/>
+<area shape="rect" href="namespacelogger.html#a53f34feeb22a94db295af05b8b2aab5c" title="Error logging function with template arguments. Separates input parameters with spaces...." alt="" coords="248,13,363,39"/>
+</map>
+</div>
+
+</div>
+</div>
+<a id="a4e37845d20ded52b2c86dda2f275aa13"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a4e37845d20ded52b2c86dda2f275aa13">&#9670;&nbsp;</a></span>saveAPRILForObject()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">DB_STATUS APRIL::writer::saveAPRILForObject </td>
           <td>(</td>
           <td class="paramtype">FILE *&#160;</td>
           <td class="paramname"><em>pFileALL</em>, </td>
@@ -143,7 +250,7 @@ Functions</h2></td></tr>
 </dl>
 
 <p class="definition">Definition at line <a class="el" href="storage_8cpp_source.html#l00007">7</a> of file <a class="el" href="storage_8cpp_source.html">storage.cpp</a>.</p>
-<div class="fragment"><div class="line"><a name="l00007"></a><span class="lineno">    7</span>&#160;                                                                                                                 {</div>
+<div class="fragment"><div class="line"><a name="l00007"></a><span class="lineno">    7</span>&#160;                                                                                                                          {</div>
 <div class="line"><a name="l00008"></a><span class="lineno">    8</span>&#160;            <span class="comment">// ALL intervals</span></div>
 <div class="line"><a name="l00009"></a><span class="lineno">    9</span>&#160;            <span class="keywordtype">size_t</span> elementsWritten = fwrite(&amp;recID, <span class="keyword">sizeof</span>(<span class="keywordtype">size_t</span>), 1, pFileALL);</div>
 <div class="line"><a name="l00010"></a><span class="lineno">   10</span>&#160;            <span class="keywordflow">if</span> (elementsWritten != 1) {</div>
@@ -187,7 +294,6 @@ Functions</h2></td></tr>
 <div class="line"><a name="l00048"></a><span class="lineno">   48</span>&#160; </div>
 <div class="line"><a name="l00049"></a><span class="lineno">   49</span>&#160;            <span class="keywordflow">return</span> DBERR_OK;</div>
 <div class="line"><a name="l00050"></a><span class="lineno">   50</span>&#160;        }</div>
-<div class="ttc" id="anamespacelogger_html_a53f34feeb22a94db295af05b8b2aab5c"><div class="ttname"><a href="namespacelogger.html#a53f34feeb22a94db295af05b8b2aab5c">logger::log_error</a></div><div class="ttdeci">void log_error(int errorCode, T first, Args... rest)</div><div class="ttdoc">Error logging function with template arguments. Separates input parameters with spaces....</div><div class="ttdef"><b>Definition:</b> <a href="utils_8h_source.html#l00096">utils.h:96</a></div></div>
 <div class="ttc" id="astructAprilData_html_a1b691307c738438a4e35f3481c58cbcc"><div class="ttname"><a href="structAprilData.html#a1b691307c738438a4e35f3481c58cbcc">AprilData::intervalsFULL</a></div><div class="ttdeci">std::vector&lt; uint32_t &gt; intervalsFULL</div><div class="ttdoc">F-list contents.</div><div class="ttdef"><b>Definition:</b> <a href="containers_8h_source.html#l00047">containers.h:47</a></div></div>
 <div class="ttc" id="astructAprilData_html_a6953d20b44f87555bb35e894278f999b"><div class="ttname"><a href="structAprilData.html#a6953d20b44f87555bb35e894278f999b">AprilData::numIntervalsALL</a></div><div class="ttdeci">uint numIntervalsALL</div><div class="ttdoc">A-list size.</div><div class="ttdef"><b>Definition:</b> <a href="containers_8h_source.html#l00033">containers.h:33</a></div></div>
 <div class="ttc" id="astructAprilData_html_aa22d432941cd24b0b70f838b7be6923c"><div class="ttname"><a href="structAprilData.html#aa22d432941cd24b0b70f838b7be6923c">AprilData::intervalsALL</a></div><div class="ttdeci">std::vector&lt; uint32_t &gt; intervalsALL</div><div class="ttdoc">A-list contents.</div><div class="ttdef"><b>Definition:</b> <a href="containers_8h_source.html#l00039">containers.h:39</a></div></div>
@@ -195,10 +301,10 @@ Functions</h2></td></tr>
 </div><!-- fragment --><div class="dynheader">
 Here is the call graph for this function:</div>
 <div class="dyncontent">
-<div class="center"><img src="namespaceAPRIL_1_1writer_a407477d6babab201c767de8584161aa1_cgraph.png" border="0" usemap="#anamespaceAPRIL_1_1writer_a407477d6babab201c767de8584161aa1_cgraph" alt=""/></div>
-<map name="anamespaceAPRIL_1_1writer_a407477d6babab201c767de8584161aa1_cgraph" id="anamespaceAPRIL_1_1writer_a407477d6babab201c767de8584161aa1_cgraph">
-<area shape="rect" title="Saves the APRIL data of an object on disk, using the given file pointers." alt="" coords="5,5,181,32"/>
-<area shape="rect" href="namespacelogger.html#a53f34feeb22a94db295af05b8b2aab5c" title="Error logging function with template arguments. Separates input parameters with spaces...." alt="" coords="229,5,344,32"/>
+<div class="center"><img src="namespaceAPRIL_1_1writer_a4e37845d20ded52b2c86dda2f275aa13_cgraph.png" border="0" usemap="#anamespaceAPRIL_1_1writer_a4e37845d20ded52b2c86dda2f275aa13_cgraph" alt=""/></div>
+<map name="anamespaceAPRIL_1_1writer_a4e37845d20ded52b2c86dda2f275aa13_cgraph" id="anamespaceAPRIL_1_1writer_a4e37845d20ded52b2c86dda2f275aa13_cgraph">
+<area shape="rect" title="Saves the APRIL data of an object on disk, using the given file pointers." alt="" coords="5,5,200,47"/>
+<area shape="rect" href="namespacelogger.html#a53f34feeb22a94db295af05b8b2aab5c" title="Error logging function with template arguments. Separates input parameters with spaces...." alt="" coords="248,13,363,39"/>
 </map>
 </div>
 

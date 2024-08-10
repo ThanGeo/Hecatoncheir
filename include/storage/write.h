@@ -23,11 +23,11 @@ namespace storage
              */
             DB_STATUS appendBatchToPartitionFile(FILE* outFile, GeometryBatch* batch, Dataset* dataset);
 
-            /**
-            @brief Updates the first bytes (sizeof(size_t)) of a partition file with the new object count value.
-             */
-            DB_STATUS updateObjectCountInFile(FILE* outFile, size_t objectCount);
         }
+        /**
+        @brief Updates the first bytes (sizeof(size_t)) of a partition file with the new object count value.
+            */
+        DB_STATUS updateObjectCountInFile(FILE* outFile, size_t objectCount);
     }
 }
 

@@ -1063,17 +1063,18 @@ struct Dataset{
     DataspaceInfo dataspaceInfo;
     // unique object count
     size_t totalObjects = 0;
+    std::vector<size_t> objectIDs;
     std::unordered_map<size_t, Shape> objects;
-    // two layer
     TwoLayerIndex twoLayerIndex;
-    /* approximations */ 
     ApproximationType approxType;
-    // APRIL
     AprilConfig aprilConfig;
-    std::unordered_map<uint, Section> sectionMap;                        // map: k,v = sectionID,(unordered map of k,v = recID,aprilData)
-    std::unordered_map<size_t,std::vector<uint>> recToSectionIdMap;         // map: k,v = recID,vector<sectionID>: maps recs to sections 
+    /** Section mapping. key,value = sectionID,(unordered map of key,value = recID,aprilData) @warning only sectionID = 0 is supported currently.*/
+    std::unordered_map<uint, Section> sectionMap;
+    /** map: key,value = recID,vector<sectionID>: maps recs to sections */
+    std::unordered_map<size_t,std::vector<uint>> recToSectionIdMap;        
 
-    /** @brief Adds a Shape object into the two layer index and the reference map. @note Calculates the partitions and the object's classes in them. */
+    /** @brief Adds a Shape object into the two layer index and the reference map. 
+     * @note Calculates the partitions and the object's classes in them. */
     void addObject(Shape &object);
 
     /** @brief Returns a reference to the object with the given ID. */
@@ -1095,6 +1096,8 @@ struct Dataset{
     void addIntervalsToAprilData(const uint sectionID, const size_t recID, const int numIntervals, const std::vector<uint32_t> &intervals, const bool ALL);
     /** @brief Returns a reference to the April Data of the given object's ID in section ID */
     AprilData* getAprilDataBySectionAndObjectID(uint sectionID, size_t recID);
+    /** @brief Sets the april data in the dataset for the given object ID and section ID */
+    DB_STATUS setAprilDataForSectionAndObjectID(uint sectionID, size_t recID, AprilData &aprilData);
 };
 
 /** @brief Holds all query-related information.

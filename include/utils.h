@@ -111,6 +111,27 @@ namespace logger
         print_args(first, rest...);
     }
 
+    /** @brief Warning logging function with template arguments. Separates input parameters with spaces. 
+     * Prints the node's rank and process type (Agent or Controller), coloured appropriately. */
+    template<typename T, typename... Args>
+    inline void log_warning(T first, Args... rest) {
+        if (g_parent_original_rank != PARENTLESS_RANK) {
+            // agents
+            std::cout << YELLOW "[" + std::to_string(g_parent_original_rank) + "]" NC BLUE "[A]" NC ORANGE "[WARNING]" NC ": ";
+        } else {
+            // controllers
+            if (g_node_rank == HOST_RANK) {
+                // host controller
+                std::cout << PURPLE "[" + std::to_string(g_node_rank) + "]" "[C]" NC ORANGE "[WARNING]" NC ": ";
+            } else {
+                // worker controller
+                std::cout << YELLOW "[" + std::to_string(g_node_rank) + "]" NC PURPLE "[C]" NC ORANGE "[WARNING]" NC ": ";
+            }
+        }
+        std::cout.flush();
+        print_args(first, rest...);
+    }
+
     /** @brief Success logging function with template arguments. Separates input parameters with spaces. 
      * Prints the node's rank and process type (Agent or Controller), coloured appropriately. */
     template<typename T, typename... Args>

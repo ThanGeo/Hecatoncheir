@@ -295,7 +295,7 @@ namespace comm
                 // empty batch, set flag to stop listening for this dataset
                 continueListening = 0;
                 // and write total objects in the begining of the partitioned file
-                ret = storage::writer::partitionFile::updateObjectCountInFile(outFile, dataset->totalObjects);
+                ret = storage::writer::updateObjectCountInFile(outFile, dataset->totalObjects);
                 logger::log_success("Saved", dataset->totalObjects,"total objects.");
                 if (ret != DBERR_OK) {
                     logger::log_error(DBERR_DISK_WRITE_FAILED, "Failed when updating partition file object count");

@@ -217,6 +217,10 @@ void Dataset::addObject(Shape &object) {
         // add to twolayer index
         this->twoLayerIndex.addObject(partitionID, classType, objectRef);
     }
+    // keep the ID in the list
+    objectIDs.push_back(object.recID);
+    /** add object to section map (section 0) @warning do not remove, will break the parallel in-memory APRIL generation */
+    this->addObjectToSectionMap(0, object.recID);
 }
 
 int Dataset::calculateBufferSize() {
@@ -361,6 +365,27 @@ AprilData* Dataset::getAprilDataBySectionAndObjectID(uint sectionID, size_t recI
         }
     }
     return nullptr;
+}
+
+DB_STATUS Dataset::setAprilDataForSectionAndObjectID(uint sectionID, size_t recID, AprilData &aprilData) {
+    auto sec = this->sectionMap.find(sectionID);
+    if (sec == this->sectionMap.end()){
+        // add new section
+        this->addObjectToSectionMap(sectionID, recID);
+        sec = this->sectionMap.find(sectionID);
+        logger::log_warning("Added new section in the section map. This shouldn't happen in parallel APRIL generation.");
+    }
+    // section exists
+    auto obj = sec->second.aprilData.find(recID);
+    if (obj != sec->second.aprilData.end()) {
+        // object exists already
+        obj->second = aprilData;
+    } else {
+        // add april data for the object, in section map
+        sec->second.aprilData.insert(std::make_pair(recID,aprilData));
+        logger::log_warning("Added new object in the section map. This shouldn't happen in parallel APRIL generation.");
+    }
+    return DBERR_OK;
 }
 
 Dataset* DatasetInfo::getDatasetByNickname(std::string &nickname) {

@@ -135,42 +135,42 @@ Functions</h2></td></tr>
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="APRIL_2filter_8cpp_source.html#l00229">229</a> of file <a class="el" href="APRIL_2filter_8cpp_source.html">filter.cpp</a>.</p>
-<div class="fragment"><div class="line"><a name="l00229"></a><span class="lineno">  229</span>&#160;                                                                                                                                    {</div>
-<div class="line"><a name="l00230"></a><span class="lineno">  230</span>&#160;            DB_STATUS ret = DBERR_OK;</div>
-<div class="line"><a name="l00231"></a><span class="lineno">  231</span>&#160;            <span class="comment">// switch based on how the MBRs intersect, to the appropriate intermediate filter</span></div>
-<div class="line"><a name="l00232"></a><span class="lineno">  232</span>&#160;            <span class="keywordflow">switch</span> (mbrRelationCase) {</div>
-<div class="line"><a name="l00233"></a><span class="lineno">  233</span>&#160;                <span class="keywordflow">case</span> MBR_R_IN_S:</div>
-<div class="line"><a name="l00234"></a><span class="lineno">  234</span>&#160;                    ret = specializedTopologyRinSContainment(objR, objS, queryOutput);</div>
-<div class="line"><a name="l00235"></a><span class="lineno">  235</span>&#160;                    <span class="keywordflow">if</span> (ret != DBERR_OK) {</div>
-<div class="line"><a name="l00236"></a><span class="lineno">  236</span>&#160;                        <a class="code" href="namespacelogger.html#a53f34feeb22a94db295af05b8b2aab5c">logger::log_error</a>(ret, <span class="stringliteral">&quot;specialized topology R in S containment filter failed.&quot;</span>);</div>
-<div class="line"><a name="l00237"></a><span class="lineno">  237</span>&#160;                    }</div>
-<div class="line"><a name="l00238"></a><span class="lineno">  238</span>&#160;                    <span class="keywordflow">break</span>;</div>
-<div class="line"><a name="l00239"></a><span class="lineno">  239</span>&#160;                <span class="keywordflow">case</span> MBR_S_IN_R:</div>
-<div class="line"><a name="l00240"></a><span class="lineno">  240</span>&#160;                    ret = specializedTopologySinRContainment(objR, objS, queryOutput);</div>
-<div class="line"><a name="l00241"></a><span class="lineno">  241</span>&#160;                    <span class="keywordflow">if</span> (ret != DBERR_OK) {</div>
-<div class="line"><a name="l00242"></a><span class="lineno">  242</span>&#160;                        <a class="code" href="namespacelogger.html#a53f34feeb22a94db295af05b8b2aab5c">logger::log_error</a>(ret, <span class="stringliteral">&quot;specialized topology S in R containment filter failed.&quot;</span>);</div>
-<div class="line"><a name="l00243"></a><span class="lineno">  243</span>&#160;                    }</div>
-<div class="line"><a name="l00244"></a><span class="lineno">  244</span>&#160;                    <span class="keywordflow">break</span>;</div>
-<div class="line"><a name="l00245"></a><span class="lineno">  245</span>&#160;                <span class="keywordflow">case</span> MBR_EQUAL:</div>
-<div class="line"><a name="l00246"></a><span class="lineno">  246</span>&#160;                    ret = specializedTopologyEqual(objR, objS, queryOutput);</div>
-<div class="line"><a name="l00247"></a><span class="lineno">  247</span>&#160;                    <span class="keywordflow">if</span> (ret != DBERR_OK) {</div>
-<div class="line"><a name="l00248"></a><span class="lineno">  248</span>&#160;                        <a class="code" href="namespacelogger.html#a53f34feeb22a94db295af05b8b2aab5c">logger::log_error</a>(ret, <span class="stringliteral">&quot;specialized topology S in R containment filter failed.&quot;</span>);</div>
-<div class="line"><a name="l00249"></a><span class="lineno">  249</span>&#160;                    }</div>
-<div class="line"><a name="l00250"></a><span class="lineno">  250</span>&#160;                    <span class="keywordflow">break</span>;</div>
-<div class="line"><a name="l00251"></a><span class="lineno">  251</span>&#160;                <span class="keywordflow">case</span> MBR_INTERSECT:</div>
-<div class="line"><a name="l00252"></a><span class="lineno">  252</span>&#160;                    ret = specializedTopologyIntersection(objR, objS, queryOutput);</div>
-<div class="line"><a name="l00253"></a><span class="lineno">  253</span>&#160;                    <span class="keywordflow">if</span> (ret != DBERR_OK) {</div>
-<div class="line"><a name="l00254"></a><span class="lineno">  254</span>&#160;                        <a class="code" href="namespacelogger.html#a53f34feeb22a94db295af05b8b2aab5c">logger::log_error</a>(ret, <span class="stringliteral">&quot;specialized topology S in R containment filter failed.&quot;</span>);</div>
-<div class="line"><a name="l00255"></a><span class="lineno">  255</span>&#160;                    }</div>
-<div class="line"><a name="l00256"></a><span class="lineno">  256</span>&#160;                    <span class="keywordflow">break</span>;</div>
-<div class="line"><a name="l00257"></a><span class="lineno">  257</span>&#160;                <span class="keywordflow">default</span>:</div>
-<div class="line"><a name="l00258"></a><span class="lineno">  258</span>&#160;                    <span class="comment">// not supported/unknown</span></div>
-<div class="line"><a name="l00259"></a><span class="lineno">  259</span>&#160;                    <a class="code" href="namespacelogger.html#a53f34feeb22a94db295af05b8b2aab5c">logger::log_error</a>(DBERR_INVALID_PARAMETER, <span class="stringliteral">&quot;Unknown MBR relation case:&quot;</span>, mbrRelationCase);</div>
-<div class="line"><a name="l00260"></a><span class="lineno">  260</span>&#160;                    <span class="keywordflow">return</span> DBERR_INVALID_PARAMETER;</div>
-<div class="line"><a name="l00261"></a><span class="lineno">  261</span>&#160;            }</div>
-<div class="line"><a name="l00262"></a><span class="lineno">  262</span>&#160;            <span class="keywordflow">return</span> ret;</div>
-<div class="line"><a name="l00263"></a><span class="lineno">  263</span>&#160;        }</div>
+<p class="definition">Definition at line <a class="el" href="APRIL_2filter_8cpp_source.html#l00230">230</a> of file <a class="el" href="APRIL_2filter_8cpp_source.html">filter.cpp</a>.</p>
+<div class="fragment"><div class="line"><a name="l00230"></a><span class="lineno">  230</span>&#160;                                                                                                                                    {</div>
+<div class="line"><a name="l00231"></a><span class="lineno">  231</span>&#160;            DB_STATUS ret = DBERR_OK;</div>
+<div class="line"><a name="l00232"></a><span class="lineno">  232</span>&#160;            <span class="comment">// switch based on how the MBRs intersect, to the appropriate intermediate filter</span></div>
+<div class="line"><a name="l00233"></a><span class="lineno">  233</span>&#160;            <span class="keywordflow">switch</span> (mbrRelationCase) {</div>
+<div class="line"><a name="l00234"></a><span class="lineno">  234</span>&#160;                <span class="keywordflow">case</span> MBR_R_IN_S:</div>
+<div class="line"><a name="l00235"></a><span class="lineno">  235</span>&#160;                    ret = specializedTopologyRinSContainment(objR, objS, queryOutput);</div>
+<div class="line"><a name="l00236"></a><span class="lineno">  236</span>&#160;                    <span class="keywordflow">if</span> (ret != DBERR_OK) {</div>
+<div class="line"><a name="l00237"></a><span class="lineno">  237</span>&#160;                        <a class="code" href="namespacelogger.html#a53f34feeb22a94db295af05b8b2aab5c">logger::log_error</a>(ret, <span class="stringliteral">&quot;specialized topology R in S containment filter failed.&quot;</span>);</div>
+<div class="line"><a name="l00238"></a><span class="lineno">  238</span>&#160;                    }</div>
+<div class="line"><a name="l00239"></a><span class="lineno">  239</span>&#160;                    <span class="keywordflow">break</span>;</div>
+<div class="line"><a name="l00240"></a><span class="lineno">  240</span>&#160;                <span class="keywordflow">case</span> MBR_S_IN_R:</div>
+<div class="line"><a name="l00241"></a><span class="lineno">  241</span>&#160;                    ret = specializedTopologySinRContainment(objR, objS, queryOutput);</div>
+<div class="line"><a name="l00242"></a><span class="lineno">  242</span>&#160;                    <span class="keywordflow">if</span> (ret != DBERR_OK) {</div>
+<div class="line"><a name="l00243"></a><span class="lineno">  243</span>&#160;                        <a class="code" href="namespacelogger.html#a53f34feeb22a94db295af05b8b2aab5c">logger::log_error</a>(ret, <span class="stringliteral">&quot;specialized topology S in R containment filter failed.&quot;</span>);</div>
+<div class="line"><a name="l00244"></a><span class="lineno">  244</span>&#160;                    }</div>
+<div class="line"><a name="l00245"></a><span class="lineno">  245</span>&#160;                    <span class="keywordflow">break</span>;</div>
+<div class="line"><a name="l00246"></a><span class="lineno">  246</span>&#160;                <span class="keywordflow">case</span> MBR_EQUAL:</div>
+<div class="line"><a name="l00247"></a><span class="lineno">  247</span>&#160;                    ret = specializedTopologyEqual(objR, objS, queryOutput);</div>
+<div class="line"><a name="l00248"></a><span class="lineno">  248</span>&#160;                    <span class="keywordflow">if</span> (ret != DBERR_OK) {</div>
+<div class="line"><a name="l00249"></a><span class="lineno">  249</span>&#160;                        <a class="code" href="namespacelogger.html#a53f34feeb22a94db295af05b8b2aab5c">logger::log_error</a>(ret, <span class="stringliteral">&quot;specialized topology S in R containment filter failed.&quot;</span>);</div>
+<div class="line"><a name="l00250"></a><span class="lineno">  250</span>&#160;                    }</div>
+<div class="line"><a name="l00251"></a><span class="lineno">  251</span>&#160;                    <span class="keywordflow">break</span>;</div>
+<div class="line"><a name="l00252"></a><span class="lineno">  252</span>&#160;                <span class="keywordflow">case</span> MBR_INTERSECT:</div>
+<div class="line"><a name="l00253"></a><span class="lineno">  253</span>&#160;                    ret = specializedTopologyIntersection(objR, objS, queryOutput);</div>
+<div class="line"><a name="l00254"></a><span class="lineno">  254</span>&#160;                    <span class="keywordflow">if</span> (ret != DBERR_OK) {</div>
+<div class="line"><a name="l00255"></a><span class="lineno">  255</span>&#160;                        <a class="code" href="namespacelogger.html#a53f34feeb22a94db295af05b8b2aab5c">logger::log_error</a>(ret, <span class="stringliteral">&quot;specialized topology S in R containment filter failed.&quot;</span>);</div>
+<div class="line"><a name="l00256"></a><span class="lineno">  256</span>&#160;                    }</div>
+<div class="line"><a name="l00257"></a><span class="lineno">  257</span>&#160;                    <span class="keywordflow">break</span>;</div>
+<div class="line"><a name="l00258"></a><span class="lineno">  258</span>&#160;                <span class="keywordflow">default</span>:</div>
+<div class="line"><a name="l00259"></a><span class="lineno">  259</span>&#160;                    <span class="comment">// not supported/unknown</span></div>
+<div class="line"><a name="l00260"></a><span class="lineno">  260</span>&#160;                    <a class="code" href="namespacelogger.html#a53f34feeb22a94db295af05b8b2aab5c">logger::log_error</a>(DBERR_INVALID_PARAMETER, <span class="stringliteral">&quot;Unknown MBR relation case:&quot;</span>, mbrRelationCase);</div>
+<div class="line"><a name="l00261"></a><span class="lineno">  261</span>&#160;                    <span class="keywordflow">return</span> DBERR_INVALID_PARAMETER;</div>
+<div class="line"><a name="l00262"></a><span class="lineno">  262</span>&#160;            }</div>
+<div class="line"><a name="l00263"></a><span class="lineno">  263</span>&#160;            <span class="keywordflow">return</span> ret;</div>
+<div class="line"><a name="l00264"></a><span class="lineno">  264</span>&#160;        }</div>
 <div class="ttc" id="anamespacelogger_html_a53f34feeb22a94db295af05b8b2aab5c"><div class="ttname"><a href="namespacelogger.html#a53f34feeb22a94db295af05b8b2aab5c">logger::log_error</a></div><div class="ttdeci">void log_error(int errorCode, T first, Args... rest)</div><div class="ttdoc">Error logging function with template arguments. Separates input parameters with spaces....</div><div class="ttdef"><b>Definition:</b> <a href="utils_8h_source.html#l00096">utils.h:96</a></div></div>
 </div><!-- fragment --><div class="dynheader">
 Here is the call graph for this function:</div>

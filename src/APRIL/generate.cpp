@@ -364,7 +364,7 @@ namespace APRIL
         }
 
         // intervalize shape with area (polygons and rectangles)
-        static DB_STATUS intervalizeRegionShape(Shape object, uint32_t cellsPerDim, AprilData &aprilData){
+        static DB_STATUS intervalizeRegionShape(Shape &object, uint32_t cellsPerDim, AprilData &aprilData){
             DB_STATUS ret = DBERR_OK;
             clock_t timer;
             RasterData rasterData;
@@ -451,7 +451,7 @@ namespace APRIL
                         return DBERR_APRIL_CREATE;
                     }
                     // save on disk
-                    ret = APRIL::writer::saveAPRIL(pFileALL, pFileFULL, object.recID, 0, &aprilData);
+                    ret = APRIL::writer::saveAPRILForObject(pFileALL, pFileFULL, object.recID, 0, &aprilData);
                     if (ret != DBERR_OK) {
                         logger::log_error(ret, "Failed while saving APRIL on disk");
                         return ret;
@@ -462,7 +462,7 @@ namespace APRIL
                     }
                 }
                 // update value 
-                ret = storage::writer::partitionFile::updateObjectCountInFile(pFileFULL, objectsInFullFile);
+                ret = storage::writer::updateObjectCountInFile(pFileFULL, objectsInFullFile);
                 if (ret != DBERR_OK) {
                     logger::log_error(ret, "Couldn't update object count value in FULL intervals file");
                     return ret;
@@ -495,7 +495,7 @@ namespace APRIL
                         return DBERR_APRIL_CREATE;
                     }
                     // save on disk
-                    ret = APRIL::writer::saveAPRIL(pFileALL, pFileFULL, object.recID, 0, &aprilData);
+                    ret = APRIL::writer::saveAPRILForObject(pFileALL, pFileFULL, object.recID, 0, &aprilData);
                     if (ret != DBERR_OK) {
                         logger::log_error(ret, "Failed while saving APRIL on disk");
                         return ret;
@@ -506,7 +506,7 @@ namespace APRIL
                     }
                 }
                 // update value 
-                ret = storage::writer::partitionFile::updateObjectCountInFile(pFileFULL, objectsInFullFile);
+                ret = storage::writer::updateObjectCountInFile(pFileFULL, objectsInFullFile);
                 if (ret != DBERR_OK) {
                     logger::log_error(ret, "Couldn't update object count value in FULL intervals file");
                     return ret;
@@ -592,84 +592,113 @@ namespace APRIL
 
         namespace memory
         {
-            /**
-            @brief load and intervalize shapes like polygon or rectangle that have area
-             */
             static DB_STATUS intervalizeRegionShapes(Dataset &dataset, FILE* pFileALL, FILE* pFileFULL) {
+                // logger::log_task("Generating APRIL in parlalel...");
                 DB_STATUS ret = DBERR_OK;
                 int objectsInFullFile = 0;
                 // loop objects from map
-                for (auto &objectIT : dataset.objects) {
-                    // get next object
-                    Shape* object = dataset.getObject(objectIT.first);
-                    // generate APRIL
-                    AprilData aprilData;
-                    ret = intervalizeRegionShape(*object, dataset.aprilConfig.getCellsPerDim(), aprilData);
-                    if (ret != DBERR_OK || aprilData.numIntervalsALL == 0) {
-                        // at least 1 ALL interval is needed for each object, otherwise there is an error
-                        logger::log_error(DBERR_APRIL_CREATE, "Failed to generate APRIL for object with ID", object->recID);
-                        return DBERR_APRIL_CREATE;
-                    }
-                    // logger::log_success("Object", object->recID, aprilData.numIntervalsALL, aprilData.numIntervalsFULL, "ALL and FULL intervals");
-                    // save on disk
-                    ret = APRIL::writer::saveAPRIL(pFileALL, pFileFULL, object->recID, 0, &aprilData);
-                    if (ret != DBERR_OK) {
-                        logger::log_error(ret, "Failed while saving APRIL on disk");
-                        return ret;
-                    }
-                    // count objects
-                    if (aprilData.numIntervalsFULL > 0) {
-                        objectsInFullFile += 1;
+                #pragma omp parallel reduction(+:objectsInFullFile)
+                {
+                    DB_STATUS local_ret = DBERR_OK;
+                    #pragma omp for
+                    for (int i=0; i<dataset.objectIDs.size(); i++) {
+                        // get next object
+                        Shape* object = dataset.getObject(dataset.objectIDs[i]);
+                        // generate APRIL
+                        AprilData aprilData;
+                        local_ret = intervalizeRegionShape(*object, dataset.aprilConfig.getCellsPerDim(), aprilData);
+                        if (local_ret != DBERR_OK || aprilData.numIntervalsALL == 0) {
+                            // at least 1 ALL interval is needed for each object, otherwise there is an error
+                            #pragma cancel for
+                            ret = local_ret;
+                            logger::log_error(local_ret, "Failed to generate APRIL for object with ID", object->recID);
+                        }
+                        // store in dataset
+                        local_ret = dataset.setAprilDataForSectionAndObjectID(0, object->recID, aprilData);
+                        if (local_ret != DBERR_OK) {
+                            #pragma cancel for
+                            ret = local_ret;
+                            logger::log_error(local_ret, "Parallel intervalization failed for object with ID", object->recID);
+                        }
+                        // count objects
+                        if (aprilData.numIntervalsFULL > 0) {
+                            objectsInFullFile += 1;
+                        }
                     }
                 }
-                // update value 
-                ret = storage::writer::partitionFile::updateObjectCountInFile(pFileFULL, objectsInFullFile);
+                // check if it ended successfully
                 if (ret != DBERR_OK) {
-                    logger::log_error(ret, "Couldn't update object count value in FULL intervals file");
+                    logger::log_error(DBERR_APRIL_CREATE, "Parallel APRIL generation failed.");
+                    return DBERR_APRIL_CREATE;
+                }
+                // save dataset APRIL on disk
+                ret = APRIL::writer::saveAPRILForDataset(pFileALL, pFileFULL, dataset);
+                if (ret != DBERR_OK) {
+                    logger::log_error(ret, "Saving APRIL objects on disk failed.");
+                    return ret;
+                }
+                // update value in FULL file
+                ret = storage::writer::updateObjectCountInFile(pFileFULL, objectsInFullFile);
+                if (ret != DBERR_OK) {
+                    logger::log_error(ret, "Couldn't update object count value in FULL intervals file.");
                     return ret;
                 }
                 return ret;
             }
 
-
-            /**
-            @brief load and intervalize shapes like polygon or rectangle that have area
-             */
             static DB_STATUS intervalizeNonRegionShapes(Dataset &dataset, FILE* pFileALL, FILE* pFileFULL) {
+                // logger::log_task("Generating APRIL in parlalel...");
                 DB_STATUS ret = DBERR_OK;
                 int objectsInFullFile = 0;
                 // loop objects from map
-                for (auto &objectIT : dataset.objects) {
-                    // get next object
-                    Shape* object = dataset.getObject(objectIT.first);
-                    // generate APRIL
-                    AprilData aprilData;
-                    ret = intervalizeNonRegionShape(*object, dataset.aprilConfig.getCellsPerDim(), aprilData);
-                    if (ret != DBERR_OK || aprilData.numIntervalsALL == 0) {
-                        // at least 1 ALL interval is needed for each object, otherwise there is an error
-                        logger::log_error(DBERR_APRIL_CREATE, "Failed to generate APRIL for object with ID", object->recID);
-                        return DBERR_APRIL_CREATE;
-                    }
-                    // save on disk
-                    ret = APRIL::writer::saveAPRIL(pFileALL, pFileFULL, object->recID, 0, &aprilData);
-                    if (ret != DBERR_OK) {
-                        logger::log_error(ret, "Failed while saving APRIL on disk");
-                        return ret;
-                    }
-                    // count objects
-                    if (aprilData.numIntervalsFULL > 0) {
-                        objectsInFullFile += 1;
+                #pragma omp parallel reduction(+:objectsInFullFile)
+                {
+                    DB_STATUS local_ret = DBERR_OK;
+                    #pragma omp for
+                    for (int i=0; i<dataset.objectIDs.size(); i++) {
+                        // get next object
+                        Shape* object = dataset.getObject(dataset.objectIDs[i]);
+                        // generate APRIL
+                        AprilData aprilData;
+                        ret = intervalizeNonRegionShape(*object, dataset.aprilConfig.getCellsPerDim(), aprilData);
+                        if (local_ret != DBERR_OK || aprilData.numIntervalsALL == 0) {
+                            // at least 1 ALL interval is needed for each object, otherwise there is an error
+                            #pragma cancel for
+                            ret = local_ret;
+                            logger::log_error(local_ret, "Failed to generate APRIL for object with ID", object->recID);
+                        }
+                        // store in dataset
+                        local_ret = dataset.setAprilDataForSectionAndObjectID(0, object->recID, aprilData);
+                        if (local_ret != DBERR_OK) {
+                            #pragma cancel for
+                            ret = local_ret;
+                            logger::log_error(local_ret, "Parallel intervalization failed for object with ID", object->recID);
+                        }
+                        // count objects
+                        if (aprilData.numIntervalsFULL > 0) {
+                            objectsInFullFile += 1;
+                        }
                     }
                 }
-                // update value 
-                ret = storage::writer::partitionFile::updateObjectCountInFile(pFileFULL, objectsInFullFile);
+                // check if it ended successfully
                 if (ret != DBERR_OK) {
-                    logger::log_error(ret, "Couldn't update object count value in FULL intervals file");
+                    logger::log_error(DBERR_APRIL_CREATE, "Parallel APRIL generation failed.");
+                    return DBERR_APRIL_CREATE;
+                }
+                // save dataset APRIL on disk
+                ret = APRIL::writer::saveAPRILForDataset(pFileALL, pFileFULL, dataset);
+                if (ret != DBERR_OK) {
+                    logger::log_error(ret, "Saving APRIL objects on disk failed.");
+                    return ret;
+                }
+                // update value in FULL file
+                ret = storage::writer::updateObjectCountInFile(pFileFULL, objectsInFullFile);
+                if (ret != DBERR_OK) {
+                    logger::log_error(ret, "Couldn't update object count value in FULL intervals file.");
                     return ret;
                 }
                 return ret;
-            }    
-
+            }
 
             DB_STATUS init(Dataset &dataset) {
                 DB_STATUS ret = DBERR_OK;

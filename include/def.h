@@ -30,6 +30,7 @@ typedef boost::geometry::model::polygon<bg_point_xy> bg_polygon;
 #define YELLOW "\e[0;33m"
 #define BLUE "\e[0;34m"
 #define PURPLE "\e[0;35m"
+#define ORANGE "\e[38;5;208m"
 #define NC "\e[0m"
 
 #define EPS 1e-08

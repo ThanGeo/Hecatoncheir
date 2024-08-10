@@ -4,7 +4,7 @@ namespace APRIL
 {
     namespace writer
     {
-        DB_STATUS saveAPRIL(FILE* pFileALL, FILE* pFileFULL, size_t recID, uint sectionID, AprilData* aprilData) {
+        DB_STATUS saveAPRILForObject(FILE* pFileALL, FILE* pFileFULL, size_t recID, uint sectionID, AprilData* aprilData) {
             // ALL intervals
             size_t elementsWritten = fwrite(&recID, sizeof(size_t), 1, pFileALL);
             if (elementsWritten != 1) {
@@ -46,6 +46,54 @@ namespace APRIL
                 }
             }
 
+            return DBERR_OK;
+        }
+
+        DB_STATUS saveAPRILForDataset(FILE* pFileALL, FILE* pFileFULL, Dataset &dataset) {
+            for (auto &secIT : dataset.sectionMap) {
+                for (auto &objIT : secIT.second.aprilData) {
+                    // ALL intervals
+                    size_t elementsWritten = fwrite(&objIT.first, sizeof(size_t), 1, pFileALL);
+                    if (elementsWritten != 1) {
+                        logger::log_error(DBERR_DISK_WRITE_FAILED, "Writing recID failed for object with ID", objIT.first);
+                        return DBERR_DISK_WRITE_FAILED;
+                    }
+                    // buffered write for section id and numIntervals
+                    int buf[2];
+                    buf[0] = secIT.first;
+                    buf[1] = objIT.second.numIntervalsALL;
+                    elementsWritten = fwrite(buf, sizeof(int), 2, pFileALL);
+                    if (elementsWritten != 2) {
+                        logger::log_error(DBERR_DISK_WRITE_FAILED, "Writing sectionID and numIntervalsALL failed for object with ID", objIT.first);
+                        return DBERR_DISK_WRITE_FAILED;
+                    }
+                    elementsWritten = fwrite(&objIT.second.intervalsALL.data()[0], sizeof(uint32_t), objIT.second.numIntervalsALL * 2, pFileALL);
+                    if (elementsWritten != objIT.second.numIntervalsALL * 2) {
+                        logger::log_error(DBERR_DISK_WRITE_FAILED, "Writing ALL intervals failed for object with ID", objIT.first);
+                        return DBERR_DISK_WRITE_FAILED;
+                    }
+                    // logger::log_success("Object:", recID, "saved", aprilData->numIntervalsALL * 2, "uint32_t elements for ALL intervals");
+                    // FULL intervals (if any)
+                    if(objIT.second.numIntervalsFULL > 0){
+                        elementsWritten = fwrite(&objIT.first, sizeof(size_t), 1, pFileFULL);
+                        if (elementsWritten != 1) {
+                            logger::log_error(DBERR_DISK_WRITE_FAILED, "Writing recID failed for object with ID", objIT.first);
+                            return DBERR_DISK_WRITE_FAILED;
+                        }
+                        buf[1] = objIT.second.numIntervalsFULL;
+                        elementsWritten = fwrite(buf, sizeof(int), 2, pFileFULL);
+                        if (elementsWritten != 2) {
+                            logger::log_error(DBERR_DISK_WRITE_FAILED, "Writing sectionID and numIntervalsFULL failed for object with ID", objIT.first);
+                            return DBERR_DISK_WRITE_FAILED;
+                        }
+                        elementsWritten = fwrite(&objIT.second.intervalsFULL.data()[0], sizeof(uint32_t), objIT.second.numIntervalsFULL * 2, pFileFULL);
+                        if (elementsWritten != objIT.second.numIntervalsFULL * 2) {
+                            logger::log_error(DBERR_DISK_WRITE_FAILED, "Writing FULL intervals failed for object with ID", objIT.first);
+                            return DBERR_DISK_WRITE_FAILED;
+                        }
+                    }
+                }
+            }
             return DBERR_OK;
         }
     }

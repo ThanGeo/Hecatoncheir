@@ -149,6 +149,7 @@ namespace APRIL
                     case TR_COVERED_BY:
                     case TR_COVERS:
                     case TR_INTERSECT:
+                    case TR_MEET:
                         // result
                         queryOutput.countTopologyRelationResult(iFilterResult);
                         return ret;
@@ -178,7 +179,7 @@ namespace APRIL
                     relation = refinement::topology::refineEqualCoversCoveredByTrueHitIntersect(objR, objS);
                     break;
                 default:
-                    logger::log_error(DBERR_APRIL_UNEXPECTED_RESULT, "Equal APRIL filter failed with unexpected relation:", relation, mapping::relationIntToStr(relation));
+                    logger::log_error(DBERR_APRIL_UNEXPECTED_RESULT, "Equal APRIL filter failed with unexpected relation:", iFilterResult, mapping::relationIntToStr(relation));
                     return DBERR_APRIL_UNEXPECTED_RESULT;
             }
             // count the refinement result

@@ -1,4 +1,5 @@
 <map id="Dataset::addObject" name="Dataset::addObject">
-<area shape="rect" id="node1" title="Adds a Shape object into the two layer index and the reference map." alt="" coords="5,5,140,32"/>
-<area shape="rect" id="node2" href="$structDataset.html#a2407297a4ceb58310cfd562510762c93" title="Returns a reference to the object with the given ID." alt="" coords="188,5,320,32"/>
+<area shape="rect" id="node1" title="Adds a Shape object into the two layer index and the reference map." alt="" coords="5,31,140,57"/>
+<area shape="rect" id="node2" href="$structDataset.html#aad72c5baa46b4858c89e315061632f0f" title="Adds the given object ID to the specified section ID." alt="" coords="188,5,407,32"/>
+<area shape="rect" id="node3" href="$structDataset.html#a2407297a4ceb58310cfd562510762c93" title="Returns a reference to the object with the given ID." alt="" coords="231,56,363,83"/>
 </map>

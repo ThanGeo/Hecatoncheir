@@ -1,0 +1,5 @@
+<map id="Dataset::addObjectToSectionMap" name="Dataset::addObjectToSectionMap">
+<area shape="rect" id="node1" title="Adds the given object ID to the specified section ID." alt="" coords="220,35,439,61"/>
+<area shape="rect" id="node2" href="$structDataset.html#a167417eb7a466cbcb1edabeb29647ae5" title="Adds a Shape object into the two layer index and the reference map." alt="" coords="21,5,156,32"/>
+<area shape="rect" id="node3" href="$structDataset.html#a8b1f923a6fd2811c00f0869395c3b522" title="Sets the april data in the dataset for the given object ID and section ID." alt="" coords="5,57,172,98"/>
+</map>
