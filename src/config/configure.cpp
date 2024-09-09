@@ -139,6 +139,26 @@ namespace configurer
                 g_config.datasetInfo.addDataset(S);
             }
         }
+        
+        // query dataset
+        if (datasetStmt->queryDatasetSet) {
+            Dataset Q;
+            // build dataset Q components
+            Q.dataspaceInfo = g_config.datasetInfo.dataspaceInfo;
+            Q.dataType = datasetStmt->datatypeQ;
+
+            DB_STATUS ret = statement::getFiletype(datasetStmt->filetypeQ, Q.fileType);
+            if (ret != DBERR_OK) {
+                logger::log_error(DBERR_INVALID_FILETYPE, "Unknown filetype for query dataset", datasetStmt->nicknameQ);
+                return DBERR_INVALID_FILETYPE;
+            }
+
+            Q.path = datasetStmt->queryDatasetPath;
+            Q.nickname = datasetStmt->nicknameQ;
+            Q.datasetName = getFileNameFromPath(Q.path);
+            // add to config
+            g_config.datasetInfo.addQueryDataset(Q);
+        }
         return DBERR_OK;
     }
 }

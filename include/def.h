@@ -104,6 +104,9 @@ typedef enum DB_STATUS {
     // query
     DBERR_QUERY_INVALID_INPUT = DBBASE + 7000,
     DBERR_QUERY_INVALID_TYPE = DBBASE + 7001,
+
+    // todo
+    DBERR_TODO = DBBASE + 10000,
 } DB_STATUS;
 
 /** @enum FileType @brief Data file types. */
@@ -221,12 +224,18 @@ enum IntervalListsRelationship {
 /** @enum ActionType @brief Different actions (jobs/tasks) the host controller will initiate/broadcast. */
 typedef enum ActionType {
     ACTION_NONE,
-    ACTION_LOAD_DATASETS,
+    ACTION_LOAD_DATASET_R,
+    ACTION_LOAD_DATASET_S,
     ACTION_PERFORM_PARTITIONING,
     ACTION_CREATE_APRIL,
     ACTION_LOAD_APRIL,
     ACTION_PERFORM_VERIFICATION,
-    ACTION_QUERY,
+    /** @brief Action to initialize the query processing by broadcasting the query's information. */
+    ACTION_QUERY_INIT,
+    /** @brief Action to broadcast queries (for range queries). */
+    ACTION_QUERY_PARTITIONING,
+    /** @brief wait for the query results */
+    ACTION_QUERY_GATHER_RESULTS,
 } ActionType;
 
 /** @enum PartitioningType @brief Data partitioning methods. Only round robin is supported currently. */

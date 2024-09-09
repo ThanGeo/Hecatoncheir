@@ -82,13 +82,17 @@ void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="name
 <tr class="memitem:a873e77ab57aa73ee78177a287a686300"><td class="memItemLeft" align="right" valign="top">DB_STATUS&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacepartitioning.html#a873e77ab57aa73ee78177a287a686300">calculateCSVDatasetDataspaceBounds</a> (<a class="el" href="structDataset.html">Dataset</a> &amp;dataset)</td></tr>
 <tr class="memdesc:a873e77ab57aa73ee78177a287a686300"><td class="mdescLeft">&#160;</td><td class="mdescRight">Calculates the given dataset's metadata about its dataspace.  <a href="namespacepartitioning.html#a873e77ab57aa73ee78177a287a686300">More...</a><br /></td></tr>
 <tr class="separator:a873e77ab57aa73ee78177a287a686300"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a5f7aef01c8b2d7c6a89ee75018c45591"><td class="memItemLeft" align="right" valign="top">DB_STATUS&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacepartitioning.html#a5f7aef01c8b2d7c6a89ee75018c45591">partitionDataset</a> (<a class="el" href="structDataset.html">Dataset</a> *dataset)</td></tr>
-<tr class="memdesc:a5f7aef01c8b2d7c6a89ee75018c45591"><td class="mdescLeft">&#160;</td><td class="mdescRight">Initializes the partitioning for the input dataset.  <a href="namespacepartitioning.html#a5f7aef01c8b2d7c6a89ee75018c45591">More...</a><br /></td></tr>
-<tr class="separator:a5f7aef01c8b2d7c6a89ee75018c45591"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aab798e2dee639273059b7cf819044e54"><td class="memItemLeft" align="right" valign="top">DB_STATUS&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacepartitioning.html#aab798e2dee639273059b7cf819044e54">partitionDataset</a> (<a class="el" href="structDataset.html">Dataset</a> *dataset, MsgType msgType)</td></tr>
+<tr class="memdesc:aab798e2dee639273059b7cf819044e54"><td class="mdescLeft">&#160;</td><td class="mdescRight">Initializes the partitioning for the input dataset.  <a href="namespacepartitioning.html#aab798e2dee639273059b7cf819044e54">More...</a><br /></td></tr>
+<tr class="separator:aab798e2dee639273059b7cf819044e54"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a031d7bd07faaa2b5d6b6f242b31e15fc"><td class="memItemLeft" align="right" valign="top"><a id="a031d7bd07faaa2b5d6b6f242b31e15fc"></a>
 DB_STATUS&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacepartitioning.html#a031d7bd07faaa2b5d6b6f242b31e15fc">calculateTwoLayerClasses</a> (<a class="el" href="structGeometryBatch.html">GeometryBatch</a> &amp;batch)</td></tr>
 <tr class="memdesc:a031d7bd07faaa2b5d6b6f242b31e15fc"><td class="mdescLeft">&#160;</td><td class="mdescRight">Calculates all partition two-layer classes for a given batch, based on the partitioning method specified in the global configuration. <br /></td></tr>
 <tr class="separator:a031d7bd07faaa2b5d6b6f242b31e15fc"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a4dc141a13f144e2df811114ba5a6eb9f"><td class="memItemLeft" align="right" valign="top"><a id="a4dc141a13f144e2df811114ba5a6eb9f"></a>
+DB_STATUS&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacepartitioning.html#a4dc141a13f144e2df811114ba5a6eb9f">partitionQueries</a> (<a class="el" href="structDataset.html">Dataset</a> *dataset)</td></tr>
+<tr class="memdesc:a4dc141a13f144e2df811114ba5a6eb9f"><td class="mdescLeft">&#160;</td><td class="mdescRight"><a class="el" href="structPartition.html" title="Holds all necessary partition information.">Partition</a> a query dataset across the workers. <br /></td></tr>
+<tr class="separator:a4dc141a13f144e2df811114ba5a6eb9f"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock"><p>Data distribution/partitioning methods. </p>
@@ -215,8 +219,8 @@ Here is the call graph for this function:</div>
 
 </div>
 </div>
-<a id="a5f7aef01c8b2d7c6a89ee75018c45591"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a5f7aef01c8b2d7c6a89ee75018c45591">&#9670;&nbsp;</a></span>partitionDataset()</h2>
+<a id="aab798e2dee639273059b7cf819044e54"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aab798e2dee639273059b7cf819044e54">&#9670;&nbsp;</a></span>partitionDataset()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -225,8 +229,18 @@ Here is the call graph for this function:</div>
           <td class="memname">DB_STATUS partitioning::partitionDataset </td>
           <td>(</td>
           <td class="paramtype"><a class="el" href="structDataset.html">Dataset</a> *&#160;</td>
-          <td class="paramname"><em>dataset</em></td><td>)</td>
+          <td class="paramname"><em>dataset</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
           <td></td>
+          <td class="paramtype">MsgType&#160;</td>
+          <td class="paramname"><em>msgType</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
         </tr>
       </table>
 </div><div class="memdoc">
@@ -235,12 +249,13 @@ Here is the call graph for this function:</div>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
     <tr><td class="paramdir">[in]</td><td class="paramname">dataset</td><td>Contains the dataset's information but not the contents, as the partitioning reads from disk and distributes the data. </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">msgType</td><td>Specifies the message instruction type (partition data, partition queries etc.) </td></tr>
   </table>
   </dd>
 </dl>
 
 <p class="definition">Definition at line <a class="el" href="partitioning_8cpp_source.html#l00386">386</a> of file <a class="el" href="partitioning_8cpp_source.html">partitioning.cpp</a>.</p>
-<div class="fragment"><div class="line"><a name="l00386"></a><span class="lineno">  386</span>&#160;                                                 {</div>
+<div class="fragment"><div class="line"><a name="l00386"></a><span class="lineno">  386</span>&#160;                                                                  {</div>
 <div class="line"><a name="l00387"></a><span class="lineno">  387</span>&#160;        <span class="keywordtype">double</span> startTime;</div>
 <div class="line"><a name="l00388"></a><span class="lineno">  388</span>&#160;        DB_STATUS ret;</div>
 <div class="line"><a name="l00389"></a><span class="lineno">  389</span>&#160;        <span class="comment">// time</span></div>
@@ -249,7 +264,7 @@ Here is the call graph for this function:</div>
 <div class="line"><a name="l00392"></a><span class="lineno">  392</span>&#160;            <span class="comment">// perform the partitioning</span></div>
 <div class="line"><a name="l00393"></a><span class="lineno">  393</span>&#160;            <span class="keywordflow">case</span> FT_CSV:</div>
 <div class="line"><a name="l00394"></a><span class="lineno">  394</span>&#160;                <span class="comment">// csv dataset</span></div>
-<div class="line"><a name="l00395"></a><span class="lineno">  395</span>&#160;                ret = performPartitioningCSV(*dataset);</div>
+<div class="line"><a name="l00395"></a><span class="lineno">  395</span>&#160;                ret = performPartitioningCSV(*dataset, msgType);</div>
 <div class="line"><a name="l00396"></a><span class="lineno">  396</span>&#160;                <span class="keywordflow">if</span> (ret != DBERR_OK) {</div>
 <div class="line"><a name="l00397"></a><span class="lineno">  397</span>&#160;                    <a class="code" href="namespacelogger.html#a53f34feeb22a94db295af05b8b2aab5c">logger::log_error</a>(DBERR_PARTITIONING_FAILED, <span class="stringliteral">&quot;Partitioning failed for dataset&quot;</span>, dataset-&gt;nickname);</div>
 <div class="line"><a name="l00398"></a><span class="lineno">  398</span>&#160;                    <span class="keywordflow">return</span> ret;</div>
@@ -271,15 +286,15 @@ Here is the call graph for this function:</div>
 <div class="line"><a name="l00414"></a><span class="lineno">  414</span>&#160;                </div>
 <div class="line"><a name="l00415"></a><span class="lineno">  415</span>&#160;        <span class="keywordflow">return</span> DBERR_OK;</div>
 <div class="line"><a name="l00416"></a><span class="lineno">  416</span>&#160;    }</div>
-<div class="ttc" id="anamespacecomm_1_1controller_1_1host_html_a7acd9cbfb1666431ed71aedf9242836b"><div class="ttname"><a href="namespacecomm_1_1controller_1_1host.html#a7acd9cbfb1666431ed71aedf9242836b">comm::controller::host::gatherResponses</a></div><div class="ttdeci">DB_STATUS gatherResponses()</div><div class="ttdoc">Gathers responses (ACK/NACK) from workers or the local agent about the last instructed action/job.</div><div class="ttdef"><b>Definition:</b> <a href="comm_8cpp_source.html#l01080">comm.cpp:1080</a></div></div>
+<div class="ttc" id="anamespacecomm_1_1controller_1_1host_html_a7acd9cbfb1666431ed71aedf9242836b"><div class="ttname"><a href="namespacecomm_1_1controller_1_1host.html#a7acd9cbfb1666431ed71aedf9242836b">comm::controller::host::gatherResponses</a></div><div class="ttdeci">DB_STATUS gatherResponses()</div><div class="ttdoc">Gathers responses (ACK/NACK) from workers or the local agent about the last instructed action/job.</div><div class="ttdef"><b>Definition:</b> <a href="comm_8cpp_source.html#l01278">comm.cpp:1278</a></div></div>
 <div class="ttc" id="anamespacelogger_html_a6232124565e7aac3c22650f1717cfa29"><div class="ttname"><a href="namespacelogger.html#a6232124565e7aac3c22650f1717cfa29">logger::log_success</a></div><div class="ttdeci">void log_success(T first, Args... rest)</div><div class="ttdoc">Success logging function with template arguments. Separates input parameters with spaces....</div><div class="ttdef"><b>Definition:</b> <a href="utils_8h_source.html#l00138">utils.h:138</a></div></div>
 <div class="ttc" id="anamespacempi__timer_html_a74c246372eadbc66ab89e4c971099ce0"><div class="ttname"><a href="namespacempi__timer.html#a74c246372eadbc66ab89e4c971099ce0">mpi_timer::getElapsedTime</a></div><div class="ttdeci">double getElapsedTime(double startTime)</div><div class="ttdoc">Get the elapsed time in seconds, from the given start timestamp.</div><div class="ttdef"><b>Definition:</b> <a href="utils_8cpp_source.html#l00144">utils.cpp:144</a></div></div>
 <div class="ttc" id="anamespacempi__timer_html_ab01f3cdc560e4858245746a406e9b951"><div class="ttname"><a href="namespacempi__timer.html#ab01f3cdc560e4858245746a406e9b951">mpi_timer::markTime</a></div><div class="ttdeci">double markTime()</div><div class="ttdoc">get the timestamp of the current time</div><div class="ttdef"><b>Definition:</b> <a href="utils_8cpp_source.html#l00140">utils.cpp:140</a></div></div>
 </div><!-- fragment --><div class="dynheader">
 Here is the call graph for this function:</div>
 <div class="dyncontent">
-<div class="center"><img src="namespacepartitioning_a5f7aef01c8b2d7c6a89ee75018c45591_cgraph.png" border="0" usemap="#anamespacepartitioning_a5f7aef01c8b2d7c6a89ee75018c45591_cgraph" alt=""/></div>
-<map name="anamespacepartitioning_a5f7aef01c8b2d7c6a89ee75018c45591_cgraph" id="anamespacepartitioning_a5f7aef01c8b2d7c6a89ee75018c45591_cgraph">
+<div class="center"><img src="namespacepartitioning_aab798e2dee639273059b7cf819044e54_cgraph.png" border="0" usemap="#anamespacepartitioning_aab798e2dee639273059b7cf819044e54_cgraph" alt=""/></div>
+<map name="anamespacepartitioning_aab798e2dee639273059b7cf819044e54_cgraph" id="anamespacepartitioning_aab798e2dee639273059b7cf819044e54_cgraph">
 <area shape="rect" title="Initializes the partitioning for the input dataset." alt="" coords="5,124,191,151"/>
 <area shape="rect" href="namespacecomm_1_1controller_1_1host.html#a7acd9cbfb1666431ed71aedf9242836b" title="Gathers responses (ACK/NACK) from workers or the local agent about the last instructed action/job." alt="" coords="253,7,405,49"/>
 <area shape="rect" href="namespacelogger.html#a53f34feeb22a94db295af05b8b2aab5c" title="Error logging function with template arguments. Separates input parameters with spaces...." alt="" coords="716,23,831,49"/>

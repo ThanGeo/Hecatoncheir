@@ -4,6 +4,12 @@
 namespace APRIL
 {
     std::vector<int> getCommonSectionIDsOfObjects(Dataset *datasetR, Dataset *datasetS, size_t idR, size_t idS) {
+        if (datasetR == nullptr) {
+            logger::log_error(DBERR_NULL_PTR_EXCEPTION, "dataset R nullptr");
+        }
+        if (datasetS == nullptr) {
+            logger::log_error(DBERR_NULL_PTR_EXCEPTION, "dataset S nullptr");
+        }
         auto itR = datasetR->recToSectionIdMap.find(idR);
         auto itS = datasetS->recToSectionIdMap.find(idS);
         std::vector<int> commonSectionIDs;
@@ -333,10 +339,12 @@ namespace APRIL
                 if (iFilterResult != INCONCLUSIVE) {
                     // count APRIL result
                     queryOutput.countAPRILresult(iFilterResult);
+                    // printf("%ld,%ld\n", objR->recID, objS->recID);
                     return ret;
                 }
             }
             // count refinement candidate (inconclusive)
+            // logger::log_task("Pair", objR->recID, objS->recID, "going to refinement");
             queryOutput.countAPRILresult(INCONCLUSIVE);
 
             // refine based on query type

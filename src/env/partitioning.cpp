@@ -44,7 +44,7 @@ namespace partitioning
         return DBERR_OK;
     }
 
-    static DB_STATUS initializeBatchMap(std::unordered_map<int,GeometryBatch> &batchMap) {
+    static DB_STATUS initializeBatchMap(std::unordered_map<int,GeometryBatch> &batchMap, MsgType messageTag) {
         // initialize batches
         for (int i=0; i<g_world_size; i++) {
             GeometryBatch batch;
@@ -211,18 +211,18 @@ namespace partitioning
         return ret;
     }
 
-    static DB_STATUS loadCSVDatasetAndPartition(std::string &datasetPath) {
+    static DB_STATUS loadCSVDatasetAndPartition(Dataset &dataset) {
         DB_STATUS ret = DBERR_OK;
         // initialize batches
         std::unordered_map<int,GeometryBatch> batchMap;
-        ret = initializeBatchMap(batchMap);
+        ret = initializeBatchMap(batchMap, dataTypeToMsgType(dataset.dataType));
         if (ret != DBERR_OK) {
             return ret;
         }
         // open file
-        std::ifstream fin(datasetPath);
+        std::ifstream fin(dataset.path);
         if (!fin.is_open()) {
-            logger::log_error(DBERR_MISSING_FILE, "Failed to open dataset path:", datasetPath);
+            logger::log_error(DBERR_MISSING_FILE, "Failed to open dataset path:", dataset.path);
             return DBERR_MISSING_FILE;
         }
         std::string line;
@@ -251,9 +251,9 @@ namespace partitioning
             }
             // logger::log_task("will handle lines", fromLine, "to", toLine);
             // open file
-            std::ifstream fin(datasetPath);
+            std::ifstream fin(dataset.path);
             if (!fin.is_open()) {
-                logger::log_error(DBERR_MISSING_FILE, "Failed to open dataset path:", datasetPath);
+                logger::log_error(DBERR_MISSING_FILE, "Failed to open dataset path:", dataset.path);
                 #pragma omp cancel parallel
                 ret = DBERR_MISSING_FILE;
             }
@@ -359,11 +359,11 @@ namespace partitioning
         return ret;
     }
 
-    static DB_STATUS performPartitioningCSV(Dataset &dataset) {
+    static DB_STATUS performPartitioningCSV(Dataset &dataset, MsgType msgType) {
         DB_STATUS ret = DBERR_OK;  
 
         // first, issue the partitioning instruction
-        ret = comm::broadcast::broadcastInstructionMessage(MSG_INSTR_PARTITIONING_INIT);
+        ret = comm::broadcast::broadcastInstructionMessage(msgType);
         if (ret != DBERR_OK) {
             return ret;
         }
@@ -375,7 +375,7 @@ namespace partitioning
         }
        
         // finally, load data and partition to workers
-        ret = loadCSVDatasetAndPartition(dataset.path);
+        ret = loadCSVDatasetAndPartition(dataset);
         if (ret != DBERR_OK) {
             return ret;
         }
@@ -383,7 +383,7 @@ namespace partitioning
         return ret;
     }
 
-    DB_STATUS partitionDataset(Dataset *dataset) {
+    DB_STATUS partitionDataset(Dataset *dataset, MsgType msgType) {
         double startTime;
         DB_STATUS ret;
         // time
@@ -392,7 +392,7 @@ namespace partitioning
             // perform the partitioning
             case FT_CSV:
                 // csv dataset
-                ret = performPartitioningCSV(*dataset);
+                ret = performPartitioningCSV(*dataset, msgType);
                 if (ret != DBERR_OK) {
                     logger::log_error(DBERR_PARTITIONING_FAILED, "Partitioning failed for dataset", dataset->nickname);
                     return ret;
@@ -557,7 +557,6 @@ namespace partitioning
             // replace into object
             geometry.partitions = newPartitions;
             geometry.partitionCount = newPartitions.size() / 2;
-            
             return DBERR_OK;
         }
     }
@@ -601,6 +600,7 @@ namespace partitioning
         // classify based on partitioning method
         switch (g_config.partitioningMethod->type) {
             case PARTITIONING_ROUND_ROBIN:
+                #pragma omp parallel
                 #pragma omp parallel
                 {
                     int tid = omp_get_thread_num();

@@ -119,6 +119,58 @@ struct MBR {
     MBR() : pMin(Point(std::numeric_limits<int>::max(), std::numeric_limits<int>::max())), pMax(Point(-std::numeric_limits<int>::max(), -std::numeric_limits<int>::max())) {}
 };
 
+/** @brief Simple Geometry object used only in the data partitioning/broadcasting.
+ * @todo Redundant. Maybe use the Shape struct.
+ */
+struct Geometry {
+    size_t recID;
+    int partitionCount;
+    std::vector<int> partitions;    // tuples of <partition ID, twolayer class>
+    int vertexCount;
+    std::vector<double> coords;
+
+    Geometry(size_t recID, int vertexCount, std::vector<double> &coords);
+    Geometry(size_t recID, std::vector<int> &partitions, int vertexCount, std::vector<double> &coords);
+    void setPartitions(std::vector<int> &ids);
+    void setPartitions(std::vector<int> &ids, std::vector<TwoLayerClass> &classes);
+};
+
+/**
+ * @brief A batch containing multiple objects for the batch partitioning/broadcasting.
+ */
+struct GeometryBatch {
+    // serializable
+    size_t objectCount = 0;
+    std::vector<Geometry> geometries;
+    // unserializable/unclearable (todo: make const?)
+    int destRank = -1;   // destination node rank
+    size_t maxObjectCount; 
+    MPI_Comm* comm; // communicator that the batch will be send through
+    int tag = -1;        // MPI tag = indicates spatial data type
+
+    bool isValid();
+    void addGeometryToBatch(Geometry &geometry);
+    void setDestNodeRank(int destRank);
+
+    // calculate the size needed for the serialization buffer
+    int calculateBufferSize();
+
+    void clear();
+
+    /**
+    @brief serializes the geometry batch into the buffer. This method also allocates the buffer's memory.
+     * Caller is responsible to free.
+     */
+    int serialize(char **buffer);
+
+    /**
+    @brief fills the struct with data from the input serialized buffer
+     * The caller must free the buffer memory
+     */
+    void deserialize(const char *buffer, int bufferSize);
+
+};
+
 /**
  * @brief Wrapper class for the Geometry objects.
  * 
@@ -740,6 +792,7 @@ public:
 
     /** @brief Default empty Shape constructor. */
     Shape() {}
+    
 
     /** @brief Default empty expicit type Shape constructor. */
     template<typename T>
@@ -758,6 +811,26 @@ public:
         std::visit([](auto&& arg) {
             arg.correctGeometry();
         }, shape);
+    }
+
+    void setFromGeometry(Geometry &geometry, DataType dataType) {
+        this->recID = geometry.recID;
+        this->dataType = dataType;
+        this->mbr.pMin.x = std::numeric_limits<int>::max();
+        this->mbr.pMin.y = std::numeric_limits<int>::max();
+        this->mbr.pMax.x = -std::numeric_limits<int>::max();
+        this->mbr.pMax.y = -std::numeric_limits<int>::max();
+        for (int i=0; i<geometry.coords.size(); i+=2) {
+            this->mbr.pMin.x = std::min(this->mbr.pMin.x, geometry.coords[i]);
+            this->mbr.pMin.y = std::min(this->mbr.pMin.y, geometry.coords[i+1]);
+            this->mbr.pMax.x = std::max(this->mbr.pMax.x, geometry.coords[i]);
+            this->mbr.pMax.y = std::max(this->mbr.pMax.y, geometry.coords[i+1]);
+            this->addPoint(geometry.coords[i], geometry.coords[i+1]);
+        }
+        this->correctGeometry();
+        for (int i=0; i<geometry.partitions.size(); i+=2) {
+            this->partitions.insert(std::make_pair(geometry.partitions[i], geometry.partitions[i+1]));
+        }
     }
 
     /** @brief Modifies the point specified by 'index' with the new values x,y. (see derived method definitions) 
@@ -996,6 +1069,7 @@ struct DataspaceInfo {
 
     DataspaceInfo();
     void set(double xMinGlobal, double yMinGlobal, double xMaxGlobal, double yMaxGlobal);
+    void set(DataspaceInfo &other);
     void clear();
 };
 
@@ -1098,6 +1172,11 @@ struct Dataset{
     AprilData* getAprilDataBySectionAndObjectID(uint sectionID, size_t recID);
     /** @brief Sets the april data in the dataset for the given object ID and section ID */
     DB_STATUS setAprilDataForSectionAndObjectID(uint sectionID, size_t recID, AprilData &aprilData);
+
+    DB_STATUS addDataFromGeometryBatch(GeometryBatch &batch);
+
+    void printTwoLayerInfo();
+    void printInfo();
 };
 
 /** @brief Holds all query-related information.
@@ -1216,6 +1295,8 @@ struct PartitioningMethod {
 
     virtual double getPartPartionExtentX() = 0;
     virtual double getPartPartionExtentY() = 0;
+
+    virtual void printInfo() = 0;
 };
 
 /** @brief Two Grid partitioning method. Uses a distribution grid for data distribution and a partitioning grid for the actual partitioning. */
@@ -1233,8 +1314,11 @@ public:
     double partPartitionExtentY;
 
     /** @brief Round robing partitioning constructor. */
-    TwoGridPartitioning(PartitioningType type, int batchSize, int partitionsPerDim, int fPartitionsPerDim) : PartitioningMethod(type, batchSize, partitionsPerDim), partPartitionsPerDim(fPartitionsPerDim) {
+    TwoGridPartitioning(PartitioningType type, int batchSize, int distPartitionsPerDim, int partPartitionsPerDim) : PartitioningMethod(type, batchSize, distPartitionsPerDim) {
+        this->partPartitionsPerDim = partPartitionsPerDim;
+        this->distPartitionsPerDim = distPartitionsPerDim;
         globalPartitionsPerDim = partPartitionsPerDim * distPartitionsPerDim;
+        // logger::log_success("Set TWOGRID PPD. DistPPD =", this->distPartitionsPerDim, "PartPPD =", this->partPartitionsPerDim, "GlobalPPD =", this->globalPartitionsPerDim);
     }
 
     /** @brief Get the distribution grid's partition ID (from parent) for the given indices. */
@@ -1262,6 +1346,8 @@ public:
 
     double getPartPartionExtentX() override;
     double getPartPartionExtentY() override;
+
+    void printInfo() override;
 };
 
 /** @brief Simple round-robin partitioning method. Uses a single grid for the distribution and the partitioning. 
@@ -1296,6 +1382,8 @@ public:
 
     double getPartPartionExtentX() override;
     double getPartPartionExtentY() override;
+
+    void printInfo() override;
 };
 
 /** @brief Holds all partitioning related information.
@@ -1334,8 +1422,9 @@ struct Action {
  */
 struct DatasetInfo {
 private:
-    Dataset* R;
-    Dataset* S;
+    Dataset* R = nullptr;
+    Dataset* S = nullptr;
+    Dataset Q;
     int numberOfDatasets;
 
 public:
@@ -1349,13 +1438,24 @@ public:
     void clear();
 
     Dataset* getDatasetR();
+    void setDatasetRptr(Dataset *other);
 
     Dataset* getDatasetS();
+    void setDatasetSptr(Dataset *other);
+
+    Dataset* getDatasetQ();
+    void setDatasetRptrToQuery();
     /**
     @brief adds a Dataset to the configuration's dataset info
      * @warning it has to be an empty dataset BUT its nickname needs to be set
      */
     void addDataset(Dataset &dataset);
+
+    /**
+    @brief adds a query Dataset to the configuration's dataset info
+     * @warning it has to be an empty dataset BUT its nickname needs to be set
+     */
+    void addQueryDataset(Dataset &queryDataset);
 
     void updateDataspace();
 };
@@ -1403,57 +1503,7 @@ struct Config {
     QueryInfo queryInfo;
 };
 
-/** @brief Simple Geometry object used only in the data partitioning/broadcasting.
- * @todo Redundant. Maybe use the Shape struct.
- */
-struct Geometry {
-    size_t recID;
-    int partitionCount;
-    std::vector<int> partitions;    // tuples of <partition ID, twolayer class>
-    int vertexCount;
-    std::vector<double> coords;
 
-    Geometry(size_t recID, int vertexCount, std::vector<double> &coords);
-    Geometry(size_t recID, std::vector<int> &partitions, int vertexCount, std::vector<double> &coords);
-    void setPartitions(std::vector<int> &ids);
-    void setPartitions(std::vector<int> &ids, std::vector<TwoLayerClass> &classes);
-};
-
-/**
- * @brief A batch containing multiple objects for the batch partitioning/broadcasting.
- */
-struct GeometryBatch {
-    // serializable
-    size_t objectCount = 0;
-    std::vector<Geometry> geometries;
-    // unserializable/unclearable (todo: make const?)
-    int destRank = -1;   // destination node rank
-    size_t maxObjectCount; 
-    MPI_Comm* comm; // communicator that the batch will be send through
-    int tag = -1;        // MPI tag = indicates spatial data type
-
-    bool isValid();
-    void addGeometryToBatch(Geometry &geometry);
-    void setDestNodeRank(int destRank);
-
-    // calculate the size needed for the serialization buffer
-    int calculateBufferSize();
-
-    void clear();
-
-    /**
-    @brief serializes the geometry batch into the buffer. This method also allocates the buffer's memory.
-     * Caller is responsible to free.
-     */
-    int serialize(char **buffer);
-
-    /**
-    @brief fills the struct with data from the input serialized buffer
-     * The caller must free the buffer memory
-     */
-    void deserialize(const char *buffer, int bufferSize);
-
-};
 
 /**
 @brief The main global configuration variable.

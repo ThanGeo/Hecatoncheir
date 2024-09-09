@@ -69,6 +69,7 @@ namespace pack
     }
 
     DB_STATUS packQueryInfo(QueryInfo &queryInfo, SerializedMsg<int> &queryInfoMsg) {
+        // todo: add option for count or result return
         queryInfoMsg.count = 0;
         queryInfoMsg.count += 4;    // query type, MBR, intermediatefilter, refinement
 
@@ -133,6 +134,35 @@ namespace pack
             localBuffer += nicknameS.length() * sizeof(char);
         }
 
+        return DBERR_OK;
+    }
+
+    DB_STATUS packDatasetNickname(SerializedMsg<char> &msg, Dataset *dataset) {
+        std::string nickname = "";
+        msg.count = 0;
+
+        // check dataset
+        if (dataset == nullptr) {
+            return DBERR_OK;
+        }
+        // count for buffer size
+        msg.count += sizeof(int) + dataset->nickname.length() * sizeof(int);
+        // keep nickname
+        nickname = dataset->nickname;
+        // allocate space
+        msg.data = (char*) malloc(msg.count * sizeof(char));
+        if (msg.data == NULL) {
+            // malloc failed
+            logger::log_error(DBERR_MALLOC_FAILED, "Malloc for pack system info failed");
+            return DBERR_MALLOC_FAILED;
+        }
+        
+        char* localBuffer = msg.data;
+        // store in buffer
+        *reinterpret_cast<int*>(localBuffer) = nickname.length();
+        localBuffer += sizeof(int);
+        std::memcpy(localBuffer, nickname.data(), nickname.length() * sizeof(char));
+        localBuffer += nickname.length() * sizeof(char);
         return DBERR_OK;
     }
 

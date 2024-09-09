@@ -71,7 +71,7 @@ $(function() {
 </div><!--header-->
 <div class="contents">
 
-<p>Statement containing all the dataset related parameters.  
+<p>Statement containing all the input dataset related parameters.  
  <a href="structDatasetStatement.html#details">More...</a></p>
 
 <p><code>#include &lt;<a class="el" href="statement_8h_source.html">statement.h</a>&gt;</code></p>
@@ -81,6 +81,24 @@ Public Attributes</h2></td></tr>
 <tr class="memitem:a743e2443ad8c53c54221508dd2899bd9"><td class="memItemLeft" align="right" valign="top"><a id="a743e2443ad8c53c54221508dd2899bd9"></a>
 std::string&#160;</td><td class="memItemRight" valign="bottom"><b>queryType</b> = &quot;&quot;</td></tr>
 <tr class="separator:a743e2443ad8c53c54221508dd2899bd9"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a50a34277cfdbdebb441894bc1e5a8e3a"><td class="memItemLeft" align="right" valign="top"><a id="a50a34277cfdbdebb441894bc1e5a8e3a"></a>
+std::string&#160;</td><td class="memItemRight" valign="bottom"><b>queryDatasetPath</b> = &quot;&quot;</td></tr>
+<tr class="separator:a50a34277cfdbdebb441894bc1e5a8e3a"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a12792d8766532cd8c49e541ad7930ecc"><td class="memItemLeft" align="right" valign="top"><a id="a12792d8766532cd8c49e541ad7930ecc"></a>
+std::string&#160;</td><td class="memItemRight" valign="bottom"><b>nicknameQ</b> = &quot;&quot;</td></tr>
+<tr class="separator:a12792d8766532cd8c49e541ad7930ecc"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ac7b26067526e9d59013fffebc65283cc"><td class="memItemLeft" align="right" valign="top"><a id="ac7b26067526e9d59013fffebc65283cc"></a>
+std::string&#160;</td><td class="memItemRight" valign="bottom"><b>filetypeQ</b> = &quot;&quot;</td></tr>
+<tr class="separator:ac7b26067526e9d59013fffebc65283cc"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a42ff32e5eeb7f18983c42d7bb6f576a4"><td class="memItemLeft" align="right" valign="top"><a id="a42ff32e5eeb7f18983c42d7bb6f576a4"></a>
+DataType&#160;</td><td class="memItemRight" valign="bottom"><b>datatypeQ</b> = DT_INVALID</td></tr>
+<tr class="separator:a42ff32e5eeb7f18983c42d7bb6f576a4"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a14c8762cfaea76728a44cc07a4b31363"><td class="memItemLeft" align="right" valign="top"><a id="a14c8762cfaea76728a44cc07a4b31363"></a>
+bool&#160;</td><td class="memItemRight" valign="bottom"><b>queryDatasetSet</b> = false</td></tr>
+<tr class="separator:a14c8762cfaea76728a44cc07a4b31363"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a5f9399c2f969cf8c4fc1b578755bf6e3"><td class="memItemLeft" align="right" valign="top"><a id="a5f9399c2f969cf8c4fc1b578755bf6e3"></a>
+int&#160;</td><td class="memItemRight" valign="bottom"><b>datasetCount</b> = 0</td></tr>
+<tr class="separator:a5f9399c2f969cf8c4fc1b578755bf6e3"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a34a64d3526c3ec252be24473ec2de8c6"><td class="memItemLeft" align="right" valign="top"><a id="a34a64d3526c3ec252be24473ec2de8c6"></a>
 std::string&#160;</td><td class="memItemRight" valign="bottom"><b>datasetPathR</b> = &quot;&quot;</td></tr>
 <tr class="separator:a34a64d3526c3ec252be24473ec2de8c6"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -99,14 +117,11 @@ std::string&#160;</td><td class="memItemRight" valign="bottom"><b>filetypeR</b><
 <tr class="memitem:ad772906bb4db37bf91218020601ff18e"><td class="memItemLeft" align="right" valign="top"><a id="ad772906bb4db37bf91218020601ff18e"></a>
 std::string&#160;</td><td class="memItemRight" valign="bottom"><b>filetypeS</b></td></tr>
 <tr class="separator:ad772906bb4db37bf91218020601ff18e"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a5f9399c2f969cf8c4fc1b578755bf6e3"><td class="memItemLeft" align="right" valign="top"><a id="a5f9399c2f969cf8c4fc1b578755bf6e3"></a>
-int&#160;</td><td class="memItemRight" valign="bottom"><b>datasetCount</b> = 0</td></tr>
-<tr class="separator:a5f9399c2f969cf8c4fc1b578755bf6e3"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a559b35715faf5dd87da1ebd8c2e4b90f"><td class="memItemLeft" align="right" valign="top"><a id="a559b35715faf5dd87da1ebd8c2e4b90f"></a>
-DataType&#160;</td><td class="memItemRight" valign="bottom"><b>datatypeR</b></td></tr>
+DataType&#160;</td><td class="memItemRight" valign="bottom"><b>datatypeR</b> = DT_INVALID</td></tr>
 <tr class="separator:a559b35715faf5dd87da1ebd8c2e4b90f"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a6ec91d9d8701e77d36d6187fffeab708"><td class="memItemLeft" align="right" valign="top"><a id="a6ec91d9d8701e77d36d6187fffeab708"></a>
-DataType&#160;</td><td class="memItemRight" valign="bottom"><b>datatypeS</b></td></tr>
+DataType&#160;</td><td class="memItemRight" valign="bottom"><b>datatypeS</b> = DT_INVALID</td></tr>
 <tr class="separator:a6ec91d9d8701e77d36d6187fffeab708"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ae90d0b4ef19da226f18684b50ee38c81"><td class="memItemLeft" align="right" valign="top"><a id="ae90d0b4ef19da226f18684b50ee38c81"></a>
 bool&#160;</td><td class="memItemRight" valign="bottom"><b>boundsSet</b> = false</td></tr>
@@ -125,9 +140,9 @@ double&#160;</td><td class="memItemRight" valign="bottom"><b>yMaxGlobal</b></td>
 <tr class="separator:a62d40b151e1c404c634f57308ebd83a4"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
-<div class="textblock"><p>Statement containing all the dataset related parameters. </p>
+<div class="textblock"><p>Statement containing all the input dataset related parameters. </p>
 
-<p class="definition">Definition at line <a class="el" href="statement_8h_source.html#l00015">15</a> of file <a class="el" href="statement_8h_source.html">statement.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="statement_8h_source.html#l00016">16</a> of file <a class="el" href="statement_8h_source.html">statement.h</a>.</p>
 </div><hr/>The documentation for this struct was generated from the following file:<ul>
 <li>include/config/<a class="el" href="statement_8h_source.html">statement.h</a></li>
 </ul>

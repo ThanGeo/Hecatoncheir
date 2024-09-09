@@ -47,10 +47,16 @@ namespace APRIL
         namespace memory
         {
             /**
-            @brief Generates the APRIL approximations for the given dataset.
+            @brief Generates the APRIL approximations for the given dataset, keeps it in memory and saves a copy on disk for persistence.
              * @warning Requires all objects to be stored already in memory (inside the dataset).
              */
             extern DB_STATUS init(Dataset &dataset);
+
+            /**
+             * @brief Generates the APRIL approximations for the given dataset and keeps it in memory. 
+             * It DOES NOT save it on disk.
+             */
+            extern DB_STATUS initNoSave(Dataset &dataset);
         }
     }
 }

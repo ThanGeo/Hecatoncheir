@@ -152,16 +152,22 @@ namespace mapping
         switch (action) {
             case ACTION_NONE:
                 return "NONE";
-            case ACTION_LOAD_DATASETS:
-                return "LOAD DATASETS";
+            case ACTION_LOAD_DATASET_R:
+                return "LOAD DATASET R";
+            case ACTION_LOAD_DATASET_S:
+                return "LOAD DATASET S";
             case ACTION_PERFORM_PARTITIONING:
                 return "PERFORM PARTITIONING";
             case ACTION_CREATE_APRIL:
                 return "CREATE APRIL";
             case ACTION_PERFORM_VERIFICATION:
                 return "PERFORM VERIFICATION";
-            case ACTION_QUERY:
-                return "QUERY";
+            case ACTION_QUERY_INIT:
+                return "QUERY INIT";
+            case ACTION_QUERY_PARTITIONING:
+                return "QUERY PARTITIONING";
+            case ACTION_QUERY_GATHER_RESULTS:
+                return "QUERY GATHER RESULTS";
             case ACTION_LOAD_APRIL:
                 return "LOAD APRIL";
             default:

@@ -114,7 +114,7 @@ std::unordered_map&lt; int, size_t &gt;&#160;</td><td class="memItemRight" valig
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="containers_8h_source.html#l01022">1022</a> of file <a class="el" href="containers_8h_source.html">containers.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="containers_8h_source.html#l01096">1096</a> of file <a class="el" href="containers_8h_source.html">containers.h</a>.</p>
 </div><h2 class="groupheader">Member Function Documentation</h2>
 <a id="ac8f418a7645608ba3a19d5362d88ca5b"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#ac8f418a7645608ba3a19d5362d88ca5b">&#9670;&nbsp;</a></span>addObject()</h2>
@@ -158,19 +158,19 @@ std::unordered_map&lt; int, size_t &gt;&#160;</td><td class="memItemRight" valig
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="containers_8cpp_source.html#l00445">445</a> of file <a class="el" href="containers_8cpp_source.html">containers.cpp</a>.</p>
-<div class="fragment"><div class="line"><a name="l00445"></a><span class="lineno">  445</span>&#160;                                                                                        {</div>
-<div class="line"><a name="l00446"></a><span class="lineno">  446</span>&#160;    <span class="comment">// get or create new partition entry</span></div>
-<div class="line"><a name="l00447"></a><span class="lineno">  447</span>&#160;    <a class="code" href="structPartition.html">Partition</a>* partition = <a class="code" href="structTwoLayerIndex.html#a125b80bcfdbc2facdc8ef389a2d364aa">getOrCreatePartition</a>(partitionID);</div>
-<div class="line"><a name="l00448"></a><span class="lineno">  448</span>&#160;    <span class="comment">// get or create new class entry of this class type, for this partition</span></div>
-<div class="line"><a name="l00449"></a><span class="lineno">  449</span>&#160;    std::vector&lt;Shape*&gt;* classObjects = partition-&gt;<a class="code" href="structPartition.html#aed331352644439a199bff28c2eefd8dd">getContainerClassContents</a>(classType);</div>
-<div class="line"><a name="l00450"></a><span class="lineno">  450</span>&#160;    <span class="comment">// add object</span></div>
-<div class="line"><a name="l00451"></a><span class="lineno">  451</span>&#160;    classObjects-&gt;push_back(objectRef);</div>
-<div class="line"><a name="l00452"></a><span class="lineno">  452</span>&#160;    <span class="comment">// logger::log_success(&quot;Added object ref:&quot;, objectRef-&gt;recID);</span></div>
-<div class="line"><a name="l00453"></a><span class="lineno">  453</span>&#160;}</div>
-<div class="ttc" id="astructPartition_html"><div class="ttname"><a href="structPartition.html">Partition</a></div><div class="ttdoc">Holds all necessary partition information.</div><div class="ttdef"><b>Definition:</b> <a href="containers_8h_source.html#l01006">containers.h:1006</a></div></div>
+<p class="definition">Definition at line <a class="el" href="containers_8cpp_source.html#l00503">503</a> of file <a class="el" href="containers_8cpp_source.html">containers.cpp</a>.</p>
+<div class="fragment"><div class="line"><a name="l00503"></a><span class="lineno">  503</span>&#160;                                                                                        {</div>
+<div class="line"><a name="l00504"></a><span class="lineno">  504</span>&#160;    <span class="comment">// get or create new partition entry</span></div>
+<div class="line"><a name="l00505"></a><span class="lineno">  505</span>&#160;    <a class="code" href="structPartition.html">Partition</a>* partition = <a class="code" href="structTwoLayerIndex.html#a125b80bcfdbc2facdc8ef389a2d364aa">getOrCreatePartition</a>(partitionID);</div>
+<div class="line"><a name="l00506"></a><span class="lineno">  506</span>&#160;    <span class="comment">// get or create new class entry of this class type, for this partition</span></div>
+<div class="line"><a name="l00507"></a><span class="lineno">  507</span>&#160;    std::vector&lt;Shape*&gt;* classObjects = partition-&gt;<a class="code" href="structPartition.html#aed331352644439a199bff28c2eefd8dd">getContainerClassContents</a>(classType);</div>
+<div class="line"><a name="l00508"></a><span class="lineno">  508</span>&#160;    <span class="comment">// add object</span></div>
+<div class="line"><a name="l00509"></a><span class="lineno">  509</span>&#160;    classObjects-&gt;push_back(objectRef);</div>
+<div class="line"><a name="l00510"></a><span class="lineno">  510</span>&#160;    <span class="comment">// logger::log_success(&quot;Added object ref:&quot;, objectRef-&gt;recID);</span></div>
+<div class="line"><a name="l00511"></a><span class="lineno">  511</span>&#160;}</div>
+<div class="ttc" id="astructPartition_html"><div class="ttname"><a href="structPartition.html">Partition</a></div><div class="ttdoc">Holds all necessary partition information.</div><div class="ttdef"><b>Definition:</b> <a href="containers_8h_source.html#l01080">containers.h:1080</a></div></div>
 <div class="ttc" id="astructPartition_html_aed331352644439a199bff28c2eefd8dd"><div class="ttname"><a href="structPartition.html#aed331352644439a199bff28c2eefd8dd">Partition::getContainerClassContents</a></div><div class="ttdeci">std::vector&lt; Shape * &gt; * getContainerClassContents(TwoLayerClass classType)</div><div class="ttdoc">Returns a reference to the partition's contents for the given class type.</div><div class="ttdef"><b>Definition:</b> <a href="containers_8cpp_source.html#l00191">containers.cpp:191</a></div></div>
-<div class="ttc" id="astructTwoLayerIndex_html_a125b80bcfdbc2facdc8ef389a2d364aa"><div class="ttname"><a href="structTwoLayerIndex.html#a125b80bcfdbc2facdc8ef389a2d364aa">TwoLayerIndex::getOrCreatePartition</a></div><div class="ttdeci">Partition * getOrCreatePartition(int partitionID)</div><div class="ttdoc">Returns or creates a new partition with the given ID.</div><div class="ttdef"><b>Definition:</b> <a href="containers_8cpp_source.html#l00430">containers.cpp:430</a></div></div>
+<div class="ttc" id="astructTwoLayerIndex_html_a125b80bcfdbc2facdc8ef389a2d364aa"><div class="ttname"><a href="structTwoLayerIndex.html#a125b80bcfdbc2facdc8ef389a2d364aa">TwoLayerIndex::getOrCreatePartition</a></div><div class="ttdeci">Partition * getOrCreatePartition(int partitionID)</div><div class="ttdoc">Returns or creates a new partition with the given ID.</div><div class="ttdef"><b>Definition:</b> <a href="containers_8cpp_source.html#l00488">containers.cpp:488</a></div></div>
 </div><!-- fragment --><div class="dynheader">
 Here is the call graph for this function:</div>
 <div class="dyncontent">

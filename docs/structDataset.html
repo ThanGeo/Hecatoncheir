@@ -123,6 +123,15 @@ int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="struc
 DB_STATUS&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structDataset.html#a8b1f923a6fd2811c00f0869395c3b522">setAprilDataForSectionAndObjectID</a> (uint sectionID, size_t recID, <a class="el" href="structAprilData.html">AprilData</a> &amp;aprilData)</td></tr>
 <tr class="memdesc:a8b1f923a6fd2811c00f0869395c3b522"><td class="mdescLeft">&#160;</td><td class="mdescRight">Sets the april data in the dataset for the given object ID and section ID. <br /></td></tr>
 <tr class="separator:a8b1f923a6fd2811c00f0869395c3b522"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a68b5c379186db9d0c5d3e1357d78cd12"><td class="memItemLeft" align="right" valign="top"><a id="a68b5c379186db9d0c5d3e1357d78cd12"></a>
+DB_STATUS&#160;</td><td class="memItemRight" valign="bottom"><b>addDataFromGeometryBatch</b> (<a class="el" href="structGeometryBatch.html">GeometryBatch</a> &amp;batch)</td></tr>
+<tr class="separator:a68b5c379186db9d0c5d3e1357d78cd12"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a8e1d8c5a628207303660aa131016819e"><td class="memItemLeft" align="right" valign="top"><a id="a8e1d8c5a628207303660aa131016819e"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>printTwoLayerInfo</b> ()</td></tr>
+<tr class="separator:a8e1d8c5a628207303660aa131016819e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ac7b6fe80d0313791c232bb31d13fb070"><td class="memItemLeft" align="right" valign="top"><a id="ac7b6fe80d0313791c232bb31d13fb070"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>printInfo</b> ()</td></tr>
+<tr class="separator:ac7b6fe80d0313791c232bb31d13fb070"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-attribs"></a>
 Public Attributes</h2></td></tr>
@@ -170,7 +179,7 @@ ApproximationType&#160;</td><td class="memItemRight" valign="bottom"><b>approxTy
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock"><p>All dataset related information. </p>
 
-<p class="definition">Definition at line <a class="el" href="containers_8h_source.html#l01054">1054</a> of file <a class="el" href="containers_8h_source.html">containers.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="containers_8h_source.html#l01128">1128</a> of file <a class="el" href="containers_8h_source.html">containers.h</a>.</p>
 </div><h2 class="groupheader">Member Function Documentation</h2>
 <a id="a3d59b3e2ea35367bd88776afd2391c94"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a3d59b3e2ea35367bd88776afd2391c94">&#9670;&nbsp;</a></span>addAprilDataToApproximationDataMap()</h2>
@@ -220,8 +229,8 @@ ApproximationType&#160;</td><td class="memItemRight" valign="bottom"><b>approxTy
 <div class="line"><a name="l00317"></a><span class="lineno">  317</span>&#160;        this-&gt;<a class="code" href="structDataset.html#a066a8adb737e33d43a900faa5b155ae7">recToSectionIdMap</a>.insert(std::make_pair(recID, sectionIDs));</div>
 <div class="line"><a name="l00318"></a><span class="lineno">  318</span>&#160;    }</div>
 <div class="line"><a name="l00319"></a><span class="lineno">  319</span>&#160;}</div>
-<div class="ttc" id="astructDataset_html_a066a8adb737e33d43a900faa5b155ae7"><div class="ttname"><a href="structDataset.html#a066a8adb737e33d43a900faa5b155ae7">Dataset::recToSectionIdMap</a></div><div class="ttdeci">std::unordered_map&lt; size_t, std::vector&lt; uint &gt; &gt; recToSectionIdMap</div><div class="ttdef"><b>Definition:</b> <a href="containers_8h_source.html#l01074">containers.h:1074</a></div></div>
-<div class="ttc" id="astructDataset_html_ad3b176a14bd5857ccb6752922f3203bd"><div class="ttname"><a href="structDataset.html#ad3b176a14bd5857ccb6752922f3203bd">Dataset::sectionMap</a></div><div class="ttdeci">std::unordered_map&lt; uint, Section &gt; sectionMap</div><div class="ttdef"><b>Definition:</b> <a href="containers_8h_source.html#l01072">containers.h:1072</a></div></div>
+<div class="ttc" id="astructDataset_html_a066a8adb737e33d43a900faa5b155ae7"><div class="ttname"><a href="structDataset.html#a066a8adb737e33d43a900faa5b155ae7">Dataset::recToSectionIdMap</a></div><div class="ttdeci">std::unordered_map&lt; size_t, std::vector&lt; uint &gt; &gt; recToSectionIdMap</div><div class="ttdef"><b>Definition:</b> <a href="containers_8h_source.html#l01148">containers.h:1148</a></div></div>
+<div class="ttc" id="astructDataset_html_ad3b176a14bd5857ccb6752922f3203bd"><div class="ttname"><a href="structDataset.html#ad3b176a14bd5857ccb6752922f3203bd">Dataset::sectionMap</a></div><div class="ttdeci">std::unordered_map&lt; uint, Section &gt; sectionMap</div><div class="ttdef"><b>Definition:</b> <a href="containers_8h_source.html#l01146">containers.h:1146</a></div></div>
 </div><!-- fragment -->
 </div>
 </div>
@@ -352,7 +361,7 @@ Here is the call graph for this function:</div>
 <div class="line"><a name="l00224"></a><span class="lineno">  224</span>&#160;}</div>
 <div class="ttc" id="astructDataset_html_a2407297a4ceb58310cfd562510762c93"><div class="ttname"><a href="structDataset.html#a2407297a4ceb58310cfd562510762c93">Dataset::getObject</a></div><div class="ttdeci">Shape * getObject(size_t recID)</div><div class="ttdoc">Returns a reference to the object with the given ID.</div><div class="ttdef"><b>Definition:</b> <a href="containers_8cpp_source.html#l00200">containers.cpp:200</a></div></div>
 <div class="ttc" id="astructDataset_html_aad72c5baa46b4858c89e315061632f0f"><div class="ttname"><a href="structDataset.html#aad72c5baa46b4858c89e315061632f0f">Dataset::addObjectToSectionMap</a></div><div class="ttdeci">void addObjectToSectionMap(const uint sectionID, const size_t recID)</div><div class="ttdoc">Adds the given object ID to the specified section ID.</div><div class="ttdef"><b>Definition:</b> <a href="containers_8cpp_source.html#l00321">containers.cpp:321</a></div></div>
-<div class="ttc" id="astructShape_html"><div class="ttname"><a href="structShape.html">Shape</a></div><div class="ttdoc">A spatial object. Could be point, linestring, rectangle or polygon, as specified by its 'dataType' fi...</div><div class="ttdef"><b>Definition:</b> <a href="containers_8h_source.html#l00719">containers.h:719</a></div></div>
+<div class="ttc" id="astructShape_html"><div class="ttname"><a href="structShape.html">Shape</a></div><div class="ttdoc">A spatial object. Could be point, linestring, rectangle or polygon, as specified by its 'dataType' fi...</div><div class="ttdef"><b>Definition:</b> <a href="containers_8h_source.html#l00771">containers.h:771</a></div></div>
 </div><!-- fragment --><div class="dynheader">
 Here is the call graph for this function:</div>
 <div class="dyncontent">
@@ -576,7 +585,7 @@ Here is the caller graph for this function:</div>
 </div><div class="memdoc">
 <p>map: key,value = recID,vector&lt;sectionID&gt;: maps recs to sections </p>
 
-<p class="definition">Definition at line <a class="el" href="containers_8h_source.html#l01074">1074</a> of file <a class="el" href="containers_8h_source.html">containers.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="containers_8h_source.html#l01148">1148</a> of file <a class="el" href="containers_8h_source.html">containers.h</a>.</p>
 
 </div>
 </div>
@@ -593,7 +602,7 @@ Here is the caller graph for this function:</div>
 </div><div class="memdoc">
 <p><a class="el" href="structSection.html" title="Holds information about sections, i.e. APRIL partitions.">Section</a> mapping. key,value = sectionID,(unordered map of key,value = recID,aprilData) </p><dl class="section warning"><dt>Warning</dt><dd>only sectionID = 0 is supported currently. </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="containers_8h_source.html#l01072">1072</a> of file <a class="el" href="containers_8h_source.html">containers.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="containers_8h_source.html#l01146">1146</a> of file <a class="el" href="containers_8h_source.html">containers.h</a>.</p>
 
 </div>
 </div>

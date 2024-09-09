@@ -8,7 +8,7 @@
 #define MSG_BASE 0
 
 /** @enum MsgType @brief Message types. They are used as tags (MPI_TAG values) in the MPI communication messages. */
-typedef enum MsgType {
+enum MsgType {
     /* BASE */
     MSG_ACK = MSG_BASE,
     MSG_NACK = MSG_BASE + 1,
@@ -16,7 +16,8 @@ typedef enum MsgType {
     /* INSTRUCTIONS */
     MSG_INSTR_BEGIN = MSG_BASE + 2000,
     MSG_INSTR_FIN = MSG_INSTR_BEGIN,
-    MSG_INSTR_PARTITIONING_INIT = MSG_BASE + 2001,
+    MSG_INSTR_DATA_PARTITIONING_INIT = MSG_BASE + 2001,
+    MSG_INSTR_QUERY_BATCHES_INIT = MSG_BASE + 2002,
     
     MSG_INSTR_END,
 
@@ -46,22 +47,25 @@ typedef enum MsgType {
     MSG_QUERY_RESULT = MSG_BASE + 6001,
 
     /* DATA */
-    MSG_LOAD_DATASETS = MSG_BASE + 7000,
-    MSG_UNLOAD_DATASETS = MSG_BASE + 7001,
+    MSG_LOAD_DATASET_R = MSG_BASE + 7000,
+    MSG_LOAD_DATASET_S = MSG_BASE + 7001,
+    MSG_UNLOAD_DATASETS = MSG_BASE + 7002,
     MSG_LOAD_APRIL = MSG_BASE + 7003,
     MSG_UNLOAD_APRIL = MSG_BASE + 7004,
     
     /* ERRORS */
     MSG_ERR_BEGIN = MSG_BASE + 10000,
-    MSG_ERR = MSG_ERR_BEGIN,
-
+    MSG_INVALID = MSG_ERR_BEGIN,
     MSG_ERR_END,
-}MsgTypeE;
+};
 
 inline std::unordered_map<MPI_Datatype, std::string> g_MPI_Datatype_map = {{MPI_INT, "MPI_INT"},
                                                                     {MPI_DOUBLE, "MPI_DOUBLE"},
                                                                     {MPI_CHAR, "MPI_CHAR"},
                                                                 };
+
+MsgType dataTypeToMsgType(DataType dataType);
+DataType msgTypeToDataType(MsgType msgType);
 
 /** @brief Serialized message of template type T that is used for MPI communication. */
 template <typename T> 

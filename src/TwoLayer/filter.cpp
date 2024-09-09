@@ -837,18 +837,17 @@ namespace twolayer
          * simple two-layer MBR intersection filter with intermediate filter forwarding
          */
         
-        static DB_STATUS evaluate(QueryOutput &queryOutput) {
+        static DB_STATUS evaluate(QueryOutput &queryOutput, Dataset* R, Dataset* S) {
             DB_STATUS ret = DBERR_OK;
-            Dataset* R = g_config.datasetInfo.getDatasetR();
-            Dataset* S = g_config.datasetInfo.getDatasetS();
             // here the final results will be stored
-            #pragma omp parallel reduction(query_output_reduction:queryOutput)
+            #pragma omp parallel reduction(query_output_reduction:queryOutput) num_threads(1)
             {
                 DB_STATUS local_ret = DBERR_OK;
                 QueryOutput localQueryOutput;
                 // loop common partitions (todo: optimize to start from the dataset that has the fewer ones)
                 #pragma omp for
                 for (int i=0; i<R->twoLayerIndex.partitions.size(); i++) {
+                    // printf("i: %d/%ld\n", i, R->twoLayerIndex.partitions.size());
                     // get partition ID and S container
                     int partitionID = R->twoLayerIndex.partitions[i].partitionID;
                     Partition* tlContainerS = S->twoLayerIndex.getPartition(partitionID);
@@ -941,7 +940,7 @@ namespace twolayer
         switch (g_config.queryInfo.type) {
             case Q_RANGE:
                 // todo: double check with dimitris. Is the filter the same for range? what about point data?
-                ret = intersectionMBRfilter::evaluate(queryOutput);
+                ret = intersectionMBRfilter::evaluate(queryOutput, g_config.datasetInfo.getDatasetR(), g_config.datasetInfo.getDatasetS());
                 if (ret != DBERR_OK) {
                     logger::log_error(ret, "Intersection MBR filter failed");
                     return ret;
@@ -955,7 +954,7 @@ namespace twolayer
             case Q_CONTAINS:
             case Q_COVERS:
             case Q_COVERED_BY:
-                ret = intersectionMBRfilter::evaluate(queryOutput);
+                ret = intersectionMBRfilter::evaluate(queryOutput, g_config.datasetInfo.getDatasetR(), g_config.datasetInfo.getDatasetS());
                 if (ret != DBERR_OK) {
                     logger::log_error(ret, "Intersection MBR filter failed");
                     return ret;

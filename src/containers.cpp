@@ -388,6 +388,53 @@ DB_STATUS Dataset::setAprilDataForSectionAndObjectID(uint sectionID, size_t recI
     return DBERR_OK;
 }
 
+DB_STATUS Dataset::addDataFromGeometryBatch(GeometryBatch &batch) {
+    Shape object;
+    // create appropriate shape object based on dataset type
+    switch (this->dataType) {
+        case DT_POLYGON:
+            object = shape_factory::createEmptyPolygonShape();
+            break;
+        case DT_RECTANGLE:
+            object = shape_factory::createEmptyRectangleShape();
+            break;
+        case DT_LINESTRING:
+            object = shape_factory::createEmptyLineStringShape();
+            break;
+        case DT_POINT:
+            object = shape_factory::createEmptyPointShape();
+            break;
+        default:
+            logger::log_error(DBERR_INVALID_DATATYPE, "Unknown data type while adding batch to dataset. Datatype:", this->dataType);
+            return DBERR_INVALID_DATATYPE;
+    }
+    // loop geometries in batch
+    for (auto &geometry : batch.geometries) {
+        // set the shape based on the geometry
+        object.setFromGeometry(geometry, this->dataType);
+        // add to dataset
+        this->addObject(object);
+        // reset
+        object.reset();
+    }
+    return DBERR_OK;
+}
+
+void Dataset::printTwoLayerInfo() {
+    logger::log_task("partition map size:", this->twoLayerIndex.partitionMap.size());
+    logger::log_task("partitions list size:", this->twoLayerIndex.partitions.size());
+}
+
+void Dataset::printInfo() {
+    logger::log_task("Dataset:", this->nickname);
+    logger::log_task("  object count:", this->objectIDs.size());
+    logger::log_task("  total objects:", this->totalObjects);
+    logger::log_task("  rec to sec map size:", this->recToSectionIdMap.size());
+    logger::log_task("  sec map size:", this->sectionMap.size());
+}
+
+
+
 Dataset* DatasetInfo::getDatasetByNickname(std::string &nickname) {
     auto it = datasets.find(nickname);
     if (it == datasets.end()) {
@@ -417,6 +464,17 @@ void DataspaceInfo::set(double xMinGlobal, double yMinGlobal, double xMaxGlobal,
     // printf("Max extent: %f\n", this->maxExtent);
     // printf("-------------------------\n");
 }
+
+void DataspaceInfo::set(DataspaceInfo &other) {
+    this->xMinGlobal = other.xMinGlobal;
+    this->yMinGlobal = other.yMinGlobal;
+    this->xMaxGlobal = other.xMaxGlobal;
+    this->yMaxGlobal = other.yMaxGlobal;
+    this->xExtent = other.xExtent;
+    this->yExtent = other.yExtent;
+    this->maxExtent = other.maxExtent;
+}
+
 
 void DataspaceInfo::clear() {
     xMinGlobal = 0;
@@ -485,6 +543,8 @@ void DatasetInfo::clear() {
     numberOfDatasets = 0;
     R = nullptr;
     S = nullptr;
+    Dataset empty;
+    Q = empty;
     datasets.clear();
     dataspaceInfo.clear();
 }
@@ -493,13 +553,26 @@ Dataset* DatasetInfo::getDatasetR() {
     return R;
 }
 
+void DatasetInfo::setDatasetRptr(Dataset *other) {
+    R = other;
+}
+
+void DatasetInfo::setDatasetRptrToQuery() {
+    R = &Q;
+}
+
 Dataset* DatasetInfo::getDatasetS() {
     return S;
 }
-/**
-@brief adds a Dataset to the configuration's dataset info
- * @warning it has to be an empty dataset BUT its nickname needs to be set
- */
+
+void DatasetInfo::setDatasetSptr(Dataset *other) {
+    S = other;
+}
+
+Dataset* DatasetInfo::getDatasetQ() {
+    return &Q;
+}
+
 void DatasetInfo::addDataset(Dataset &dataset) {
     // add to datasets struct
     datasets.insert(std::make_pair(dataset.nickname, dataset));
@@ -512,6 +585,13 @@ void DatasetInfo::addDataset(Dataset &dataset) {
     }
     numberOfDatasets++;
 }
+
+void DatasetInfo::addQueryDataset(Dataset &queryDataset) {
+    // add to datasets struct
+    logger::log_task("Query dataset objects: ", queryDataset.objectIDs.size());
+    this->Q = queryDataset;
+}
+
 
 void DatasetInfo::updateDataspace() {
     // find the bounds that enclose both datasets
@@ -710,6 +790,8 @@ void TwoGridPartitioning::setPartGridDataspace(double xMin, double yMin, double 
 
 void TwoGridPartitioning::setPartGridDataspace(DataspaceInfo &otherDataspaceInfo) {
     partGridDataspaceInfo = otherDataspaceInfo;
+    partPartitionExtentX = partGridDataspaceInfo.xExtent / partPartitionsPerDim;
+    partPartitionExtentY = partGridDataspaceInfo.yExtent / partPartitionsPerDim;
 }
 
 double TwoGridPartitioning::getPartPartionExtentX() {
@@ -718,6 +800,16 @@ double TwoGridPartitioning::getPartPartionExtentX() {
 
 double TwoGridPartitioning::getPartPartionExtentY() {
     return partPartitionExtentY;
+}
+
+void TwoGridPartitioning::printInfo() {
+    logger::log_task("Partitioning method TWO GRID, validation type: ", this->getType());
+    logger::log_task("dist/part PPD:", this->getDistributionPPD(), "/", this->getPartitioningPPD());
+    logger::log_task("dist grid extents X,Y:", this->distGridDataspaceInfo.xExtent, ",", this->distGridDataspaceInfo.yExtent);
+    logger::log_task("dist partition extents X,Y:", this->getDistPartionExtentX(), ",", this->getDistPartionExtentY());
+    logger::log_task("part grid extents X,Y:", this->partGridDataspaceInfo.xExtent, ",", this->partGridDataspaceInfo.yExtent);
+    logger::log_task("part partition extents X,Y:", this->getPartPartionExtentX(), ",", this->getPartPartionExtentY());
+    logger::log_task("batch size:", this->getBatchSize());
 }
 
 /** @brief Get the grid's partition ID (from parent). */
@@ -768,6 +860,14 @@ double RoundRobinPartitioning::getPartPartionExtentX() {
 
 double RoundRobinPartitioning::getPartPartionExtentY() {
     return distPartitionExtentY;
+}
+
+void RoundRobinPartitioning::printInfo() {
+    logger::log_task("Partitioning method ROUND ROBIN, validation type: ", this->getType());
+    logger::log_task("dist partition extents X,Y:", this->getDistPartionExtentX(), ",", this->getDistPartionExtentY());
+    logger::log_task("part partition extents X,Y:", this->getPartPartionExtentX(), ",", this->getPartPartionExtentY());
+    logger::log_task("dist/part PPD:", this->getDistributionPPD(), "/", this->getPartitioningPPD());
+    logger::log_task("batch size:", this->getBatchSize());
 }
 
 namespace shape_factory

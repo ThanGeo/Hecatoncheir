@@ -713,7 +713,7 @@ $(function() {
 <div class="line"><a name="l00646"></a><span class="lineno">  646</span>&#160;                <span class="keywordflow">return</span> ret;</div>
 <div class="line"><a name="l00647"></a><span class="lineno">  647</span>&#160;            }</div>
 <div class="line"><a name="l00648"></a><span class="lineno">  648</span>&#160; </div>
-<div class="line"><a name="l00649"></a><span class="lineno">  649</span>&#160;            <span class="keyword">static</span> DB_STATUS intervalizeNonRegionShapes(<a class="code" href="structDataset.html">Dataset</a> &amp;dataset, FILE* pFileALL, FILE* pFileFULL) {</div>
+<div class="line"><a name="l00649"></a><span class="lineno">  649</span>&#160;            <span class="keyword">static</span> DB_STATUS intervalizeRegionShapesNoSave(<a class="code" href="structDataset.html">Dataset</a> &amp;dataset) {</div>
 <div class="line"><a name="l00650"></a><span class="lineno">  650</span>&#160;                <span class="comment">// logger::log_task(&quot;Generating APRIL in parlalel...&quot;);</span></div>
 <div class="line"><a name="l00651"></a><span class="lineno">  651</span>&#160;                DB_STATUS ret = DBERR_OK;</div>
 <div class="line"><a name="l00652"></a><span class="lineno">  652</span>&#160;                <span class="keywordtype">int</span> objectsInFullFile = 0;</div>
@@ -727,7 +727,7 @@ $(function() {
 <div class="line"><a name="l00660"></a><span class="lineno">  660</span>&#160;                        <a class="code" href="structShape.html">Shape</a>* <span class="keywordtype">object</span> = dataset.<a class="code" href="structDataset.html#a2407297a4ceb58310cfd562510762c93">getObject</a>(dataset.objectIDs[i]);</div>
 <div class="line"><a name="l00661"></a><span class="lineno">  661</span>&#160;                        <span class="comment">// generate APRIL</span></div>
 <div class="line"><a name="l00662"></a><span class="lineno">  662</span>&#160;                        <a class="code" href="structAprilData.html">AprilData</a> aprilData;</div>
-<div class="line"><a name="l00663"></a><span class="lineno">  663</span>&#160;                        ret = intervalizeNonRegionShape(*<span class="keywordtype">object</span>, dataset.aprilConfig.<a class="code" href="structAprilConfig.html#a51d25caa3f6d819fb9babafe730772ed">getCellsPerDim</a>(), aprilData);</div>
+<div class="line"><a name="l00663"></a><span class="lineno">  663</span>&#160;                        local_ret = intervalizeRegionShape(*<span class="keywordtype">object</span>, dataset.aprilConfig.<a class="code" href="structAprilConfig.html#a51d25caa3f6d819fb9babafe730772ed">getCellsPerDim</a>(), aprilData);</div>
 <div class="line"><a name="l00664"></a><span class="lineno">  664</span>&#160;                        <span class="keywordflow">if</span> (local_ret != DBERR_OK || aprilData.<a class="code" href="structAprilData.html#a6953d20b44f87555bb35e894278f999b">numIntervalsALL</a> == 0) {</div>
 <div class="line"><a name="l00665"></a><span class="lineno">  665</span>&#160;                            <span class="comment">// at least 1 ALL interval is needed for each object, otherwise there is an error</span></div>
 <div class="line"><a name="l00666"></a><span class="lineno">  666</span>&#160;<span class="preprocessor">                            #pragma cancel for</span></div>
@@ -752,88 +752,202 @@ $(function() {
 <div class="line"><a name="l00685"></a><span class="lineno">  685</span>&#160;                    <a class="code" href="namespacelogger.html#a53f34feeb22a94db295af05b8b2aab5c">logger::log_error</a>(DBERR_APRIL_CREATE, <span class="stringliteral">&quot;Parallel APRIL generation failed.&quot;</span>);</div>
 <div class="line"><a name="l00686"></a><span class="lineno">  686</span>&#160;                    <span class="keywordflow">return</span> DBERR_APRIL_CREATE;</div>
 <div class="line"><a name="l00687"></a><span class="lineno">  687</span>&#160;                }</div>
-<div class="line"><a name="l00688"></a><span class="lineno">  688</span>&#160;                <span class="comment">// save dataset APRIL on disk</span></div>
-<div class="line"><a name="l00689"></a><span class="lineno">  689</span>&#160;                ret = <a class="code" href="namespaceAPRIL_1_1writer.html#abc696cb76fd7e57c526d1162755fd1f1">APRIL::writer::saveAPRILForDataset</a>(pFileALL, pFileFULL, dataset);</div>
-<div class="line"><a name="l00690"></a><span class="lineno">  690</span>&#160;                <span class="keywordflow">if</span> (ret != DBERR_OK) {</div>
-<div class="line"><a name="l00691"></a><span class="lineno">  691</span>&#160;                    <a class="code" href="namespacelogger.html#a53f34feeb22a94db295af05b8b2aab5c">logger::log_error</a>(ret, <span class="stringliteral">&quot;Saving APRIL objects on disk failed.&quot;</span>);</div>
-<div class="line"><a name="l00692"></a><span class="lineno">  692</span>&#160;                    <span class="keywordflow">return</span> ret;</div>
-<div class="line"><a name="l00693"></a><span class="lineno">  693</span>&#160;                }</div>
-<div class="line"><a name="l00694"></a><span class="lineno">  694</span>&#160;                <span class="comment">// update value in FULL file</span></div>
-<div class="line"><a name="l00695"></a><span class="lineno">  695</span>&#160;                ret = <a class="code" href="namespacestorage_1_1writer.html#ac95c49e4706e3b28a0977d4745339fc7">storage::writer::updateObjectCountInFile</a>(pFileFULL, objectsInFullFile);</div>
-<div class="line"><a name="l00696"></a><span class="lineno">  696</span>&#160;                <span class="keywordflow">if</span> (ret != DBERR_OK) {</div>
-<div class="line"><a name="l00697"></a><span class="lineno">  697</span>&#160;                    <a class="code" href="namespacelogger.html#a53f34feeb22a94db295af05b8b2aab5c">logger::log_error</a>(ret, <span class="stringliteral">&quot;Couldn&#39;t update object count value in FULL intervals file.&quot;</span>);</div>
-<div class="line"><a name="l00698"></a><span class="lineno">  698</span>&#160;                    <span class="keywordflow">return</span> ret;</div>
-<div class="line"><a name="l00699"></a><span class="lineno">  699</span>&#160;                }</div>
-<div class="line"><a name="l00700"></a><span class="lineno">  700</span>&#160;                <span class="keywordflow">return</span> ret;</div>
-<div class="line"><a name="l00701"></a><span class="lineno">  701</span>&#160;            }</div>
-<div class="line"><a name="l00702"></a><span class="lineno">  702</span>&#160; </div>
-<div class="line"><a name="l00703"></a><span class="lineno"><a class="line" href="namespaceAPRIL_1_1generation_1_1memory.html#a0c4c14f8aeb1fd4997844035def19c88">  703</a></span>&#160;            DB_STATUS <a class="code" href="namespaceAPRIL_1_1generation_1_1memory.html#a0c4c14f8aeb1fd4997844035def19c88">init</a>(<a class="code" href="structDataset.html">Dataset</a> &amp;dataset) {</div>
-<div class="line"><a name="l00704"></a><span class="lineno">  704</span>&#160;                DB_STATUS ret = DBERR_OK;</div>
-<div class="line"><a name="l00705"></a><span class="lineno">  705</span>&#160;                <span class="comment">// init rasterization environment</span></div>
-<div class="line"><a name="l00706"></a><span class="lineno">  706</span>&#160;                ret = setRasterBounds(dataset.dataspaceInfo.xMinGlobal, dataset.dataspaceInfo.yMinGlobal, dataset.dataspaceInfo.xMaxGlobal, dataset.dataspaceInfo.yMaxGlobal);</div>
-<div class="line"><a name="l00707"></a><span class="lineno">  707</span>&#160;                <span class="keywordflow">if</span> (ret != DBERR_OK) {</div>
-<div class="line"><a name="l00708"></a><span class="lineno">  708</span>&#160;                    <span class="keywordflow">return</span> DBERR_INVALID_PARAMETER;</div>
-<div class="line"><a name="l00709"></a><span class="lineno">  709</span>&#160;                }</div>
-<div class="line"><a name="l00710"></a><span class="lineno">  710</span>&#160;                <span class="comment">// generate approximation filepaths</span></div>
-<div class="line"><a name="l00711"></a><span class="lineno">  711</span>&#160;                ret = <a class="code" href="namespacestorage.html#a4562eadd26f908e88c3e4df5310e85a9">storage::generateAPRILFilePath</a>(dataset);</div>
-<div class="line"><a name="l00712"></a><span class="lineno">  712</span>&#160;                <span class="keywordflow">if</span> (ret != DBERR_OK) {</div>
-<div class="line"><a name="l00713"></a><span class="lineno">  713</span>&#160;                    <span class="keywordflow">return</span> ret;</div>
-<div class="line"><a name="l00714"></a><span class="lineno">  714</span>&#160;                }</div>
-<div class="line"><a name="l00715"></a><span class="lineno">  715</span>&#160;                <span class="comment">// open april files for writing</span></div>
-<div class="line"><a name="l00716"></a><span class="lineno">  716</span>&#160;                FILE* pFileALL = fopen(dataset.aprilConfig.<a class="code" href="structAprilConfig.html#a52e1f0fb719f26c3ec8e9e97388b4a4b">ALL_intervals_path</a>.c_str(), <span class="stringliteral">&quot;wb&quot;</span>);</div>
-<div class="line"><a name="l00717"></a><span class="lineno">  717</span>&#160;                <span class="keywordflow">if</span> (pFileALL == NULL) {</div>
-<div class="line"><a name="l00718"></a><span class="lineno">  718</span>&#160;                    <a class="code" href="namespacelogger.html#a53f34feeb22a94db295af05b8b2aab5c">logger::log_error</a>(DBERR_MISSING_FILE, <span class="stringliteral">&quot;Couldnt open APRIL ALL file:&quot;</span>, dataset.aprilConfig.<a class="code" href="structAprilConfig.html#a52e1f0fb719f26c3ec8e9e97388b4a4b">ALL_intervals_path</a>);</div>
-<div class="line"><a name="l00719"></a><span class="lineno">  719</span>&#160;                    <span class="keywordflow">return</span> DBERR_MISSING_FILE;</div>
-<div class="line"><a name="l00720"></a><span class="lineno">  720</span>&#160;                }</div>
-<div class="line"><a name="l00721"></a><span class="lineno">  721</span>&#160;                FILE* pFileFULL = fopen(dataset.aprilConfig.<a class="code" href="structAprilConfig.html#a8b476114c449a5d78a38cff912e0d08d">FULL_intervals_path</a>.c_str(), <span class="stringliteral">&quot;wb&quot;</span>);</div>
-<div class="line"><a name="l00722"></a><span class="lineno">  722</span>&#160;                <span class="keywordflow">if</span> (pFileFULL == NULL) {</div>
-<div class="line"><a name="l00723"></a><span class="lineno">  723</span>&#160;                    <a class="code" href="namespacelogger.html#a53f34feeb22a94db295af05b8b2aab5c">logger::log_error</a>(DBERR_MISSING_FILE, <span class="stringliteral">&quot;Couldnt open APRIL FULL file:&quot;</span>, dataset.aprilConfig.<a class="code" href="structAprilConfig.html#a8b476114c449a5d78a38cff912e0d08d">FULL_intervals_path</a>);</div>
-<div class="line"><a name="l00724"></a><span class="lineno">  724</span>&#160;                    <span class="keywordflow">return</span> DBERR_MISSING_FILE;</div>
-<div class="line"><a name="l00725"></a><span class="lineno">  725</span>&#160;                }</div>
-<div class="line"><a name="l00726"></a><span class="lineno">  726</span>&#160;                <span class="comment">// write dummy value for object count. </span></div>
-<div class="line"><a name="l00727"></a><span class="lineno">  727</span>&#160;                <span class="keywordtype">size_t</span> elementsWritten = fwrite(&amp;dataset.totalObjects, <span class="keyword">sizeof</span>(<span class="keywordtype">size_t</span>), 1, pFileALL);</div>
-<div class="line"><a name="l00728"></a><span class="lineno">  728</span>&#160;                <span class="keywordflow">if</span> (elementsWritten != 1) {</div>
-<div class="line"><a name="l00729"></a><span class="lineno">  729</span>&#160;                    <a class="code" href="namespacelogger.html#a53f34feeb22a94db295af05b8b2aab5c">logger::log_error</a>(DBERR_DISK_WRITE_FAILED, <span class="stringliteral">&quot;Writing total objects in ALL file failed&quot;</span>);</div>
-<div class="line"><a name="l00730"></a><span class="lineno">  730</span>&#160;                    <span class="keywordflow">return</span> DBERR_DISK_WRITE_FAILED;</div>
-<div class="line"><a name="l00731"></a><span class="lineno">  731</span>&#160;                }</div>
-<div class="line"><a name="l00732"></a><span class="lineno">  732</span>&#160;                <span class="comment">// will replace with the actual value in the end, because some objects may not have FULL intervals</span></div>
-<div class="line"><a name="l00733"></a><span class="lineno">  733</span>&#160;                elementsWritten = fwrite(&amp;dataset.totalObjects, <span class="keyword">sizeof</span>(<span class="keywordtype">size_t</span>), 1, pFileFULL);</div>
-<div class="line"><a name="l00734"></a><span class="lineno">  734</span>&#160;                <span class="keywordflow">if</span> (elementsWritten != 1) {</div>
-<div class="line"><a name="l00735"></a><span class="lineno">  735</span>&#160;                    <a class="code" href="namespacelogger.html#a53f34feeb22a94db295af05b8b2aab5c">logger::log_error</a>(DBERR_DISK_WRITE_FAILED, <span class="stringliteral">&quot;Writing total objects in ALL file failed&quot;</span>);</div>
-<div class="line"><a name="l00736"></a><span class="lineno">  736</span>&#160;                    <span class="keywordflow">return</span> DBERR_DISK_WRITE_FAILED;</div>
-<div class="line"><a name="l00737"></a><span class="lineno">  737</span>&#160;                }</div>
-<div class="line"><a name="l00738"></a><span class="lineno">  738</span>&#160;                <span class="comment">// switch based on data type</span></div>
-<div class="line"><a name="l00739"></a><span class="lineno">  739</span>&#160;                <span class="keywordflow">switch</span> (dataset.dataType) {</div>
-<div class="line"><a name="l00740"></a><span class="lineno">  740</span>&#160;                    <span class="comment">// intervalize dataset objects</span></div>
-<div class="line"><a name="l00741"></a><span class="lineno">  741</span>&#160;                    <span class="keywordflow">case</span> DT_POLYGON:</div>
-<div class="line"><a name="l00742"></a><span class="lineno">  742</span>&#160;                    <span class="keywordflow">case</span> DT_RECTANGLE:</div>
-<div class="line"><a name="l00743"></a><span class="lineno">  743</span>&#160;                        ret = intervalizeRegionShapes(dataset, pFileALL, pFileFULL);</div>
-<div class="line"><a name="l00744"></a><span class="lineno">  744</span>&#160;                        <span class="keywordflow">break</span>;</div>
-<div class="line"><a name="l00745"></a><span class="lineno">  745</span>&#160;                    <span class="keywordflow">case</span> DT_POINT:</div>
-<div class="line"><a name="l00746"></a><span class="lineno">  746</span>&#160;                    <span class="keywordflow">case</span> DT_LINESTRING:</div>
-<div class="line"><a name="l00747"></a><span class="lineno">  747</span>&#160;                        ret = intervalizeNonRegionShapes(dataset, pFileALL, pFileFULL);</div>
-<div class="line"><a name="l00748"></a><span class="lineno">  748</span>&#160;                        <span class="keywordflow">break</span>;</div>
-<div class="line"><a name="l00749"></a><span class="lineno">  749</span>&#160;                    <span class="keywordflow">default</span>:</div>
-<div class="line"><a name="l00750"></a><span class="lineno">  750</span>&#160;                        <span class="comment">// error</span></div>
-<div class="line"><a name="l00751"></a><span class="lineno">  751</span>&#160;                        <a class="code" href="namespacelogger.html#a53f34feeb22a94db295af05b8b2aab5c">logger::log_error</a>(DBERR_INVALID_DATATYPE, <span class="stringliteral">&quot;Invalid datatype in intervalization:&quot;</span>, dataset.dataType);</div>
-<div class="line"><a name="l00752"></a><span class="lineno">  752</span>&#160;                        <span class="keywordflow">return</span> DBERR_INVALID_DATATYPE;</div>
-<div class="line"><a name="l00753"></a><span class="lineno">  753</span>&#160;                }</div>
-<div class="line"><a name="l00754"></a><span class="lineno">  754</span>&#160;                <span class="keywordflow">if</span> (ret != DBERR_OK) {</div>
-<div class="line"><a name="l00755"></a><span class="lineno">  755</span>&#160;                    <a class="code" href="namespacelogger.html#a53f34feeb22a94db295af05b8b2aab5c">logger::log_error</a>(ret, <span class="stringliteral">&quot;Failed to load and intervalize dataset contents.&quot;</span>);</div>
-<div class="line"><a name="l00756"></a><span class="lineno">  756</span>&#160;                    <span class="keywordflow">goto</span> CLOSE_AND_EXIT;</div>
-<div class="line"><a name="l00757"></a><span class="lineno">  757</span>&#160;                }</div>
-<div class="line"><a name="l00758"></a><span class="lineno">  758</span>&#160;        CLOSE_AND_EXIT:</div>
-<div class="line"><a name="l00759"></a><span class="lineno">  759</span>&#160;                fflush(pFileALL);</div>
-<div class="line"><a name="l00760"></a><span class="lineno">  760</span>&#160;                fclose(pFileALL);</div>
-<div class="line"><a name="l00761"></a><span class="lineno">  761</span>&#160;                fflush(pFileFULL);</div>
-<div class="line"><a name="l00762"></a><span class="lineno">  762</span>&#160;                fclose(pFileFULL);</div>
-<div class="line"><a name="l00763"></a><span class="lineno">  763</span>&#160;                <span class="keywordflow">return</span> ret;</div>
-<div class="line"><a name="l00764"></a><span class="lineno">  764</span>&#160;            }</div>
-<div class="line"><a name="l00765"></a><span class="lineno">  765</span>&#160;        }</div>
-<div class="line"><a name="l00766"></a><span class="lineno">  766</span>&#160;    }</div>
-<div class="line"><a name="l00767"></a><span class="lineno">  767</span>&#160;}</div>
+<div class="line"><a name="l00688"></a><span class="lineno">  688</span>&#160;                <span class="keywordflow">return</span> ret;</div>
+<div class="line"><a name="l00689"></a><span class="lineno">  689</span>&#160;            }</div>
+<div class="line"><a name="l00690"></a><span class="lineno">  690</span>&#160; </div>
+<div class="line"><a name="l00691"></a><span class="lineno">  691</span>&#160;            <span class="keyword">static</span> DB_STATUS intervalizeNonRegionShapes(<a class="code" href="structDataset.html">Dataset</a> &amp;dataset, FILE* pFileALL, FILE* pFileFULL) {</div>
+<div class="line"><a name="l00692"></a><span class="lineno">  692</span>&#160;                <span class="comment">// logger::log_task(&quot;Generating APRIL in parlalel...&quot;);</span></div>
+<div class="line"><a name="l00693"></a><span class="lineno">  693</span>&#160;                DB_STATUS ret = DBERR_OK;</div>
+<div class="line"><a name="l00694"></a><span class="lineno">  694</span>&#160;                <span class="keywordtype">int</span> objectsInFullFile = 0;</div>
+<div class="line"><a name="l00695"></a><span class="lineno">  695</span>&#160;                <span class="comment">// loop objects from map</span></div>
+<div class="line"><a name="l00696"></a><span class="lineno">  696</span>&#160;<span class="preprocessor">                #pragma omp parallel reduction(+:objectsInFullFile)</span></div>
+<div class="line"><a name="l00697"></a><span class="lineno">  697</span>&#160;                {</div>
+<div class="line"><a name="l00698"></a><span class="lineno">  698</span>&#160;                    DB_STATUS local_ret = DBERR_OK;</div>
+<div class="line"><a name="l00699"></a><span class="lineno">  699</span>&#160;<span class="preprocessor">                    #pragma omp for</span></div>
+<div class="line"><a name="l00700"></a><span class="lineno">  700</span>&#160;                    <span class="keywordflow">for</span> (<span class="keywordtype">int</span> i=0; i&lt;dataset.objectIDs.size(); i++) {</div>
+<div class="line"><a name="l00701"></a><span class="lineno">  701</span>&#160;                        <span class="comment">// get next object</span></div>
+<div class="line"><a name="l00702"></a><span class="lineno">  702</span>&#160;                        <a class="code" href="structShape.html">Shape</a>* <span class="keywordtype">object</span> = dataset.<a class="code" href="structDataset.html#a2407297a4ceb58310cfd562510762c93">getObject</a>(dataset.objectIDs[i]);</div>
+<div class="line"><a name="l00703"></a><span class="lineno">  703</span>&#160;                        <span class="comment">// generate APRIL</span></div>
+<div class="line"><a name="l00704"></a><span class="lineno">  704</span>&#160;                        <a class="code" href="structAprilData.html">AprilData</a> aprilData;</div>
+<div class="line"><a name="l00705"></a><span class="lineno">  705</span>&#160;                        ret = intervalizeNonRegionShape(*<span class="keywordtype">object</span>, dataset.aprilConfig.<a class="code" href="structAprilConfig.html#a51d25caa3f6d819fb9babafe730772ed">getCellsPerDim</a>(), aprilData);</div>
+<div class="line"><a name="l00706"></a><span class="lineno">  706</span>&#160;                        <span class="keywordflow">if</span> (local_ret != DBERR_OK || aprilData.<a class="code" href="structAprilData.html#a6953d20b44f87555bb35e894278f999b">numIntervalsALL</a> == 0) {</div>
+<div class="line"><a name="l00707"></a><span class="lineno">  707</span>&#160;                            <span class="comment">// at least 1 ALL interval is needed for each object, otherwise there is an error</span></div>
+<div class="line"><a name="l00708"></a><span class="lineno">  708</span>&#160;<span class="preprocessor">                            #pragma cancel for</span></div>
+<div class="line"><a name="l00709"></a><span class="lineno">  709</span>&#160;                            ret = local_ret;</div>
+<div class="line"><a name="l00710"></a><span class="lineno">  710</span>&#160;                            <a class="code" href="namespacelogger.html#a53f34feeb22a94db295af05b8b2aab5c">logger::log_error</a>(local_ret, <span class="stringliteral">&quot;Failed to generate APRIL for object with ID&quot;</span>, object-&gt;<a class="code" href="structShape.html#a989ab9ff22efa8799a2c77cd64044fa6">recID</a>);</div>
+<div class="line"><a name="l00711"></a><span class="lineno">  711</span>&#160;                        }</div>
+<div class="line"><a name="l00712"></a><span class="lineno">  712</span>&#160;                        <span class="comment">// store in dataset</span></div>
+<div class="line"><a name="l00713"></a><span class="lineno">  713</span>&#160;                        local_ret = dataset.<a class="code" href="structDataset.html#a8b1f923a6fd2811c00f0869395c3b522">setAprilDataForSectionAndObjectID</a>(0, object-&gt;<a class="code" href="structShape.html#a989ab9ff22efa8799a2c77cd64044fa6">recID</a>, aprilData);</div>
+<div class="line"><a name="l00714"></a><span class="lineno">  714</span>&#160;                        <span class="keywordflow">if</span> (local_ret != DBERR_OK) {</div>
+<div class="line"><a name="l00715"></a><span class="lineno">  715</span>&#160;<span class="preprocessor">                            #pragma cancel for</span></div>
+<div class="line"><a name="l00716"></a><span class="lineno">  716</span>&#160;                            ret = local_ret;</div>
+<div class="line"><a name="l00717"></a><span class="lineno">  717</span>&#160;                            <a class="code" href="namespacelogger.html#a53f34feeb22a94db295af05b8b2aab5c">logger::log_error</a>(local_ret, <span class="stringliteral">&quot;Parallel intervalization failed for object with ID&quot;</span>, object-&gt;<a class="code" href="structShape.html#a989ab9ff22efa8799a2c77cd64044fa6">recID</a>);</div>
+<div class="line"><a name="l00718"></a><span class="lineno">  718</span>&#160;                        }</div>
+<div class="line"><a name="l00719"></a><span class="lineno">  719</span>&#160;                        <span class="comment">// count objects</span></div>
+<div class="line"><a name="l00720"></a><span class="lineno">  720</span>&#160;                        <span class="keywordflow">if</span> (aprilData.<a class="code" href="structAprilData.html#ab02c90f05b91dc00e862397ebef5d7b1">numIntervalsFULL</a> &gt; 0) {</div>
+<div class="line"><a name="l00721"></a><span class="lineno">  721</span>&#160;                            objectsInFullFile += 1;</div>
+<div class="line"><a name="l00722"></a><span class="lineno">  722</span>&#160;                        }</div>
+<div class="line"><a name="l00723"></a><span class="lineno">  723</span>&#160;                    }</div>
+<div class="line"><a name="l00724"></a><span class="lineno">  724</span>&#160;                }</div>
+<div class="line"><a name="l00725"></a><span class="lineno">  725</span>&#160;                <span class="comment">// check if it ended successfully</span></div>
+<div class="line"><a name="l00726"></a><span class="lineno">  726</span>&#160;                <span class="keywordflow">if</span> (ret != DBERR_OK) {</div>
+<div class="line"><a name="l00727"></a><span class="lineno">  727</span>&#160;                    <a class="code" href="namespacelogger.html#a53f34feeb22a94db295af05b8b2aab5c">logger::log_error</a>(DBERR_APRIL_CREATE, <span class="stringliteral">&quot;Parallel APRIL generation failed.&quot;</span>);</div>
+<div class="line"><a name="l00728"></a><span class="lineno">  728</span>&#160;                    <span class="keywordflow">return</span> DBERR_APRIL_CREATE;</div>
+<div class="line"><a name="l00729"></a><span class="lineno">  729</span>&#160;                }</div>
+<div class="line"><a name="l00730"></a><span class="lineno">  730</span>&#160;                <span class="comment">// save dataset APRIL on disk</span></div>
+<div class="line"><a name="l00731"></a><span class="lineno">  731</span>&#160;                ret = <a class="code" href="namespaceAPRIL_1_1writer.html#abc696cb76fd7e57c526d1162755fd1f1">APRIL::writer::saveAPRILForDataset</a>(pFileALL, pFileFULL, dataset);</div>
+<div class="line"><a name="l00732"></a><span class="lineno">  732</span>&#160;                <span class="keywordflow">if</span> (ret != DBERR_OK) {</div>
+<div class="line"><a name="l00733"></a><span class="lineno">  733</span>&#160;                    <a class="code" href="namespacelogger.html#a53f34feeb22a94db295af05b8b2aab5c">logger::log_error</a>(ret, <span class="stringliteral">&quot;Saving APRIL objects on disk failed.&quot;</span>);</div>
+<div class="line"><a name="l00734"></a><span class="lineno">  734</span>&#160;                    <span class="keywordflow">return</span> ret;</div>
+<div class="line"><a name="l00735"></a><span class="lineno">  735</span>&#160;                }</div>
+<div class="line"><a name="l00736"></a><span class="lineno">  736</span>&#160;                <span class="comment">// update value in FULL file</span></div>
+<div class="line"><a name="l00737"></a><span class="lineno">  737</span>&#160;                ret = <a class="code" href="namespacestorage_1_1writer.html#ac95c49e4706e3b28a0977d4745339fc7">storage::writer::updateObjectCountInFile</a>(pFileFULL, objectsInFullFile);</div>
+<div class="line"><a name="l00738"></a><span class="lineno">  738</span>&#160;                <span class="keywordflow">if</span> (ret != DBERR_OK) {</div>
+<div class="line"><a name="l00739"></a><span class="lineno">  739</span>&#160;                    <a class="code" href="namespacelogger.html#a53f34feeb22a94db295af05b8b2aab5c">logger::log_error</a>(ret, <span class="stringliteral">&quot;Couldn&#39;t update object count value in FULL intervals file.&quot;</span>);</div>
+<div class="line"><a name="l00740"></a><span class="lineno">  740</span>&#160;                    <span class="keywordflow">return</span> ret;</div>
+<div class="line"><a name="l00741"></a><span class="lineno">  741</span>&#160;                }</div>
+<div class="line"><a name="l00742"></a><span class="lineno">  742</span>&#160;                <span class="keywordflow">return</span> ret;</div>
+<div class="line"><a name="l00743"></a><span class="lineno">  743</span>&#160;            }</div>
+<div class="line"><a name="l00744"></a><span class="lineno">  744</span>&#160; </div>
+<div class="line"><a name="l00745"></a><span class="lineno">  745</span>&#160;            <span class="keyword">static</span> DB_STATUS intervalizeNonRegionShapesNoSave(<a class="code" href="structDataset.html">Dataset</a> &amp;dataset) {</div>
+<div class="line"><a name="l00746"></a><span class="lineno">  746</span>&#160;                <span class="comment">// logger::log_task(&quot;Generating APRIL in parlalel...&quot;);</span></div>
+<div class="line"><a name="l00747"></a><span class="lineno">  747</span>&#160;                DB_STATUS ret = DBERR_OK;</div>
+<div class="line"><a name="l00748"></a><span class="lineno">  748</span>&#160;                <span class="keywordtype">int</span> objectsInFullFile = 0;</div>
+<div class="line"><a name="l00749"></a><span class="lineno">  749</span>&#160;                <span class="comment">// loop objects from map</span></div>
+<div class="line"><a name="l00750"></a><span class="lineno">  750</span>&#160;<span class="preprocessor">                #pragma omp parallel reduction(+:objectsInFullFile)</span></div>
+<div class="line"><a name="l00751"></a><span class="lineno">  751</span>&#160;                {</div>
+<div class="line"><a name="l00752"></a><span class="lineno">  752</span>&#160;                    DB_STATUS local_ret = DBERR_OK;</div>
+<div class="line"><a name="l00753"></a><span class="lineno">  753</span>&#160;<span class="preprocessor">                    #pragma omp for</span></div>
+<div class="line"><a name="l00754"></a><span class="lineno">  754</span>&#160;                    <span class="keywordflow">for</span> (<span class="keywordtype">int</span> i=0; i&lt;dataset.objectIDs.size(); i++) {</div>
+<div class="line"><a name="l00755"></a><span class="lineno">  755</span>&#160;                        <span class="comment">// get next object</span></div>
+<div class="line"><a name="l00756"></a><span class="lineno">  756</span>&#160;                        <a class="code" href="structShape.html">Shape</a>* <span class="keywordtype">object</span> = dataset.<a class="code" href="structDataset.html#a2407297a4ceb58310cfd562510762c93">getObject</a>(dataset.objectIDs[i]);</div>
+<div class="line"><a name="l00757"></a><span class="lineno">  757</span>&#160;                        <span class="comment">// generate APRIL</span></div>
+<div class="line"><a name="l00758"></a><span class="lineno">  758</span>&#160;                        <a class="code" href="structAprilData.html">AprilData</a> aprilData;</div>
+<div class="line"><a name="l00759"></a><span class="lineno">  759</span>&#160;                        ret = intervalizeNonRegionShape(*<span class="keywordtype">object</span>, dataset.aprilConfig.<a class="code" href="structAprilConfig.html#a51d25caa3f6d819fb9babafe730772ed">getCellsPerDim</a>(), aprilData);</div>
+<div class="line"><a name="l00760"></a><span class="lineno">  760</span>&#160;                        <span class="keywordflow">if</span> (local_ret != DBERR_OK || aprilData.<a class="code" href="structAprilData.html#a6953d20b44f87555bb35e894278f999b">numIntervalsALL</a> == 0) {</div>
+<div class="line"><a name="l00761"></a><span class="lineno">  761</span>&#160;                            <span class="comment">// at least 1 ALL interval is needed for each object, otherwise there is an error</span></div>
+<div class="line"><a name="l00762"></a><span class="lineno">  762</span>&#160;<span class="preprocessor">                            #pragma cancel for</span></div>
+<div class="line"><a name="l00763"></a><span class="lineno">  763</span>&#160;                            ret = local_ret;</div>
+<div class="line"><a name="l00764"></a><span class="lineno">  764</span>&#160;                            <a class="code" href="namespacelogger.html#a53f34feeb22a94db295af05b8b2aab5c">logger::log_error</a>(local_ret, <span class="stringliteral">&quot;Failed to generate APRIL for object with ID&quot;</span>, object-&gt;<a class="code" href="structShape.html#a989ab9ff22efa8799a2c77cd64044fa6">recID</a>);</div>
+<div class="line"><a name="l00765"></a><span class="lineno">  765</span>&#160;                        }</div>
+<div class="line"><a name="l00766"></a><span class="lineno">  766</span>&#160;                        <span class="comment">// store in dataset</span></div>
+<div class="line"><a name="l00767"></a><span class="lineno">  767</span>&#160;                        local_ret = dataset.<a class="code" href="structDataset.html#a8b1f923a6fd2811c00f0869395c3b522">setAprilDataForSectionAndObjectID</a>(0, object-&gt;<a class="code" href="structShape.html#a989ab9ff22efa8799a2c77cd64044fa6">recID</a>, aprilData);</div>
+<div class="line"><a name="l00768"></a><span class="lineno">  768</span>&#160;                        <span class="keywordflow">if</span> (local_ret != DBERR_OK) {</div>
+<div class="line"><a name="l00769"></a><span class="lineno">  769</span>&#160;<span class="preprocessor">                            #pragma cancel for</span></div>
+<div class="line"><a name="l00770"></a><span class="lineno">  770</span>&#160;                            ret = local_ret;</div>
+<div class="line"><a name="l00771"></a><span class="lineno">  771</span>&#160;                            <a class="code" href="namespacelogger.html#a53f34feeb22a94db295af05b8b2aab5c">logger::log_error</a>(local_ret, <span class="stringliteral">&quot;Parallel intervalization failed for object with ID&quot;</span>, object-&gt;<a class="code" href="structShape.html#a989ab9ff22efa8799a2c77cd64044fa6">recID</a>);</div>
+<div class="line"><a name="l00772"></a><span class="lineno">  772</span>&#160;                        }</div>
+<div class="line"><a name="l00773"></a><span class="lineno">  773</span>&#160;                        <span class="comment">// count objects</span></div>
+<div class="line"><a name="l00774"></a><span class="lineno">  774</span>&#160;                        <span class="keywordflow">if</span> (aprilData.<a class="code" href="structAprilData.html#ab02c90f05b91dc00e862397ebef5d7b1">numIntervalsFULL</a> &gt; 0) {</div>
+<div class="line"><a name="l00775"></a><span class="lineno">  775</span>&#160;                            objectsInFullFile += 1;</div>
+<div class="line"><a name="l00776"></a><span class="lineno">  776</span>&#160;                        }</div>
+<div class="line"><a name="l00777"></a><span class="lineno">  777</span>&#160;                    }</div>
+<div class="line"><a name="l00778"></a><span class="lineno">  778</span>&#160;                }</div>
+<div class="line"><a name="l00779"></a><span class="lineno">  779</span>&#160;                <span class="comment">// check if it ended successfully</span></div>
+<div class="line"><a name="l00780"></a><span class="lineno">  780</span>&#160;                <span class="keywordflow">if</span> (ret != DBERR_OK) {</div>
+<div class="line"><a name="l00781"></a><span class="lineno">  781</span>&#160;                    <a class="code" href="namespacelogger.html#a53f34feeb22a94db295af05b8b2aab5c">logger::log_error</a>(DBERR_APRIL_CREATE, <span class="stringliteral">&quot;Parallel APRIL generation failed.&quot;</span>);</div>
+<div class="line"><a name="l00782"></a><span class="lineno">  782</span>&#160;                    <span class="keywordflow">return</span> DBERR_APRIL_CREATE;</div>
+<div class="line"><a name="l00783"></a><span class="lineno">  783</span>&#160;                }</div>
+<div class="line"><a name="l00784"></a><span class="lineno">  784</span>&#160;                <span class="keywordflow">return</span> ret;</div>
+<div class="line"><a name="l00785"></a><span class="lineno">  785</span>&#160;            }</div>
+<div class="line"><a name="l00786"></a><span class="lineno">  786</span>&#160; </div>
+<div class="line"><a name="l00787"></a><span class="lineno"><a class="line" href="namespaceAPRIL_1_1generation_1_1memory.html#a0c4c14f8aeb1fd4997844035def19c88">  787</a></span>&#160;            DB_STATUS <a class="code" href="namespaceAPRIL_1_1generation_1_1memory.html#a0c4c14f8aeb1fd4997844035def19c88">init</a>(<a class="code" href="structDataset.html">Dataset</a> &amp;dataset) {</div>
+<div class="line"><a name="l00788"></a><span class="lineno">  788</span>&#160;                DB_STATUS ret = DBERR_OK;</div>
+<div class="line"><a name="l00789"></a><span class="lineno">  789</span>&#160;                <span class="comment">// init rasterization environment</span></div>
+<div class="line"><a name="l00790"></a><span class="lineno">  790</span>&#160;                ret = setRasterBounds(dataset.dataspaceInfo.xMinGlobal, dataset.dataspaceInfo.yMinGlobal, dataset.dataspaceInfo.xMaxGlobal, dataset.dataspaceInfo.yMaxGlobal);</div>
+<div class="line"><a name="l00791"></a><span class="lineno">  791</span>&#160;                <span class="keywordflow">if</span> (ret != DBERR_OK) {</div>
+<div class="line"><a name="l00792"></a><span class="lineno">  792</span>&#160;                    <span class="keywordflow">return</span> DBERR_INVALID_PARAMETER;</div>
+<div class="line"><a name="l00793"></a><span class="lineno">  793</span>&#160;                }</div>
+<div class="line"><a name="l00794"></a><span class="lineno">  794</span>&#160;                <span class="comment">// generate approximation filepaths</span></div>
+<div class="line"><a name="l00795"></a><span class="lineno">  795</span>&#160;                ret = <a class="code" href="namespacestorage.html#a4562eadd26f908e88c3e4df5310e85a9">storage::generateAPRILFilePath</a>(dataset);</div>
+<div class="line"><a name="l00796"></a><span class="lineno">  796</span>&#160;                <span class="keywordflow">if</span> (ret != DBERR_OK) {</div>
+<div class="line"><a name="l00797"></a><span class="lineno">  797</span>&#160;                    <span class="keywordflow">return</span> ret;</div>
+<div class="line"><a name="l00798"></a><span class="lineno">  798</span>&#160;                }</div>
+<div class="line"><a name="l00799"></a><span class="lineno">  799</span>&#160;                <span class="comment">// open april files for writing</span></div>
+<div class="line"><a name="l00800"></a><span class="lineno">  800</span>&#160;                FILE* pFileALL = fopen(dataset.aprilConfig.<a class="code" href="structAprilConfig.html#a52e1f0fb719f26c3ec8e9e97388b4a4b">ALL_intervals_path</a>.c_str(), <span class="stringliteral">&quot;wb&quot;</span>);</div>
+<div class="line"><a name="l00801"></a><span class="lineno">  801</span>&#160;                <span class="keywordflow">if</span> (pFileALL == NULL) {</div>
+<div class="line"><a name="l00802"></a><span class="lineno">  802</span>&#160;                    <a class="code" href="namespacelogger.html#a53f34feeb22a94db295af05b8b2aab5c">logger::log_error</a>(DBERR_MISSING_FILE, <span class="stringliteral">&quot;Couldnt open APRIL ALL file:&quot;</span>, dataset.aprilConfig.<a class="code" href="structAprilConfig.html#a52e1f0fb719f26c3ec8e9e97388b4a4b">ALL_intervals_path</a>);</div>
+<div class="line"><a name="l00803"></a><span class="lineno">  803</span>&#160;                    <span class="keywordflow">return</span> DBERR_MISSING_FILE;</div>
+<div class="line"><a name="l00804"></a><span class="lineno">  804</span>&#160;                }</div>
+<div class="line"><a name="l00805"></a><span class="lineno">  805</span>&#160;                FILE* pFileFULL = fopen(dataset.aprilConfig.<a class="code" href="structAprilConfig.html#a8b476114c449a5d78a38cff912e0d08d">FULL_intervals_path</a>.c_str(), <span class="stringliteral">&quot;wb&quot;</span>);</div>
+<div class="line"><a name="l00806"></a><span class="lineno">  806</span>&#160;                <span class="keywordflow">if</span> (pFileFULL == NULL) {</div>
+<div class="line"><a name="l00807"></a><span class="lineno">  807</span>&#160;                    <a class="code" href="namespacelogger.html#a53f34feeb22a94db295af05b8b2aab5c">logger::log_error</a>(DBERR_MISSING_FILE, <span class="stringliteral">&quot;Couldnt open APRIL FULL file:&quot;</span>, dataset.aprilConfig.<a class="code" href="structAprilConfig.html#a8b476114c449a5d78a38cff912e0d08d">FULL_intervals_path</a>);</div>
+<div class="line"><a name="l00808"></a><span class="lineno">  808</span>&#160;                    <span class="keywordflow">return</span> DBERR_MISSING_FILE;</div>
+<div class="line"><a name="l00809"></a><span class="lineno">  809</span>&#160;                }</div>
+<div class="line"><a name="l00810"></a><span class="lineno">  810</span>&#160;                <span class="comment">// write dummy value for object count. </span></div>
+<div class="line"><a name="l00811"></a><span class="lineno">  811</span>&#160;                <span class="keywordtype">size_t</span> elementsWritten = fwrite(&amp;dataset.totalObjects, <span class="keyword">sizeof</span>(<span class="keywordtype">size_t</span>), 1, pFileALL);</div>
+<div class="line"><a name="l00812"></a><span class="lineno">  812</span>&#160;                <span class="keywordflow">if</span> (elementsWritten != 1) {</div>
+<div class="line"><a name="l00813"></a><span class="lineno">  813</span>&#160;                    <a class="code" href="namespacelogger.html#a53f34feeb22a94db295af05b8b2aab5c">logger::log_error</a>(DBERR_DISK_WRITE_FAILED, <span class="stringliteral">&quot;Writing total objects in ALL file failed&quot;</span>);</div>
+<div class="line"><a name="l00814"></a><span class="lineno">  814</span>&#160;                    <span class="keywordflow">return</span> DBERR_DISK_WRITE_FAILED;</div>
+<div class="line"><a name="l00815"></a><span class="lineno">  815</span>&#160;                }</div>
+<div class="line"><a name="l00816"></a><span class="lineno">  816</span>&#160;                <span class="comment">// will replace with the actual value in the end, because some objects may not have FULL intervals</span></div>
+<div class="line"><a name="l00817"></a><span class="lineno">  817</span>&#160;                elementsWritten = fwrite(&amp;dataset.totalObjects, <span class="keyword">sizeof</span>(<span class="keywordtype">size_t</span>), 1, pFileFULL);</div>
+<div class="line"><a name="l00818"></a><span class="lineno">  818</span>&#160;                <span class="keywordflow">if</span> (elementsWritten != 1) {</div>
+<div class="line"><a name="l00819"></a><span class="lineno">  819</span>&#160;                    <a class="code" href="namespacelogger.html#a53f34feeb22a94db295af05b8b2aab5c">logger::log_error</a>(DBERR_DISK_WRITE_FAILED, <span class="stringliteral">&quot;Writing total objects in ALL file failed&quot;</span>);</div>
+<div class="line"><a name="l00820"></a><span class="lineno">  820</span>&#160;                    <span class="keywordflow">return</span> DBERR_DISK_WRITE_FAILED;</div>
+<div class="line"><a name="l00821"></a><span class="lineno">  821</span>&#160;                }</div>
+<div class="line"><a name="l00822"></a><span class="lineno">  822</span>&#160;                <span class="comment">// switch based on data type</span></div>
+<div class="line"><a name="l00823"></a><span class="lineno">  823</span>&#160;                <span class="keywordflow">switch</span> (dataset.dataType) {</div>
+<div class="line"><a name="l00824"></a><span class="lineno">  824</span>&#160;                    <span class="comment">// intervalize dataset objects</span></div>
+<div class="line"><a name="l00825"></a><span class="lineno">  825</span>&#160;                    <span class="keywordflow">case</span> DT_POLYGON:</div>
+<div class="line"><a name="l00826"></a><span class="lineno">  826</span>&#160;                    <span class="keywordflow">case</span> DT_RECTANGLE:</div>
+<div class="line"><a name="l00827"></a><span class="lineno">  827</span>&#160;                        ret = intervalizeRegionShapes(dataset, pFileALL, pFileFULL);</div>
+<div class="line"><a name="l00828"></a><span class="lineno">  828</span>&#160;                        <span class="keywordflow">break</span>;</div>
+<div class="line"><a name="l00829"></a><span class="lineno">  829</span>&#160;                    <span class="keywordflow">case</span> DT_POINT:</div>
+<div class="line"><a name="l00830"></a><span class="lineno">  830</span>&#160;                    <span class="keywordflow">case</span> DT_LINESTRING:</div>
+<div class="line"><a name="l00831"></a><span class="lineno">  831</span>&#160;                        ret = intervalizeNonRegionShapes(dataset, pFileALL, pFileFULL);</div>
+<div class="line"><a name="l00832"></a><span class="lineno">  832</span>&#160;                        <span class="keywordflow">break</span>;</div>
+<div class="line"><a name="l00833"></a><span class="lineno">  833</span>&#160;                    <span class="keywordflow">default</span>:</div>
+<div class="line"><a name="l00834"></a><span class="lineno">  834</span>&#160;                        <span class="comment">// error</span></div>
+<div class="line"><a name="l00835"></a><span class="lineno">  835</span>&#160;                        <a class="code" href="namespacelogger.html#a53f34feeb22a94db295af05b8b2aab5c">logger::log_error</a>(DBERR_INVALID_DATATYPE, <span class="stringliteral">&quot;Invalid datatype in intervalization:&quot;</span>, dataset.dataType);</div>
+<div class="line"><a name="l00836"></a><span class="lineno">  836</span>&#160;                        <span class="keywordflow">return</span> DBERR_INVALID_DATATYPE;</div>
+<div class="line"><a name="l00837"></a><span class="lineno">  837</span>&#160;                }</div>
+<div class="line"><a name="l00838"></a><span class="lineno">  838</span>&#160;                <span class="keywordflow">if</span> (ret != DBERR_OK) {</div>
+<div class="line"><a name="l00839"></a><span class="lineno">  839</span>&#160;                    <a class="code" href="namespacelogger.html#a53f34feeb22a94db295af05b8b2aab5c">logger::log_error</a>(ret, <span class="stringliteral">&quot;Failed to load and intervalize dataset contents.&quot;</span>);</div>
+<div class="line"><a name="l00840"></a><span class="lineno">  840</span>&#160;                    <span class="keywordflow">goto</span> CLOSE_AND_EXIT;</div>
+<div class="line"><a name="l00841"></a><span class="lineno">  841</span>&#160;                }</div>
+<div class="line"><a name="l00842"></a><span class="lineno">  842</span>&#160;        CLOSE_AND_EXIT:</div>
+<div class="line"><a name="l00843"></a><span class="lineno">  843</span>&#160;                fflush(pFileALL);</div>
+<div class="line"><a name="l00844"></a><span class="lineno">  844</span>&#160;                fclose(pFileALL);</div>
+<div class="line"><a name="l00845"></a><span class="lineno">  845</span>&#160;                fflush(pFileFULL);</div>
+<div class="line"><a name="l00846"></a><span class="lineno">  846</span>&#160;                fclose(pFileFULL);</div>
+<div class="line"><a name="l00847"></a><span class="lineno">  847</span>&#160;                <span class="keywordflow">return</span> ret;</div>
+<div class="line"><a name="l00848"></a><span class="lineno">  848</span>&#160;            }</div>
+<div class="line"><a name="l00849"></a><span class="lineno">  849</span>&#160; </div>
+<div class="line"><a name="l00850"></a><span class="lineno"><a class="line" href="namespaceAPRIL_1_1generation_1_1memory.html#af4c3a9793ce6e097b827a9ab0bf89a11">  850</a></span>&#160;            DB_STATUS <a class="code" href="namespaceAPRIL_1_1generation_1_1memory.html#af4c3a9793ce6e097b827a9ab0bf89a11">initNoSave</a>(<a class="code" href="structDataset.html">Dataset</a> &amp;dataset) {</div>
+<div class="line"><a name="l00851"></a><span class="lineno">  851</span>&#160;                DB_STATUS ret = DBERR_OK;</div>
+<div class="line"><a name="l00852"></a><span class="lineno">  852</span>&#160;                <span class="comment">// init rasterization environment</span></div>
+<div class="line"><a name="l00853"></a><span class="lineno">  853</span>&#160;                ret = setRasterBounds(dataset.dataspaceInfo.xMinGlobal, dataset.dataspaceInfo.yMinGlobal, dataset.dataspaceInfo.xMaxGlobal, dataset.dataspaceInfo.yMaxGlobal);</div>
+<div class="line"><a name="l00854"></a><span class="lineno">  854</span>&#160;                <span class="keywordflow">if</span> (ret != DBERR_OK) {</div>
+<div class="line"><a name="l00855"></a><span class="lineno">  855</span>&#160;                    <span class="keywordflow">return</span> ret;</div>
+<div class="line"><a name="l00856"></a><span class="lineno">  856</span>&#160;                }</div>
+<div class="line"><a name="l00857"></a><span class="lineno">  857</span>&#160;                <span class="comment">// switch based on data type</span></div>
+<div class="line"><a name="l00858"></a><span class="lineno">  858</span>&#160;                <span class="keywordflow">switch</span> (dataset.dataType) {</div>
+<div class="line"><a name="l00859"></a><span class="lineno">  859</span>&#160;                    <span class="comment">// intervalize dataset objects</span></div>
+<div class="line"><a name="l00860"></a><span class="lineno">  860</span>&#160;                    <span class="keywordflow">case</span> DT_POLYGON:</div>
+<div class="line"><a name="l00861"></a><span class="lineno">  861</span>&#160;                    <span class="keywordflow">case</span> DT_RECTANGLE:</div>
+<div class="line"><a name="l00862"></a><span class="lineno">  862</span>&#160;                        ret = intervalizeRegionShapesNoSave(dataset);</div>
+<div class="line"><a name="l00863"></a><span class="lineno">  863</span>&#160;                        <span class="keywordflow">break</span>;</div>
+<div class="line"><a name="l00864"></a><span class="lineno">  864</span>&#160;                    <span class="keywordflow">case</span> DT_POINT:</div>
+<div class="line"><a name="l00865"></a><span class="lineno">  865</span>&#160;                    <span class="keywordflow">case</span> DT_LINESTRING:</div>
+<div class="line"><a name="l00866"></a><span class="lineno">  866</span>&#160;                        ret = intervalizeNonRegionShapesNoSave(dataset);</div>
+<div class="line"><a name="l00867"></a><span class="lineno">  867</span>&#160;                        <span class="keywordflow">break</span>;</div>
+<div class="line"><a name="l00868"></a><span class="lineno">  868</span>&#160;                    <span class="keywordflow">default</span>:</div>
+<div class="line"><a name="l00869"></a><span class="lineno">  869</span>&#160;                        <span class="comment">// error</span></div>
+<div class="line"><a name="l00870"></a><span class="lineno">  870</span>&#160;                        <a class="code" href="namespacelogger.html#a53f34feeb22a94db295af05b8b2aab5c">logger::log_error</a>(DBERR_INVALID_DATATYPE, <span class="stringliteral">&quot;Invalid datatype in intervalization:&quot;</span>, dataset.dataType);</div>
+<div class="line"><a name="l00871"></a><span class="lineno">  871</span>&#160;                        <span class="keywordflow">return</span> DBERR_INVALID_DATATYPE;</div>
+<div class="line"><a name="l00872"></a><span class="lineno">  872</span>&#160;                }</div>
+<div class="line"><a name="l00873"></a><span class="lineno">  873</span>&#160;                <span class="keywordflow">if</span> (ret != DBERR_OK) {</div>
+<div class="line"><a name="l00874"></a><span class="lineno">  874</span>&#160;                    <a class="code" href="namespacelogger.html#a53f34feeb22a94db295af05b8b2aab5c">logger::log_error</a>(ret, <span class="stringliteral">&quot;Failed to load and intervalize dataset contents.&quot;</span>);</div>
+<div class="line"><a name="l00875"></a><span class="lineno">  875</span>&#160;                }</div>
+<div class="line"><a name="l00876"></a><span class="lineno">  876</span>&#160;                <span class="keywordflow">return</span> ret;</div>
+<div class="line"><a name="l00877"></a><span class="lineno">  877</span>&#160;            }</div>
+<div class="line"><a name="l00878"></a><span class="lineno">  878</span>&#160;        }</div>
+<div class="line"><a name="l00879"></a><span class="lineno">  879</span>&#160;    }</div>
+<div class="line"><a name="l00880"></a><span class="lineno">  880</span>&#160;}</div>
 <div class="ttc" id="anamespaceAPRIL_1_1generation_1_1disk_html_a2588d072af4662dd891dec18008dd642"><div class="ttname"><a href="namespaceAPRIL_1_1generation_1_1disk.html#a2588d072af4662dd891dec18008dd642">APRIL::generation::disk::init</a></div><div class="ttdeci">DB_STATUS init(Dataset &amp;dataset)</div><div class="ttdoc">Generates the APRIL approximations for the given dataset.</div><div class="ttdef"><b>Definition:</b> <a href="generate_8cpp_source.html#l00517">generate.cpp:517</a></div></div>
-<div class="ttc" id="anamespaceAPRIL_1_1generation_1_1memory_html_a0c4c14f8aeb1fd4997844035def19c88"><div class="ttname"><a href="namespaceAPRIL_1_1generation_1_1memory.html#a0c4c14f8aeb1fd4997844035def19c88">APRIL::generation::memory::init</a></div><div class="ttdeci">DB_STATUS init(Dataset &amp;dataset)</div><div class="ttdoc">Generates the APRIL approximations for the given dataset.</div><div class="ttdef"><b>Definition:</b> <a href="generate_8cpp_source.html#l00703">generate.cpp:703</a></div></div>
+<div class="ttc" id="anamespaceAPRIL_1_1generation_1_1memory_html_a0c4c14f8aeb1fd4997844035def19c88"><div class="ttname"><a href="namespaceAPRIL_1_1generation_1_1memory.html#a0c4c14f8aeb1fd4997844035def19c88">APRIL::generation::memory::init</a></div><div class="ttdeci">DB_STATUS init(Dataset &amp;dataset)</div><div class="ttdoc">Generates the APRIL approximations for the given dataset, keeps it in memory and saves a copy on disk...</div><div class="ttdef"><b>Definition:</b> <a href="generate_8cpp_source.html#l00787">generate.cpp:787</a></div></div>
+<div class="ttc" id="anamespaceAPRIL_1_1generation_1_1memory_html_af4c3a9793ce6e097b827a9ab0bf89a11"><div class="ttname"><a href="namespaceAPRIL_1_1generation_1_1memory.html#af4c3a9793ce6e097b827a9ab0bf89a11">APRIL::generation::memory::initNoSave</a></div><div class="ttdeci">DB_STATUS initNoSave(Dataset &amp;dataset)</div><div class="ttdoc">Generates the APRIL approximations for the given dataset and keeps it in memory. It DOES NOT save it ...</div><div class="ttdef"><b>Definition:</b> <a href="generate_8cpp_source.html#l00850">generate.cpp:850</a></div></div>
 <div class="ttc" id="anamespaceAPRIL_1_1writer_html_a4e37845d20ded52b2c86dda2f275aa13"><div class="ttname"><a href="namespaceAPRIL_1_1writer.html#a4e37845d20ded52b2c86dda2f275aa13">APRIL::writer::saveAPRILForObject</a></div><div class="ttdeci">DB_STATUS saveAPRILForObject(FILE *pFileALL, FILE *pFileFULL, size_t recID, uint sectionID, AprilData *aprilData)</div><div class="ttdoc">Saves the APRIL data of an object on disk, using the given file pointers.</div><div class="ttdef"><b>Definition:</b> <a href="storage_8cpp_source.html#l00007">storage.cpp:7</a></div></div>
 <div class="ttc" id="anamespaceAPRIL_1_1writer_html_abc696cb76fd7e57c526d1162755fd1f1"><div class="ttname"><a href="namespaceAPRIL_1_1writer.html#abc696cb76fd7e57c526d1162755fd1f1">APRIL::writer::saveAPRILForDataset</a></div><div class="ttdeci">DB_STATUS saveAPRILForDataset(FILE *pFileALL, FILE *pFileFULL, Dataset &amp;dataset)</div><div class="ttdoc">Saves the APRIL data of an object on disk, using the given file pointers.</div><div class="ttdef"><b>Definition:</b> <a href="storage_8cpp_source.html#l00052">storage.cpp:52</a></div></div>
 <div class="ttc" id="anamespaceAPRIL_html"><div class="ttname"><a href="namespaceAPRIL.html">APRIL</a></div><div class="ttdoc">APRIL related methods.</div><div class="ttdef"><b>Definition:</b> <a href="APRIL_2filter_8cpp_source.html#l00004">filter.cpp:5</a></div></div>
@@ -843,7 +957,7 @@ $(function() {
 <div class="ttc" id="anamespacestorage_1_1reader_1_1partitionFile_html_a6ec9e0ed5e6abc1bbd5d791d05747b77"><div class="ttname"><a href="namespacestorage_1_1reader_1_1partitionFile.html#a6ec9e0ed5e6abc1bbd5d791d05747b77">storage::reader::partitionFile::loadDatasetInfo</a></div><div class="ttdeci">DB_STATUS loadDatasetInfo(FILE *pFile, Dataset &amp;dataset)</div><div class="ttdoc">Loads the dataset info from the partition file. The file pointer must be opened to the file and its p...</div><div class="ttdef"><b>Definition:</b> <a href="read_8cpp_source.html#l00010">read.cpp:10</a></div></div>
 <div class="ttc" id="anamespacestorage_1_1reader_1_1partitionFile_html_ac42d761483b1f7b7f6eaf6a5734ee49a"><div class="ttname"><a href="namespacestorage_1_1reader_1_1partitionFile.html#ac42d761483b1f7b7f6eaf6a5734ee49a">storage::reader::partitionFile::loadNextObjectComplete</a></div><div class="ttdeci">DB_STATUS loadNextObjectComplete(FILE *pFile, Shape &amp;object)</div><div class="ttdoc">Loads the next object in its entirety from an already opened file.</div><div class="ttdef"><b>Definition:</b> <a href="read_8cpp_source.html#l00049">read.cpp:49</a></div></div>
 <div class="ttc" id="anamespacestorage_1_1writer_html_ac95c49e4706e3b28a0977d4745339fc7"><div class="ttname"><a href="namespacestorage_1_1writer.html#ac95c49e4706e3b28a0977d4745339fc7">storage::writer::updateObjectCountInFile</a></div><div class="ttdeci">DB_STATUS updateObjectCountInFile(FILE *outFile, size_t objectCount)</div><div class="ttdoc">Updates the first bytes (sizeof(size_t)) of a partition file with the new object count value.</div><div class="ttdef"><b>Definition:</b> <a href="write_8cpp_source.html#l00043">write.cpp:43</a></div></div>
-<div class="ttc" id="anamespacestorage_html_a4562eadd26f908e88c3e4df5310e85a9"><div class="ttname"><a href="namespacestorage.html#a4562eadd26f908e88c3e4df5310e85a9">storage::generateAPRILFilePath</a></div><div class="ttdeci">DB_STATUS generateAPRILFilePath(Dataset &amp;dataset)</div><div class="ttdoc">Generates the APRIL file path for the given dataset from the dataset's nickname.</div><div class="ttdef"><b>Definition:</b> <a href="storage_2utils_8cpp_source.html#l00025">utils.cpp:25</a></div></div>
+<div class="ttc" id="anamespacestorage_html_a4562eadd26f908e88c3e4df5310e85a9"><div class="ttname"><a href="namespacestorage.html#a4562eadd26f908e88c3e4df5310e85a9">storage::generateAPRILFilePath</a></div><div class="ttdeci">DB_STATUS generateAPRILFilePath(Dataset &amp;dataset)</div><div class="ttdoc">Generates the APRIL file path for the given dataset from the dataset's nickname.</div><div class="ttdef"><b>Definition:</b> <a href="storage_2utils_8cpp_source.html#l00026">utils.cpp:26</a></div></div>
 <div class="ttc" id="astructAPRIL_1_1generation_1_1RasterData_html"><div class="ttname"><a href="structAPRIL_1_1generation_1_1RasterData.html">APRIL::generation::RasterData</a></div><div class="ttdoc">APRIL raster data.</div><div class="ttdef"><b>Definition:</b> <a href="generate_8h_source.html#l00031">generate.h:31</a></div></div>
 <div class="ttc" id="astructAprilConfig_html_a51d25caa3f6d819fb9babafe730772ed"><div class="ttname"><a href="structAprilConfig.html#a51d25caa3f6d819fb9babafe730772ed">AprilConfig::getCellsPerDim</a></div><div class="ttdeci">int getCellsPerDim()</div><div class="ttdoc">Returns the number of cells per dimension in the Hilbert grid.</div><div class="ttdef"><b>Definition:</b> <a href="containers_8cpp_source.html#l00187">containers.cpp:187</a></div></div>
 <div class="ttc" id="astructAprilConfig_html_a52e1f0fb719f26c3ec8e9e97388b4a4b"><div class="ttname"><a href="structAprilConfig.html#a52e1f0fb719f26c3ec8e9e97388b4a4b">AprilConfig::ALL_intervals_path</a></div><div class="ttdeci">std::string ALL_intervals_path</div><div class="ttdoc">The A-list intervals filepath on disk.</div><div class="ttdef"><b>Definition:</b> <a href="containers_8h_source.html#l00090">containers.h:90</a></div></div>
@@ -853,11 +967,11 @@ $(function() {
 <div class="ttc" id="astructAprilData_html_a6953d20b44f87555bb35e894278f999b"><div class="ttname"><a href="structAprilData.html#a6953d20b44f87555bb35e894278f999b">AprilData::numIntervalsALL</a></div><div class="ttdeci">uint numIntervalsALL</div><div class="ttdoc">A-list size.</div><div class="ttdef"><b>Definition:</b> <a href="containers_8h_source.html#l00033">containers.h:33</a></div></div>
 <div class="ttc" id="astructAprilData_html_aa22d432941cd24b0b70f838b7be6923c"><div class="ttname"><a href="structAprilData.html#aa22d432941cd24b0b70f838b7be6923c">AprilData::intervalsALL</a></div><div class="ttdeci">std::vector&lt; uint32_t &gt; intervalsALL</div><div class="ttdoc">A-list contents.</div><div class="ttdef"><b>Definition:</b> <a href="containers_8h_source.html#l00039">containers.h:39</a></div></div>
 <div class="ttc" id="astructAprilData_html_ab02c90f05b91dc00e862397ebef5d7b1"><div class="ttname"><a href="structAprilData.html#ab02c90f05b91dc00e862397ebef5d7b1">AprilData::numIntervalsFULL</a></div><div class="ttdeci">uint numIntervalsFULL</div><div class="ttdoc">F-list size.</div><div class="ttdef"><b>Definition:</b> <a href="containers_8h_source.html#l00041">containers.h:41</a></div></div>
-<div class="ttc" id="astructDataset_html"><div class="ttname"><a href="structDataset.html">Dataset</a></div><div class="ttdoc">All dataset related information.</div><div class="ttdef"><b>Definition:</b> <a href="containers_8h_source.html#l01054">containers.h:1054</a></div></div>
+<div class="ttc" id="astructDataset_html"><div class="ttname"><a href="structDataset.html">Dataset</a></div><div class="ttdoc">All dataset related information.</div><div class="ttdef"><b>Definition:</b> <a href="containers_8h_source.html#l01128">containers.h:1128</a></div></div>
 <div class="ttc" id="astructDataset_html_a2407297a4ceb58310cfd562510762c93"><div class="ttname"><a href="structDataset.html#a2407297a4ceb58310cfd562510762c93">Dataset::getObject</a></div><div class="ttdeci">Shape * getObject(size_t recID)</div><div class="ttdoc">Returns a reference to the object with the given ID.</div><div class="ttdef"><b>Definition:</b> <a href="containers_8cpp_source.html#l00200">containers.cpp:200</a></div></div>
 <div class="ttc" id="astructDataset_html_a8b1f923a6fd2811c00f0869395c3b522"><div class="ttname"><a href="structDataset.html#a8b1f923a6fd2811c00f0869395c3b522">Dataset::setAprilDataForSectionAndObjectID</a></div><div class="ttdeci">DB_STATUS setAprilDataForSectionAndObjectID(uint sectionID, size_t recID, AprilData &amp;aprilData)</div><div class="ttdoc">Sets the april data in the dataset for the given object ID and section ID.</div><div class="ttdef"><b>Definition:</b> <a href="containers_8cpp_source.html#l00370">containers.cpp:370</a></div></div>
-<div class="ttc" id="astructShape_html"><div class="ttname"><a href="structShape.html">Shape</a></div><div class="ttdoc">A spatial object. Could be point, linestring, rectangle or polygon, as specified by its 'dataType' fi...</div><div class="ttdef"><b>Definition:</b> <a href="containers_8h_source.html#l00719">containers.h:719</a></div></div>
-<div class="ttc" id="astructShape_html_a989ab9ff22efa8799a2c77cd64044fa6"><div class="ttname"><a href="structShape.html#a989ab9ff22efa8799a2c77cd64044fa6">Shape::recID</a></div><div class="ttdeci">size_t recID</div><div class="ttdoc">the object's ID, as read by the data file.</div><div class="ttdef"><b>Definition:</b> <a href="containers_8h_source.html#l00729">containers.h:729</a></div></div>
+<div class="ttc" id="astructShape_html"><div class="ttname"><a href="structShape.html">Shape</a></div><div class="ttdoc">A spatial object. Could be point, linestring, rectangle or polygon, as specified by its 'dataType' fi...</div><div class="ttdef"><b>Definition:</b> <a href="containers_8h_source.html#l00771">containers.h:771</a></div></div>
+<div class="ttc" id="astructShape_html_a989ab9ff22efa8799a2c77cd64044fa6"><div class="ttname"><a href="structShape.html#a989ab9ff22efa8799a2c77cd64044fa6">Shape::recID</a></div><div class="ttdeci">size_t recID</div><div class="ttdoc">the object's ID, as read by the data file.</div><div class="ttdef"><b>Definition:</b> <a href="containers_8h_source.html#l00781">containers.h:781</a></div></div>
 </div><!-- fragment --></div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>

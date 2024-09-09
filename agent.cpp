@@ -36,8 +36,8 @@ int main(int argc, char* argv[]) {
         goto EXIT_SAFELY;
     }
 EXIT_SAFELY:
-    // logger::log_success("Waiting for exit...");
     // wait for the rest of the processes in the intercomm to finish
+    // logger::log_success("Waiting for parent...");
     MPI_Barrier(g_local_comm);
     // Finalize the MPI environment.
     MPI_Finalize();

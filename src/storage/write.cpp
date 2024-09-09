@@ -48,6 +48,7 @@ namespace storage
                 logger::log_error(DBERR_DISK_WRITE_FAILED, "Failed while updating object count in partition file");
                 return DBERR_DISK_WRITE_FAILED;
             }
+            // logger::log_success("Updated object count value in partition file:", objectCount);
             fflush(outFile);
             return DBERR_OK;
         }

@@ -76,18 +76,57 @@ namespace parser
         // find if query type is supported
         auto queryIT = g_querySupportMap.find(queryType);
         if (queryIT != g_querySupportMap.end()) {
-            DataType dataTypeR = g_config.datasetInfo.getDatasetR()->dataType;
-            // todo: for queries with one dataset input, handle this accordingly
-            DataType dataTypeS = g_config.datasetInfo.getDatasetS()->dataType;
-            const auto& allowedCombinations = queryIT->second;
-            auto dataTypesPair = std::make_pair(dataTypeR, dataTypeS);
-            auto datatypesIT = allowedCombinations.find(dataTypesPair);
-            if (datatypesIT != allowedCombinations.end()) {
-                // query data types combination supported
-                return DBERR_OK;
-            } else {
-                logger::log_error(DBERR_QUERY_INVALID_TYPE, "Data type combination unsupported for query", mapping::queryTypeIntToStr(g_config.queryInfo.type), "combination:", mapping::dataTypeIntToStr(dataTypeR), "and", mapping::dataTypeIntToStr(dataTypeS));
-                return DBERR_QUERY_INVALID_TYPE;
+            switch (queryType) {
+                case Q_RANGE:
+                    {
+                        // range query, verify validity
+                        if (g_config.datasetInfo.getNumberOfDatasets() != 1) {
+                            logger::log_error(DBERR_QUERY_INVALID_INPUT, "Range queries accept only 1 dataset as input (use -R).");
+                            return DBERR_QUERY_INVALID_INPUT;
+                        }
+                        if (g_config.datasetInfo.getDatasetR() == nullptr) {
+                            logger::log_error(DBERR_QUERY_INVALID_INPUT, "Input dataset R not set, but required for range queries. (use -R)");
+                            return DBERR_QUERY_INVALID_INPUT;
+                        }
+                        // all ok
+                        DataType queryDataType = g_config.datasetInfo.getDatasetQ()->dataType;
+                        DataType dataTypeR = g_config.datasetInfo.getDatasetR()->dataType;
+                        const auto& allowedCombinations = queryIT->second;
+                        auto dataTypesPair = std::make_pair(queryDataType, dataTypeR );
+                        auto datatypesIT = allowedCombinations.find(dataTypesPair);
+                        if (datatypesIT != allowedCombinations.end()) {
+                            // query data types combination supported
+                            return DBERR_OK;
+                        } else {
+                            logger::log_error(DBERR_QUERY_INVALID_TYPE, "Data type combination unsupported for query", mapping::queryTypeIntToStr(g_config.queryInfo.type), "combination:", mapping::dataTypeIntToStr(queryDataType), "and", mapping::dataTypeIntToStr(dataTypeR));
+                            return DBERR_QUERY_INVALID_TYPE;
+                        }
+                    }
+                    break;
+                case Q_DISJOINT:
+                case Q_INTERSECT:
+                case Q_INSIDE:
+                case Q_CONTAINS:
+                case Q_COVERS:
+                case Q_COVERED_BY:
+                case Q_MEET:
+                case Q_EQUAL:
+                    {
+                        // joins
+                        DataType dataTypeR = g_config.datasetInfo.getDatasetR()->dataType;
+                        DataType dataTypeS = g_config.datasetInfo.getDatasetS()->dataType;
+                        const auto& allowedCombinations = queryIT->second;
+                        auto dataTypesPair = std::make_pair(dataTypeR, dataTypeS);
+                        auto datatypesIT = allowedCombinations.find(dataTypesPair);
+                        if (datatypesIT != allowedCombinations.end()) {
+                            // query data types combination supported
+                            return DBERR_OK;
+                        } else {
+                            logger::log_error(DBERR_QUERY_INVALID_TYPE, "Data type combination unsupported for query", mapping::queryTypeIntToStr(g_config.queryInfo.type), "combination:", mapping::dataTypeIntToStr(dataTypeR), "and", mapping::dataTypeIntToStr(dataTypeS));
+                            return DBERR_QUERY_INVALID_TYPE;
+                        }
+                    }
+                    break;
             }
         }
         // error for query type
@@ -138,10 +177,25 @@ namespace parser
             Action action(ACTION_PERFORM_PARTITIONING);
             g_config.actions.emplace_back(action);
         }
-        // load datasets action
-        if (actionsStmt->loadDatasets) {
-            Action action(ACTION_LOAD_DATASETS);
-            g_config.actions.emplace_back(action);
+        // load dataset(s) action
+        if (g_config.queryInfo.type != Q_NONE) {
+            if (g_config.queryInfo.type != Q_RANGE) {
+                // join query, load both datasets a priori
+                if (actionsStmt->loadDatasetR) {
+                    Action action(ACTION_LOAD_DATASET_R);
+                    g_config.actions.emplace_back(action);
+                }
+                if (actionsStmt->loadDatasetS) {
+                    Action action(ACTION_LOAD_DATASET_S);
+                    g_config.actions.emplace_back(action);
+                }
+            } else {
+                // range query, load only dataset S a priori
+                if (actionsStmt->loadDatasetR) {
+                    Action action(ACTION_LOAD_DATASET_R);
+                    g_config.actions.emplace_back(action);
+                }
+            }
         }
         // create APRIL
         for (int i=0; i<actionsStmt->createApproximations.size(); i++) {
@@ -159,15 +213,27 @@ namespace parser
             }
         }
         // load approximations (after any creation and after the datasets have been loaded)
-        if (actionsStmt->loadDatasets) {
+        if (actionsStmt->loadDatasetR || actionsStmt->loadDatasetS) {
             Action action(ACTION_LOAD_APRIL);
             g_config.actions.emplace_back(action);
         }
         // queries
         if (g_config.queryInfo.type != Q_NONE) {
-            Action action(ACTION_QUERY);
-            g_config.actions.emplace_back(action);
+            // query init action
+            Action actionQinit(ACTION_QUERY_INIT);
+            g_config.actions.emplace_back(actionQinit);
+
+            if (g_config.queryInfo.type == Q_RANGE) {
+                // only for range queries, the host also needs to parse and transmit the query data in batches
+                Action queryPartitioningAction(ACTION_QUERY_PARTITIONING);
+                g_config.actions.emplace_back(queryPartitioningAction);
+            }
+
+            // gather results
+            Action actionQresults(ACTION_QUERY_GATHER_RESULTS);
+            g_config.actions.emplace_back(actionQresults);
         }
+
         // verification always last (todo)
         if (actionsStmt->performVerification) {
             Action action(ACTION_PERFORM_VERIFICATION);
@@ -295,6 +361,21 @@ namespace parser
             }
         }
 
+        // verify query dataset
+        if (datasetStmt->queryDatasetSet) {
+            FileType fileTypeQ = mapping::fileTypeTextToInt(datasetStmt->filetypeQ);
+            if (fileTypeQ == FT_INVALID) {
+                logger::log_error(DBERR_INVALID_FILETYPE, "Unkown file type of query dataset:", datasetStmt->filetypeQ);
+                return DBERR_INVALID_FILETYPE;
+            }
+
+            // verify dataset R path
+            if (!verifyFilepath(datasetStmt->queryDatasetPath)) {
+                logger::log_error(DBERR_MISSING_FILE, "Query dataset invalid path:", datasetStmt->queryDatasetPath);
+                return DBERR_MISSING_FILE;
+            }
+        }
+
 
         return DBERR_OK;
     }
@@ -331,6 +412,10 @@ namespace parser
 
             // file type
             datasetStmt->filetypeS = dataset_config_pt.get<std::string>(datasetStmt->datasetNicknameS+".filetype");
+        }
+        if (datasetStmt->datasetNicknameR == "" && datasetStmt->datasetNicknameS != "") {
+            logger::log_error(DBERR_INVALID_PARAMETER, "If you need one input dataset, use -R instead of -S");
+            return DBERR_INVALID_PARAMETER;
         }
         if (datasetStmt->datasetCount > 0) {
             // hardcoded bounds
@@ -372,7 +457,21 @@ namespace parser
             }
         }
 
-        // verify 
+        // query dataset
+        if (datasetStmt->queryDatasetSet) {
+            datasetStmt->queryDatasetPath = dataset_config_pt.get<std::string>(datasetStmt->nicknameQ+".path");
+            // dataset data type
+            DataType datatypeQ = mapping::dataTypeTextToInt(dataset_config_pt.get<std::string>(datasetStmt->nicknameQ+".datatype"));
+            if (datatypeQ == DT_INVALID) {
+                logger::log_error(DBERR_INVALID_DATATYPE, "Unknown data type for query dataset Q.");
+                return DBERR_INVALID_DATATYPE;
+            }
+            datasetStmt->datatypeQ = datatypeQ;
+            // file type
+            datasetStmt->filetypeQ = dataset_config_pt.get<std::string>(datasetStmt->nicknameQ+".filetype");
+        }
+
+        // verify options
         DB_STATUS ret = verifyDatasetOptions(datasetStmt);
         if (ret != DBERR_OK) {
             return ret;
@@ -461,7 +560,7 @@ namespace parser
         DB_STATUS ret = DBERR_OK;
 
         // after config file has been loaded, parse cmd arguments and overwrite any selected options
-        while ((c = getopt(argc, argv, "a:t:sm:pc:f:q:R:S:ev:z?")) != -1)
+        while ((c = getopt(argc, argv, "a:t:sm:pc:f:q:Q:R:S:ev:z?")) != -1)
         {
             switch (c)
             {
@@ -477,13 +576,18 @@ namespace parser
                     // Dataset R path
                     settingsStmt.datasetStmt.datasetNicknameR = std::string(optarg);
                     settingsStmt.datasetStmt.datasetCount++;
-                    settingsStmt.actionsStmt.loadDatasets = true;
+                    settingsStmt.actionsStmt.loadDatasetR = true;
                     break;
                 case 'S':
                     // Dataset S path
                     settingsStmt.datasetStmt.datasetNicknameS = std::string(optarg);
                     settingsStmt.datasetStmt.datasetCount++;
-                    settingsStmt.actionsStmt.loadDatasets = true;
+                    settingsStmt.actionsStmt.loadDatasetS = true;
+                    break;
+                case 'Q':
+                    // Query dataset Q path
+                    settingsStmt.datasetStmt.nicknameQ = std::string(optarg);
+                    settingsStmt.datasetStmt.queryDatasetSet = true;
                     break;
                 case 't':
                     // system type: LOCAL (1 machine) or CLUSTER (many machines)

@@ -37,6 +37,9 @@ namespace pack
      */
     DB_STATUS packDatasetsNicknames(SerializedMsg<char> &msg);
 
+    /** @brief Packs the given dataset's nickname in the message */
+    DB_STATUS packDatasetNickname(SerializedMsg<char> &msg, Dataset *dataset);
+
     /** @brief Packs the query results based on query type.  */
     DB_STATUS packQueryResults(SerializedMsg<int> &msg, QueryOutput &queryOutput);
 }

@@ -13,8 +13,9 @@ namespace partitioning
     /** @brief Initializes the partitioning for the input dataset.
      * @param[in] dataset Contains the dataset's information but not the contents, 
      * as the partitioning reads from disk and distributes the data.
+     * @param[in] msgType Specifies the message instruction type (partition data, partition queries etc.)
      */
-    DB_STATUS partitionDataset(Dataset *dataset);
+    DB_STATUS partitionDataset(Dataset *dataset, MsgType msgType);
 
     /** @brief Calculates the given dataset's metadata about its dataspace.
      * @param[in] dataset dataset Contains the dataset's information but not the contents.
@@ -24,6 +25,9 @@ namespace partitioning
 
     /** @brief Calculates all partition two-layer classes for a given batch, based on the partitioning method specified in the global configuration. */
     DB_STATUS calculateTwoLayerClasses(GeometryBatch &batch);
+
+    /** @brief Partition a query dataset across the workers. */
+    DB_STATUS partitionQueries(Dataset *dataset);
 }
 
 #endif

@@ -646,6 +646,48 @@ namespace APRIL
                 return ret;
             }
 
+            static DB_STATUS intervalizeRegionShapesNoSave(Dataset &dataset) {
+                // logger::log_task("Generating APRIL in parlalel...");
+                DB_STATUS ret = DBERR_OK;
+                int objectsInFullFile = 0;
+                // loop objects from map
+                #pragma omp parallel reduction(+:objectsInFullFile)
+                {
+                    DB_STATUS local_ret = DBERR_OK;
+                    #pragma omp for
+                    for (int i=0; i<dataset.objectIDs.size(); i++) {
+                        // get next object
+                        Shape* object = dataset.getObject(dataset.objectIDs[i]);
+                        // generate APRIL
+                        AprilData aprilData;
+                        local_ret = intervalizeRegionShape(*object, dataset.aprilConfig.getCellsPerDim(), aprilData);
+                        if (local_ret != DBERR_OK || aprilData.numIntervalsALL == 0) {
+                            // at least 1 ALL interval is needed for each object, otherwise there is an error
+                            #pragma cancel for
+                            ret = local_ret;
+                            logger::log_error(local_ret, "Failed to generate APRIL for object with ID", object->recID);
+                        }
+                        // store in dataset
+                        local_ret = dataset.setAprilDataForSectionAndObjectID(0, object->recID, aprilData);
+                        if (local_ret != DBERR_OK) {
+                            #pragma cancel for
+                            ret = local_ret;
+                            logger::log_error(local_ret, "Parallel intervalization failed for object with ID", object->recID);
+                        }
+                        // count objects
+                        if (aprilData.numIntervalsFULL > 0) {
+                            objectsInFullFile += 1;
+                        }
+                    }
+                }
+                // check if it ended successfully
+                if (ret != DBERR_OK) {
+                    logger::log_error(DBERR_APRIL_CREATE, "Parallel APRIL generation failed.");
+                    return DBERR_APRIL_CREATE;
+                }
+                return ret;
+            }
+
             static DB_STATUS intervalizeNonRegionShapes(Dataset &dataset, FILE* pFileALL, FILE* pFileFULL) {
                 // logger::log_task("Generating APRIL in parlalel...");
                 DB_STATUS ret = DBERR_OK;
@@ -696,6 +738,48 @@ namespace APRIL
                 if (ret != DBERR_OK) {
                     logger::log_error(ret, "Couldn't update object count value in FULL intervals file.");
                     return ret;
+                }
+                return ret;
+            }
+
+            static DB_STATUS intervalizeNonRegionShapesNoSave(Dataset &dataset) {
+                // logger::log_task("Generating APRIL in parlalel...");
+                DB_STATUS ret = DBERR_OK;
+                int objectsInFullFile = 0;
+                // loop objects from map
+                #pragma omp parallel reduction(+:objectsInFullFile)
+                {
+                    DB_STATUS local_ret = DBERR_OK;
+                    #pragma omp for
+                    for (int i=0; i<dataset.objectIDs.size(); i++) {
+                        // get next object
+                        Shape* object = dataset.getObject(dataset.objectIDs[i]);
+                        // generate APRIL
+                        AprilData aprilData;
+                        ret = intervalizeNonRegionShape(*object, dataset.aprilConfig.getCellsPerDim(), aprilData);
+                        if (local_ret != DBERR_OK || aprilData.numIntervalsALL == 0) {
+                            // at least 1 ALL interval is needed for each object, otherwise there is an error
+                            #pragma cancel for
+                            ret = local_ret;
+                            logger::log_error(local_ret, "Failed to generate APRIL for object with ID", object->recID);
+                        }
+                        // store in dataset
+                        local_ret = dataset.setAprilDataForSectionAndObjectID(0, object->recID, aprilData);
+                        if (local_ret != DBERR_OK) {
+                            #pragma cancel for
+                            ret = local_ret;
+                            logger::log_error(local_ret, "Parallel intervalization failed for object with ID", object->recID);
+                        }
+                        // count objects
+                        if (aprilData.numIntervalsFULL > 0) {
+                            objectsInFullFile += 1;
+                        }
+                    }
+                }
+                // check if it ended successfully
+                if (ret != DBERR_OK) {
+                    logger::log_error(DBERR_APRIL_CREATE, "Parallel APRIL generation failed.");
+                    return DBERR_APRIL_CREATE;
                 }
                 return ret;
             }
@@ -760,6 +844,35 @@ namespace APRIL
                 fclose(pFileALL);
                 fflush(pFileFULL);
                 fclose(pFileFULL);
+                return ret;
+            }
+
+            DB_STATUS initNoSave(Dataset &dataset) {
+                DB_STATUS ret = DBERR_OK;
+                // init rasterization environment
+                ret = setRasterBounds(dataset.dataspaceInfo.xMinGlobal, dataset.dataspaceInfo.yMinGlobal, dataset.dataspaceInfo.xMaxGlobal, dataset.dataspaceInfo.yMaxGlobal);
+                if (ret != DBERR_OK) {
+                    return ret;
+                }
+                // switch based on data type
+                switch (dataset.dataType) {
+                    // intervalize dataset objects
+                    case DT_POLYGON:
+                    case DT_RECTANGLE:
+                        ret = intervalizeRegionShapesNoSave(dataset);
+                        break;
+                    case DT_POINT:
+                    case DT_LINESTRING:
+                        ret = intervalizeNonRegionShapesNoSave(dataset);
+                        break;
+                    default:
+                        // error
+                        logger::log_error(DBERR_INVALID_DATATYPE, "Invalid datatype in intervalization:", dataset.dataType);
+                        return DBERR_INVALID_DATATYPE;
+                }
+                if (ret != DBERR_OK) {
+                    logger::log_error(ret, "Failed to load and intervalize dataset contents.");
+                }
                 return ret;
             }
         }

@@ -80,59 +80,66 @@ $(function() {
 <div class="line"><a name="l00008"></a><span class="lineno">    8</span>&#160;    <span class="keywordtype">bool</span> performPartitioning = <span class="keyword">false</span>;</div>
 <div class="line"><a name="l00009"></a><span class="lineno">    9</span>&#160;    std::vector&lt;std::string&gt; createApproximations;</div>
 <div class="line"><a name="l00010"></a><span class="lineno">   10</span>&#160;    <span class="keywordtype">bool</span> performVerification = <span class="keyword">false</span>;</div>
-<div class="line"><a name="l00011"></a><span class="lineno">   11</span>&#160;    <span class="keywordtype">bool</span> loadDatasets = <span class="keyword">false</span>;</div>
-<div class="line"><a name="l00012"></a><span class="lineno">   12</span>&#160;};</div>
-<div class="line"><a name="l00013"></a><span class="lineno">   13</span>&#160; </div>
-<div class="line"><a name="l00015"></a><span class="lineno"><a class="line" href="structDatasetStatement.html">   15</a></span>&#160;<span class="keyword">struct </span><a class="code" href="structDatasetStatement.html">DatasetStatement</a> {</div>
-<div class="line"><a name="l00016"></a><span class="lineno">   16</span>&#160;    std::string queryType = <span class="stringliteral">&quot;&quot;</span>;</div>
-<div class="line"><a name="l00017"></a><span class="lineno">   17</span>&#160;    std::string datasetPathR = <span class="stringliteral">&quot;&quot;</span>, datasetPathS = <span class="stringliteral">&quot;&quot;</span>;</div>
-<div class="line"><a name="l00018"></a><span class="lineno">   18</span>&#160;    std::string datasetNicknameR = <span class="stringliteral">&quot;&quot;</span>, datasetNicknameS = <span class="stringliteral">&quot;&quot;</span>;</div>
-<div class="line"><a name="l00019"></a><span class="lineno">   19</span>&#160;    std::string filetypeR,filetypeS;</div>
-<div class="line"><a name="l00020"></a><span class="lineno">   20</span>&#160;    <span class="keywordtype">int</span> datasetCount = 0;</div>
-<div class="line"><a name="l00021"></a><span class="lineno">   21</span>&#160;    DataType datatypeR, datatypeS;</div>
-<div class="line"><a name="l00022"></a><span class="lineno">   22</span>&#160;    <span class="keywordtype">bool</span> boundsSet = <span class="keyword">false</span>;</div>
-<div class="line"><a name="l00023"></a><span class="lineno">   23</span>&#160;    <span class="keywordtype">double</span> xMinGlobal, yMinGlobal, xMaxGlobal, yMaxGlobal;</div>
-<div class="line"><a name="l00024"></a><span class="lineno">   24</span>&#160;};</div>
-<div class="line"><a name="l00025"></a><span class="lineno">   25</span>&#160; </div>
-<div class="line"><a name="l00027"></a><span class="lineno"><a class="line" href="structQueryStatement.html">   27</a></span>&#160;<span class="keyword">struct </span><a class="code" href="structQueryStatement.html">QueryStatement</a> {</div>
-<div class="line"><a name="l00028"></a><span class="lineno">   28</span>&#160;    std::string queryType = <span class="stringliteral">&quot;&quot;</span>;</div>
-<div class="line"><a name="l00029"></a><span class="lineno">   29</span>&#160;};</div>
-<div class="line"><a name="l00030"></a><span class="lineno">   30</span>&#160; </div>
-<div class="line"><a name="l00032"></a><span class="lineno"><a class="line" href="structSystemOptionsStatement.html">   32</a></span>&#160;<span class="keyword">struct </span><a class="code" href="structSystemOptionsStatement.html">SystemOptionsStatement</a> {</div>
-<div class="line"><a name="l00033"></a><span class="lineno">   33</span>&#160;    std::string setupType = <span class="stringliteral">&quot;&quot;</span>;</div>
-<div class="line"><a name="l00034"></a><span class="lineno">   34</span>&#160;    std::string nodefilePath = <span class="stringliteral">&quot;&quot;</span>;</div>
-<div class="line"><a name="l00035"></a><span class="lineno">   35</span>&#160;    <span class="keywordtype">int</span> nodeCount = -1;</div>
+<div class="line"><a name="l00011"></a><span class="lineno">   11</span>&#160;    <span class="keywordtype">bool</span> loadDatasetR = <span class="keyword">false</span>;</div>
+<div class="line"><a name="l00012"></a><span class="lineno">   12</span>&#160;    <span class="keywordtype">bool</span> loadDatasetS = <span class="keyword">false</span>;</div>
+<div class="line"><a name="l00013"></a><span class="lineno">   13</span>&#160;};</div>
+<div class="line"><a name="l00014"></a><span class="lineno">   14</span>&#160; </div>
+<div class="line"><a name="l00016"></a><span class="lineno"><a class="line" href="structDatasetStatement.html">   16</a></span>&#160;<span class="keyword">struct </span><a class="code" href="structDatasetStatement.html">DatasetStatement</a> {</div>
+<div class="line"><a name="l00017"></a><span class="lineno">   17</span>&#160;    std::string queryType = <span class="stringliteral">&quot;&quot;</span>;</div>
+<div class="line"><a name="l00018"></a><span class="lineno">   18</span>&#160;    std::string queryDatasetPath = <span class="stringliteral">&quot;&quot;</span>;</div>
+<div class="line"><a name="l00019"></a><span class="lineno">   19</span>&#160;    std::string nicknameQ = <span class="stringliteral">&quot;&quot;</span>;</div>
+<div class="line"><a name="l00020"></a><span class="lineno">   20</span>&#160;    std::string filetypeQ = <span class="stringliteral">&quot;&quot;</span>;</div>
+<div class="line"><a name="l00021"></a><span class="lineno">   21</span>&#160;    DataType datatypeQ = DT_INVALID;</div>
+<div class="line"><a name="l00022"></a><span class="lineno">   22</span>&#160;    <span class="keywordtype">bool</span> queryDatasetSet = <span class="keyword">false</span>;</div>
+<div class="line"><a name="l00023"></a><span class="lineno">   23</span>&#160; </div>
+<div class="line"><a name="l00024"></a><span class="lineno">   24</span>&#160;    <span class="keywordtype">int</span> datasetCount = 0;</div>
+<div class="line"><a name="l00025"></a><span class="lineno">   25</span>&#160;    std::string datasetPathR = <span class="stringliteral">&quot;&quot;</span>, datasetPathS = <span class="stringliteral">&quot;&quot;</span>;</div>
+<div class="line"><a name="l00026"></a><span class="lineno">   26</span>&#160;    std::string datasetNicknameR = <span class="stringliteral">&quot;&quot;</span>, datasetNicknameS = <span class="stringliteral">&quot;&quot;</span>;</div>
+<div class="line"><a name="l00027"></a><span class="lineno">   27</span>&#160;    std::string filetypeR,filetypeS;</div>
+<div class="line"><a name="l00028"></a><span class="lineno">   28</span>&#160;    DataType datatypeR = DT_INVALID, datatypeS = DT_INVALID;</div>
+<div class="line"><a name="l00029"></a><span class="lineno">   29</span>&#160;    <span class="keywordtype">bool</span> boundsSet = <span class="keyword">false</span>;</div>
+<div class="line"><a name="l00030"></a><span class="lineno">   30</span>&#160;    <span class="keywordtype">double</span> xMinGlobal, yMinGlobal, xMaxGlobal, yMaxGlobal;</div>
+<div class="line"><a name="l00031"></a><span class="lineno">   31</span>&#160;};</div>
+<div class="line"><a name="l00032"></a><span class="lineno">   32</span>&#160; </div>
+<div class="line"><a name="l00034"></a><span class="lineno"><a class="line" href="structQueryStatement.html">   34</a></span>&#160;<span class="keyword">struct </span><a class="code" href="structQueryStatement.html">QueryStatement</a> {</div>
+<div class="line"><a name="l00035"></a><span class="lineno">   35</span>&#160;    std::string queryType = <span class="stringliteral">&quot;&quot;</span>;</div>
 <div class="line"><a name="l00036"></a><span class="lineno">   36</span>&#160;};</div>
 <div class="line"><a name="l00037"></a><span class="lineno">   37</span>&#160; </div>
-<div class="line"><a name="l00039"></a><span class="lineno"><a class="line" href="structSettingsStatement.html">   39</a></span>&#160;<span class="keyword">struct </span><a class="code" href="structSettingsStatement.html">SettingsStatement</a> {</div>
-<div class="line"><a name="l00040"></a><span class="lineno">   40</span>&#160;    std::string configFilePath;</div>
-<div class="line"><a name="l00041"></a><span class="lineno">   41</span>&#160;    <a class="code" href="structActionsStatement.html">ActionsStatement</a> actionsStmt;</div>
-<div class="line"><a name="l00042"></a><span class="lineno">   42</span>&#160;    <a class="code" href="structQueryStatement.html">QueryStatement</a> queryStmt;</div>
-<div class="line"><a name="l00043"></a><span class="lineno">   43</span>&#160;    <a class="code" href="structSystemOptionsStatement.html">SystemOptionsStatement</a> sysOpsStmt;</div>
-<div class="line"><a name="l00044"></a><span class="lineno">   44</span>&#160;    <a class="code" href="structDatasetStatement.html">DatasetStatement</a> datasetStmt;</div>
-<div class="line"><a name="l00045"></a><span class="lineno">   45</span>&#160;};</div>
-<div class="line"><a name="l00046"></a><span class="lineno">   46</span>&#160; </div>
-<div class="line"><a name="l00048"></a><span class="lineno">   48</span>&#160;<span class="keyword">namespace </span><a class="code" href="namespacestatement.html">statement</a></div>
-<div class="line"><a name="l00049"></a><span class="lineno">   49</span>&#160;{</div>
-<div class="line"><a name="l00054"></a><span class="lineno">   54</span>&#160;    DB_STATUS <a class="code" href="namespacestatement.html#ad1f9aaf5994af16525159c0593a9e283">getPartitioningType</a>(std::string &amp;typeStr, PartitioningType &amp;type);</div>
-<div class="line"><a name="l00055"></a><span class="lineno">   55</span>&#160; </div>
-<div class="line"><a name="l00060"></a><span class="lineno">   60</span>&#160;    DB_STATUS <a class="code" href="namespacestatement.html#ab925bf63088f3560cc2c9364dc8ff399">getFiletype</a>(std::string &amp;filetypeStr, FileType &amp;filetype);</div>
-<div class="line"><a name="l00061"></a><span class="lineno">   61</span>&#160; </div>
-<div class="line"><a name="l00066"></a><span class="lineno">   66</span>&#160;    DB_STATUS <a class="code" href="namespacestatement.html#abb15700635f14aca0fcb2ac59e878d3c">getCreateApproximationAction</a>(std::string &amp;approximationStr, <a class="code" href="structAction.html">Action</a> &amp;actionType);</div>
-<div class="line"><a name="l00067"></a><span class="lineno">   67</span>&#160;}</div>
+<div class="line"><a name="l00039"></a><span class="lineno"><a class="line" href="structSystemOptionsStatement.html">   39</a></span>&#160;<span class="keyword">struct </span><a class="code" href="structSystemOptionsStatement.html">SystemOptionsStatement</a> {</div>
+<div class="line"><a name="l00040"></a><span class="lineno">   40</span>&#160;    std::string setupType = <span class="stringliteral">&quot;&quot;</span>;</div>
+<div class="line"><a name="l00041"></a><span class="lineno">   41</span>&#160;    std::string nodefilePath = <span class="stringliteral">&quot;&quot;</span>;</div>
+<div class="line"><a name="l00042"></a><span class="lineno">   42</span>&#160;    <span class="keywordtype">int</span> nodeCount = -1;</div>
+<div class="line"><a name="l00043"></a><span class="lineno">   43</span>&#160;};</div>
+<div class="line"><a name="l00044"></a><span class="lineno">   44</span>&#160; </div>
+<div class="line"><a name="l00046"></a><span class="lineno"><a class="line" href="structSettingsStatement.html">   46</a></span>&#160;<span class="keyword">struct </span><a class="code" href="structSettingsStatement.html">SettingsStatement</a> {</div>
+<div class="line"><a name="l00047"></a><span class="lineno">   47</span>&#160;    std::string configFilePath;</div>
+<div class="line"><a name="l00048"></a><span class="lineno">   48</span>&#160;    <a class="code" href="structActionsStatement.html">ActionsStatement</a> actionsStmt;</div>
+<div class="line"><a name="l00049"></a><span class="lineno">   49</span>&#160;    <a class="code" href="structQueryStatement.html">QueryStatement</a> queryStmt;</div>
+<div class="line"><a name="l00050"></a><span class="lineno">   50</span>&#160;    <a class="code" href="structSystemOptionsStatement.html">SystemOptionsStatement</a> sysOpsStmt;</div>
+<div class="line"><a name="l00051"></a><span class="lineno">   51</span>&#160;    <a class="code" href="structDatasetStatement.html">DatasetStatement</a> datasetStmt;</div>
+<div class="line"><a name="l00052"></a><span class="lineno">   52</span>&#160;};</div>
+<div class="line"><a name="l00053"></a><span class="lineno">   53</span>&#160; </div>
+<div class="line"><a name="l00055"></a><span class="lineno">   55</span>&#160;<span class="keyword">namespace </span><a class="code" href="namespacestatement.html">statement</a></div>
+<div class="line"><a name="l00056"></a><span class="lineno">   56</span>&#160;{</div>
+<div class="line"><a name="l00061"></a><span class="lineno">   61</span>&#160;    DB_STATUS <a class="code" href="namespacestatement.html#ad1f9aaf5994af16525159c0593a9e283">getPartitioningType</a>(std::string &amp;typeStr, PartitioningType &amp;type);</div>
+<div class="line"><a name="l00062"></a><span class="lineno">   62</span>&#160; </div>
+<div class="line"><a name="l00067"></a><span class="lineno">   67</span>&#160;    DB_STATUS <a class="code" href="namespacestatement.html#ab925bf63088f3560cc2c9364dc8ff399">getFiletype</a>(std::string &amp;filetypeStr, FileType &amp;filetype);</div>
 <div class="line"><a name="l00068"></a><span class="lineno">   68</span>&#160; </div>
-<div class="line"><a name="l00069"></a><span class="lineno">   69</span>&#160;<span class="preprocessor">#endif</span></div>
+<div class="line"><a name="l00073"></a><span class="lineno">   73</span>&#160;    DB_STATUS <a class="code" href="namespacestatement.html#abb15700635f14aca0fcb2ac59e878d3c">getCreateApproximationAction</a>(std::string &amp;approximationStr, <a class="code" href="structAction.html">Action</a> &amp;actionType);</div>
+<div class="line"><a name="l00074"></a><span class="lineno">   74</span>&#160;}</div>
+<div class="line"><a name="l00075"></a><span class="lineno">   75</span>&#160; </div>
+<div class="line"><a name="l00076"></a><span class="lineno">   76</span>&#160;<span class="preprocessor">#endif</span></div>
 <div class="ttc" id="acontainers_8h_html"><div class="ttname"><a href="containers_8h.html">containers.h</a></div><div class="ttdoc">Contains the struct definitions.</div></div>
 <div class="ttc" id="anamespacestatement_html"><div class="ttname"><a href="namespacestatement.html">statement</a></div><div class="ttdoc">Statement related methods.</div><div class="ttdef"><b>Definition:</b> <a href="statement_8cpp_source.html#l00003">statement.cpp:4</a></div></div>
 <div class="ttc" id="anamespacestatement_html_ab925bf63088f3560cc2c9364dc8ff399"><div class="ttname"><a href="namespacestatement.html#ab925bf63088f3560cc2c9364dc8ff399">statement::getFiletype</a></div><div class="ttdeci">DB_STATUS getFiletype(std::string &amp;filetypeStr, FileType &amp;filetype)</div><div class="ttdoc">Sets the input data file type.</div><div class="ttdef"><b>Definition:</b> <a href="statement_8cpp_source.html#l00017">statement.cpp:17</a></div></div>
 <div class="ttc" id="anamespacestatement_html_abb15700635f14aca0fcb2ac59e878d3c"><div class="ttname"><a href="namespacestatement.html#abb15700635f14aca0fcb2ac59e878d3c">statement::getCreateApproximationAction</a></div><div class="ttdeci">DB_STATUS getCreateApproximationAction(std::string &amp;approximationStr, Action &amp;action)</div><div class="ttdoc">Sets the create approximation action (if any).</div><div class="ttdef"><b>Definition:</b> <a href="statement_8cpp_source.html#l00031">statement.cpp:31</a></div></div>
 <div class="ttc" id="anamespacestatement_html_ad1f9aaf5994af16525159c0593a9e283"><div class="ttname"><a href="namespacestatement.html#ad1f9aaf5994af16525159c0593a9e283">statement::getPartitioningType</a></div><div class="ttdeci">DB_STATUS getPartitioningType(std::string &amp;typeStr, PartitioningType &amp;type)</div><div class="ttdoc">Sets the partitioning type based on the user specification.</div><div class="ttdef"><b>Definition:</b> <a href="statement_8cpp_source.html#l00005">statement.cpp:5</a></div></div>
-<div class="ttc" id="astructAction_html"><div class="ttname"><a href="structAction.html">Action</a></div><div class="ttdoc">Holds all partitioning related information.</div><div class="ttdef"><b>Definition:</b> <a href="containers_8h_source.html#l01323">containers.h:1323</a></div></div>
+<div class="ttc" id="astructAction_html"><div class="ttname"><a href="structAction.html">Action</a></div><div class="ttdoc">Holds all partitioning related information.</div><div class="ttdef"><b>Definition:</b> <a href="containers_8h_source.html#l01411">containers.h:1411</a></div></div>
 <div class="ttc" id="astructActionsStatement_html"><div class="ttname"><a href="structActionsStatement.html">ActionsStatement</a></div><div class="ttdoc">Statement containing the requested actions, based on the user and system configuration.</div><div class="ttdef"><b>Definition:</b> <a href="statement_8h_source.html#l00007">statement.h:7</a></div></div>
-<div class="ttc" id="astructDatasetStatement_html"><div class="ttname"><a href="structDatasetStatement.html">DatasetStatement</a></div><div class="ttdoc">Statement containing all the dataset related parameters.</div><div class="ttdef"><b>Definition:</b> <a href="statement_8h_source.html#l00015">statement.h:15</a></div></div>
-<div class="ttc" id="astructQueryStatement_html"><div class="ttname"><a href="structQueryStatement.html">QueryStatement</a></div><div class="ttdoc">Statement containing the query info.</div><div class="ttdef"><b>Definition:</b> <a href="statement_8h_source.html#l00027">statement.h:27</a></div></div>
-<div class="ttc" id="astructSettingsStatement_html"><div class="ttname"><a href="structSettingsStatement.html">SettingsStatement</a></div><div class="ttdoc">Statement containing all system and user specified parameters for runtime.</div><div class="ttdef"><b>Definition:</b> <a href="statement_8h_source.html#l00039">statement.h:39</a></div></div>
-<div class="ttc" id="astructSystemOptionsStatement_html"><div class="ttname"><a href="structSystemOptionsStatement.html">SystemOptionsStatement</a></div><div class="ttdoc">Statement containing the distributed system options.</div><div class="ttdef"><b>Definition:</b> <a href="statement_8h_source.html#l00032">statement.h:32</a></div></div>
+<div class="ttc" id="astructDatasetStatement_html"><div class="ttname"><a href="structDatasetStatement.html">DatasetStatement</a></div><div class="ttdoc">Statement containing all the input dataset related parameters.</div><div class="ttdef"><b>Definition:</b> <a href="statement_8h_source.html#l00016">statement.h:16</a></div></div>
+<div class="ttc" id="astructQueryStatement_html"><div class="ttname"><a href="structQueryStatement.html">QueryStatement</a></div><div class="ttdoc">Statement containing the query info.</div><div class="ttdef"><b>Definition:</b> <a href="statement_8h_source.html#l00034">statement.h:34</a></div></div>
+<div class="ttc" id="astructSettingsStatement_html"><div class="ttname"><a href="structSettingsStatement.html">SettingsStatement</a></div><div class="ttdoc">Statement containing all system and user specified parameters for runtime.</div><div class="ttdef"><b>Definition:</b> <a href="statement_8h_source.html#l00046">statement.h:46</a></div></div>
+<div class="ttc" id="astructSystemOptionsStatement_html"><div class="ttname"><a href="structSystemOptionsStatement.html">SystemOptionsStatement</a></div><div class="ttdoc">Statement containing the distributed system options.</div><div class="ttdef"><b>Definition:</b> <a href="statement_8h_source.html#l00039">statement.h:39</a></div></div>
 </div><!-- fragment --></div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>

@@ -14,7 +14,7 @@ namespace storage
                 // object count
                 size_t elementsRead = fread(&dataset.totalObjects, sizeof(size_t), 1, pFile);
                 if (elementsRead != 1) {
-                    logger::log_error(DBERR_DISK_READ_FAILED, "Couldn't read the object count");
+                    logger::log_error(DBERR_DISK_READ_FAILED, "Couldn't read the object count. Read", elementsRead, "instead of 1");
                     return DBERR_DISK_READ_FAILED;
                 }
                 // read data type

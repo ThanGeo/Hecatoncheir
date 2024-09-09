@@ -296,7 +296,7 @@ namespace comm
                 continueListening = 0;
                 // and write total objects in the begining of the partitioned file
                 ret = storage::writer::updateObjectCountInFile(outFile, dataset->totalObjects);
-                logger::log_success("Saved", dataset->totalObjects,"total objects.");
+                // logger::log_success("Saved", dataset->totalObjects,"total objects.");
                 if (ret != DBERR_OK) {
                     logger::log_error(DBERR_DISK_WRITE_FAILED, "Failed when updating partition file object count");
                     return DBERR_DISK_WRITE_FAILED;
@@ -306,7 +306,33 @@ namespace comm
             return ret;
         }
 
-        static DB_STATUS pullSerializedMessageAndHandle(MPI_Status status, FILE* outFile, Dataset *dataset, int &continueListening) {
+        static DB_STATUS deserializeQueryBatchMessage(char *buffer, int bufferSize, Dataset *dataset, int &continueListening) {
+            DB_STATUS ret = DBERR_OK;
+            GeometryBatch batch;
+            // deserialize the batch
+            batch.deserialize(buffer, bufferSize);
+            if (batch.objectCount > 0) {
+                // calculate two layer classes for each object, in each partition
+                ret = partitioning::calculateTwoLayerClasses(batch);
+                if (ret != DBERR_OK) {
+                    logger::log_error(ret, "Calculating two layer index classes failed for batch.");
+                    return ret;
+                }
+                // add to dataset
+                ret = dataset->addDataFromGeometryBatch(batch);
+                if (ret != DBERR_OK) {
+                    logger::log_error(ret, "Adding data from batch to query dataset failed.");
+                    return ret;
+                }
+            } else {
+                // empty batch, set flag to stop listening for this dataset
+                continueListening = 0;
+            }
+
+            return ret;
+        }
+
+        static DB_STATUS pullDataPartitionMessage(MPI_Status status, FILE* outFile, Dataset *dataset, int &continueListening) {
             int tag = status.MPI_TAG;
             SerializedMsg<char> msg(MPI_CHAR);
             // receive the message
@@ -322,6 +348,34 @@ namespace comm
                 case MSG_BATCH_LINESTRING:
                 case MSG_BATCH_POLYGON:
                     ret = deserializeBatchMessageAndStore(msg.data, msg.count, outFile, dataset, continueListening);
+                    if (ret != DBERR_OK) {
+                        return ret;
+                    }
+                    break;
+                default:
+                    logger::log_error(DBERR_COMM_INVALID_MSG_TAG, "Invalid message tag");
+                    break;
+            }
+            // free memory
+            free(msg.data);
+            return ret;
+        }
+
+        static DB_STATUS pullQueryPartitionMessage(MPI_Status status, Dataset *dataset, int &continueListening) {
+            int tag = status.MPI_TAG;
+            SerializedMsg<char> msg(MPI_CHAR);
+            // receive the message
+            DB_STATUS ret = recv::receiveMessage(status, msg.type, g_local_comm, msg);
+            if (ret != DBERR_OK) {
+                logger::log_error(ret, "Failed pulling serialized message");
+                return ret;
+            }
+            // deserialize based on tag
+            switch (tag) {
+                case MSG_BATCH_POINT:
+                case MSG_BATCH_LINESTRING:
+                case MSG_BATCH_POLYGON:
+                    ret = deserializeQueryBatchMessage(msg.data, msg.count, dataset, continueListening);
                     if (ret != DBERR_OK) {
                         return ret;
                     }
@@ -421,7 +475,7 @@ namespace comm
                     case MSG_BATCH_LINESTRING:
                     case MSG_BATCH_POLYGON:
                         /* batch geometry message */
-                        ret = pullSerializedMessageAndHandle(status, outFile, &dataset, listen);
+                        ret = pullDataPartitionMessage(status, outFile, &dataset, listen);
                         if (ret != DBERR_OK) {
                             goto STOP_LISTENING;
                         }  
@@ -440,6 +494,122 @@ STOP_LISTENING:
             }
             // respond
             if (ret == DBERR_OK) {
+                // g_config.partitioningMethod->printInfo();
+                // send ACK back that all data for this dataset has been received and processed successfully
+                ret = send::sendResponse(PARENT_RANK, MSG_ACK, g_local_comm);
+                if (ret != DBERR_OK) {
+                    logger::log_error(ret, "Send ACK failed.");
+                }
+            } else {
+                // there was an error, send NACK and propagate error code locally
+                DB_STATUS errorCode = ret;
+                ret = send::sendResponse(PARENT_RANK, MSG_NACK, g_local_comm);
+                if (ret != DBERR_OK) {
+                    logger::log_error(ret, "Send NACK failed.");
+                    return ret;
+                }
+                return errorCode;
+            }
+            return ret;
+        }
+
+        static DB_STATUS listenForQueryBatches(MPI_Status status) {
+            // probe for approriate message
+            DB_STATUS ret = probeBlocking(PARENT_RANK, MSG_INSTR_QUERY_BATCHES_INIT, g_local_comm, status);
+            if (ret != DBERR_OK) {
+                return ret;
+            }
+            // receive the message
+            ret = recv::receiveInstructionMessage(PARENT_RANK, status.MPI_TAG, g_local_comm, status);
+            if (ret != DBERR_OK) {
+                return ret;
+            }
+            // begin batch receival
+            Dataset queryDataset;
+            SerializedMsg<char> datasetInfoMsg(MPI_CHAR);
+            int listen = 1;
+            // proble blockingly for the dataset info
+            ret = probeBlocking(PARENT_RANK, MPI_ANY_TAG, g_local_comm, status);
+            if (ret != DBERR_OK) {
+                return ret;
+            }
+            // verify that it is the proper message
+            if (status.MPI_TAG != MSG_DATASET_INFO) {
+                logger::log_error(DBERR_COMM_WRONG_MESSAGE_ORDER, "Partitioning: Expected dataset info message but received message with tag", status.MPI_TAG);
+                return DBERR_COMM_WRONG_MESSAGE_ORDER;
+            }
+            // retrieve dataset info pack
+            ret = recv::receiveMessage(status, datasetInfoMsg.type, g_local_comm, datasetInfoMsg);
+            if (ret != DBERR_OK) {
+                logger::log_error(ret, "Failed pulling the dataset info message");
+                goto STOP_LISTENING;
+            }
+            // create dataset from the received message
+            ret = generateDatasetFromMessage(datasetInfoMsg, queryDataset);
+            if (ret != DBERR_OK) {
+                logger::log_error(ret, "Failed creating the dataset from the dataset info message");
+                goto STOP_LISTENING;
+            }
+            // free memory
+            free(datasetInfoMsg.data);
+            // set dataset dataspace info to the global configuration
+            queryDataset.dataspaceInfo.set(g_config.datasetInfo.dataspaceInfo);
+            // update the grids' dataspace info in the partitioning object 
+            g_config.partitioningMethod->setDistGridDataspace(queryDataset.dataspaceInfo);
+            g_config.partitioningMethod->setPartGridDataspace(queryDataset.dataspaceInfo);
+
+            // listen for dataset batches until an empty batch arrives
+            while(listen) {
+                // proble blockingly for batch
+                ret = probeBlocking(PARENT_RANK, MPI_ANY_TAG, g_local_comm, status);
+                if (ret != DBERR_OK) {
+                    goto STOP_LISTENING;
+                }
+                // pull
+                switch (status.MPI_TAG) {
+                    case MSG_INSTR_FIN: // todo: maybe this is not needed
+                        /* stop listening for instructions */
+                        ret = recv::receiveInstructionMessage(PARENT_RANK, status.MPI_TAG, g_local_comm, status);
+                        if (ret == DBERR_OK) {
+                            // break the listening loop
+                            return DB_FIN;
+                        }
+                        goto STOP_LISTENING;
+                    case MSG_BATCH_POINT:
+                    case MSG_BATCH_LINESTRING:
+                    case MSG_BATCH_POLYGON:
+                        /* batch geometry message */
+                        ret = pullQueryPartitionMessage(status, &queryDataset, listen);
+                        if (ret != DBERR_OK) {
+                            goto STOP_LISTENING;
+                        }
+                        break;
+                    default:
+                        logger::log_error(DBERR_COMM_WRONG_MESSAGE_ORDER, "After the dataset info pack, only geometry packs are expected. Received message with tag", status.MPI_TAG);
+                        ret = DBERR_COMM_WRONG_MESSAGE_ORDER;
+                        goto STOP_LISTENING;
+                }
+            }
+STOP_LISTENING:
+            // respond
+            if (ret == DBERR_OK) {
+                // if all ok, create APRIL for the query dataset
+                ret = APRIL::generation::memory::initNoSave(queryDataset);
+                if (ret != DBERR_OK) {
+                    logger::log_error(ret, "Generating APRIL for query dataset failed.");
+                    return ret;
+                }
+                // save query dataset
+                g_config.datasetInfo.addQueryDataset(queryDataset);
+                // switch dataset pointers
+                g_config.datasetInfo.setDatasetSptr(g_config.datasetInfo.getDatasetR());
+                g_config.datasetInfo.setDatasetRptrToQuery();
+                
+                // queryDataset.printTwoLayerInfo();
+                // queryDataset.printInfo();
+                // printf("R objects: %ld\n", g_config.datasetInfo.getDatasetR()->objectIDs.size());
+                // printf("S objects: %ld\n", g_config.datasetInfo.getDatasetS()->objectIDs.size());
+                // g_config.partitioningMethod->printInfo();
                 // send ACK back that all data for this dataset has been received and processed successfully
                 ret = send::sendResponse(PARENT_RANK, MSG_ACK, g_local_comm);
                 if (ret != DBERR_OK) {
@@ -474,7 +644,7 @@ STOP_LISTENING:
             switch (status.MPI_TAG) {
                 case MSG_INSTR_FIN:
                     return DB_FIN;
-                case MSG_INSTR_PARTITIONING_INIT:
+                case MSG_INSTR_DATA_PARTITIONING_INIT:
                     /* begin dataset partitioning */
                     ret = listenForDatasetPartitioning(status);
                     if (ret != DBERR_OK) {
@@ -482,7 +652,7 @@ STOP_LISTENING:
                     }
                     break;
                 default:
-                    logger::log_error(DBERR_COMM_UNKNOWN_INSTR, "Unknown instruction");
+                    logger::log_error(DBERR_COMM_UNKNOWN_INSTR, "Unknown/Out-of-order instruction. Tag:", status.MPI_TAG);
                     return DBERR_COMM_UNKNOWN_INSTR;
             }
             return ret;
@@ -604,19 +774,46 @@ STOP_LISTENING:
             }
             // free memory
             free(msg.data);
-            QueryOutput queryOutput;
-            // execute
-            ret = twolayer::processQuery(queryOutput);
-            if (ret != DBERR_OK) {
-                logger::log_error(ret, "Processing query failed.");
-                return ret;
+            // handle based on query type
+            if (g_config.queryInfo.type == Q_RANGE) {
+                // range query, listen for batches
+                ret = listenForQueryBatches(status);
+                if (ret != DBERR_OK) {
+                    return ret;
+                }
+
+                QueryOutput queryOutput;
+                // execute
+                logger::log_task("Processing query...");
+                ret = twolayer::processQuery(queryOutput);
+                if (ret != DBERR_OK) {
+                    logger::log_error(ret, "Processing query failed.");
+                    return ret;
+                }
+                // send the result to the local controller
+                logger::log_task("Responding with results...");
+                ret = respondWithQueryResults(queryOutput);
+                if (ret != DBERR_OK) {
+                    logger::log_error(ret, "Responding with query results failed.");
+                    return ret;
+                }
+            } else {
+                // join, evaluate straight away
+                QueryOutput queryOutput;
+                // execute
+                ret = twolayer::processQuery(queryOutput);
+                if (ret != DBERR_OK) {
+                    logger::log_error(ret, "Processing query failed.");
+                    return ret;
+                }
+                // send the result to the local controller
+                ret = respondWithQueryResults(queryOutput);
+                if (ret != DBERR_OK) {
+                    logger::log_error(ret, "Responding with query results failed.");
+                    return ret;
+                }
             }
-            // send the result to the local controller
-            ret = respondWithQueryResults(queryOutput);
-            if (ret != DBERR_OK) {
-                logger::log_error(ret, "Responding with query results failed.");
-                return ret;
-            }
+
             return ret;
         }
 
@@ -657,7 +854,7 @@ STOP_LISTENING:
                 if (ret != DBERR_OK) {
                     logger::log_error(DBERR_DISK_READ_FAILED, "Failed loading partition file MBRs");
                     goto EXIT_SAFELY;
-                }  
+                }
             }
             // dont forget to update the dataspace info of the configuration
             g_config.datasetInfo.updateDataspace();
@@ -764,7 +961,8 @@ EXIT_SAFELY:
                         return ret;
                     }
                     break;
-                case MSG_LOAD_DATASETS:
+                case MSG_LOAD_DATASET_R:
+                case MSG_LOAD_DATASET_S:
                     /* load datasets */
                     ret = handleLoadDatasetsMessage(status);
                     if (ret != DBERR_OK) {
@@ -841,8 +1039,6 @@ STOP_LISTENING:
             }
             return ret;
         }
-
-        
 
         DB_STATUS broadcastSysInfo() {
             SerializedMsg<char> msgPack(MPI_CHAR);
@@ -968,7 +1164,8 @@ STOP_LISTENING:
                         return ret;
                     }
                     return DB_FIN;
-                case MSG_INSTR_PARTITIONING_INIT:
+                case MSG_INSTR_QUERY_BATCHES_INIT:
+                case MSG_INSTR_DATA_PARTITIONING_INIT:
                     /* init partitioning */
                     ret = forward::forwardInstructionMessage(g_host_rank, status.MPI_TAG, g_global_comm, AGENT_RANK, g_local_comm);
                     if (ret != DBERR_OK) {
@@ -980,11 +1177,12 @@ STOP_LISTENING:
                         return ret;
                     }
                     break;
-                case MSG_LOAD_DATASETS:
+                case MSG_LOAD_DATASET_R:
+                case MSG_LOAD_DATASET_S:
                 case MSG_SYS_INFO:
                     /* char messages */
                     {
-                        SerializedMsg<char> msg(MPI_CHAR);
+                        SerializedMsg<char> msg;
                         ret = forward::forwardAndWaitResponse(msg, status);
                         if (ret != DBERR_OK) {
                             return ret;

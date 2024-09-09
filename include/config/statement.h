@@ -8,17 +8,24 @@ struct ActionsStatement {
     bool performPartitioning = false;
     std::vector<std::string> createApproximations;
     bool performVerification = false;
-    bool loadDatasets = false;
+    bool loadDatasetR = false;
+    bool loadDatasetS = false;
 };
 
-/** @brief Statement containing all the dataset related parameters. */
+/** @brief Statement containing all the input dataset related parameters. */
 struct DatasetStatement {
     std::string queryType = "";
+    std::string queryDatasetPath = "";
+    std::string nicknameQ = "";
+    std::string filetypeQ = "";
+    DataType datatypeQ = DT_INVALID;
+    bool queryDatasetSet = false;
+
+    int datasetCount = 0;
     std::string datasetPathR = "", datasetPathS = "";
     std::string datasetNicknameR = "", datasetNicknameS = "";
     std::string filetypeR,filetypeS;
-    int datasetCount = 0;
-    DataType datatypeR, datatypeS;
+    DataType datatypeR = DT_INVALID, datatypeS = DT_INVALID;
     bool boundsSet = false;
     double xMinGlobal, yMinGlobal, xMaxGlobal, yMaxGlobal;
 };

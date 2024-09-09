@@ -19,6 +19,7 @@ namespace storage
             // local machine
             dataset.path += "_Node" + std::to_string(g_parent_original_rank) + "_" + std::to_string(g_config.partitioningMethod->getGlobalPPD()) + ".dat";
         }
+        // logger::log_success("Generated partition filepath:", dataset.path);
         return DBERR_OK;
     }
 
