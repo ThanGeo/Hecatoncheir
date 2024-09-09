@@ -14,10 +14,10 @@ namespace storage
         dataset.path = g_config.dirPaths.partitionsPath + dataset.nickname;
         if (g_config.options.setupType == SYS_CLUSTER) {
             // cluster
-            dataset.path += "_" + std::to_string(g_config.partitioningMethod->getDistributionPPD()) + ".dat";
+            dataset.path += "_" + std::to_string(g_config.partitioningMethod->getGlobalPPD()) + ".dat";
         } else {
             // local machine
-            dataset.path += "_Node" + std::to_string(g_parent_original_rank) + "_" + std::to_string(g_config.partitioningMethod->getDistributionPPD()) + ".dat";
+            dataset.path += "_Node" + std::to_string(g_parent_original_rank) + "_" + std::to_string(g_config.partitioningMethod->getGlobalPPD()) + ".dat";
         }
         return DBERR_OK;
     }

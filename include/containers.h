@@ -1183,6 +1183,9 @@ struct PartitioningMethod {
     /** @brief Abstract method. Returns the number of partitions per dimension in the partitioning grid. */
     virtual int getPartitioningPPD() = 0;
 
+    /** @brief Abstract method. Returns the number of partitions per dimension in the partitioning grid. */
+    virtual int getGlobalPPD() = 0;
+
     /** @brief Sets the distribution grid's dataspace info. (bounds and extent) */
     void setDistGridDataspace(double xMin, double yMin, double xMax, double yMax) {
         distGridDataspaceInfo.set(xMin, yMin, xMax, yMax);
@@ -1248,6 +1251,9 @@ public:
     /** @brief Returns the partitioning (fine) grid's partitions per dimension number. */
     int getPartitioningPPD() override;
 
+    /** @brief Returns the partitioning (fine) grid's partitions per dimension number. */
+    int getGlobalPPD() override;
+
     /** @brief Set the fine grid's dataspace info. */
     void setPartGridDataspace(double xMin, double yMin, double xMax, double yMax) override;
 
@@ -1278,6 +1284,9 @@ public:
 
     /** @brief Returns the partitioning (fine) grid's partitions per dimension number. */
     int getPartitioningPPD() override;
+
+    /** @brief Returns the partitioning (fine) grid's partitions per dimension number. */
+    int getGlobalPPD() override;
 
     /** @brief Dist grid = part grid. */
     void setPartGridDataspace(double xMin, double yMin, double xMax, double yMax) override;

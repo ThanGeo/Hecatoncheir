@@ -371,7 +371,7 @@ namespace refinement
 
         void refineIntersectionJoin(Shape* objR, Shape* objS, QueryOutput &queryOutput) {
             if (objR->intersects(*objS)) {
-                // printf("%d,%d\n", objR->recID, objS.recID);
+                // printf("%ld,%ld\n", objR->recID, objS->recID);
                 queryOutput.countResult();
             }
         }

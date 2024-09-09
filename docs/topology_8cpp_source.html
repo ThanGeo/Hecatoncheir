@@ -427,7 +427,7 @@ $(function() {
 <div class="line"><a name="l00367"></a><span class="lineno">  367</span>&#160;        </div>
 <div class="line"><a name="l00372"></a><span class="lineno"><a class="line" href="namespacerefinement_1_1relate.html#a45401e61973c8226ee2b1fe1f375055c">  372</a></span>&#160;        <span class="keywordtype">void</span> <a class="code" href="namespacerefinement_1_1relate.html#a45401e61973c8226ee2b1fe1f375055c">refineIntersectionJoin</a>(<a class="code" href="structShape.html">Shape</a>* objR, <a class="code" href="structShape.html">Shape</a>* objS, <a class="code" href="structQueryOutput.html">QueryOutput</a> &amp;queryOutput) {</div>
 <div class="line"><a name="l00373"></a><span class="lineno">  373</span>&#160;            <span class="keywordflow">if</span> (objR-&gt;<a class="code" href="structShape.html#a540f907bd548182b8b0ec4fcdd5e7b50">intersects</a>(*objS)) {</div>
-<div class="line"><a name="l00374"></a><span class="lineno">  374</span>&#160;                <span class="comment">// printf(&quot;%d,%d\n&quot;, objR-&gt;recID, objS.recID);</span></div>
+<div class="line"><a name="l00374"></a><span class="lineno">  374</span>&#160;                <span class="comment">// printf(&quot;%ld,%ld\n&quot;, objR-&gt;recID, objS-&gt;recID);</span></div>
 <div class="line"><a name="l00375"></a><span class="lineno">  375</span>&#160;                queryOutput.countResult();</div>
 <div class="line"><a name="l00376"></a><span class="lineno">  376</span>&#160;            }</div>
 <div class="line"><a name="l00377"></a><span class="lineno">  377</span>&#160;        }</div>

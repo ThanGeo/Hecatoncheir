@@ -453,6 +453,10 @@ namespace partitioning
                 xMax = std::max(xMax, geometry.coords[i]);
                 yMax = std::max(yMax, geometry.coords[i+1]);
             }             
+            // if (geometry.recID == 10582) {
+            //     printf("MBR: (%f,%f),(%f,%f)\n", xMin, yMin, xMax, yMax);
+            //     printf("%d partitions in dist grid\n", geometry.partitionCount);
+            // }
             // vector for the new partitions
             std::vector<int> newPartitions;
             // for each distribution partition
@@ -473,10 +477,11 @@ namespace partitioning
                 TwoLayerClass objectClassInDistributionPartition = getTwoLayerClassForMBRandPartition(xMin, yMin, distPartitionXmin, distPartitionYmin);
                 // printf("Object class in parent partition: %s\n", mapping::twoLayerClassIntToStr(objectClassInDistributionPartition).c_str());
                 // get the indices of the start/end part partitions
-                int localPartitionXstart = (xMin - distPartitionXmin) / g_config.partitioningMethod->getPartPartionExtentX();
-                int localPartitionYstart = (yMin - distPartitionYmin) / g_config.partitioningMethod->getPartPartionExtentY();
-                int localPartitionXend = (xMax - distPartitionXmin) / g_config.partitioningMethod->getPartPartionExtentX();
-                int localPartitionYend = (yMax - distPartitionYmin) / g_config.partitioningMethod->getPartPartionExtentY();
+                int localPartitionXstart = (xMin - distPartitionXmin) / (g_config.partitioningMethod->getDistPartionExtentX() / g_config.partitioningMethod->getPartitioningPPD());
+                int localPartitionYstart = (yMin - distPartitionYmin) / (g_config.partitioningMethod->getDistPartionExtentY() / g_config.partitioningMethod->getPartitioningPPD());
+                int localPartitionXend = (xMax - distPartitionXmin) / (g_config.partitioningMethod->getDistPartionExtentX() / g_config.partitioningMethod->getPartitioningPPD());
+                int localPartitionYend = (yMax - distPartitionYmin) / (g_config.partitioningMethod->getDistPartionExtentY() / g_config.partitioningMethod->getPartitioningPPD());
+                
                 // printf("Local partition start/end: (%d,%d),(%d,%d)\n", localPartitionXstart, localPartitionYstart, localPartitionXend, localPartitionYend);
                 // adjust (todo: check whether any of these happen, discard the rest)
                 if (localPartitionXstart < 0) {
@@ -503,60 +508,48 @@ namespace partitioning
                 else if (localPartitionYend > g_config.partitioningMethod->getPartitioningPPD()-1) {
                     localPartitionYend = g_config.partitioningMethod->getPartitioningPPD()-1;
                 }
-                // printf("After adjustment: Local partition start/end: (%d,%d),(%d,%d)\n", localPartitionXstart, localPartitionYstart, localPartitionXend, localPartitionYend);
+
                 int totalNewPartitions = (localPartitionXend - localPartitionXstart + 1) * (localPartitionYend - localPartitionYstart + 1);
                 // vector for the new partitions
                 newPartitions.reserve(newPartitions.size() + totalNewPartitions*2);
                 // first partition inherits the class of the parent partition
-                newPartitions.emplace_back(g_config.partitioningMethod->getPartitioningGridPartitionID(distPartitionIndexX, distPartitionIndexY, localPartitionXstart, localPartitionYstart));
+                int partitionID = g_config.partitioningMethod->getPartitioningGridPartitionID(distPartitionIndexX, distPartitionIndexY, localPartitionXstart, localPartitionYstart);
+                newPartitions.emplace_back(partitionID);
                 newPartitions.emplace_back(objectClassInDistributionPartition);
                 // for each local partition, get the object's class
                 for (int indexI=localPartitionXstart; indexI <= localPartitionXend; indexI++) {
                     if (indexI != localPartitionXstart) {
                         // next partitions on X axis
                         // add partition ID
-                        newPartitions.emplace_back(g_config.partitioningMethod->getPartitioningGridPartitionID(distPartitionIndexX, distPartitionIndexY, indexI, localPartitionYstart));
-                        if (objectClassInDistributionPartition == CLASS_B) {
-                            // if in parent partition it is B, 
-                            // then in the next partition on the X axis would be D 
-                            // (as the object would be before this partition in both axes)
-                            newPartitions.emplace_back(CLASS_D);
-                            // printf("Instant object class: %s\n", mapping::twoLayerClassIntToStr(CLASS_D).c_str());
-                        } else {
-                            // otherwise its C
+                        int partitionID = g_config.partitioningMethod->getPartitioningGridPartitionID(distPartitionIndexX, distPartitionIndexY, indexI, localPartitionYstart);
+                        newPartitions.emplace_back(partitionID);
+                        if (objectClassInDistributionPartition == CLASS_A || objectClassInDistributionPartition == CLASS_C) {
+                            // if in parent partition it is A or C 
+                            // then in the next partition on the X axis would be C as well
                             newPartitions.emplace_back(CLASS_C);
-                            // printf("Instant object class: %s\n", mapping::twoLayerClassIntToStr(CLASS_C).c_str());
+                        } else {
+                            // if in parent partition it is B or D 
+                            // then in the next partition on the X axis would be D 
+                            newPartitions.emplace_back(CLASS_D);
                         }
-                        // validity prints
-                        // double currentPartitionXmin = distPartitionXmin + (indexI * g_config.partitioningMethod->getPartPartionExtentX());
-                        // double currentPartitionYmin = distPartitionYmin + (localPartitionYstart * g_config.partitioningMethod->getPartPartionExtentY());
-                        // double currentPartitionXmax = distPartitionXmin + ((indexI+1) * g_config.partitioningMethod->getPartPartionExtentX());//debug only, remove after
-                        // double currentPartitionYmax = distPartitionYmin + ((localPartitionYstart+1) * g_config.partitioningMethod->getPartPartionExtentY());//debug only, remove after
-                        // TwoLayerClass objectClassInPartition = getTwoLayerClassForMBRandPartition(xMin, yMin, currentPartitionXmin, currentPartitionYmin);
-                        // printf("Local partition: (%d,%d)\n", indexI, localPartitionYstart);
-                        // printf("Local partition bounds: (%f,%f),(%f,%f),(%f,%f),(%f,%f)\n", currentPartitionXmin, currentPartitionYmin, currentPartitionXmax, currentPartitionYmin, currentPartitionXmax, currentPartitionYmax, currentPartitionXmin, currentPartitionYmax);
-                        // printf("Calculated object class: %s\n", mapping::twoLayerClassIntToStr(objectClassInPartition).c_str());
                     }
                     for (int indexJ=localPartitionYstart+1; indexJ <= localPartitionYend; indexJ++) {
                         // next partitions on Y axis
                         // add partition ID
-                        newPartitions.emplace_back(g_config.partitioningMethod->getPartitioningGridPartitionID(distPartitionIndexX, distPartitionIndexY, indexI, indexJ));
+                        int partitionID = g_config.partitioningMethod->getPartitioningGridPartitionID(distPartitionIndexX, distPartitionIndexY, indexI, indexJ);
+                        newPartitions.emplace_back(partitionID);
                         if (indexI == localPartitionXstart) {
-                            if (objectClassInDistributionPartition == CLASS_C) {
-                                // if in parent partition it is C, 
-                                // then in the next partition on the Y axis would be D 
-                                // (as the object would be before this partition in both axes)
-                                newPartitions.emplace_back(CLASS_D);
-                                // printf("Instant object class: %s\n", mapping::twoLayerClassIntToStr(CLASS_D).c_str());
-                            } else {
-                                // otherwise its B
+                            if (objectClassInDistributionPartition == CLASS_B || objectClassInDistributionPartition == CLASS_A) {
+                                // if it is the first column and the object is class A or B in the dist grid
+                                // then this is class B as well
                                 newPartitions.emplace_back(CLASS_B);
-                                // printf("Instant object class: %s\n", mapping::twoLayerClassIntToStr(CLASS_B).c_str());
+                            } else {
+                                // otherwise it is D
+                                newPartitions.emplace_back(CLASS_D);
                             }
                         } else {
                             // D always
                             newPartitions.emplace_back(CLASS_D);
-                            // printf("Instant object class: %s\n", mapping::twoLayerClassIntToStr(CLASS_D).c_str());
                         }
                     }
                 }
@@ -608,7 +601,7 @@ namespace partitioning
         // classify based on partitioning method
         switch (g_config.partitioningMethod->type) {
             case PARTITIONING_ROUND_ROBIN:
-                #pragma omp parallel num_threads(2)
+                #pragma omp parallel
                 {
                     int tid = omp_get_thread_num();
                     DB_STATUS local_ret = DBERR_OK;
@@ -625,7 +618,7 @@ namespace partitioning
                 }
                 break;
             case PARTITIONING_TWO_GRID:
-                #pragma omp parallel num_threads(2)
+                #pragma omp parallel
                 {
                     int tid = omp_get_thread_num();
                     DB_STATUS local_ret = DBERR_OK;
@@ -638,6 +631,12 @@ namespace partitioning
                             #pragma omp cancel for
                             ret = local_ret;
                         }
+                        // if (batch.geometries[i].recID == 10582) {
+                        //     printf("Object %ld has %d partitions:\n", batch.geometries[i].recID, batch.geometries[i].partitionCount);
+                        //     for (int j=0; j < batch.geometries[i].partitionCount; j++) {
+                        //         printf("    partition: %d class %s\n", batch.geometries[i].partitions[2*j], mapping::twoLayerClassIntToStr((TwoLayerClass) batch.geometries[i].partitions[2*j+1]).c_str());
+                        //     }   
+                        // }
                     }
                 }
                 break;

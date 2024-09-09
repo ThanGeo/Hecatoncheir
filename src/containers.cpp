@@ -686,8 +686,8 @@ int TwoGridPartitioning::getPartitioningGridPartitionID(int distI, int distJ, in
 }
 
 void TwoGridPartitioning::getPartitioningGridPartitionIndices(int partitionID, int &i, int &j) {
-    j = partitionID / partPartitionsPerDim;
-    i = partitionID % partPartitionsPerDim;
+    j = partitionID / globalPartitionsPerDim;
+    i = partitionID % globalPartitionsPerDim;
 }
 
 int TwoGridPartitioning::getDistributionPPD() {
@@ -696,6 +696,10 @@ int TwoGridPartitioning::getDistributionPPD() {
 
 int TwoGridPartitioning::getPartitioningPPD() {
     return partPartitionsPerDim; 
+}
+
+int TwoGridPartitioning::getGlobalPPD() {
+    return globalPartitionsPerDim; 
 }
 
 void TwoGridPartitioning::setPartGridDataspace(double xMin, double yMin, double xMax, double yMax) {
@@ -742,6 +746,11 @@ int RoundRobinPartitioning::getDistributionPPD() {
 
 /** @brief Returns the partitioning (fine) grid's partitions per dimension number. */
 int RoundRobinPartitioning::getPartitioningPPD() {
+    return distPartitionsPerDim; 
+}
+
+/** @brief Returns the partitioning (fine) grid's partitions per dimension number. */
+int RoundRobinPartitioning::getGlobalPPD() {
     return distPartitionsPerDim; 
 }
 
