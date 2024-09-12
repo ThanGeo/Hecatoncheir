@@ -87,14 +87,18 @@ DB_STATUS&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href=
 DB_STATUS&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespaceunpack.html#a0fb06d4896d7726d179fe84ff8c0165f">unpackQueryInfo</a> (<a class="el" href="structSerializedMsg.html">SerializedMsg</a>&lt; int &gt; &amp;queryInfoMsg)</td></tr>
 <tr class="memdesc:a0fb06d4896d7726d179fe84ff8c0165f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Unpacks an query info serialized message. <br /></td></tr>
 <tr class="separator:a0fb06d4896d7726d179fe84ff8c0165f"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aac8922a4a6bcfd5ebf2b64ef0bf092c6"><td class="memItemLeft" align="right" valign="top"><a id="aac8922a4a6bcfd5ebf2b64ef0bf092c6"></a>
-DB_STATUS&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespaceunpack.html#aac8922a4a6bcfd5ebf2b64ef0bf092c6">unpackQueryResults</a> (<a class="el" href="structSerializedMsg.html">SerializedMsg</a>&lt; int &gt; &amp;queryResultsMsg, QueryType queryType, <a class="el" href="structQueryOutput.html">QueryOutput</a> &amp;queryOutput)</td></tr>
-<tr class="memdesc:aac8922a4a6bcfd5ebf2b64ef0bf092c6"><td class="mdescLeft">&#160;</td><td class="mdescRight">Unpacks a query results serialized message. <br /></td></tr>
-<tr class="separator:aac8922a4a6bcfd5ebf2b64ef0bf092c6"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:affa25645a90ee7ff7f7bdd26b1a0ac3b"><td class="memItemLeft" align="right" valign="top"><a id="affa25645a90ee7ff7f7bdd26b1a0ac3b"></a>
+DB_STATUS&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespaceunpack.html#affa25645a90ee7ff7f7bdd26b1a0ac3b">unpackQueryResults</a> (<a class="el" href="structSerializedMsg.html">SerializedMsg</a>&lt; int &gt; &amp;queryResultsMsg, QueryTypeE queryType, <a class="el" href="structQueryOutput.html">QueryOutput</a> &amp;queryOutput)</td></tr>
+<tr class="memdesc:affa25645a90ee7ff7f7bdd26b1a0ac3b"><td class="mdescLeft">&#160;</td><td class="mdescRight">Unpacks a query results serialized message. <br /></td></tr>
+<tr class="separator:affa25645a90ee7ff7f7bdd26b1a0ac3b"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ac5a4712b1454ef70fadb5cbf630b4c73"><td class="memItemLeft" align="right" valign="top"><a id="ac5a4712b1454ef70fadb5cbf630b4c73"></a>
 DB_STATUS&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespaceunpack.html#ac5a4712b1454ef70fadb5cbf630b4c73">unpackDatasetsNicknames</a> (<a class="el" href="structSerializedMsg.html">SerializedMsg</a>&lt; char &gt; &amp;msg, std::vector&lt; std::string &gt; &amp;nicknames)</td></tr>
 <tr class="memdesc:ac5a4712b1454ef70fadb5cbf630b4c73"><td class="mdescLeft">&#160;</td><td class="mdescRight">Unpacks a datasets' nicknames serialized message. <br /></td></tr>
 <tr class="separator:ac5a4712b1454ef70fadb5cbf630b4c73"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a2cbb728d419617ff19fcaac9575e41b6"><td class="memItemLeft" align="right" valign="top"><a id="a2cbb728d419617ff19fcaac9575e41b6"></a>
+DB_STATUS&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespaceunpack.html#a2cbb728d419617ff19fcaac9575e41b6">unpackDatasetLoadMsg</a> (<a class="el" href="structSerializedMsg.html">SerializedMsg</a>&lt; char &gt; &amp;msg, <a class="el" href="structDataset.html">Dataset</a> &amp;dataset, DatasetIndexE &amp;datasetIndex)</td></tr>
+<tr class="memdesc:a2cbb728d419617ff19fcaac9575e41b6"><td class="mdescLeft">&#160;</td><td class="mdescRight">Unpacks a 'dataset load' message. Results are stored in the dataset and datasetIndex arguments. <br /></td></tr>
+<tr class="separator:a2cbb728d419617ff19fcaac9575e41b6"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock"><p>Methos that unpack serialized messages and extract their contents, based on message type. </p>

@@ -546,7 +546,7 @@ namespace APRIL
                 // dummy object
                 Shape object;
                 // next read the dataset info
-                ret = storage::reader::partitionFile::loadDatasetInfo(pFile, dataset);
+                ret = storage::reader::partitionFile::loadDatasetInfo(pFile, &dataset);
                 if (ret != DBERR_OK) {
                     goto CLOSE_AND_EXIT;
                 }

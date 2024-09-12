@@ -103,9 +103,12 @@ void&#160;</td><td class="memItemRight" valign="bottom"><b>clear</b> ()</td></tr
 <tr class="memitem:a31ac71e8a3a927c35e8f448238db92fa"><td class="memItemLeft" align="right" valign="top"><a id="a31ac71e8a3a927c35e8f448238db92fa"></a>
 <a class="el" href="structDataset.html">Dataset</a> *&#160;</td><td class="memItemRight" valign="bottom"><b>getDatasetS</b> ()</td></tr>
 <tr class="separator:a31ac71e8a3a927c35e8f448238db92fa"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a2bf167932686678cb72266aedb190741"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structDatasetInfo.html#a2bf167932686678cb72266aedb190741">addDataset</a> (<a class="el" href="structDataset.html">Dataset</a> &amp;dataset)</td></tr>
-<tr class="memdesc:a2bf167932686678cb72266aedb190741"><td class="mdescLeft">&#160;</td><td class="mdescRight">adds a <a class="el" href="structDataset.html" title="All dataset related information.">Dataset</a> to the configuration's dataset info  <a href="structDatasetInfo.html#a2bf167932686678cb72266aedb190741">More...</a><br /></td></tr>
-<tr class="separator:a2bf167932686678cb72266aedb190741"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad2d7ea6f914bce0f14abe6dfeb2ea809"><td class="memItemLeft" align="right" valign="top"><a id="ad2d7ea6f914bce0f14abe6dfeb2ea809"></a>
+<a class="el" href="structDataset.html">Dataset</a> *&#160;</td><td class="memItemRight" valign="bottom"><b>getDatasetByIdx</b> (DatasetIndexE datasetIndex)</td></tr>
+<tr class="separator:ad2d7ea6f914bce0f14abe6dfeb2ea809"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ade61e41dd4198411f123176820f0792f"><td class="memItemLeft" align="right" valign="top">DB_STATUS&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structDatasetInfo.html#ade61e41dd4198411f123176820f0792f">addDataset</a> (DatasetIndexE datasetIdx, <a class="el" href="structDataset.html">Dataset</a> &amp;dataset)</td></tr>
+<tr class="memdesc:ade61e41dd4198411f123176820f0792f"><td class="mdescLeft">&#160;</td><td class="mdescRight">adds a <a class="el" href="structDataset.html" title="All dataset related information.">Dataset</a> to the configuration's dataset info  <a href="structDatasetInfo.html#ade61e41dd4198411f123176820f0792f">More...</a><br /></td></tr>
+<tr class="separator:ade61e41dd4198411f123176820f0792f"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a6d391b882f2fd75f15e6367b99c534ec"><td class="memItemLeft" align="right" valign="top"><a id="a6d391b882f2fd75f15e6367b99c534ec"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>updateDataspace</b> ()</td></tr>
 <tr class="separator:a6d391b882f2fd75f15e6367b99c534ec"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -122,20 +125,30 @@ std::unordered_map&lt; std::string, <a class="el" href="structDataset.html">Data
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock"><p>Holds the dataset(s) related info in the configuration. </p>
 
-<p class="definition">Definition at line <a class="el" href="containers_8h_source.html#l01335">1335</a> of file <a class="el" href="containers_8h_source.html">containers.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="containers_8h_source.html#l01358">1358</a> of file <a class="el" href="containers_8h_source.html">containers.h</a>.</p>
 </div><h2 class="groupheader">Member Function Documentation</h2>
-<a id="a2bf167932686678cb72266aedb190741"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a2bf167932686678cb72266aedb190741">&#9670;&nbsp;</a></span>addDataset()</h2>
+<a id="ade61e41dd4198411f123176820f0792f"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ade61e41dd4198411f123176820f0792f">&#9670;&nbsp;</a></span>addDataset()</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">void DatasetInfo::addDataset </td>
+          <td class="memname">DB_STATUS DatasetInfo::addDataset </td>
           <td>(</td>
-          <td class="paramtype"><a class="el" href="structDataset.html">Dataset</a> &amp;&#160;</td>
-          <td class="paramname"><em>dataset</em></td><td>)</td>
+          <td class="paramtype">DatasetIndexE&#160;</td>
+          <td class="paramname"><em>datasetIdx</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
           <td></td>
+          <td class="paramtype"><a class="el" href="structDataset.html">Dataset</a> &amp;&#160;</td>
+          <td class="paramname"><em>dataset</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
         </tr>
       </table>
 </div><div class="memdoc">
@@ -143,24 +156,41 @@ std::unordered_map&lt; std::string, <a class="el" href="structDataset.html">Data
 <p>adds a <a class="el" href="structDataset.html" title="All dataset related information.">Dataset</a> to the configuration's dataset info </p>
 <dl class="section warning"><dt>Warning</dt><dd>it has to be an empty dataset BUT its nickname needs to be set </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="containers_8cpp_source.html#l00503">503</a> of file <a class="el" href="containers_8cpp_source.html">containers.cpp</a>.</p>
-<div class="fragment"><div class="line"><a name="l00503"></a><span class="lineno">  503</span>&#160;                                             {</div>
-<div class="line"><a name="l00504"></a><span class="lineno">  504</span>&#160;    <span class="comment">// add to datasets struct</span></div>
-<div class="line"><a name="l00505"></a><span class="lineno">  505</span>&#160;    datasets.insert(std::make_pair(dataset.nickname, dataset));</div>
-<div class="line"><a name="l00506"></a><span class="lineno">  506</span>&#160;    <span class="keywordflow">if</span> (numberOfDatasets &lt; 1) {</div>
-<div class="line"><a name="l00507"></a><span class="lineno">  507</span>&#160;        <span class="comment">// R is being added</span></div>
-<div class="line"><a name="l00508"></a><span class="lineno">  508</span>&#160;        R = &amp;datasets.find(dataset.nickname)-&gt;second;</div>
-<div class="line"><a name="l00509"></a><span class="lineno">  509</span>&#160;    } <span class="keywordflow">else</span> {</div>
-<div class="line"><a name="l00510"></a><span class="lineno">  510</span>&#160;        <span class="comment">// S is being added</span></div>
-<div class="line"><a name="l00511"></a><span class="lineno">  511</span>&#160;        S = &amp;datasets.find(dataset.nickname)-&gt;second;</div>
-<div class="line"><a name="l00512"></a><span class="lineno">  512</span>&#160;    }</div>
-<div class="line"><a name="l00513"></a><span class="lineno">  513</span>&#160;    numberOfDatasets++;</div>
-<div class="line"><a name="l00514"></a><span class="lineno">  514</span>&#160;}</div>
+<p class="definition">Definition at line <a class="el" href="containers_8cpp_source.html#l00549">549</a> of file <a class="el" href="containers_8cpp_source.html">containers.cpp</a>.</p>
+<div class="fragment"><div class="line"><a name="l00549"></a><span class="lineno">  549</span>&#160;                                                                            {</div>
+<div class="line"><a name="l00550"></a><span class="lineno">  550</span>&#160;    <span class="comment">// add to datasets struct</span></div>
+<div class="line"><a name="l00551"></a><span class="lineno">  551</span>&#160;    datasets[dataset.nickname] = dataset;</div>
+<div class="line"><a name="l00552"></a><span class="lineno">  552</span>&#160;    <span class="keywordflow">switch</span> (datasetIdx) {</div>
+<div class="line"><a name="l00553"></a><span class="lineno">  553</span>&#160;        <span class="keywordflow">case</span> DATASET_R:</div>
+<div class="line"><a name="l00554"></a><span class="lineno">  554</span>&#160;            <span class="comment">// R is being added</span></div>
+<div class="line"><a name="l00555"></a><span class="lineno">  555</span>&#160;            R = &amp;datasets[dataset.nickname];</div>
+<div class="line"><a name="l00556"></a><span class="lineno">  556</span>&#160;            <span class="keywordflow">break</span>;</div>
+<div class="line"><a name="l00557"></a><span class="lineno">  557</span>&#160;        <span class="keywordflow">case</span> DATASET_S:</div>
+<div class="line"><a name="l00558"></a><span class="lineno">  558</span>&#160;            <span class="comment">// S is being added</span></div>
+<div class="line"><a name="l00559"></a><span class="lineno">  559</span>&#160;            S = &amp;datasets[dataset.nickname];</div>
+<div class="line"><a name="l00560"></a><span class="lineno">  560</span>&#160;            <span class="keywordflow">break</span>;</div>
+<div class="line"><a name="l00561"></a><span class="lineno">  561</span>&#160;        <span class="keywordflow">default</span>:</div>
+<div class="line"><a name="l00562"></a><span class="lineno">  562</span>&#160;            <a class="code" href="namespacelogger.html#a53f34feeb22a94db295af05b8b2aab5c">logger::log_error</a>(DBERR_INVALID_PARAMETER, <span class="stringliteral">&quot;Invalid dataset index. Use only DATASET_R or DATASET_S.&quot;</span>);</div>
+<div class="line"><a name="l00563"></a><span class="lineno">  563</span>&#160;            <span class="keywordflow">break</span>;</div>
+<div class="line"><a name="l00564"></a><span class="lineno">  564</span>&#160;    }</div>
+<div class="line"><a name="l00565"></a><span class="lineno">  565</span>&#160;    numberOfDatasets++;</div>
+<div class="line"><a name="l00566"></a><span class="lineno">  566</span>&#160;    <span class="keywordflow">return</span> DBERR_OK;</div>
+<div class="line"><a name="l00567"></a><span class="lineno">  567</span>&#160;}</div>
+<div class="ttc" id="anamespacelogger_html_a53f34feeb22a94db295af05b8b2aab5c"><div class="ttname"><a href="namespacelogger.html#a53f34feeb22a94db295af05b8b2aab5c">logger::log_error</a></div><div class="ttdeci">void log_error(int errorCode, T first, Args... rest)</div><div class="ttdoc">Error logging function with template arguments. Separates input parameters with spaces....</div><div class="ttdef"><b>Definition:</b> <a href="utils_8h_source.html#l00096">utils.h:96</a></div></div>
 </div><!-- fragment --><div class="dynheader">
+Here is the call graph for this function:</div>
+<div class="dyncontent">
+<div class="center"><img src="structDatasetInfo_ade61e41dd4198411f123176820f0792f_cgraph.png" border="0" usemap="#astructDatasetInfo_ade61e41dd4198411f123176820f0792f_cgraph" alt=""/></div>
+<map name="astructDatasetInfo_ade61e41dd4198411f123176820f0792f_cgraph" id="astructDatasetInfo_ade61e41dd4198411f123176820f0792f_cgraph">
+<area shape="rect" title="adds a Dataset to the configuration&#39;s dataset info" alt="" coords="5,5,171,32"/>
+<area shape="rect" href="namespacelogger.html#a53f34feeb22a94db295af05b8b2aab5c" title="Error logging function with template arguments. Separates input parameters with spaces...." alt="" coords="219,5,333,32"/>
+</map>
+</div>
+<div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
-<div class="center"><img src="structDatasetInfo_a2bf167932686678cb72266aedb190741_icgraph.png" border="0" usemap="#astructDatasetInfo_a2bf167932686678cb72266aedb190741_icgraph" alt=""/></div>
-<map name="astructDatasetInfo_a2bf167932686678cb72266aedb190741_icgraph" id="astructDatasetInfo_a2bf167932686678cb72266aedb190741_icgraph">
+<div class="center"><img src="structDatasetInfo_ade61e41dd4198411f123176820f0792f_icgraph.png" border="0" usemap="#astructDatasetInfo_ade61e41dd4198411f123176820f0792f_icgraph" alt=""/></div>
+<map name="astructDatasetInfo_ade61e41dd4198411f123176820f0792f_icgraph" id="astructDatasetInfo_ade61e41dd4198411f123176820f0792f_icgraph">
 <area shape="rect" title="adds a Dataset to the configuration&#39;s dataset info" alt="" coords="227,5,392,32"/>
 <area shape="rect" href="namespaceconfigurer.html#a0de96041979d35a1a73c7545c207973e" title="Configures the specified dataset info from the input dataset statement." alt="" coords="5,5,179,32"/>
 </map>

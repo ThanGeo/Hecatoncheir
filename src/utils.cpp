@@ -148,12 +148,14 @@ namespace mpi_timer
 
 namespace mapping
 {
-    std::string actionIntToStr(ActionType action) {
+    std::string actionIntToStr(ActionTypeE action) {
         switch (action) {
             case ACTION_NONE:
                 return "NONE";
-            case ACTION_LOAD_DATASETS:
-                return "LOAD DATASETS";
+            case ACTION_LOAD_DATASET_R:
+                return "LOAD DATASET R";
+            case ACTION_LOAD_DATASET_S:
+                return "LOAD DATASET S";
             case ACTION_PERFORM_PARTITIONING:
                 return "PERFORM PARTITIONING";
             case ACTION_CREATE_APRIL:
@@ -169,7 +171,7 @@ namespace mapping
         }
     }
 
-    std::string twoLayerClassIntToStr(TwoLayerClass classType) {
+    std::string twoLayerClassIntToStr(TwoLayerClassE classType) {
         switch (classType) {
             case CLASS_A:
                 return "A";
@@ -184,7 +186,7 @@ namespace mapping
         }
     }
 
-    std::string queryTypeIntToStr(QueryType val){
+    std::string queryTypeIntToStr(QueryTypeE val){
         switch(val) {
             case Q_RANGE: return "range";
             case Q_INTERSECT: return "intersect";
@@ -201,7 +203,7 @@ namespace mapping
         }
     }
 
-    QueryType queryTypeStrToInt(std::string &str) {
+    QueryTypeE queryTypeStrToInt(std::string &str) {
         if (str == "range") {
             return Q_RANGE;
         } else if (str == "intersect") {
@@ -227,7 +229,7 @@ namespace mapping
         }
     }
 
-    std::string dataTypeIntToStr(DataType val){
+    std::string dataTypeIntToStr(DataTypeE val){
         switch(val) {
             case DT_POLYGON: return "POLYGON";
             case DT_RECTANGLE: return "RECTANGLE";
@@ -237,7 +239,7 @@ namespace mapping
         }
     }
 
-    DataType dataTypeTextToInt(std::string str){
+    DataTypeE dataTypeTextToInt(std::string str){
         if (str.compare("POLYGON") == 0) return DT_POLYGON;
         else if (str.compare("RECTANGLE") == 0) return DT_RECTANGLE;
         else if (str.compare("POINT") == 0) return DT_POINT;
@@ -246,7 +248,7 @@ namespace mapping
         return DT_INVALID;
     }
 
-    FileType fileTypeTextToInt(std::string str) {
+    FileTypeE fileTypeTextToInt(std::string str) {
         if (str.compare("BINARY") == 0) return FT_BINARY;
         else if (str.compare("CSV") == 0) return FT_CSV;
         else if (str.compare("WKT") == 0) return FT_WKT;

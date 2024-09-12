@@ -628,39 +628,54 @@ STOP_LISTENING:
             if (ret != DBERR_OK) {
                 goto EXIT_SAFELY;
             }
-
-            // unpack info and store
-            ret = unpack::unpackDatasetsNicknames(msg, nicknames);
-            if (ret != DBERR_OK) {
-                goto EXIT_SAFELY;
-            }
-            // free memory
-            free(msg.data);
-
-            // create empty datasets
-            for (int i=0; i<nicknames.size(); i++) {
+            {
+                // message received
+                // create empty dataset;
                 Dataset dataset;
-                dataset.nickname = nicknames[i];
-                // add empty dataset to configuration
-                g_config.datasetInfo.addDataset(dataset);
-            }
-            // load data and fill the dataset objects
-            for (int i=0; i<nicknames.size(); i++) {
-                Dataset* dataset = g_config.datasetInfo.getDatasetByNickname(nicknames[i]);
-                // generate partition file path from dataset nickname
-                ret = storage::generatePartitionFilePath(*dataset);
+                DatasetIndexE datasetIndex;
+                // unpack info and store
+                ret = unpack::unpackDatasetLoadMsg(msg, dataset, datasetIndex);
                 if (ret != DBERR_OK) {
                     goto EXIT_SAFELY;
                 }
-                // load partition file (create MBRs)
-                ret = storage::reader::partitionFile::loadDatasetComplete(*dataset);
+                // free memory
+                free(msg.data);
+                // generate partition file path from dataset nickname
+                ret = storage::generatePartitionFilePath(dataset);
+                if (ret != DBERR_OK) {
+                    goto EXIT_SAFELY;
+                }
+                // add the EMPTY dataset to the configuration
+                ret = g_config.datasetInfo.addDataset(datasetIndex, dataset);
+                if (ret != DBERR_OK) {
+                    logger::log_error(ret, "Failed to add dataset to configuration. Dataset nickname:", dataset.nickname, "dataset index:", datasetIndex);
+                    goto EXIT_SAFELY;
+                }
+                // get the dataset's reference
+                Dataset *datasetRef = g_config.datasetInfo.getDatasetByIdx(datasetIndex);
+                if (datasetRef == nullptr) {
+                    return DBERR_NULL_PTR_EXCEPTION;
+                }
+                // load partition file (and create MBRs)
+                ret = storage::reader::partitionFile::loadDatasetComplete(datasetRef);
                 if (ret != DBERR_OK) {
                     logger::log_error(DBERR_DISK_READ_FAILED, "Failed loading partition file MBRs");
                     goto EXIT_SAFELY;
                 }  
+                // // dont forget to update the dataspace info of the configuration
+                // g_config.datasetInfo.updateDataspace();
+                // // verification prints
+                // if (datasetIndex == DATASET_R) {
+                //     printf("Loaded dataset R %s:\n", g_config.datasetInfo.getDatasetR()->nickname.c_str());
+                //     // g_config.datasetInfo.getDatasetR()->printObjectsGeometries();
+                //     // g_config.datasetInfo.getDatasetR()->printObjectsPartitions();
+                //     g_config.datasetInfo.getDatasetR()->printPartitions();
+                // } else if (datasetIndex == DATASET_S) {
+                //     // printf("Loaded dataset S %s. Objects:\n", g_config.datasetInfo.getDatasetS()->nickname.c_str());
+                //     // g_config.datasetInfo.getDatasetS()->printObjectsGeometries();
+                //     // g_config.datasetInfo.getDatasetS()->printObjectsPartitions();
+                // }
             }
-            // dont forget to update the dataspace info of the configuration
-            g_config.datasetInfo.updateDataspace();
 EXIT_SAFELY:
             // respond
             if (ret == DBERR_OK) {
@@ -764,7 +779,7 @@ EXIT_SAFELY:
                         return ret;
                     }
                     break;
-                case MSG_LOAD_DATASETS:
+                case MSG_LOAD_DATASET:
                     /* load datasets */
                     ret = handleLoadDatasetsMessage(status);
                     if (ret != DBERR_OK) {
@@ -980,7 +995,7 @@ STOP_LISTENING:
                         return ret;
                     }
                     break;
-                case MSG_LOAD_DATASETS:
+                case MSG_LOAD_DATASET:
                 case MSG_SYS_INFO:
                     /* char messages */
                     {
@@ -1128,7 +1143,7 @@ STOP_LISTENING:
                 return ret;
             }
 
-            static DB_STATUS handleQueryResultMessage(MPI_Status &status, MPI_Comm &comm, QueryType queryType, QueryOutput &queryOutput) {
+            static DB_STATUS handleQueryResultMessage(MPI_Status &status, MPI_Comm &comm, QueryTypeE queryType, QueryOutput &queryOutput) {
                 DB_STATUS ret = DBERR_OK;
                 SerializedMsg<int> msg;
                 // receive the serialized message

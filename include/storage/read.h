@@ -17,13 +17,13 @@ namespace storage
             @brief Loads a dataset (both vector data and MBRs) in-memory, to use in query processing.
              * Creates the local index based on the objects' partitions.
              */
-            DB_STATUS loadDatasetComplete(Dataset &dataset);
+            DB_STATUS loadDatasetComplete(Dataset *dataset);
 
             /**
             @brief Loads the dataset info from the partition file. The file pointer must be opened to the file and 
              * its position must be in the begining of the file.
              */
-            DB_STATUS loadDatasetInfo(FILE* pFile, Dataset &dataset);
+            DB_STATUS loadDatasetInfo(FILE* pFile, Dataset *dataset);
 
             /**
             @brief Loads the next object in its entirety from an already opened file.

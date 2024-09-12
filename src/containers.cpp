@@ -34,27 +34,7 @@ void queryResultReductionFunc(QueryOutput &in, QueryOutput &out) {
 
 QueryOutput::QueryOutput() {
     // result
-    this->queryResults = 0;
-    // topology relations results
-    this->topologyRelationsResultMap.clear();
-    this->topologyRelationsResultMap.insert(std::make_pair(TR_DISJOINT, 0));
-    this->topologyRelationsResultMap.insert(std::make_pair(TR_EQUAL, 0));
-    this->topologyRelationsResultMap.insert(std::make_pair(TR_MEET, 0));
-    this->topologyRelationsResultMap.insert(std::make_pair(TR_CONTAINS, 0));
-    this->topologyRelationsResultMap.insert(std::make_pair(TR_COVERS, 0));
-    this->topologyRelationsResultMap.insert(std::make_pair(TR_COVERED_BY, 0));
-    this->topologyRelationsResultMap.insert(std::make_pair(TR_INSIDE, 0));
-    this->topologyRelationsResultMap.insert(std::make_pair(TR_INTERSECT, 0));
-    // statistics
-    this->postMBRFilterCandidates = 0;
-    this->refinementCandidates = 0;
-    this->trueHits = 0;
-    this->trueNegatives = 0;
-    
-    // time
-    this->mbrFilterTime = 0;
-    this->iFilterTime = 0;
-    this->refinementTime = 0;
+    this->reset();
 }
 
 void QueryOutput::reset() {
@@ -62,14 +42,14 @@ void QueryOutput::reset() {
     this->queryResults = 0;
     // topology relations results
     this->topologyRelationsResultMap.clear();
-    this->topologyRelationsResultMap.insert(std::make_pair(TR_DISJOINT, 0));
-    this->topologyRelationsResultMap.insert(std::make_pair(TR_EQUAL, 0));
-    this->topologyRelationsResultMap.insert(std::make_pair(TR_MEET, 0));
-    this->topologyRelationsResultMap.insert(std::make_pair(TR_CONTAINS, 0));
-    this->topologyRelationsResultMap.insert(std::make_pair(TR_COVERS, 0));
-    this->topologyRelationsResultMap.insert(std::make_pair(TR_COVERED_BY, 0));
-    this->topologyRelationsResultMap.insert(std::make_pair(TR_INSIDE, 0));
-    this->topologyRelationsResultMap.insert(std::make_pair(TR_INTERSECT, 0));
+    this->topologyRelationsResultMap[TR_DISJOINT] = 0;
+    this->topologyRelationsResultMap[TR_EQUAL] = 0;
+    this->topologyRelationsResultMap[TR_MEET] = 0;
+    this->topologyRelationsResultMap[TR_CONTAINS] = 0;
+    this->topologyRelationsResultMap[TR_COVERS] = 0;
+    this->topologyRelationsResultMap[TR_COVERED_BY] = 0;
+    this->topologyRelationsResultMap[TR_INSIDE] = 0;
+    this->topologyRelationsResultMap[TR_INTERSECT] = 0;
     // statistics
     this->postMBRFilterCandidates = 0;
     this->refinementCandidates = 0;
@@ -113,7 +93,7 @@ void QueryOutput::countTopologyRelationResult(int relation) {
     this->topologyRelationsResultMap[relation] += 1;
 }
 
-int QueryOutput::getResultForTopologyRelation(TopologyRelation relation) {
+int QueryOutput::getResultForTopologyRelation(TopologyRelationE relation) {
     auto it = topologyRelationsResultMap.find(relation);
     if (it != topologyRelationsResultMap.end()) {
         return it->second;
@@ -122,14 +102,7 @@ int QueryOutput::getResultForTopologyRelation(TopologyRelation relation) {
 }
 
 void QueryOutput::setTopologyRelationResult(int relation, int result) {
-    auto it = topologyRelationsResultMap.find(relation);
-    if (it != topologyRelationsResultMap.end()) {
-        // exists already, replace
-        it->second = result;
-    } else {
-        // new entry
-        topologyRelationsResultMap.insert(std::make_pair(relation, result));
-    }
+    topologyRelationsResultMap[relation] = result;
 }
 
 void QueryOutput::shallowCopy(QueryOutput &other) {
@@ -138,7 +111,7 @@ void QueryOutput::shallowCopy(QueryOutput &other) {
     // topology relations results
     this->topologyRelationsResultMap.clear();
     for (auto &it: other.topologyRelationsResultMap) {
-        this->topologyRelationsResultMap.insert(std::make_pair(it.first, it.second));
+        this->topologyRelationsResultMap[it.first] = it.second;
     }
     // statistics
     this->postMBRFilterCandidates = other.postMBRFilterCandidates;
@@ -188,13 +161,20 @@ int AprilConfig::getCellsPerDim() {
     return cellsPerDim;
 }
 
-std::vector<Shape*>* Partition::getContainerClassContents(TwoLayerClass classType) {
+std::vector<Shape*>* Partition::getContainerClassContents(TwoLayerClassE classType) {
     if (classType < CLASS_A || classType > CLASS_D) {
         logger::log_error(DBERR_OUT_OF_BOUNDS, "class type index out of bounds");
         return nullptr;
     }
-    // exists
     return &classIndex[classType];
+}
+
+void Partition::addObjectOfClass(Shape *objectRef, TwoLayerClassE classType) {
+    classIndex[classType].push_back(objectRef);
+    // if (this->partitionID == 289605) {
+    //     printf("partition %d class %s new size after insertion of %ld: %ld\n", this->partitionID, mapping::twoLayerClassIntToStr(classType).c_str(), objectRef->recID, classIndex[classType].size());
+    // }
+    // printf("Adding object of type %s and class %s in partition %ld\n", objectRef->getShapeType().c_str(), mapping::twoLayerClassIntToStr(classType).c_str(), this->partitionID);
 }
 
 Shape* Dataset::getObject(size_t recID) {
@@ -205,28 +185,38 @@ Shape* Dataset::getObject(size_t recID) {
     return &it->second;
 }
 
-void Dataset::addObject(Shape &object) {
+DB_STATUS Dataset::addObject(Shape &object) {
     // add object to the objects map
-    objects.insert(std::make_pair(object.recID, object));
+    objects[object.recID] = object;
     // get object reference
     Shape* objectRef = this->getObject(object.recID);
+    if (objectRef == nullptr) {
+        logger::log_error(DBERR_INVALID_KEY, "Object with id", object.recID, "does not exist in the object map.");
+        return DBERR_INVALID_KEY;
+    }
     // insert reference to partition index
     for (auto &partitionIT: object.partitions) {
         int partitionID = partitionIT.first;
-        TwoLayerClass classType = (TwoLayerClass) partitionIT.second;
+        TwoLayerClassE classType = (TwoLayerClassE) partitionIT.second;
         // add to twolayer index
         this->twoLayerIndex.addObject(partitionID, classType, objectRef);
+        // if (partitionID == 289605) {
+        //     printf("added object %ld to partition %d\n", object.recID, partitionID);
+        //     printf("Partitions from disk: %ld\n", object.partitions.size());
+        // }
     }
     // keep the ID in the list
     objectIDs.push_back(object.recID);
     /** add object to section map (section 0) @warning do not remove, will break the parallel in-memory APRIL generation */
     this->addObjectToSectionMap(0, object.recID);
+
+    return DBERR_OK;
 }
 
 int Dataset::calculateBufferSize() {
     int size = 0;
     // dataset data type
-    size += sizeof(DataType);
+    size += sizeof(DataTypeE);
     // dataset nickname: length + string
     size += sizeof(int) + (nickname.length() * sizeof(char));     
     // dataset's dataspace info (MBR)
@@ -251,8 +241,8 @@ int Dataset::serialize(char **buffer) {
     }
 
     // add datatype
-    memcpy(localBuffer + position, &dataType, sizeof(DataType));
-    position += sizeof(DataType);
+    memcpy(localBuffer + position, &dataType, sizeof(DataTypeE));
+    position += sizeof(DataTypeE);
     // add dataset nickname length + string
     int nicknameLength = nickname.length();
     memcpy(localBuffer + position, &nicknameLength, sizeof(int));
@@ -279,8 +269,8 @@ void Dataset::deserialize(const char *buffer, int bufferSize) {
     double xMin, yMin, xMax, yMax;
     
     // dataset data type
-    memcpy(&dataType, buffer + position, sizeof(DataType));
-    position += sizeof(DataType);
+    memcpy(&dataType, buffer + position, sizeof(DataTypeE));
+    position += sizeof(DataTypeE);
     // dataset nickname length + string
     memcpy(&nicknameLength, buffer + position, sizeof(int));
     position += sizeof(int);
@@ -305,22 +295,22 @@ void Dataset::deserialize(const char *buffer, int bufferSize) {
 
 void Dataset::addAprilDataToApproximationDataMap(const uint sectionID, const size_t recID, const AprilData &aprilData) {
     // store april data
-    this->sectionMap[sectionID].aprilData.insert(std::make_pair(recID, aprilData));
+    this->sectionMap[sectionID].aprilData[recID] = aprilData;
     // store mapping recID -> sectionID
     auto it = this->recToSectionIdMap.find(recID);
     if (it != this->recToSectionIdMap.end()) {
-        // exists
+        // exists, append
         it->second.emplace_back(sectionID);
     } else {
         // doesnt exist, new entry
         std::vector<uint> sectionIDs = {sectionID};
-        this->recToSectionIdMap.insert(std::make_pair(recID, sectionIDs));
+        this->recToSectionIdMap[recID] = sectionIDs;
     }
 }
 
 void Dataset::addObjectToSectionMap(const uint sectionID, const size_t recID) {
     AprilData aprilData;
-    this->sectionMap[sectionID].aprilData.insert(std::make_pair(recID, aprilData));
+    this->sectionMap[sectionID].aprilData[recID] = aprilData;
     // store mapping recID -> sectionID
     auto it = this->recToSectionIdMap.find(recID);
     if (it != this->recToSectionIdMap.end()) {
@@ -329,7 +319,7 @@ void Dataset::addObjectToSectionMap(const uint sectionID, const size_t recID) {
     } else {
         // doesnt exist, new entry
         std::vector<uint> sectionIDs = {sectionID};
-        this->recToSectionIdMap.insert(std::make_pair(recID, sectionIDs));
+        this->recToSectionIdMap[recID] = sectionIDs;
     }
 }
 
@@ -382,10 +372,48 @@ DB_STATUS Dataset::setAprilDataForSectionAndObjectID(uint sectionID, size_t recI
         obj->second = aprilData;
     } else {
         // add april data for the object, in section map
-        sec->second.aprilData.insert(std::make_pair(recID,aprilData));
+        sec->second.aprilData[recID] = aprilData;
         logger::log_warning("Added new object in the section map. This shouldn't happen in parallel APRIL generation.");
     }
     return DBERR_OK;
+}
+
+void Dataset::printObjectsGeometries() {
+    for (auto &it : objectIDs) {
+        printf("MBR: (%f,%f),(%f,%f)\n", this->objects[it].mbr.pMin.x, this->objects[it].mbr.pMin.y, this->objects[it].mbr.pMax.x, this->objects[it].mbr.pMax.y);
+        this->objects[it].printGeometry();
+    }
+}
+
+void Dataset::printObjectsPartitions() {
+    for (auto &it : objectIDs) {
+        printf("id: %zu, type %s, Partitions:", it, objects[it].getShapeType().c_str());
+        for (auto &partIT : this->objects[it].partitions) {
+            printf("(%ld,%s),", partIT.first, mapping::twoLayerClassIntToStr((TwoLayerClassE) partIT.second).c_str());
+        }
+        printf("\n");
+    }
+}
+
+void Dataset::printPartitions() {
+    for (auto it : this->twoLayerIndex.partitions) {
+        printf("Partition %d\n", it.partitionID);
+        for (int c=CLASS_A; c<=CLASS_D; c++) {
+            printf("Class %s:\n", mapping::twoLayerClassIntToStr((TwoLayerClassE) c).c_str());
+            std::vector<Shape*>* container = it.getContainerClassContents((TwoLayerClassE) c);
+            if (container == nullptr) {
+                printf("    nullptr\n");
+            } else {
+                printf("    size %ld, content ids:\n", container->size());
+                printf("        ");
+                for (auto contIT : *container) {
+                    printf("%ld,", contIT->recID);
+                    // printf("%ld (%s),", contIT->recID, contIT->getShapeType().c_str());
+                }
+                printf("\n");
+            }
+        }
+    }
 }
 
 Dataset* DatasetInfo::getDatasetByNickname(std::string &nickname) {
@@ -432,24 +460,31 @@ Partition* TwoLayerIndex::getOrCreatePartition(int partitionID) {
     auto it = partitionMap.find(partitionID);
     if (it == partitionMap.end()) {
         // new partition
-        partitions.emplace_back(partitionID);
+        Partition partition(partitionID);
+        partitions.push_back(partition);
         size_t newIndex = partitions.size() - 1;
         partitionMap[partitionID] = newIndex;
         return &partitions[newIndex];
-    } else {
-        // existing
-        return &partitions[it->second];
     }
+    // existing partition
+    return &partitions[it->second];
 }
 
-void TwoLayerIndex::addObject(int partitionID, TwoLayerClass classType, Shape* objectRef) {
-    // get or create new partition entry
-    Partition* partition = getOrCreatePartition(partitionID);
-    // get or create new class entry of this class type, for this partition
-    std::vector<Shape*>* classObjects = partition->getContainerClassContents(classType);
-    // add object
-    classObjects->push_back(objectRef);
-    // logger::log_success("Added object ref:", objectRef->recID);
+void TwoLayerIndex::addObject(int partitionID, TwoLayerClassE classType, Shape* objectRef) {
+    auto it = partitionMap.find(partitionID);
+    if (it == partitionMap.end()) {
+        // new partition
+        Partition partition(partitionID);
+        // add object reference
+        partition.addObjectOfClass(objectRef, classType);
+        // save partition
+        partitions.push_back(partition);
+        int newIndex = partitions.size() - 1;
+        partitionMap[partitionID] = newIndex;
+    } else {
+        // existing partition
+        partitions[it->second].addObjectOfClass(objectRef, classType);
+    }
 }
 
 Partition* TwoLayerIndex::getPartition(int partitionID) {
@@ -496,21 +531,39 @@ Dataset* DatasetInfo::getDatasetR() {
 Dataset* DatasetInfo::getDatasetS() {
     return S;
 }
+
+Dataset* DatasetInfo::getDatasetByIdx(DatasetIndexE datasetIndex) {
+    switch (datasetIndex) {
+        case DATASET_R:
+            return R;
+        case DATASET_S:
+            return S;
+    }
+    logger::log_error(DBERR_INVALID_PARAMETER, "Invalid dataset index:", datasetIndex);
+    return nullptr;
+}
 /**
 @brief adds a Dataset to the configuration's dataset info
  * @warning it has to be an empty dataset BUT its nickname needs to be set
  */
-void DatasetInfo::addDataset(Dataset &dataset) {
+DB_STATUS DatasetInfo::addDataset(DatasetIndexE datasetIdx, Dataset &dataset) {
     // add to datasets struct
-    datasets.insert(std::make_pair(dataset.nickname, dataset));
-    if (numberOfDatasets < 1) {
-        // R is being added
-        R = &datasets.find(dataset.nickname)->second;
-    } else {
-        // S is being added
-        S = &datasets.find(dataset.nickname)->second;
+    datasets[dataset.nickname] = dataset;
+    switch (datasetIdx) {
+        case DATASET_R:
+            // R is being added
+            R = &datasets[dataset.nickname];
+            break;
+        case DATASET_S:
+            // S is being added
+            S = &datasets[dataset.nickname];
+            break;
+        default:
+            logger::log_error(DBERR_INVALID_PARAMETER, "Invalid dataset index. Use only DATASET_R or DATASET_S.");
+            break;
     }
     numberOfDatasets++;
+    return DBERR_OK;
 }
 
 void DatasetInfo::updateDataspace() {
@@ -543,7 +596,7 @@ Geometry::Geometry(size_t recID, std::vector<int> &partitions, int vertexCount, 
     this->coords = coords;
 }
 
-void Geometry::setPartitions(std::vector<int> &ids, std::vector<TwoLayerClass> &classes) {
+void Geometry::setPartitions(std::vector<int> &ids, std::vector<TwoLayerClassE> &classes) {
     for (int i=0; i<ids.size(); i++) {
         partitions.emplace_back(ids.at(i));
         partitions.emplace_back(classes.at(i));
@@ -685,11 +738,6 @@ int TwoGridPartitioning::getPartitioningGridPartitionID(int distI, int distJ, in
     return (globalI + (globalJ * globalPartitionsPerDim));
 }
 
-void TwoGridPartitioning::getPartitioningGridPartitionIndices(int partitionID, int &i, int &j) {
-    j = partitionID / globalPartitionsPerDim;
-    i = partitionID % globalPartitionsPerDim;
-}
-
 int TwoGridPartitioning::getDistributionPPD() {
     return distPartitionsPerDim; 
 }
@@ -732,11 +780,6 @@ int RoundRobinPartitioning::getPartitioningGridPartitionID(int distI, int distJ,
         return -1;
     }
     return (distI + (distJ * distPartitionsPerDim));
-}
-
-void RoundRobinPartitioning::getPartitioningGridPartitionIndices(int partitionID, int &i, int &j) {
-    j = partitionID / distPartitionsPerDim;
-    i = partitionID % distPartitionsPerDim;
 }
 
 /** @brief Returns the distribution (coarse) grid's partitions per dimension number. */

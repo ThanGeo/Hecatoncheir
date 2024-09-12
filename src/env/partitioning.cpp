@@ -56,7 +56,7 @@ namespace partitioning
             }
             batch.tag = MSG_BATCH_POLYGON;
             batch.maxObjectCount = g_config.partitioningMethod->getBatchSize();
-            batchMap.insert(std::make_pair(i,batch));
+            batchMap[i] = batch;
         }
         return DBERR_OK;
     }
@@ -415,7 +415,7 @@ namespace partitioning
         return DBERR_OK;
     }
 
-    static TwoLayerClass getTwoLayerClassForMBRandPartition(double mbrXmin, double mbrYmin, double partitionXmin, double partitionYmin) {
+    static TwoLayerClassE getTwoLayerClassForMBRandPartition(double mbrXmin, double mbrYmin, double partitionXmin, double partitionYmin) {
         if (mbrXmin < partitionXmin) {
             // before in X axis
             if (mbrYmin < partitionYmin) {
@@ -474,7 +474,7 @@ namespace partitioning
                 double distPartitionXmax = g_config.partitioningMethod->distGridDataspaceInfo.xMinGlobal + ((distPartitionIndexX+1) * g_config.partitioningMethod->getDistPartionExtentX());
                 double distPartitionYmax = g_config.partitioningMethod->distGridDataspaceInfo.yMinGlobal + ((distPartitionIndexY+1) * g_config.partitioningMethod->getDistPartionExtentY());
                 // printf("Distribution grid partition bounds: (%f,%f),(%f,%f),(%f,%f),(%f,%f)\n", distPartitionXmin, distPartitionYmin, distPartitionXmax, distPartitionYmin, distPartitionXmax, distPartitionYmax, distPartitionXmin, distPartitionYmax);
-                TwoLayerClass objectClassInDistributionPartition = getTwoLayerClassForMBRandPartition(xMin, yMin, distPartitionXmin, distPartitionYmin);
+                TwoLayerClassE objectClassInDistributionPartition = getTwoLayerClassForMBRandPartition(xMin, yMin, distPartitionXmin, distPartitionYmin);
                 // printf("Object class in parent partition: %s\n", mapping::twoLayerClassIntToStr(objectClassInDistributionPartition).c_str());
                 // get the indices of the start/end part partitions
                 int localPartitionXstart = (xMin - distPartitionXmin) / (g_config.partitioningMethod->getDistPartionExtentX() / g_config.partitioningMethod->getPartitioningPPD());
@@ -588,7 +588,7 @@ namespace partitioning
                 double distPartitionXmin = g_config.partitioningMethod->distGridDataspaceInfo.xMinGlobal + (distPartitionIndexX * g_config.partitioningMethod->getDistPartionExtentX());
                 double distPartitionYmin = g_config.partitioningMethod->distGridDataspaceInfo.yMinGlobal + (distPartitionIndexY * g_config.partitioningMethod->getDistPartionExtentY());
                 // get the object's class
-                TwoLayerClass objectClass = getTwoLayerClassForMBRandPartition(xMin, yMin, distPartitionXmin, distPartitionYmin);
+                TwoLayerClassE objectClass = getTwoLayerClassForMBRandPartition(xMin, yMin, distPartitionXmin, distPartitionYmin);
                 // fill in the partition's two layer class data
                 geometry.partitions.at((i*2)+1) = objectClass;
             }
@@ -618,7 +618,7 @@ namespace partitioning
                 }
                 break;
             case PARTITIONING_TWO_GRID:
-                #pragma omp parallel
+                #pragma omp parallel //num_threads(1)
                 {
                     int tid = omp_get_thread_num();
                     DB_STATUS local_ret = DBERR_OK;
@@ -634,7 +634,7 @@ namespace partitioning
                         // if (batch.geometries[i].recID == 10582) {
                         //     printf("Object %ld has %d partitions:\n", batch.geometries[i].recID, batch.geometries[i].partitionCount);
                         //     for (int j=0; j < batch.geometries[i].partitionCount; j++) {
-                        //         printf("    partition: %d class %s\n", batch.geometries[i].partitions[2*j], mapping::twoLayerClassIntToStr((TwoLayerClass) batch.geometries[i].partitions[2*j+1]).c_str());
+                        //         printf("    partition: %d class %s\n", batch.geometries[i].partitions[2*j], mapping::twoLayerClassIntToStr((TwoLayerClassE) batch.geometries[i].partitions[2*j+1]).c_str());
                         //     }   
                         // }
                     }

@@ -6,7 +6,7 @@ namespace twolayer
     namespace topologyMBRfilter
     {
         
-        static inline DB_STATUS forwardPair(Shape* objR, Shape* objS, MBRRelationCase mbrRelationCase, QueryOutput &queryOutput) {
+        static inline DB_STATUS forwardPair(Shape* objR, Shape* objS, MBRRelationCaseE mbrRelationCase, QueryOutput &queryOutput) {
             DB_STATUS ret = DBERR_OK;
             if (mbrRelationCase != MBR_CROSS) {
                 // count as MBR filter result
@@ -292,6 +292,9 @@ namespace twolayer
             if (objectsR == nullptr || objectsS == nullptr) {
                 return DBERR_OK;
             }
+            if (objectsR->size() == 0 || objectsS->size() == 0) {
+                return DBERR_OK;
+            }
             DB_STATUS ret = DBERR_OK;
             auto r = objectsR->begin();
             auto s = objectsS->begin();
@@ -322,6 +325,9 @@ namespace twolayer
             if (objectsR == nullptr || objectsS == nullptr) {
                 return DBERR_OK;
             }
+            if (objectsR->size() == 0 || objectsS->size() == 0) {
+                return DBERR_OK;
+            }
             DB_STATUS ret = DBERR_OK;
             auto r = objectsR->begin();
             auto s = objectsS->begin();
@@ -341,6 +347,9 @@ namespace twolayer
         
         static inline DB_STATUS sweepRollY_3(std::vector<Shape*>* objectsR, std::vector<Shape*>* objectsS, int flag, QueryOutput &queryOutput) {
             if (objectsR == nullptr || objectsS == nullptr) {
+                return DBERR_OK;
+            }
+            if (objectsR->size() == 0 || objectsS->size() == 0) {
                 return DBERR_OK;
             }
             DB_STATUS ret = DBERR_OK;
@@ -374,6 +383,9 @@ namespace twolayer
             if (objectsR == nullptr || objectsS == nullptr) {
                 return DBERR_OK;
             }
+            if (objectsR->size() == 0 || objectsS->size() == 0) {
+                return DBERR_OK;
+            }
             DB_STATUS ret = DBERR_OK;
             auto r = objectsR->begin();
             auto s = objectsS->begin();
@@ -394,6 +406,9 @@ namespace twolayer
         
         inline DB_STATUS sweepRollY_5(std::vector<Shape*>* objectsR, std::vector<Shape*>* objectsS, int flag, QueryOutput &queryOutput) {
             if (objectsR == nullptr || objectsS == nullptr) {
+                return DBERR_OK;
+            }
+            if (objectsR->size() == 0 || objectsS->size() == 0) {
                 return DBERR_OK;
             }
             DB_STATUS ret = DBERR_OK;
@@ -714,6 +729,9 @@ namespace twolayer
             if (objectsR == nullptr || objectsS == nullptr) {
                 return DBERR_OK;
             }
+            if (objectsR->size() == 0 || objectsS->size() == 0) {
+                return DBERR_OK;
+            }
             DB_STATUS ret = DBERR_OK;
             std::vector<Shape*>::iterator r = objectsR->begin();
             auto s = objectsS->begin();
@@ -744,6 +762,9 @@ namespace twolayer
             if (objectsR == nullptr || objectsS == nullptr) {
                 return DBERR_OK;
             }
+            if (objectsR->size() == 0 || objectsS->size() == 0) {
+                return DBERR_OK;
+            }
             DB_STATUS ret = DBERR_OK;
             auto r = objectsR->begin();
             auto s = objectsS->begin();
@@ -762,6 +783,9 @@ namespace twolayer
         
         static inline DB_STATUS sweepRollY_3(std::vector<Shape*>* objectsR, std::vector<Shape*>* objectsS, int flag, QueryOutput &queryOutput) {
             if (objectsR == nullptr || objectsS == nullptr) {
+                return DBERR_OK;
+            }
+            if (objectsR->size() == 0 || objectsS->size() == 0) {
                 return DBERR_OK;
             }
             DB_STATUS ret = DBERR_OK;
@@ -795,6 +819,9 @@ namespace twolayer
             if (objectsR == nullptr || objectsS == nullptr) {
                 return DBERR_OK;
             }
+            if (objectsR->size() == 0 || objectsS->size() == 0) {
+                return DBERR_OK;
+            }
             DB_STATUS ret = DBERR_OK;
             auto r = objectsR->begin();
             auto s = objectsS->begin();
@@ -815,6 +842,9 @@ namespace twolayer
         
         inline DB_STATUS sweepRollY_5(std::vector<Shape*>* objectsR, std::vector<Shape*>* objectsS, int flag, QueryOutput &queryOutput) {
             if (objectsR == nullptr || objectsS == nullptr) {
+                return DBERR_OK;
+            }
+            if (objectsR->size() == 0 || objectsS->size() == 0) {
                 return DBERR_OK;
             }
             DB_STATUS ret = DBERR_OK;
@@ -841,6 +871,7 @@ namespace twolayer
             DB_STATUS ret = DBERR_OK;
             Dataset* R = g_config.datasetInfo.getDatasetR();
             Dataset* S = g_config.datasetInfo.getDatasetS();
+            // R->printPartitions();
             // here the final results will be stored
             #pragma omp parallel reduction(query_output_reduction:queryOutput)
             {
@@ -856,7 +887,9 @@ namespace twolayer
                     if (tlContainerS != nullptr) {
                         // common partition found
                         Partition* tlContainerR = &R->twoLayerIndex.partitions[i];
+                        // printf("Comparing partitions %ld and %ld \n", tlContainerR->partitionID, tlContainerS->partitionID);
                         // R_A - S_A
+                        // printf("RA-SA\n");
                         local_ret = sweepRollY_1(tlContainerR->getContainerClassContents(CLASS_A), tlContainerS->getContainerClassContents(CLASS_A), localQueryOutput);
                         if (local_ret != DBERR_OK) {
                             logger::log_error(ret, "R_A - S_A sweep roll failed");
@@ -864,6 +897,7 @@ namespace twolayer
                             ret = local_ret;
                         }
                         // S_B - R_A
+                        // printf("SB-RA\n");
                         local_ret = sweepRollY_2(tlContainerS->getContainerClassContents(CLASS_B), tlContainerR->getContainerClassContents(CLASS_A), 1, localQueryOutput);
                         if (local_ret != DBERR_OK) {
                             logger::log_error(ret, "S_B - R_A sweep roll failed");
@@ -871,6 +905,7 @@ namespace twolayer
                             ret = local_ret;
                         }
                         // R_A - S_C
+                        // printf("RA-SC\n");
                         local_ret = sweepRollY_3(tlContainerR->getContainerClassContents(CLASS_A), tlContainerS->getContainerClassContents(CLASS_C), 0, localQueryOutput);
                         if (local_ret != DBERR_OK) {
                             logger::log_error(ret, "R_A - S_C sweep roll failed");
@@ -878,6 +913,7 @@ namespace twolayer
                             ret = local_ret;
                         }
                         // S_D - R_A
+                        // printf("SD-RA\n");
                         local_ret = sweepRollY_5(tlContainerS->getContainerClassContents(CLASS_D), tlContainerR->getContainerClassContents(CLASS_A), 1, localQueryOutput);
                         if (local_ret != DBERR_OK) {
                             logger::log_error(ret, "S_D - R_A sweep roll failed");
@@ -885,6 +921,7 @@ namespace twolayer
                             ret = local_ret;
                         }
                         // R_B - S_A
+                        // printf("RA-SA\n");
                         local_ret = sweepRollY_2(tlContainerR->getContainerClassContents(CLASS_B), tlContainerS->getContainerClassContents(CLASS_A), 0, localQueryOutput);
                         if (local_ret != DBERR_OK) {
                             logger::log_error(ret, "R_B - S_A sweep roll failed");
@@ -892,6 +929,7 @@ namespace twolayer
                             ret = local_ret;
                         }
                         // R_B - S_C
+                        // printf("RB-SC\n");
                         local_ret = sweepRollY_4(tlContainerR->getContainerClassContents(CLASS_B), tlContainerS->getContainerClassContents(CLASS_C), 0, localQueryOutput);
                         if (local_ret != DBERR_OK) {
                             logger::log_error(ret, "R_B - S_C sweep roll failed");
@@ -899,6 +937,7 @@ namespace twolayer
                             ret = local_ret;
                         }
                         // S_A - R_C
+                        // printf("SA-RC\n");
                         local_ret = sweepRollY_3(tlContainerS->getContainerClassContents(CLASS_A), tlContainerR->getContainerClassContents(CLASS_C), 1, localQueryOutput);
                         if (local_ret != DBERR_OK) {
                             logger::log_error(ret, "S_A - R_C sweep roll failed");
@@ -906,6 +945,7 @@ namespace twolayer
                             ret = local_ret;
                         }
                         // S_B - R_C
+                        // printf("SB-RC\n");
                         local_ret = sweepRollY_4(tlContainerS->getContainerClassContents(CLASS_B), tlContainerR->getContainerClassContents(CLASS_C), 1, localQueryOutput);
                         if (local_ret != DBERR_OK) {
                             logger::log_error(ret, "S_B - R_C sweep roll failed");
@@ -913,6 +953,7 @@ namespace twolayer
                             ret = local_ret;
                         }
                         // R_D - S_A
+                        // printf("RD-SA\n");
                         local_ret = sweepRollY_5(tlContainerR->getContainerClassContents(CLASS_D), tlContainerS->getContainerClassContents(CLASS_A), 0, localQueryOutput);
                         if (local_ret != DBERR_OK) {
                             logger::log_error(ret, "R_D - S_A sweep roll failed");

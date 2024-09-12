@@ -370,6 +370,10 @@ namespace refinement
          */
 
         void refineIntersectionJoin(Shape* objR, Shape* objS, QueryOutput &queryOutput) {
+            // printf("Refining objects %ld and %ld\n", objR->recID, objS->recID);
+            // objR->printGeometry();
+            // objS->printGeometry();
+            // printf("Data types: %s and %s\n", objR->getShapeType().c_str(), objS->getShapeType().c_str());
             if (objR->intersects(*objS)) {
                 // printf("%ld,%ld\n", objR->recID, objS->recID);
                 queryOutput.countResult();
@@ -418,7 +422,7 @@ namespace refinement
             }
         }
         
-        DB_STATUS refinementEntrypoint(Shape* objR, Shape* objS, QueryType queryType, QueryOutput &queryOutput) {
+        DB_STATUS refinementEntrypoint(Shape* objR, Shape* objS, QueryTypeE queryType, QueryOutput &queryOutput) {
             // switch based on query type
             switch(queryType) {
                 case Q_RANGE:

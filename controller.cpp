@@ -118,18 +118,19 @@ static DB_STATUS initQueryExecution() {
     return DBERR_OK;
 }
 
-static DB_STATUS initLoadDatasets() {
+/** @brief initializes (broadcasts) the load specific dataset action for the given dataset */
+static DB_STATUS initLoadDataset(Dataset *dataset, DatasetIndexE datasetIndex) {
     // send load instruction + dataset info
     DB_STATUS ret = DBERR_OK;
     // pack nicknames
     SerializedMsg<char> msg(MPI_CHAR);
-    ret = pack::packDatasetsNicknames(msg);
+    ret = pack::packDatasetLoadMsg(dataset, datasetIndex, msg);
     if (ret != DBERR_OK) {
         return ret;
     }
 
     // broadcast message
-    ret = comm::broadcast::broadcastMessage(msg, MSG_LOAD_DATASETS);
+    ret = comm::broadcast::broadcastMessage(msg, MSG_LOAD_DATASET);
     if (ret != DBERR_OK) {
         logger::log_error(ret, "Failed to broadcast query info");
         return ret;
@@ -204,9 +205,14 @@ static DB_STATUS performActions() {
                     return ret;
                 }
                 break;
-            case ACTION_LOAD_DATASETS:
-                /* instruct workers to load the datasets (MBRs)*/
-                ret = initLoadDatasets();
+            case ACTION_LOAD_DATASET_R:
+                ret = initLoadDataset(g_config.datasetInfo.getDatasetR(), DATASET_R);
+                if (ret != DBERR_OK) {
+                    return ret;
+                }
+                break;
+            case ACTION_LOAD_DATASET_S:
+                ret = initLoadDataset(g_config.datasetInfo.getDatasetS(), DATASET_S);
                 if (ret != DBERR_OK) {
                     return ret;
                 }

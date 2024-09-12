@@ -7,18 +7,18 @@ namespace storage
 
         namespace partitionFile
         {
-            DB_STATUS loadDatasetInfo(FILE* pFile, Dataset &dataset) {
+            DB_STATUS loadDatasetInfo(FILE* pFile, Dataset *dataset) {
                 DB_STATUS ret = DBERR_OK;
                 double xMin, yMin, xMax, yMax;
                 int length;
                 // object count
-                size_t elementsRead = fread(&dataset.totalObjects, sizeof(size_t), 1, pFile);
+                size_t elementsRead = fread(&dataset->totalObjects, sizeof(size_t), 1, pFile);
                 if (elementsRead != 1) {
                     logger::log_error(DBERR_DISK_READ_FAILED, "Couldn't read the object count");
                     return DBERR_DISK_READ_FAILED;
                 }
                 // read data type
-                elementsRead = fread(&dataset.dataType, sizeof(DataType), 1, pFile);
+                elementsRead = fread(&dataset->dataType, sizeof(DataTypeE), 1, pFile);
                 if (elementsRead != 1) {
                     logger::log_error(DBERR_DISK_READ_FAILED, "Couldn't read the dataset's datatype");
                     return DBERR_DISK_READ_FAILED;
@@ -26,7 +26,7 @@ namespace storage
                 // read nickname length + string
                 elementsRead = 0;
                 elementsRead += fread(&length, sizeof(int), 1, pFile);
-                elementsRead += fread(dataset.nickname.data(), length * sizeof(char), length, pFile);
+                elementsRead += fread(dataset->nickname.data(), length * sizeof(char), length, pFile);
                 if (elementsRead != length + 1) {
                     logger::log_error(DBERR_DISK_READ_FAILED, "Couldn't read the dataset's nickname");
                     return DBERR_DISK_READ_FAILED;
@@ -41,7 +41,7 @@ namespace storage
                     logger::log_error(DBERR_DISK_READ_FAILED, "Couldn't read the dataset's dataspace MBR");
                     return DBERR_DISK_READ_FAILED;
                 }
-                dataset.dataspaceInfo.set(xMin, yMin, xMax, yMax);
+                dataset->dataspaceInfo.set(xMin, yMin, xMax, yMax);
                 // logger::log_success("loaded dataset info:", dataset.totalObjects, dataset.dataType, dataset.nickname, dataset.dataspaceInfo.xMinGlobal, dataset.dataspaceInfo.yMinGlobal, dataset.dataspaceInfo.xMaxGlobal, dataset.dataspaceInfo.yMaxGlobal);
                 return ret;
             }
@@ -69,7 +69,7 @@ namespace storage
                 }
                 // store partitions info
                 for (int i=0; i<partitionCount * 2; i+=2) {
-                    object.partitions.insert(std::make_pair(partitionVector.at(i), partitionVector.at(i+1)));
+                    object.partitions[partitionVector.at(i)] = (TwoLayerClassE) partitionVector.at(i+1);
                 }
                 // read vertex count
                 int vertexCount;
@@ -106,90 +106,98 @@ namespace storage
             }
 
 
-            static DB_STATUS loadPolygonDatasetContents(FILE *pFile, Dataset &dataset) {
+            static DB_STATUS loadPolygonDatasetContents(FILE *pFile, Dataset *dataset) {
                 DB_STATUS ret = DBERR_OK;
                 // read data (vector and create MBRs as well)
-                for (size_t i=0; i<dataset.totalObjects; i++) {
+                for (size_t i=0; i<dataset->totalObjects; i++) {
                     // read next object
                     Shape object = shape_factory::createEmptyPolygonShape();
                     ret = loadNextObjectComplete(pFile, object);
                     if (ret != DBERR_OK) {
-                        logger::log_error(ret, "Failed to read MBR for object number", i, "of", dataset.totalObjects);
+                        logger::log_error(ret, "Failed to read MBR for object number", i, "of", dataset->totalObjects);
                         return ret;
                     }
                     // store in dataset
-                    dataset.addObject(object);
+                    ret = dataset->addObject(object);
+                    if (ret != DBERR_OK) {
+                        logger::log_error(ret, "Error when adding object with id", object.recID, "in dataset", dataset->nickname);
+                        return ret;
+                    }
                 }
 
-                // sort two layer
-                dataset.twoLayerIndex.sortPartitionsOnY();
                 return ret;
             }
             
-            static DB_STATUS loadLinestringDatasetContents(FILE *pFile, Dataset &dataset) {
+            static DB_STATUS loadLinestringDatasetContents(FILE *pFile, Dataset *dataset) {
                 DB_STATUS ret = DBERR_OK;
                 // read data (vector and create MBRs as well)
-                for (size_t i=0; i<dataset.totalObjects; i++) {
+                for (size_t i=0; i<dataset->totalObjects; i++) {
                     // read next object
                     Shape object = shape_factory::createEmptyLineStringShape();
                     ret = loadNextObjectComplete(pFile, object);
                     if (ret != DBERR_OK) {
-                        logger::log_error(ret, "Failed to read MBR for object number", i, "of", dataset.totalObjects);
+                        logger::log_error(ret, "Failed to read MBR for object number", i, "of", dataset->totalObjects);
                         return ret;
                     }
                     // store in dataset
-                    dataset.addObject(object);
+                    ret = dataset->addObject(object);
+                    if (ret != DBERR_OK) {
+                        logger::log_error(ret, "Error when adding object with id", object.recID, "in dataset", dataset->nickname);
+                        return ret;
+                    }
                 }
-                // sort two layer
-                dataset.twoLayerIndex.sortPartitionsOnY();
                 return ret;
             }
 
-            static DB_STATUS loadPointDatasetContents(FILE *pFile, Dataset &dataset) {
+            static DB_STATUS loadPointDatasetContents(FILE *pFile, Dataset* dataset) {
                 DB_STATUS ret = DBERR_OK;
                 // read data (vector and create MBRs as well)
-                for (size_t i=0; i<dataset.totalObjects; i++) {
+                for (size_t i=0; i<dataset->totalObjects; i++) {
                     // read next object
                     Shape object = shape_factory::createEmptyPointShape();
                     ret = loadNextObjectComplete(pFile, object);
                     if (ret != DBERR_OK) {
-                        logger::log_error(ret, "Failed to read MBR for object number", i, "of", dataset.totalObjects);
+                        logger::log_error(ret, "Failed to read MBR for object number", i, "of", dataset->totalObjects);
                         return ret;
                     }
                     // store in dataset
-                    dataset.addObject(object);
+                    ret = dataset->addObject(object);
+                    if (ret != DBERR_OK) {
+                        logger::log_error(ret, "Error when adding object with id", object.recID, "in dataset", dataset->nickname);
+                        return ret;
+                    }
                 }
-                // sort two layer
-                dataset.twoLayerIndex.sortPartitionsOnY();
                 return ret;
             }
 
-            static DB_STATUS loadRectangleDatasetContents(FILE *pFile, Dataset &dataset) {
+            static DB_STATUS loadRectangleDatasetContents(FILE *pFile, Dataset* dataset) {
                 DB_STATUS ret = DBERR_OK;
                 // read data (vector and create MBRs as well)
-                for (size_t i=0; i<dataset.totalObjects; i++) {
+                for (size_t i=0; i<dataset->totalObjects; i++) {
                     // read next object
                     Shape object = shape_factory::createEmptyRectangleShape();
                     ret = loadNextObjectComplete(pFile, object);
                     if (ret != DBERR_OK) {
-                        logger::log_error(ret, "Failed to read MBR for object number", i, "of", dataset.totalObjects);
+                        logger::log_error(ret, "Failed to read MBR for object number", i, "of", dataset->totalObjects);
                         return ret;
                     }
                     // store in dataset
-                    dataset.addObject(object);
+                    ret = dataset->addObject(object);
+                    if (ret != DBERR_OK) {
+                        logger::log_error(ret, "Error when adding object with id", object.recID, "in dataset", dataset->nickname);
+                        return ret;
+                    }
                 }
-                // sort two layer
-                dataset.twoLayerIndex.sortPartitionsOnY();
                 return ret;
             }
 
-            DB_STATUS loadDatasetComplete(Dataset &dataset) {
+            DB_STATUS loadDatasetComplete(Dataset *dataset) {
                 DB_STATUS ret = DBERR_OK;
                 int length = 0;
                 // open partition file
-                FILE* pFile = fopen(dataset.path.c_str(), "rb");
+                FILE* pFile = fopen(dataset->path.c_str(), "rb");
                 if (pFile == NULL) {
-                    logger::log_error(DBERR_MISSING_FILE, "Could not open partitioned dataset file from path:", dataset.path);
+                    logger::log_error(DBERR_MISSING_FILE, "Could not open partitioned dataset file from path:", dataset->path);
                     return DBERR_MISSING_FILE;
                 }
                 // dataset info
@@ -199,7 +207,7 @@ namespace storage
                     goto CLOSE_AND_EXIT;
                 }
                 // dataset contents based on type
-                switch (dataset.dataType) {
+                switch (dataset->dataType) {
                     case DT_POLYGON:
                         ret = loadPolygonDatasetContents(pFile, dataset);
                         break;
@@ -221,6 +229,8 @@ namespace storage
                     logger::log_error(ret, "Failed to load dataset contents");
                     goto CLOSE_AND_EXIT;
                 }
+                // sort two layer
+                dataset->twoLayerIndex.sortPartitionsOnY();
                 // logger::log_success("Loaded", dataset.totalObjects, "objects");
 CLOSE_AND_EXIT:
                 fclose(pFile);

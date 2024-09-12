@@ -727,8 +727,6 @@ private:
 public:
     /** @brief the object's ID, as read by the data file. */
     size_t recID;
-    /** @brief the object's geometry type. */
-    enum DataType dataType;
     /** @brief the object's MBR. */
     MBR mbr;
     /** @brief The object's partition index, containing info about the partitions that this object intersects with
@@ -736,7 +734,7 @@ public:
      * @param key Partition ID.
      * @param value The two-layer index class of the object in that partition.
      */
-    std::unordered_map<int, int> partitions;
+    std::unordered_map<size_t, TwoLayerClassE> partitions;
 
     /** @brief Default empty Shape constructor. */
     Shape() {}
@@ -744,6 +742,24 @@ public:
     /** @brief Default empty expicit type Shape constructor. */
     template<typename T>
     explicit Shape(T geom) : shape(geom) {}
+
+    // Method to get the name/type of the shape variant
+    std::string getShapeType() const {
+        // Use std::visit to handle each possible type in the variant
+        return std::visit([](const auto& shape) -> std::string {
+            using T = std::decay_t<decltype(shape)>; // Get the underlying type
+            if constexpr (std::is_same_v<T, PointWrapper>)
+                return "PointWrapper";
+            else if constexpr (std::is_same_v<T, PolygonWrapper>)
+                return "PolygonWrapper";
+            else if constexpr (std::is_same_v<T, LineStringWrapper>)
+                return "LineStringWrapper";
+            else if constexpr (std::is_same_v<T, RectangleWrapper>)
+                return "RectangleWrapper";
+            else
+                return "Unknown type";
+        }, shape);
+    }
 
     /** @brief Adds a point to the boost geometry (see derived method definitions). */
     void addPoint(const double x, const double y) {
@@ -782,7 +798,6 @@ public:
     /** @brief Resets the boost geometry object. */
     void reset() {
         recID = 0;
-        dataType = DT_INVALID;
         mbr = MBR();
         partitions.clear();
         std::visit([](auto&& arg) {
@@ -919,6 +934,9 @@ public:
         }, shape);
     }
 
+    // void printVariantType() {
+    //     boost::typeindex::type_id<T?>
+    // }
 };
 
 /** @namespace shape_factory
@@ -960,7 +978,7 @@ struct QueryOutput {
     void countMBRresult();
     void countRefinementCandidate();
     void countTopologyRelationResult(int result);
-    int getResultForTopologyRelation(TopologyRelation relation);
+    int getResultForTopologyRelation(TopologyRelationE relation);
     void setTopologyRelationResult(int relation, int result);
     /**
     @brief copies the contents of the 'other' query output object into this struct
@@ -1004,15 +1022,23 @@ struct DataspaceInfo {
  * @param classIndex Fixed 4 position vector, one for each two-layer index class.
  */
 struct Partition {
-    size_t partitionID;
+    int partitionID;
     /** @brief Contains the list of objects (Shape) of each class for this partition */
     std::vector<std::vector<Shape*>> classIndex;
     /**
     @brief Default constructor that defines the 4-position vector. Two-layer index classes: A, B, C, D
      */
-    Partition(size_t id) : partitionID(id), classIndex(4) {}
+    Partition(int id){
+        partitionID = id;
+        classIndex.resize(4);
+        for (auto &it : classIndex) {
+            it.resize(0, nullptr);
+        }
+    }
     /** @brief Returns a reference to the partition's contents for the given class type. @param classType Either A, B, C or D. */
-    std::vector<Shape*>* getContainerClassContents(TwoLayerClass classType);
+    std::vector<Shape*>* getContainerClassContents(TwoLayerClassE classType);
+
+    void addObjectOfClass(Shape *objectRef, TwoLayerClassE classType);
 };
 
 /** @brief Holds all two-layer related index information.
@@ -1037,7 +1063,7 @@ public:
      * @param[in] classType The class of the object in that partition.
      * @param[out] objectRef The returned object reference.
      */
-    void addObject(int partitionID, TwoLayerClass classType, Shape* objectRef);
+    void addObject(int partitionID, TwoLayerClassE classType, Shape* objectRef);
     /**
     @brief Returns the partition reference to this partition ID
      */
@@ -1052,8 +1078,8 @@ public:
  * @brief All dataset related information.
  */
 struct Dataset{
-    DataType dataType;
-    FileType fileType;
+    DataTypeE dataType;
+    FileTypeE fileType;
     std::string path;
     // derived from the path
     std::string datasetName;
@@ -1066,7 +1092,7 @@ struct Dataset{
     std::vector<size_t> objectIDs;
     std::unordered_map<size_t, Shape> objects;
     TwoLayerIndex twoLayerIndex;
-    ApproximationType approxType;
+    ApproximationTypeE approxType;
     AprilConfig aprilConfig;
     /** Section mapping. key,value = sectionID,(unordered map of key,value = recID,aprilData) @warning only sectionID = 0 is supported currently.*/
     std::unordered_map<uint, Section> sectionMap;
@@ -1075,7 +1101,7 @@ struct Dataset{
 
     /** @brief Adds a Shape object into the two layer index and the reference map. 
      * @note Calculates the partitions and the object's classes in them. */
-    void addObject(Shape &object);
+    DB_STATUS addObject(Shape &object);
 
     /** @brief Returns a reference to the object with the given ID. */
     Shape* getObject(size_t recID);
@@ -1098,12 +1124,16 @@ struct Dataset{
     AprilData* getAprilDataBySectionAndObjectID(uint sectionID, size_t recID);
     /** @brief Sets the april data in the dataset for the given object ID and section ID */
     DB_STATUS setAprilDataForSectionAndObjectID(uint sectionID, size_t recID, AprilData &aprilData);
+
+    void printObjectsGeometries();
+    void printObjectsPartitions();
+    void printPartitions();
 };
 
 /** @brief Holds all query-related information.
  */
 struct Query{
-    QueryType type;
+    QueryTypeE type;
     int numberOfDatasets;
     Dataset R;         // R: left dataset
     Dataset S;         // S: right dataset
@@ -1132,7 +1162,7 @@ struct DirectoryPaths {
 /** @brief Base class for the partitioning methods (abstract class). */
 struct PartitioningMethod {
     /** @brief The partitioning technique */
-    PartitioningType type;
+    PartitioningTypeE type;
     /** @brief The number of partitions per dimension */
     int distPartitionsPerDim;
     /** @brief The batch size for the data distribution, in number of objects. */             
@@ -1144,10 +1174,10 @@ struct PartitioningMethod {
     double distPartitionExtentY;
 
     /** @brief Base constructor. */
-    PartitioningMethod(PartitioningType pType, int pBatchSize, int partitionsPerDimensionNum) : type(pType), batchSize(pBatchSize), distPartitionsPerDim(partitionsPerDimensionNum) {}
+    PartitioningMethod(PartitioningTypeE pType, int pBatchSize, int partitionsPerDimensionNum) : type(pType), batchSize(pBatchSize), distPartitionsPerDim(partitionsPerDimensionNum) {}
 
     /** @brief Returns the partitioning method's type. */
-    PartitioningType getType() {
+    PartitioningTypeE getType() {
         return type;
     }
 
@@ -1161,9 +1191,6 @@ struct PartitioningMethod {
         j = partitionID / distPartitionsPerDim;
         i = partitionID % distPartitionsPerDim;
     }
-
-    /** @brief Abstract method. Gets the partition's indices for the given partition ID , as defined by the derived partitioning method. */
-    virtual void getPartitioningGridPartitionIndices(int partitionID, int &i, int &j) = 0;
 
     /** @brief Abstract method. Returns the partition ID in the distribution grid for the given indices, as defined by the derived partitioning method. */
     virtual int getDistributionGridPartitionID(int i, int j) = 0;
@@ -1233,7 +1260,7 @@ public:
     double partPartitionExtentY;
 
     /** @brief Round robing partitioning constructor. */
-    TwoGridPartitioning(PartitioningType type, int batchSize, int partitionsPerDim, int fPartitionsPerDim) : PartitioningMethod(type, batchSize, partitionsPerDim), partPartitionsPerDim(fPartitionsPerDim) {
+    TwoGridPartitioning(PartitioningTypeE type, int batchSize, int partitionsPerDim, int fPartitionsPerDim) : PartitioningMethod(type, batchSize, partitionsPerDim), partPartitionsPerDim(fPartitionsPerDim) {
         globalPartitionsPerDim = partPartitionsPerDim * distPartitionsPerDim;
     }
 
@@ -1242,8 +1269,6 @@ public:
 
     /** @brief Get the partitioning grid's partition ID (from parent) for the given distribution grid AND partitioning grid indices. */
     int getPartitioningGridPartitionID(int distI, int distJ, int partI, int partJ) override;
-
-    void getPartitioningGridPartitionIndices(int partitionID, int &i, int &j) override;
 
     /** @brief Returns the distribution (coarse) grid's partitions per dimension number. */
     int getDistributionPPD() override;
@@ -1269,15 +1294,13 @@ public:
 struct RoundRobinPartitioning : public PartitioningMethod {
 public:
     /** @brief Round robing partitioning constructor. */
-    RoundRobinPartitioning(PartitioningType type, int batchSize, int partitionsPerDim) : PartitioningMethod(type, batchSize, partitionsPerDim) {}
+    RoundRobinPartitioning(PartitioningTypeE type, int batchSize, int partitionsPerDim) : PartitioningMethod(type, batchSize, partitionsPerDim) {}
 
     /** @brief Get the grid's partition ID (from parent). */
     int getDistributionGridPartitionID(int i, int j) override;
 
     /** @brief Get the grid's partition ID (from parent). */
     int getPartitioningGridPartitionID(int distI, int distJ, int partI, int partJ) override;
-
-    void getPartitioningGridPartitionIndices(int partitionID, int &i, int &j) override;
 
     /** @brief Returns the distribution (coarse) grid's partitions per dimension number. */
     int getDistributionPPD() override;
@@ -1302,7 +1325,7 @@ public:
  */
 // struct PartitioningInfo {
 //     /** @brief The partitioning technique */
-//     PartitioningType type;                 
+//     PartitioningTypeE type;                 
 //     /** @brief The number of partitions per dimension */
 //     int ppdNum;                
 //     /** @brief The batch size for the data distribution, in number of objects. */             
@@ -1321,11 +1344,11 @@ public:
 /** @brief Defines a system task/job that the host controller is responsible for performing/broadcasting.
  */
 struct Action {
-    ActionType type;
+    ActionTypeE type;
     Action(){
         this->type = ACTION_NONE;
     }
-    Action(ActionType type) {
+    Action(ActionTypeE type) {
         this->type = type;
     }
 };
@@ -1351,11 +1374,14 @@ public:
     Dataset* getDatasetR();
 
     Dataset* getDatasetS();
+
+    Dataset* getDatasetByIdx(DatasetIndexE datasetIndex);
+
     /**
     @brief adds a Dataset to the configuration's dataset info
      * @warning it has to be an empty dataset BUT its nickname needs to be set
      */
-    void addDataset(Dataset &dataset);
+    DB_STATUS addDataset(DatasetIndexE datasetIdx, Dataset &dataset);
 
     void updateDataspace();
 };
@@ -1363,12 +1389,12 @@ public:
 /** @brief Holds all approximation related info.
  */
 struct ApproximationInfo {
-    ApproximationType type;   // sets which of the following fields will be used
+    ApproximationTypeE type;   // sets which of the following fields will be used
     AprilConfig aprilConfig;  
     ApproximationInfo() {
         this->type = AT_NONE;
     }
-    ApproximationInfo(ApproximationType type) {
+    ApproximationInfo(ApproximationTypeE type) {
         this->type = type;
     }
 };
@@ -1376,7 +1402,7 @@ struct ApproximationInfo {
 /** @brief Holds all the query related info in the configuration.
  */
 struct QueryInfo {
-    QueryType type = Q_NONE;
+    QueryTypeE type = Q_NONE;
     int MBRFilter = 1;
     int IntermediateFilter = 1;
     int Refinement = 1;
@@ -1385,7 +1411,7 @@ struct QueryInfo {
 /** @brief Holds all the system related info in the configuration.
  */
 struct SystemOptions {
-    SystemSetupType setupType;
+    SystemSetupTypeE setupType;
     std::string nodefilePath;
     uint nodeCount;
 };
@@ -1416,7 +1442,7 @@ struct Geometry {
     Geometry(size_t recID, int vertexCount, std::vector<double> &coords);
     Geometry(size_t recID, std::vector<int> &partitions, int vertexCount, std::vector<double> &coords);
     void setPartitions(std::vector<int> &ids);
-    void setPartitions(std::vector<int> &ids, std::vector<TwoLayerClass> &classes);
+    void setPartitions(std::vector<int> &ids, std::vector<TwoLayerClassE> &classes);
 };
 
 /**

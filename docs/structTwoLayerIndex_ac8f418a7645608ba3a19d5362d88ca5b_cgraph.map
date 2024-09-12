@@ -1,6 +1,0 @@
-<map id="TwoLayerIndex::addObject" name="TwoLayerIndex::addObject">
-<area shape="rect" id="node1" title="Adds an object to a partition with partitionID, with the specified classType and returns a pointer to..." alt="" coords="5,46,183,73"/>
-<area shape="rect" id="node2" href="$structPartition.html#aed331352644439a199bff28c2eefd8dd" title="Returns a reference to the partition&#39;s contents for the given class type." alt="" coords="232,5,419,47"/>
-<area shape="rect" id="node4" href="$structTwoLayerIndex.html#a125b80bcfdbc2facdc8ef389a2d364aa" title="Returns or creates a new partition with the given ID." alt="" coords="231,71,420,112"/>
-<area shape="rect" id="node3" href="$namespacelogger.html#a53f34feeb22a94db295af05b8b2aab5c" title="Error logging function with template arguments. Separates input parameters with spaces...." alt="" coords="468,13,583,39"/>
-</map>

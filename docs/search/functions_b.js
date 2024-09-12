@@ -20,7 +20,7 @@ var searchData=
   ['refineinsidejoin_434',['refineInsideJoin',['../namespacerefinement_1_1relate.html#addbc422783e4a80184b27532200c16b2',1,'refinement::relate']]],
   ['refineintersectionjoin_435',['refineIntersectionJoin',['../namespacerefinement_1_1relate.html#a45401e61973c8226ee2b1fe1f375055c',1,'refinement::relate']]],
   ['refinemeetjoin_436',['refineMeetJoin',['../namespacerefinement_1_1relate.html#a8888ecdbd804e490a35234efcd98d5c7',1,'refinement::relate']]],
-  ['refinemententrypoint_437',['refinementEntrypoint',['../namespacerefinement_1_1relate.html#a079dc098b2d719b263ad2e31ff9690fd',1,'refinement::relate']]],
+  ['refinemententrypoint_437',['refinementEntrypoint',['../namespacerefinement_1_1relate.html#a8648ae83cd8bee000ca1b5bd0ae0eddf',1,'refinement::relate']]],
   ['reset_438',['reset',['../structShape.html#a092686033218ceb6e70f18c7431f90df',1,'Shape']]],
-  ['roundrobinpartitioning_439',['RoundRobinPartitioning',['../structRoundRobinPartitioning.html#a27ed17aaaa3d3326251078bd5bfe6361',1,'RoundRobinPartitioning']]]
+  ['roundrobinpartitioning_439',['RoundRobinPartitioning',['../structRoundRobinPartitioning.html#af3c9ccfab98b6046ac7a359f29bcc326',1,'RoundRobinPartitioning']]]
 ];

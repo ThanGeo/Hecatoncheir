@@ -1,6 +1,5 @@
 <map id="configurer::setDatasetInfo" name="configurer::setDatasetInfo">
-<area shape="rect" id="node1" title="Configures the specified dataset info from the input dataset statement." alt="" coords="5,56,179,83"/>
-<area shape="rect" id="node2" href="$structDatasetInfo.html#a2bf167932686678cb72266aedb190741" title="adds a Dataset to the configuration&#39;s dataset info" alt="" coords="227,5,392,32"/>
-<area shape="rect" id="node3" href="$namespacestatement.html#ab925bf63088f3560cc2c9364dc8ff399" title="Sets the input data file type." alt="" coords="233,56,385,83"/>
-<area shape="rect" id="node4" href="$namespacelogger.html#a53f34feeb22a94db295af05b8b2aab5c" title="Error logging function with template arguments. Separates input parameters with spaces...." alt="" coords="440,81,555,108"/>
+<area shape="rect" id="node1" title="Configures the specified dataset info from the input dataset statement." alt="" coords="5,31,179,57"/>
+<area shape="rect" id="node2" href="$structDatasetInfo.html#ade61e41dd4198411f123176820f0792f" title="adds a Dataset to the configuration&#39;s dataset info" alt="" coords="227,5,392,32"/>
+<area shape="rect" id="node3" href="$namespacelogger.html#a53f34feeb22a94db295af05b8b2aab5c" title="Error logging function with template arguments. Separates input parameters with spaces...." alt="" coords="440,31,555,57"/>
 </map>

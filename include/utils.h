@@ -204,13 +204,13 @@ namespace logger
 /** @brief Mapping functions from int to string and back, for printing/parsing purposes. */
 namespace mapping
 {
-    extern std::string actionIntToStr(ActionType action);
-    std::string twoLayerClassIntToStr(TwoLayerClass classType);
-    extern std::string queryTypeIntToStr(QueryType val);
-    extern QueryType queryTypeStrToInt(std::string &str);
-    extern std::string dataTypeIntToStr(DataType val);
-    extern DataType dataTypeTextToInt(std::string str);
-    extern FileType fileTypeTextToInt(std::string str);
+    extern std::string actionIntToStr(ActionTypeE action);
+    std::string twoLayerClassIntToStr(TwoLayerClassE classType);
+    extern std::string queryTypeIntToStr(QueryTypeE val);
+    extern QueryTypeE queryTypeStrToInt(std::string &str);
+    extern std::string dataTypeIntToStr(DataTypeE val);
+    extern DataTypeE dataTypeTextToInt(std::string str);
+    extern FileTypeE fileTypeTextToInt(std::string str);
     extern std::string relationIntToStr(int relation);
 }
 

@@ -97,10 +97,10 @@ Collaboration diagram for RoundRobinPartitioning:</div>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:a27ed17aaaa3d3326251078bd5bfe6361"><td class="memItemLeft" align="right" valign="top"><a id="a27ed17aaaa3d3326251078bd5bfe6361"></a>
-&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structRoundRobinPartitioning.html#a27ed17aaaa3d3326251078bd5bfe6361">RoundRobinPartitioning</a> (PartitioningType <a class="el" href="structPartitioningMethod.html#a2b42e27fbcac6136d0709c087bd2a42b">type</a>, int <a class="el" href="structPartitioningMethod.html#ac27d552ac93ac38c861ba160d7a3d02e">batchSize</a>, int partitionsPerDim)</td></tr>
-<tr class="memdesc:a27ed17aaaa3d3326251078bd5bfe6361"><td class="mdescLeft">&#160;</td><td class="mdescRight">Round robing partitioning constructor. <br /></td></tr>
-<tr class="separator:a27ed17aaaa3d3326251078bd5bfe6361"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:af3c9ccfab98b6046ac7a359f29bcc326"><td class="memItemLeft" align="right" valign="top"><a id="af3c9ccfab98b6046ac7a359f29bcc326"></a>
+&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structRoundRobinPartitioning.html#af3c9ccfab98b6046ac7a359f29bcc326">RoundRobinPartitioning</a> (PartitioningTypeE <a class="el" href="structPartitioningMethod.html#a01d4b1138f1544dfb0c75e4fb3c50e80">type</a>, int <a class="el" href="structPartitioningMethod.html#ac27d552ac93ac38c861ba160d7a3d02e">batchSize</a>, int partitionsPerDim)</td></tr>
+<tr class="memdesc:af3c9ccfab98b6046ac7a359f29bcc326"><td class="mdescLeft">&#160;</td><td class="mdescRight">Round robing partitioning constructor. <br /></td></tr>
+<tr class="separator:af3c9ccfab98b6046ac7a359f29bcc326"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a25a682de7f1280b099c7e9b539267615"><td class="memItemLeft" align="right" valign="top"><a id="a25a682de7f1280b099c7e9b539267615"></a>
 int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structRoundRobinPartitioning.html#a25a682de7f1280b099c7e9b539267615">getDistributionGridPartitionID</a> (int i, int j) override</td></tr>
 <tr class="memdesc:a25a682de7f1280b099c7e9b539267615"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get the grid's partition ID (from parent). <br /></td></tr>
@@ -109,10 +109,6 @@ int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="struc
 int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structRoundRobinPartitioning.html#a2c28c9a10f699ecc255ce6ebbb290ac6">getPartitioningGridPartitionID</a> (int distI, int distJ, int partI, int partJ) override</td></tr>
 <tr class="memdesc:a2c28c9a10f699ecc255ce6ebbb290ac6"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get the grid's partition ID (from parent). <br /></td></tr>
 <tr class="separator:a2c28c9a10f699ecc255ce6ebbb290ac6"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a3dbff2390c90b08a0433833809a52362"><td class="memItemLeft" align="right" valign="top"><a id="a3dbff2390c90b08a0433833809a52362"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structRoundRobinPartitioning.html#a3dbff2390c90b08a0433833809a52362">getPartitioningGridPartitionIndices</a> (int partitionID, int &amp;i, int &amp;j) override</td></tr>
-<tr class="memdesc:a3dbff2390c90b08a0433833809a52362"><td class="mdescLeft">&#160;</td><td class="mdescRight">Abstract method. Gets the partition's indices for the given partition ID , as defined by the derived partitioning method. <br /></td></tr>
-<tr class="separator:a3dbff2390c90b08a0433833809a52362"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aa32d287e9a3e4846c416cf9c85b95b15"><td class="memItemLeft" align="right" valign="top"><a id="aa32d287e9a3e4846c416cf9c85b95b15"></a>
 int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structRoundRobinPartitioning.html#aa32d287e9a3e4846c416cf9c85b95b15">getDistributionPPD</a> () override</td></tr>
 <tr class="memdesc:aa32d287e9a3e4846c416cf9c85b95b15"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns the distribution (coarse) grid's partitions per dimension number. <br /></td></tr>
@@ -140,14 +136,14 @@ double&#160;</td><td class="memItemRight" valign="bottom"><b>getPartPartionExten
 double&#160;</td><td class="memItemRight" valign="bottom"><b>getPartPartionExtentY</b> () override</td></tr>
 <tr class="separator:ae23850e1ad0d03debf1b4dc2efa491db"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="inherit_header pub_methods_structPartitioningMethod"><td colspan="2" onclick="javascript:toggleInherit('pub_methods_structPartitioningMethod')"><img src="closed.png" alt="-"/>&#160;Public Member Functions inherited from <a class="el" href="structPartitioningMethod.html">PartitioningMethod</a></td></tr>
-<tr class="memitem:a2cae9e36aefa1c49219c1abdbd224df0 inherit pub_methods_structPartitioningMethod"><td class="memItemLeft" align="right" valign="top"><a id="a2cae9e36aefa1c49219c1abdbd224df0"></a>
-&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structPartitioningMethod.html#a2cae9e36aefa1c49219c1abdbd224df0">PartitioningMethod</a> (PartitioningType pType, int pBatchSize, int partitionsPerDimensionNum)</td></tr>
-<tr class="memdesc:a2cae9e36aefa1c49219c1abdbd224df0 inherit pub_methods_structPartitioningMethod"><td class="mdescLeft">&#160;</td><td class="mdescRight">Base constructor. <br /></td></tr>
-<tr class="separator:a2cae9e36aefa1c49219c1abdbd224df0 inherit pub_methods_structPartitioningMethod"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a78ac6f79fb4bd638e501b60f1e4f9c79 inherit pub_methods_structPartitioningMethod"><td class="memItemLeft" align="right" valign="top"><a id="a78ac6f79fb4bd638e501b60f1e4f9c79"></a>
-PartitioningType&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structPartitioningMethod.html#a78ac6f79fb4bd638e501b60f1e4f9c79">getType</a> ()</td></tr>
-<tr class="memdesc:a78ac6f79fb4bd638e501b60f1e4f9c79 inherit pub_methods_structPartitioningMethod"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns the partitioning method's type. <br /></td></tr>
-<tr class="separator:a78ac6f79fb4bd638e501b60f1e4f9c79 inherit pub_methods_structPartitioningMethod"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a2104e28ef5b14ab69b8ca01b2749da27 inherit pub_methods_structPartitioningMethod"><td class="memItemLeft" align="right" valign="top"><a id="a2104e28ef5b14ab69b8ca01b2749da27"></a>
+&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structPartitioningMethod.html#a2104e28ef5b14ab69b8ca01b2749da27">PartitioningMethod</a> (PartitioningTypeE pType, int pBatchSize, int partitionsPerDimensionNum)</td></tr>
+<tr class="memdesc:a2104e28ef5b14ab69b8ca01b2749da27 inherit pub_methods_structPartitioningMethod"><td class="mdescLeft">&#160;</td><td class="mdescRight">Base constructor. <br /></td></tr>
+<tr class="separator:a2104e28ef5b14ab69b8ca01b2749da27 inherit pub_methods_structPartitioningMethod"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a6e950b611cba8a6f2d36e5cbc32550aa inherit pub_methods_structPartitioningMethod"><td class="memItemLeft" align="right" valign="top"><a id="a6e950b611cba8a6f2d36e5cbc32550aa"></a>
+PartitioningTypeE&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structPartitioningMethod.html#a6e950b611cba8a6f2d36e5cbc32550aa">getType</a> ()</td></tr>
+<tr class="memdesc:a6e950b611cba8a6f2d36e5cbc32550aa inherit pub_methods_structPartitioningMethod"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns the partitioning method's type. <br /></td></tr>
+<tr class="separator:a6e950b611cba8a6f2d36e5cbc32550aa inherit pub_methods_structPartitioningMethod"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a816f21ad060ff6aa69a4bd462acada8a inherit pub_methods_structPartitioningMethod"><td class="memItemLeft" align="right" valign="top"><a id="a816f21ad060ff6aa69a4bd462acada8a"></a>
 int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structPartitioningMethod.html#a816f21ad060ff6aa69a4bd462acada8a">getBatchSize</a> ()</td></tr>
 <tr class="memdesc:a816f21ad060ff6aa69a4bd462acada8a inherit pub_methods_structPartitioningMethod"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns the batch size. <br /></td></tr>
@@ -177,10 +173,10 @@ double&#160;</td><td class="memItemRight" valign="bottom"><b>getDistPartionExten
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="inherited"></a>
 Additional Inherited Members</h2></td></tr>
 <tr class="inherit_header pub_attribs_structPartitioningMethod"><td colspan="2" onclick="javascript:toggleInherit('pub_attribs_structPartitioningMethod')"><img src="closed.png" alt="-"/>&#160;Public Attributes inherited from <a class="el" href="structPartitioningMethod.html">PartitioningMethod</a></td></tr>
-<tr class="memitem:a2b42e27fbcac6136d0709c087bd2a42b inherit pub_attribs_structPartitioningMethod"><td class="memItemLeft" align="right" valign="top"><a id="a2b42e27fbcac6136d0709c087bd2a42b"></a>
-PartitioningType&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structPartitioningMethod.html#a2b42e27fbcac6136d0709c087bd2a42b">type</a></td></tr>
-<tr class="memdesc:a2b42e27fbcac6136d0709c087bd2a42b inherit pub_attribs_structPartitioningMethod"><td class="mdescLeft">&#160;</td><td class="mdescRight">The partitioning technique. <br /></td></tr>
-<tr class="separator:a2b42e27fbcac6136d0709c087bd2a42b inherit pub_attribs_structPartitioningMethod"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a01d4b1138f1544dfb0c75e4fb3c50e80 inherit pub_attribs_structPartitioningMethod"><td class="memItemLeft" align="right" valign="top"><a id="a01d4b1138f1544dfb0c75e4fb3c50e80"></a>
+PartitioningTypeE&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structPartitioningMethod.html#a01d4b1138f1544dfb0c75e4fb3c50e80">type</a></td></tr>
+<tr class="memdesc:a01d4b1138f1544dfb0c75e4fb3c50e80 inherit pub_attribs_structPartitioningMethod"><td class="mdescLeft">&#160;</td><td class="mdescRight">The partitioning technique. <br /></td></tr>
+<tr class="separator:a01d4b1138f1544dfb0c75e4fb3c50e80 inherit pub_attribs_structPartitioningMethod"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aea4645ae36d8ce941dcfc708febd0ab7 inherit pub_attribs_structPartitioningMethod"><td class="memItemLeft" align="right" valign="top"><a id="aea4645ae36d8ce941dcfc708febd0ab7"></a>
 int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structPartitioningMethod.html#aea4645ae36d8ce941dcfc708febd0ab7">distPartitionsPerDim</a></td></tr>
 <tr class="memdesc:aea4645ae36d8ce941dcfc708febd0ab7 inherit pub_attribs_structPartitioningMethod"><td class="mdescLeft">&#160;</td><td class="mdescRight">The number of partitions per dimension. <br /></td></tr>
@@ -205,7 +201,7 @@ double&#160;</td><td class="memItemRight" valign="bottom"><b>distPartitionExtent
 <dl class="section note"><dt>Note</dt><dd>It doesn't matter which method will be used to get a partition's ID, since there is a single grid. <br  />
  </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="containers_8h_source.html#l01269">1269</a> of file <a class="el" href="containers_8h_source.html">containers.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="containers_8h_source.html#l01294">1294</a> of file <a class="el" href="containers_8h_source.html">containers.h</a>.</p>
 </div><hr/>The documentation for this struct was generated from the following files:<ul>
 <li>include/<a class="el" href="containers_8h_source.html">containers.h</a></li>
 <li>src/<a class="el" href="containers_8cpp_source.html">containers.cpp</a></li>

@@ -69,6 +69,8 @@ typedef enum DB_STATUS {
     DBERR_INVALID_OPERATION = DBBASE + 1010,
     DBERR_OUT_OF_BOUNDS = DBBASE + 1011,
     DBERR_NULL_PTR_EXCEPTION = DBBASE + 1012,
+    DBERR_DUPLICATE_ENTRY = DBBASE + 1013,
+    DBERR_INVALID_KEY = DBBASE + 1014,
 
     // comm
     DBERR_COMM_RECV = DBBASE + 2000,
@@ -106,16 +108,21 @@ typedef enum DB_STATUS {
     DBERR_QUERY_INVALID_TYPE = DBBASE + 7001,
 } DB_STATUS;
 
-/** @enum FileType @brief Data file types. */
-typedef enum FileType {
+enum DatasetIndexE {
+    DATASET_R,
+    DATASET_S,
+};
+
+/** @enum FileTypeE @brief Data file types. */
+enum FileTypeE {
     FT_INVALID,
     FT_BINARY,
     FT_CSV,
     FT_WKT,
-} FileType;
+};
 
-/** @enum FilterResult @brief Possible results for the intermediate filter. */
-enum FilterResult {
+/** @enum FilterResultE @brief Possible results for the intermediate filter. */
+enum FilterResultE {
     TRUE_NEGATIVE,
     TRUE_HIT,
     INCONCLUSIVE,
@@ -134,9 +141,9 @@ typedef enum QueryType{
     Q_COVERS,
     Q_COVERED_BY,
     Q_FIND_RELATION,    // find what type of topological relation is there
-}QueryType;
+}QueryTypeE;
 
-/** @enum MBRRelationCase 
+/** @enum MBRRelationCase
 @brief Specific relationships between the MBRs of two objects R and S. 
  * 
  * Used in the topological MBR filter.
@@ -147,7 +154,7 @@ typedef enum MBRRelationCase {
     MBR_EQUAL,
     MBR_CROSS,
     MBR_INTERSECT,
-} MBRRelationCase;
+} MBRRelationCaseE;
 
 /** @enum TopologyRelation @brief Topological relation related flags. 
  * 
@@ -174,7 +181,7 @@ typedef enum TopologyRelation {
     REFINE_COVERS_TRUEHIT_INTERSECT,
     REFINE_COVERS_COVEREDBY_TRUEHIT_INTERSECT,
     REFINE_EQUAL_COVERS_COVEREDBY_TRUEHIT_INTERSECT,
-} TopologyRelation;
+} TopologyRelationE;
 
 /** @enum DataType @brief Spatial data types. */
 typedef enum DataType{
@@ -183,7 +190,7 @@ typedef enum DataType{
     DT_LINESTRING,
     DT_RECTANGLE,
     DT_POLYGON,
-} DataType;
+} DataTypeE;
 
 /** @enum ApproximationType @brief Spatial approximation types (mostly for polygons). */
 typedef enum ApproximationType{
@@ -195,19 +202,19 @@ typedef enum ApproximationType{
     AT_5CCH,
     AT_RA,
     AT_GEOS,
-} ApproximationType;
+} ApproximationTypeE;
 
 /** @enum TwoLayerClass @brief The two-layer index classes. (see paper) */
 typedef enum TwoLayerClass {
-    CLASS_A,
-    CLASS_B,
-    CLASS_C,
-    CLASS_D,
+    CLASS_A = 0,
+    CLASS_B = 1,
+    CLASS_C = 2,
+    CLASS_D = 3,
     CLASS_NONE = 777,
-} TwoLayerClass;
+} TwoLayerClassE;
 
-/** @enum IntervalListsRelationship @brief Types of possible relationships between interval lists (IL). */
-enum IntervalListsRelationship {
+/** @enum IntervalListsRelationshipE @brief Types of possible relationships between interval lists (IL). */
+enum IntervalListsRelationshipE {
     // no containment, no intersection
     IL_DISJOINT,
     // no containment, yes intersection
@@ -221,13 +228,14 @@ enum IntervalListsRelationship {
 /** @enum ActionType @brief Different actions (jobs/tasks) the host controller will initiate/broadcast. */
 typedef enum ActionType {
     ACTION_NONE,
-    ACTION_LOAD_DATASETS,
+    ACTION_LOAD_DATASET_R,
+    ACTION_LOAD_DATASET_S,
     ACTION_PERFORM_PARTITIONING,
     ACTION_CREATE_APRIL,
     ACTION_LOAD_APRIL,
     ACTION_PERFORM_VERIFICATION,
     ACTION_QUERY,
-} ActionType;
+} ActionTypeE;
 
 /** @enum PartitioningType @brief Data partitioning methods. Only round robin is supported currently. */
 typedef enum PartitioningType {
@@ -237,13 +245,13 @@ typedef enum PartitioningType {
     PARTITIONING_PREFIX_BASED,
     /** @brief A distribution grid is used to distribute the data, then a fine-grid is used at each local node for the partitioning. */
     PARTITIONING_TWO_GRID,
-} PartitioningType;
+} PartitioningTypeE;
 
 /** @enum SystemSetupType @brief System type: Cluster or single machine (VM) */
 typedef enum SystemSetupType {
     SYS_LOCAL_MACHINE,
     SYS_CLUSTER,
-} SystemSetupType;
+} SystemSetupTypeE;
 
 
 #endif

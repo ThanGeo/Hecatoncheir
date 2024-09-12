@@ -95,9 +95,9 @@ $(function() {
 <div class="line"><a name="l00024"></a><span class="lineno">   24</span>&#160;        }</div>
 <div class="line"><a name="l00025"></a><span class="lineno">   25</span>&#160;    };</div>
 <div class="line"><a name="l00026"></a><span class="lineno">   26</span>&#160; </div>
-<div class="line"><a name="l00028"></a><span class="lineno">   28</span>&#160;    <span class="keyword">using</span> DataTypePair = std::pair&lt;DataType, DataType&gt;;</div>
+<div class="line"><a name="l00028"></a><span class="lineno">   28</span>&#160;    <span class="keyword">using</span> DataTypePair = std::pair&lt;DataTypeE, DataTypeE&gt;;</div>
 <div class="line"><a name="l00030"></a><span class="lineno">   30</span>&#160;    <span class="keyword">using</span> SupportStatus = std::unordered_map&lt;DataTypePair, bool, pair_hash&gt;;</div>
-<div class="line"><a name="l00032"></a><span class="lineno">   32</span>&#160;    <span class="keyword">using</span> QuerySupportMap = std::unordered_map&lt;QueryType, SupportStatus&gt;;</div>
+<div class="line"><a name="l00032"></a><span class="lineno">   32</span>&#160;    <span class="keyword">using</span> QuerySupportMap = std::unordered_map&lt;QueryTypeE, SupportStatus&gt;;</div>
 <div class="line"><a name="l00033"></a><span class="lineno">   33</span>&#160; </div>
 <div class="line"><a name="l00034"></a><span class="lineno">   34</span>&#160;    <span class="keyword">extern</span> QuerySupportMap g_querySupportMap;</div>
 <div class="line"><a name="l00035"></a><span class="lineno">   35</span>&#160; </div>
@@ -107,8 +107,8 @@ $(function() {
 <div class="line"><a name="l00044"></a><span class="lineno">   44</span>&#160;<span class="preprocessor">#endif</span></div>
 <div class="ttc" id="acontainers_8h_html"><div class="ttname"><a href="containers_8h.html">containers.h</a></div><div class="ttdoc">Contains the struct definitions.</div></div>
 <div class="ttc" id="anamespaceparser_html"><div class="ttname"><a href="namespaceparser.html">parser</a></div><div class="ttdoc">System parameter and runtime options parsing methods.</div><div class="ttdef"><b>Definition:</b> <a href="parse_8cpp_source.html#l00003">parse.cpp:4</a></div></div>
-<div class="ttc" id="anamespaceparser_html_aaf3716532dd70ed06384fcd75ba203e2"><div class="ttname"><a href="namespaceparser.html#aaf3716532dd70ed06384fcd75ba203e2">parser::parse</a></div><div class="ttdeci">DB_STATUS parse(int argc, char *argv[])</div><div class="ttdoc">Load config options and parse any cmd arguments.</div><div class="ttdef"><b>Definition:</b> <a href="parse_8cpp_source.html#l00458">parse.cpp:458</a></div></div>
-<div class="ttc" id="astructparser_1_1pair__hash_html"><div class="ttname"><a href="structparser_1_1pair__hash.html">parser::pair_hash</a></div><div class="ttdoc">Custom hash function for std::pair&lt;QueryType, DataType&gt; objects.</div><div class="ttdef"><b>Definition:</b> <a href="parse_8h_source.html#l00018">parse.h:18</a></div></div>
+<div class="ttc" id="anamespaceparser_html_aaf3716532dd70ed06384fcd75ba203e2"><div class="ttname"><a href="namespaceparser.html#aaf3716532dd70ed06384fcd75ba203e2">parser::parse</a></div><div class="ttdeci">DB_STATUS parse(int argc, char *argv[])</div><div class="ttdoc">Load config options and parse any cmd arguments.</div><div class="ttdef"><b>Definition:</b> <a href="parse_8cpp_source.html#l00450">parse.cpp:450</a></div></div>
+<div class="ttc" id="astructparser_1_1pair__hash_html"><div class="ttname"><a href="structparser_1_1pair__hash.html">parser::pair_hash</a></div><div class="ttdoc">Custom hash function for std::pair&lt;QueryTypeE, DataTypeE&gt; objects.</div><div class="ttdef"><b>Definition:</b> <a href="parse_8h_source.html#l00018">parse.h:18</a></div></div>
 </div><!-- fragment --></div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>

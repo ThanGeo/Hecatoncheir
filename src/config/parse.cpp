@@ -70,15 +70,15 @@ namespace parser
         return -1;
     }
 
-    static DB_STATUS verifyDatatypeCombinationForQueryType(QueryType queryType) {
+    static DB_STATUS verifyDatatypeCombinationForQueryType(QueryTypeE queryType) {
         // get number of datasets
         int numberOfDatasets = g_config.datasetInfo.getNumberOfDatasets();
         // find if query type is supported
         auto queryIT = g_querySupportMap.find(queryType);
         if (queryIT != g_querySupportMap.end()) {
-            DataType dataTypeR = g_config.datasetInfo.getDatasetR()->dataType;
+            DataTypeE dataTypeR = g_config.datasetInfo.getDatasetR()->dataType;
             // todo: for queries with one dataset input, handle this accordingly
-            DataType dataTypeS = g_config.datasetInfo.getDatasetS()->dataType;
+            DataTypeE dataTypeS = g_config.datasetInfo.getDatasetS()->dataType;
             const auto& allowedCombinations = queryIT->second;
             auto dataTypesPair = std::make_pair(dataTypeR, dataTypeS);
             auto datatypesIT = allowedCombinations.find(dataTypesPair);
@@ -138,9 +138,13 @@ namespace parser
             Action action(ACTION_PERFORM_PARTITIONING);
             g_config.actions.emplace_back(action);
         }
-        // load datasets action
-        if (actionsStmt->loadDatasets) {
-            Action action(ACTION_LOAD_DATASETS);
+        // load dataset actions
+        if (actionsStmt->loadDatasetR) {
+            Action action(ACTION_LOAD_DATASET_R);
+            g_config.actions.emplace_back(action);
+        }
+        if (actionsStmt->loadDatasetS) {
+            Action action(ACTION_LOAD_DATASET_S);
             g_config.actions.emplace_back(action);
         }
         // create APRIL
@@ -158,8 +162,9 @@ namespace parser
                 return DBERR_CONFIG_FILE;
             }
         }
-        // load approximations (after any creation and after the datasets have been loaded)
-        if (actionsStmt->loadDatasets) {
+        // load APRIL (after any creation and after the datasets have been loaded)
+        // only of there is at least one dataset and the intermediate filter is enabled
+        if ((actionsStmt->loadDatasetR || actionsStmt->loadDatasetS) && g_config.queryInfo.IntermediateFilter) {
             Action action(ACTION_LOAD_APRIL);
             g_config.actions.emplace_back(action);
         }
@@ -205,7 +210,7 @@ namespace parser
 
         // partitioning type
         std::string partitioningTypeStr = system_config_pt.get<std::string>("Partitioning.type");
-        PartitioningType partitioningType;
+        PartitioningTypeE partitioningType;
         DB_STATUS ret = statement::getPartitioningType(partitioningTypeStr, partitioningType);
         if (ret != DBERR_OK) {
             logger::log_error(ret, "Unkown partitioning type in config file");
@@ -253,6 +258,7 @@ namespace parser
         return DBERR_OK;
     }
 
+    /** @brief Verify the validity of the dataset options */
     static DB_STATUS verifyDatasetOptions(DatasetStatement *datasetStmt) {
         if (datasetStmt->datasetCount == 1 && datasetStmt->datasetNicknameR == "") {
             logger::log_error(DBERR_INVALID_PARAMETER, "If only one dataset is specified, the '-R' argument must be used instead of '-S'");
@@ -267,7 +273,7 @@ namespace parser
         if (datasetStmt->datasetCount > 0) {
             // R dataset
             // file type
-            FileType fileTypeR = mapping::fileTypeTextToInt(datasetStmt->filetypeR);
+            FileTypeE fileTypeR = mapping::fileTypeTextToInt(datasetStmt->filetypeR);
             if (fileTypeR == FT_INVALID) {
                 logger::log_error(DBERR_INVALID_FILETYPE, "Unkown file type of dataset R:", datasetStmt->filetypeR);
                 return DBERR_INVALID_FILETYPE;
@@ -281,8 +287,12 @@ namespace parser
 
             if (datasetStmt->datasetCount > 1) {
                 // S dataset
+                if (datasetStmt->datasetNicknameS == "") {
+                    logger::log_error(DBERR_INVALID_PARAMETER, "Two datasets specified, but '-S' dataset is empty.");
+                    return DBERR_INVALID_PARAMETER;
+                }
                 // file type
-                FileType fileTypeS = mapping::fileTypeTextToInt(datasetStmt->filetypeS);
+                FileTypeE fileTypeS = mapping::fileTypeTextToInt(datasetStmt->filetypeS);
                 if (fileTypeS == FT_INVALID) {
                     logger::log_error(DBERR_INVALID_FILETYPE, "Unkown file type of dataset S:", datasetStmt->filetypeS);
                     return DBERR_INVALID_FILETYPE;
@@ -305,41 +315,18 @@ namespace parser
             logger::log_error(DBERR_MISSING_FILE, "Dataset configuration file 'dataset.ini' missing from Database directory.");
             return DBERR_MISSING_FILE;
         }
-
-        // if no argument is passed, read config
-        if (datasetStmt->datasetNicknameR != "") {
-            datasetStmt->datasetPathR = dataset_config_pt.get<std::string>(datasetStmt->datasetNicknameR+".path");
-            // dataset data type
-            DataType datatypeR = mapping::dataTypeTextToInt(dataset_config_pt.get<std::string>(datasetStmt->datasetNicknameR+".datatype"));
-            if (datatypeR == DT_INVALID) {
-                logger::log_error(DBERR_INVALID_DATATYPE, "Unknown data type for dataset R.");
-                return DBERR_INVALID_DATATYPE;
-            }
-            datasetStmt->datatypeR = datatypeR;
-            // file type
-            datasetStmt->filetypeR = dataset_config_pt.get<std::string>(datasetStmt->datasetNicknameR+".filetype");
-        }
-        if (datasetStmt->datasetNicknameS != "") {
-            datasetStmt->datasetPathS = dataset_config_pt.get<std::string>(datasetStmt->datasetNicknameS+".path");
-            // dataset data type
-            DataType datatypeS = mapping::dataTypeTextToInt(dataset_config_pt.get<std::string>(datasetStmt->datasetNicknameS+".datatype"));
-            if (datatypeS == DT_INVALID) {
-                logger::log_error(DBERR_INVALID_DATATYPE, "Unknown data type for dataset S.");
-                return DBERR_INVALID_DATATYPE;
-            }
-            datasetStmt->datatypeS = datatypeS;
-
-            // file type
-            datasetStmt->filetypeS = dataset_config_pt.get<std::string>(datasetStmt->datasetNicknameS+".filetype");
-        }
+        // load config
         if (datasetStmt->datasetCount > 0) {
-            // hardcoded bounds
+            // R dataset (must be) specified
+            datasetStmt->datasetPathR = dataset_config_pt.get<std::string>(datasetStmt->datasetNicknameR+".path");
+            datasetStmt->filetypeR = dataset_config_pt.get<std::string>(datasetStmt->datasetNicknameR+".filetype");
+            datasetStmt->datatypeR = mapping::dataTypeTextToInt(dataset_config_pt.get<std::string>(datasetStmt->datasetNicknameR+".datatype"));
             double xMinR = std::numeric_limits<int>::max();
             double yMinR = std::numeric_limits<int>::max();
             double xMaxR = -std::numeric_limits<int>::max();
             double yMaxR = -std::numeric_limits<int>::max();
             if(dataset_config_pt.get<int>(datasetStmt->datasetNicknameR+".bounds")) {
-                // hardcoded bounds
+                // load hardcoded bounds for R
                 xMinR = dataset_config_pt.get<double>(datasetStmt->datasetNicknameR+".xMin");
                 yMinR = dataset_config_pt.get<double>(datasetStmt->datasetNicknameR+".yMin");
                 xMaxR = dataset_config_pt.get<double>(datasetStmt->datasetNicknameR+".xMax");
@@ -347,18 +334,23 @@ namespace parser
                 datasetStmt->boundsSet = true;
             }
             if (datasetStmt->datasetCount == 2) {
+                // S dataset (must be) specified
+                datasetStmt->datasetPathS = dataset_config_pt.get<std::string>(datasetStmt->datasetNicknameS+".path");
+                datasetStmt->filetypeS = dataset_config_pt.get<std::string>(datasetStmt->datasetNicknameS+".filetype");
+                datasetStmt->datatypeS = mapping::dataTypeTextToInt(dataset_config_pt.get<std::string>(datasetStmt->datasetNicknameS+".datatype"));
                 double xMinS = std::numeric_limits<int>::max();
                 double yMinS = std::numeric_limits<int>::max();
                 double xMaxS = -std::numeric_limits<int>::max();
                 double yMaxS = -std::numeric_limits<int>::max();
                 if(dataset_config_pt.get<int>(datasetStmt->datasetNicknameS+".bounds")) {
+                    // load hardcoded bounds for S
                     xMinS = dataset_config_pt.get<double>(datasetStmt->datasetNicknameS+".xMin");
                     yMinS = dataset_config_pt.get<double>(datasetStmt->datasetNicknameS+".yMin");
                     xMaxS = dataset_config_pt.get<double>(datasetStmt->datasetNicknameS+".xMax");
                     yMaxS = dataset_config_pt.get<double>(datasetStmt->datasetNicknameS+".yMax");
                     datasetStmt->boundsSet = true;
                 }
-                // if they have different hardcoded bounds, assign as global the outermost ones (min of min, max of max)
+                // if the two datasets have different bounds, set as global bounds the outermost ones (min of min, max of max)
                 datasetStmt->xMinGlobal = std::min(xMinR, xMinS);
                 datasetStmt->yMinGlobal = std::min(yMinR, yMinS);
                 datasetStmt->xMaxGlobal = std::max(xMaxR, xMaxS);
@@ -393,7 +385,7 @@ namespace parser
             return DBERR_OK;
         }
         // get query type int
-        QueryType queryType = mapping::queryTypeStrToInt(queryStmt->queryType);
+        QueryTypeE queryType = mapping::queryTypeStrToInt(queryStmt->queryType);
         if (queryType == -1) {
             logger::log_error(DBERR_INVALID_PARAMETER, "Invalid query type:", queryStmt->queryType);
             return DBERR_INVALID_PARAMETER;
@@ -405,7 +397,7 @@ namespace parser
         }
 
         // set to configuration
-        g_config.queryInfo.type = (QueryType) queryType;
+        g_config.queryInfo.type = (QueryTypeE) queryType;
         
         return DBERR_OK;    
     }
@@ -450,7 +442,7 @@ namespace parser
                 logger::log_error(DBERR_INVALID_PARAMETER, "Unknown system setup type:", sysOpsStmt.setupType);
                 return DBERR_INVALID_PARAMETER;
             }
-            g_config.options.setupType = (SystemSetupType) setupType;
+            g_config.options.setupType = (SystemSetupTypeE) setupType;
         }
         return DBERR_OK;
     }
@@ -477,13 +469,13 @@ namespace parser
                     // Dataset R path
                     settingsStmt.datasetStmt.datasetNicknameR = std::string(optarg);
                     settingsStmt.datasetStmt.datasetCount++;
-                    settingsStmt.actionsStmt.loadDatasets = true;
+                    settingsStmt.actionsStmt.loadDatasetR = true;
                     break;
                 case 'S':
                     // Dataset S path
                     settingsStmt.datasetStmt.datasetNicknameS = std::string(optarg);
                     settingsStmt.datasetStmt.datasetCount++;
-                    settingsStmt.actionsStmt.loadDatasets = true;
+                    settingsStmt.actionsStmt.loadDatasetS = true;
                     break;
                 case 't':
                     // system type: LOCAL (1 machine) or CLUSTER (many machines)

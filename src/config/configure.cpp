@@ -104,39 +104,36 @@ namespace configurer
                 g_config.datasetInfo.dataspaceInfo.boundsSet = true;
             }
             
-            // build dataset R objects
+            // fill dataset R fields
             R.dataspaceInfo = g_config.datasetInfo.dataspaceInfo;
             R.dataType = datasetStmt->datatypeR;
-
-            DB_STATUS ret = statement::getFiletype(datasetStmt->filetypeR, R.fileType);
-            if (ret != DBERR_OK) {
-                logger::log_error(DBERR_INVALID_FILETYPE, "Unknown filetype for dataset", datasetStmt->datasetNicknameR);
-                return DBERR_INVALID_FILETYPE;
-            }
-
             R.path = datasetStmt->datasetPathR;
             R.nickname = datasetStmt->datasetNicknameR;
             R.datasetName = getFileNameFromPath(R.path);
+            R.fileType = (FileTypeE) mapping::fileTypeTextToInt(datasetStmt->filetypeR);
+            
             // add to config
-            g_config.datasetInfo.addDataset(R);
+            DB_STATUS ret = g_config.datasetInfo.addDataset(DATASET_R, R);
+            if (ret != DBERR_OK) {
+                logger::log_error(ret, "Failed to add dataset R in configuration. Dataset nickname:", datasetStmt->datasetNicknameR, "Dataset idx: DATASET_R");
+                return ret;
+            }
             
             if (datasetStmt->datasetCount == 2) {
                 Dataset S;
                 // build dataset S objects (inherit the same dataspace info)
                 S.dataspaceInfo = g_config.datasetInfo.dataspaceInfo;
                 S.dataType = datasetStmt->datatypeS;
-
-                ret = statement::getFiletype(datasetStmt->filetypeS, S.fileType);
-                if (ret != DBERR_OK) {
-                    logger::log_error(DBERR_INVALID_FILETYPE, "Unknown filetype for dataset", datasetStmt->datasetNicknameS);
-                    return DBERR_INVALID_FILETYPE;
-                }
-
                 S.path = datasetStmt->datasetPathS;
                 S.nickname = datasetStmt->datasetNicknameS;
                 S.datasetName = getFileNameFromPath(S.path);
+                S.fileType = (FileTypeE) mapping::fileTypeTextToInt(datasetStmt->filetypeS);
                 // add to config
-                g_config.datasetInfo.addDataset(S);
+                DB_STATUS ret = g_config.datasetInfo.addDataset(DATASET_S, S);
+                if (ret != DBERR_OK) {
+                    logger::log_error(ret, "Failed to add dataset S in configuration. Dataset nickname:", datasetStmt->datasetNicknameS, "Dataset idx: DATASET_S");
+                    return ret;
+                }
             }
         }
         return DBERR_OK;

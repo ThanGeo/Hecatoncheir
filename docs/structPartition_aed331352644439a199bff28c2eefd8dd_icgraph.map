@@ -1,4 +1,0 @@
-<map id="Partition::getContainerClassContents" name="Partition::getContainerClassContents">
-<area shape="rect" id="node1" title="Returns a reference to the partition&#39;s contents for the given class type." alt="" coords="231,5,417,47"/>
-<area shape="rect" id="node2" href="$structTwoLayerIndex.html#ac8f418a7645608ba3a19d5362d88ca5b" title="Adds an object to a partition with partitionID, with the specified classType and returns a pointer to..." alt="" coords="5,13,183,39"/>
-</map>

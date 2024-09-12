@@ -77,7 +77,7 @@ namespace refinement
     namespace relate
     {
         /** @brief Entrypoint function for when there is NO intermediate filter. */
-        DB_STATUS refinementEntrypoint(Shape* objR, Shape* objS, QueryType queryType, QueryOutput &queryOutput);
+        DB_STATUS refinementEntrypoint(Shape* objR, Shape* objS, QueryTypeE queryType, QueryOutput &queryOutput);
 
         /** @brief Geometrically refines two objects for intersection. */
         void refineIntersectionJoin(Shape* objR, Shape* objS, QueryOutput &queryOutput);

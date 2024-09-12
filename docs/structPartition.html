@@ -79,19 +79,22 @@ $(function() {
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:aaec5d9eda2ce2f195a86dd3bbff79960"><td class="memItemLeft" align="right" valign="top"><a id="aaec5d9eda2ce2f195a86dd3bbff79960"></a>
-&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structPartition.html#aaec5d9eda2ce2f195a86dd3bbff79960">Partition</a> (size_t id)</td></tr>
-<tr class="memdesc:aaec5d9eda2ce2f195a86dd3bbff79960"><td class="mdescLeft">&#160;</td><td class="mdescRight">Default constructor that defines the 4-position vector. Two-layer index classes: A, B, C, D. <br /></td></tr>
-<tr class="separator:aaec5d9eda2ce2f195a86dd3bbff79960"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aed331352644439a199bff28c2eefd8dd"><td class="memItemLeft" align="right" valign="top">std::vector&lt; <a class="el" href="structShape.html">Shape</a> * &gt; *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structPartition.html#aed331352644439a199bff28c2eefd8dd">getContainerClassContents</a> (TwoLayerClass classType)</td></tr>
-<tr class="memdesc:aed331352644439a199bff28c2eefd8dd"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns a reference to the partition's contents for the given class type.  <a href="structPartition.html#aed331352644439a199bff28c2eefd8dd">More...</a><br /></td></tr>
-<tr class="separator:aed331352644439a199bff28c2eefd8dd"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a1606e14e14a9d7cf8e58dc2b613a2357"><td class="memItemLeft" align="right" valign="top"><a id="a1606e14e14a9d7cf8e58dc2b613a2357"></a>
+&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structPartition.html#a1606e14e14a9d7cf8e58dc2b613a2357">Partition</a> (int id)</td></tr>
+<tr class="memdesc:a1606e14e14a9d7cf8e58dc2b613a2357"><td class="mdescLeft">&#160;</td><td class="mdescRight">Default constructor that defines the 4-position vector. Two-layer index classes: A, B, C, D. <br /></td></tr>
+<tr class="separator:a1606e14e14a9d7cf8e58dc2b613a2357"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a78ec104053c124434b2819612e838a26"><td class="memItemLeft" align="right" valign="top">std::vector&lt; <a class="el" href="structShape.html">Shape</a> * &gt; *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structPartition.html#a78ec104053c124434b2819612e838a26">getContainerClassContents</a> (TwoLayerClassE classType)</td></tr>
+<tr class="memdesc:a78ec104053c124434b2819612e838a26"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns a reference to the partition's contents for the given class type.  <a href="structPartition.html#a78ec104053c124434b2819612e838a26">More...</a><br /></td></tr>
+<tr class="separator:a78ec104053c124434b2819612e838a26"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa762db8fe5a7f8d14f9bbfbefc0e76c5"><td class="memItemLeft" align="right" valign="top"><a id="aa762db8fe5a7f8d14f9bbfbefc0e76c5"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>addObjectOfClass</b> (<a class="el" href="structShape.html">Shape</a> *objectRef, TwoLayerClassE classType)</td></tr>
+<tr class="separator:aa762db8fe5a7f8d14f9bbfbefc0e76c5"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-attribs"></a>
 Public Attributes</h2></td></tr>
-<tr class="memitem:ad60c47c998758602f0134a461a4faa8d"><td class="memItemLeft" align="right" valign="top"><a id="ad60c47c998758602f0134a461a4faa8d"></a>
-size_t&#160;</td><td class="memItemRight" valign="bottom"><b>partitionID</b></td></tr>
-<tr class="separator:ad60c47c998758602f0134a461a4faa8d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad7771270f7065dce70d3faa1ad05c172"><td class="memItemLeft" align="right" valign="top"><a id="ad7771270f7065dce70d3faa1ad05c172"></a>
+int&#160;</td><td class="memItemRight" valign="bottom"><b>partitionID</b></td></tr>
+<tr class="separator:ad7771270f7065dce70d3faa1ad05c172"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ae373cfcbd8a107fa63323de8ad0bb324"><td class="memItemLeft" align="right" valign="top"><a id="ae373cfcbd8a107fa63323de8ad0bb324"></a>
 std::vector&lt; std::vector&lt; <a class="el" href="structShape.html">Shape</a> * &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structPartition.html#ae373cfcbd8a107fa63323de8ad0bb324">classIndex</a></td></tr>
 <tr class="memdesc:ae373cfcbd8a107fa63323de8ad0bb324"><td class="mdescLeft">&#160;</td><td class="mdescRight">Contains the list of objects (<a class="el" href="structShape.html" title="A spatial object. Could be point, linestring, rectangle or polygon, as specified by its &#39;dataType&#39; fi...">Shape</a>) of each class for this partition. <br /></td></tr>
@@ -107,10 +110,10 @@ std::vector&lt; std::vector&lt; <a class="el" href="structShape.html">Shape</a> 
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="containers_8h_source.html#l01006">1006</a> of file <a class="el" href="containers_8h_source.html">containers.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="containers_8h_source.html#l01024">1024</a> of file <a class="el" href="containers_8h_source.html">containers.h</a>.</p>
 </div><h2 class="groupheader">Member Function Documentation</h2>
-<a id="aed331352644439a199bff28c2eefd8dd"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#aed331352644439a199bff28c2eefd8dd">&#9670;&nbsp;</a></span>getContainerClassContents()</h2>
+<a id="a78ec104053c124434b2819612e838a26"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a78ec104053c124434b2819612e838a26">&#9670;&nbsp;</a></span>getContainerClassContents()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -118,7 +121,7 @@ std::vector&lt; std::vector&lt; <a class="el" href="structShape.html">Shape</a> 
         <tr>
           <td class="memname">std::vector&lt; <a class="el" href="structShape.html">Shape</a> * &gt; * Partition::getContainerClassContents </td>
           <td>(</td>
-          <td class="paramtype">TwoLayerClass&#160;</td>
+          <td class="paramtype">TwoLayerClassE&#160;</td>
           <td class="paramname"><em>classType</em></td><td>)</td>
           <td></td>
         </tr>
@@ -133,33 +136,23 @@ std::vector&lt; std::vector&lt; <a class="el" href="structShape.html">Shape</a> 
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="containers_8cpp_source.html#l00191">191</a> of file <a class="el" href="containers_8cpp_source.html">containers.cpp</a>.</p>
-<div class="fragment"><div class="line"><a name="l00191"></a><span class="lineno">  191</span>&#160;                                                                               {</div>
-<div class="line"><a name="l00192"></a><span class="lineno">  192</span>&#160;    <span class="keywordflow">if</span> (classType &lt; CLASS_A || classType &gt; CLASS_D) {</div>
-<div class="line"><a name="l00193"></a><span class="lineno">  193</span>&#160;        <a class="code" href="namespacelogger.html#a53f34feeb22a94db295af05b8b2aab5c">logger::log_error</a>(DBERR_OUT_OF_BOUNDS, <span class="stringliteral">&quot;class type index out of bounds&quot;</span>);</div>
-<div class="line"><a name="l00194"></a><span class="lineno">  194</span>&#160;        <span class="keywordflow">return</span> <span class="keyword">nullptr</span>;</div>
-<div class="line"><a name="l00195"></a><span class="lineno">  195</span>&#160;    }</div>
-<div class="line"><a name="l00196"></a><span class="lineno">  196</span>&#160;    <span class="comment">// exists</span></div>
-<div class="line"><a name="l00197"></a><span class="lineno">  197</span>&#160;    <span class="keywordflow">return</span> &amp;<a class="code" href="structPartition.html#ae373cfcbd8a107fa63323de8ad0bb324">classIndex</a>[classType];</div>
-<div class="line"><a name="l00198"></a><span class="lineno">  198</span>&#160;}</div>
+<p class="definition">Definition at line <a class="el" href="containers_8cpp_source.html#l00164">164</a> of file <a class="el" href="containers_8cpp_source.html">containers.cpp</a>.</p>
+<div class="fragment"><div class="line"><a name="l00164"></a><span class="lineno">  164</span>&#160;                                                                                {</div>
+<div class="line"><a name="l00165"></a><span class="lineno">  165</span>&#160;    <span class="keywordflow">if</span> (classType &lt; CLASS_A || classType &gt; CLASS_D) {</div>
+<div class="line"><a name="l00166"></a><span class="lineno">  166</span>&#160;        <a class="code" href="namespacelogger.html#a53f34feeb22a94db295af05b8b2aab5c">logger::log_error</a>(DBERR_OUT_OF_BOUNDS, <span class="stringliteral">&quot;class type index out of bounds&quot;</span>);</div>
+<div class="line"><a name="l00167"></a><span class="lineno">  167</span>&#160;        <span class="keywordflow">return</span> <span class="keyword">nullptr</span>;</div>
+<div class="line"><a name="l00168"></a><span class="lineno">  168</span>&#160;    }</div>
+<div class="line"><a name="l00169"></a><span class="lineno">  169</span>&#160;    <span class="keywordflow">return</span> &amp;<a class="code" href="structPartition.html#ae373cfcbd8a107fa63323de8ad0bb324">classIndex</a>[classType];</div>
+<div class="line"><a name="l00170"></a><span class="lineno">  170</span>&#160;}</div>
 <div class="ttc" id="anamespacelogger_html_a53f34feeb22a94db295af05b8b2aab5c"><div class="ttname"><a href="namespacelogger.html#a53f34feeb22a94db295af05b8b2aab5c">logger::log_error</a></div><div class="ttdeci">void log_error(int errorCode, T first, Args... rest)</div><div class="ttdoc">Error logging function with template arguments. Separates input parameters with spaces....</div><div class="ttdef"><b>Definition:</b> <a href="utils_8h_source.html#l00096">utils.h:96</a></div></div>
-<div class="ttc" id="astructPartition_html_ae373cfcbd8a107fa63323de8ad0bb324"><div class="ttname"><a href="structPartition.html#ae373cfcbd8a107fa63323de8ad0bb324">Partition::classIndex</a></div><div class="ttdeci">std::vector&lt; std::vector&lt; Shape * &gt; &gt; classIndex</div><div class="ttdoc">Contains the list of objects (Shape) of each class for this partition.</div><div class="ttdef"><b>Definition:</b> <a href="containers_8h_source.html#l01009">containers.h:1009</a></div></div>
+<div class="ttc" id="astructPartition_html_ae373cfcbd8a107fa63323de8ad0bb324"><div class="ttname"><a href="structPartition.html#ae373cfcbd8a107fa63323de8ad0bb324">Partition::classIndex</a></div><div class="ttdeci">std::vector&lt; std::vector&lt; Shape * &gt; &gt; classIndex</div><div class="ttdoc">Contains the list of objects (Shape) of each class for this partition.</div><div class="ttdef"><b>Definition:</b> <a href="containers_8h_source.html#l01027">containers.h:1027</a></div></div>
 </div><!-- fragment --><div class="dynheader">
 Here is the call graph for this function:</div>
 <div class="dyncontent">
-<div class="center"><img src="structPartition_aed331352644439a199bff28c2eefd8dd_cgraph.png" border="0" usemap="#astructPartition_aed331352644439a199bff28c2eefd8dd_cgraph" alt=""/></div>
-<map name="astructPartition_aed331352644439a199bff28c2eefd8dd_cgraph" id="astructPartition_aed331352644439a199bff28c2eefd8dd_cgraph">
+<div class="center"><img src="structPartition_a78ec104053c124434b2819612e838a26_cgraph.png" border="0" usemap="#astructPartition_a78ec104053c124434b2819612e838a26_cgraph" alt=""/></div>
+<map name="astructPartition_a78ec104053c124434b2819612e838a26_cgraph" id="astructPartition_a78ec104053c124434b2819612e838a26_cgraph">
 <area shape="rect" title="Returns a reference to the partition&#39;s contents for the given class type." alt="" coords="5,5,192,47"/>
 <area shape="rect" href="namespacelogger.html#a53f34feeb22a94db295af05b8b2aab5c" title="Error logging function with template arguments. Separates input parameters with spaces...." alt="" coords="240,13,355,39"/>
-</map>
-</div>
-<div class="dynheader">
-Here is the caller graph for this function:</div>
-<div class="dyncontent">
-<div class="center"><img src="structPartition_aed331352644439a199bff28c2eefd8dd_icgraph.png" border="0" usemap="#astructPartition_aed331352644439a199bff28c2eefd8dd_icgraph" alt=""/></div>
-<map name="astructPartition_aed331352644439a199bff28c2eefd8dd_icgraph" id="astructPartition_aed331352644439a199bff28c2eefd8dd_icgraph">
-<area shape="rect" title="Returns a reference to the partition&#39;s contents for the given class type." alt="" coords="231,5,417,47"/>
-<area shape="rect" href="structTwoLayerIndex.html#ac8f418a7645608ba3a19d5362d88ca5b" title="Adds an object to a partition with partitionID, with the specified classType and returns a pointer to..." alt="" coords="5,13,183,39"/>
 </map>
 </div>
 
