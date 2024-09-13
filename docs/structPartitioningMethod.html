@@ -194,7 +194,7 @@ double&#160;</td><td class="memItemRight" valign="bottom"><b>distPartitionExtent
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock"><p>Base class for the partitioning methods (abstract class). </p>
 
-<p class="definition">Definition at line <a class="el" href="containers_8h_source.html#l01163">1163</a> of file <a class="el" href="containers_8h_source.html">containers.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="containers_8h_source.html#l01186">1186</a> of file <a class="el" href="containers_8h_source.html">containers.h</a>.</p>
 </div><h2 class="groupheader">Member Function Documentation</h2>
 <a id="a92842b964a0385e0a8dad13e91d8b9c7"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a92842b964a0385e0a8dad13e91d8b9c7">&#9670;&nbsp;</a></span>getNodeRankForPartitionID()</h2>
@@ -223,10 +223,10 @@ double&#160;</td><td class="memItemRight" valign="bottom"><b>distPartitionExtent
 <p>Returns the node's rank that's responsible for this partition. </p>
 <dl class="section warning"><dt>Warning</dt><dd>Should only be called by the host controller and the input partitionID should be of the outermost (distribution) grid. </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="containers_8h_source.html#l01203">1203</a> of file <a class="el" href="containers_8h_source.html">containers.h</a>.</p>
-<div class="fragment"><div class="line"><a name="l01203"></a><span class="lineno"> 1203</span>&#160;                                                   {</div>
-<div class="line"><a name="l01204"></a><span class="lineno"> 1204</span>&#160;        <span class="keywordflow">return</span> (partitionID % g_world_size);</div>
-<div class="line"><a name="l01205"></a><span class="lineno"> 1205</span>&#160;    }</div>
+<p class="definition">Definition at line <a class="el" href="containers_8h_source.html#l01226">1226</a> of file <a class="el" href="containers_8h_source.html">containers.h</a>.</p>
+<div class="fragment"><div class="line"><a name="l01226"></a><span class="lineno"> 1226</span>&#160;                                                   {</div>
+<div class="line"><a name="l01227"></a><span class="lineno"> 1227</span>&#160;        <span class="keywordflow">return</span> (partitionID % g_world_size);</div>
+<div class="line"><a name="l01228"></a><span class="lineno"> 1228</span>&#160;    }</div>
 </div><!-- fragment --><div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">

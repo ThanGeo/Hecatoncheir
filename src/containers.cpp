@@ -195,15 +195,8 @@ DB_STATUS Dataset::addObject(Shape &object) {
         return DBERR_INVALID_KEY;
     }
     // insert reference to partition index
-    for (auto &partitionIT: object.partitions) {
-        int partitionID = partitionIT.first;
-        TwoLayerClassE classType = (TwoLayerClassE) partitionIT.second;
-        // add to twolayer index
-        this->twoLayerIndex.addObject(partitionID, classType, objectRef);
-        // if (partitionID == 289605) {
-        //     printf("added object %ld to partition %d\n", object.recID, partitionID);
-        //     printf("Partitions from disk: %ld\n", object.partitions.size());
-        // }
+    for (int i=0; i<object.getPartitionCount(); i++) {
+        this->twoLayerIndex.addObject(object.getPartitionID(i), object.getPartitionClass(i), objectRef);
     }
     // keep the ID in the list
     objectIDs.push_back(object.recID);
@@ -388,8 +381,8 @@ void Dataset::printObjectsGeometries() {
 void Dataset::printObjectsPartitions() {
     for (auto &it : objectIDs) {
         printf("id: %zu, type %s, Partitions:", it, objects[it].getShapeType().c_str());
-        for (auto &partIT : this->objects[it].partitions) {
-            printf("(%ld,%s),", partIT.first, mapping::twoLayerClassIntToStr((TwoLayerClassE) partIT.second).c_str());
+        for (int i=0; i<objects[it].getPartitionCount(); i++) {
+            printf("(%d,%s),", objects[it].getPartitionID(i), mapping::twoLayerClassIntToStr((TwoLayerClassE) objects[it].getPartitionClass(i)).c_str());
         }
         printf("\n");
     }

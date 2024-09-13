@@ -89,9 +89,8 @@ Collaboration diagram for Shape:</div>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:aaa8d87171e65e0d8ba3c5459978992a7"><td class="memItemLeft" align="right" valign="top"><a id="aaa8d87171e65e0d8ba3c5459978992a7"></a>
-&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structShape.html#aaa8d87171e65e0d8ba3c5459978992a7">Shape</a> ()</td></tr>
-<tr class="memdesc:aaa8d87171e65e0d8ba3c5459978992a7"><td class="mdescLeft">&#160;</td><td class="mdescRight">Default empty <a class="el" href="structShape.html" title="A spatial object. Could be point, linestring, rectangle or polygon, as specified by its &#39;dataType&#39; fi...">Shape</a> constructor. <br /></td></tr>
+<tr class="memitem:aaa8d87171e65e0d8ba3c5459978992a7"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structShape.html#aaa8d87171e65e0d8ba3c5459978992a7">Shape</a> ()</td></tr>
+<tr class="memdesc:aaa8d87171e65e0d8ba3c5459978992a7"><td class="mdescLeft">&#160;</td><td class="mdescRight">The object's partition index, containing info about the partitions that this object intersects with and its two-layer index class in each of them.  <a href="structShape.html#aaa8d87171e65e0d8ba3c5459978992a7">More...</a><br /></td></tr>
 <tr class="separator:aaa8d87171e65e0d8ba3c5459978992a7"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a01bb4edda98cdee8c8dc220acdee146f"><td class="memTemplParams" colspan="2"><a id="a01bb4edda98cdee8c8dc220acdee146f"></a>
 template&lt;typename T &gt; </td></tr>
@@ -101,6 +100,18 @@ template&lt;typename T &gt; </td></tr>
 <tr class="memitem:a8357fb0905466fef724cd58e29096645"><td class="memItemLeft" align="right" valign="top"><a id="a8357fb0905466fef724cd58e29096645"></a>
 std::string&#160;</td><td class="memItemRight" valign="bottom"><b>getShapeType</b> () const</td></tr>
 <tr class="separator:a8357fb0905466fef724cd58e29096645"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ae2fa8d64c1d9e3ac31802476d0328f78"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structShape.html#ae2fa8d64c1d9e3ac31802476d0328f78">getPartitionID</a> (int partitionIndex)</td></tr>
+<tr class="memdesc:ae2fa8d64c1d9e3ac31802476d0328f78"><td class="mdescLeft">&#160;</td><td class="mdescRight">returns the partition ID for partition number 'partitionIndex' in the partitions list.  <a href="structShape.html#ae2fa8d64c1d9e3ac31802476d0328f78">More...</a><br /></td></tr>
+<tr class="separator:ae2fa8d64c1d9e3ac31802476d0328f78"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:abf82afd926b451a9f13da02ff42e0315"><td class="memItemLeft" align="right" valign="top">TwoLayerClassE&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structShape.html#abf82afd926b451a9f13da02ff42e0315">getPartitionClass</a> (int partitionIndex)</td></tr>
+<tr class="memdesc:abf82afd926b451a9f13da02ff42e0315"><td class="mdescLeft">&#160;</td><td class="mdescRight">returns the partition class for partition number 'partitionIndex' in the partitions list.  <a href="structShape.html#abf82afd926b451a9f13da02ff42e0315">More...</a><br /></td></tr>
+<tr class="separator:abf82afd926b451a9f13da02ff42e0315"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a5e8c69a10371e7cf837a46418440a9a3"><td class="memItemLeft" align="right" valign="top"><a id="a5e8c69a10371e7cf837a46418440a9a3"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>setPartitions</b> (std::vector&lt; int &gt; &amp;newPartitions, int partitionCount)</td></tr>
+<tr class="separator:a5e8c69a10371e7cf837a46418440a9a3"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a414305477b896cfe44290ffb9a40fe88"><td class="memItemLeft" align="right" valign="top"><a id="a414305477b896cfe44290ffb9a40fe88"></a>
+int&#160;</td><td class="memItemRight" valign="bottom"><b>getPartitionCount</b> ()</td></tr>
+<tr class="separator:a414305477b896cfe44290ffb9a40fe88"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aa890f29b52525ba1fcddcc48834114df"><td class="memItemLeft" align="right" valign="top"><a id="aa890f29b52525ba1fcddcc48834114df"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structShape.html#aa890f29b52525ba1fcddcc48834114df">addPoint</a> (const double x, const double y)</td></tr>
 <tr class="memdesc:aa890f29b52525ba1fcddcc48834114df"><td class="mdescLeft">&#160;</td><td class="mdescRight">Adds a point to the boost geometry (see derived method definitions). <br /></td></tr>
@@ -178,16 +189,52 @@ size_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="st
 <a class="el" href="structMBR.html">MBR</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structShape.html#af7e345146e379bc31887977626a1225e">mbr</a></td></tr>
 <tr class="memdesc:af7e345146e379bc31887977626a1225e"><td class="mdescLeft">&#160;</td><td class="mdescRight">the object's <a class="el" href="structMBR.html" title="Struct for Minimum Bounding Rectangles (MBR).">MBR</a>. <br /></td></tr>
 <tr class="separator:af7e345146e379bc31887977626a1225e"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ae160e73c713890a7f23e91a133b30dad"><td class="memItemLeft" align="right" valign="top">std::unordered_map&lt; size_t, TwoLayerClassE &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structShape.html#ae160e73c713890a7f23e91a133b30dad">partitions</a></td></tr>
-<tr class="memdesc:ae160e73c713890a7f23e91a133b30dad"><td class="mdescLeft">&#160;</td><td class="mdescRight">The object's partition index, containing info about the partitions that this object intersects with and its two-layer index class in each of them.  <a href="structShape.html#ae160e73c713890a7f23e91a133b30dad">More...</a><br /></td></tr>
-<tr class="separator:ae160e73c713890a7f23e91a133b30dad"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock"><p>A spatial object. Could be point, linestring, rectangle or polygon, as specified by its 'dataType' field. </p>
 <p>All geometry wrappers are not meant to be visible to the user. Always use this struct for loading, querying or otherwise handling data. Extensions to the struct's methods require explicit definitions for the geometry types in the derived geometry structs. </p>
 
 <p class="definition">Definition at line <a class="el" href="containers_8h_source.html#l00719">719</a> of file <a class="el" href="containers_8h_source.html">containers.h</a>.</p>
-</div><h2 class="groupheader">Member Function Documentation</h2>
+</div><h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
+<a id="aaa8d87171e65e0d8ba3c5459978992a7"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aaa8d87171e65e0d8ba3c5459978992a7">&#9670;&nbsp;</a></span>Shape()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">Shape::Shape </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>The object's partition index, containing info about the partitions that this object intersects with and its two-layer index class in each of them. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">key</td><td><a class="el" href="structPartition.html" title="Holds all necessary partition information.">Partition</a> ID. </td></tr>
+    <tr><td class="paramname">value</td><td>The two-layer index class of the object in that partition.</td></tr>
+  </table>
+  </dd>
+</dl>
+<p>Default empty <a class="el" href="structShape.html" title="A spatial object. Could be point, linestring, rectangle or polygon, as specified by its &#39;dataType&#39; fi...">Shape</a> constructor. </p>
+
+<p class="definition">Definition at line <a class="el" href="containers_8h_source.html#l00741">741</a> of file <a class="el" href="containers_8h_source.html">containers.h</a>.</p>
+<div class="fragment"><div class="line"><a name="l00741"></a><span class="lineno">  741</span>&#160;{}</div>
+</div><!-- fragment -->
+</div>
+</div>
+<h2 class="groupheader">Member Function Documentation</h2>
 <a id="a0b82933695d14e00333b3b8c19c3de1d"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a0b82933695d14e00333b3b8c19c3de1d">&#9670;&nbsp;</a></span>contains()</h2>
 
@@ -217,14 +264,14 @@ template&lt;typename OtherBoostGeometryObj &gt; </div>
 <p>Returns true whether the geometry completely contains (reverse of inside) the input geometry. False otherwise. </p>
 <dl class="section warning"><dt>Warning</dt><dd>Not all geometry type combinations are supported (see data type support). </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="containers_8h_source.html#l00892">892</a> of file <a class="el" href="containers_8h_source.html">containers.h</a>.</p>
-<div class="fragment"><div class="line"><a name="l00892"></a><span class="lineno">  892</span>&#160;                                                            {</div>
-<div class="line"><a name="l00893"></a><span class="lineno">  893</span>&#160;        <span class="keywordflow">return</span> std::visit([&amp;other](<span class="keyword">auto</span>&amp;&amp; arg) -&gt; <span class="keywordtype">bool</span> {</div>
-<div class="line"><a name="l00894"></a><span class="lineno">  894</span>&#160;            <span class="keywordflow">return</span> std::visit([&amp;arg](<span class="keyword">auto</span>&amp;&amp; otherArg) -&gt; <span class="keywordtype">bool</span> {</div>
-<div class="line"><a name="l00895"></a><span class="lineno">  895</span>&#160;                <span class="keywordflow">return</span> arg.contains(otherArg);</div>
-<div class="line"><a name="l00896"></a><span class="lineno">  896</span>&#160;            }, other.shape);</div>
-<div class="line"><a name="l00897"></a><span class="lineno">  897</span>&#160;        }, shape);</div>
-<div class="line"><a name="l00898"></a><span class="lineno">  898</span>&#160;    }</div>
+<p class="definition">Definition at line <a class="el" href="containers_8h_source.html#l00915">915</a> of file <a class="el" href="containers_8h_source.html">containers.h</a>.</p>
+<div class="fragment"><div class="line"><a name="l00915"></a><span class="lineno">  915</span>&#160;                                                            {</div>
+<div class="line"><a name="l00916"></a><span class="lineno">  916</span>&#160;        <span class="keywordflow">return</span> std::visit([&amp;other](<span class="keyword">auto</span>&amp;&amp; arg) -&gt; <span class="keywordtype">bool</span> {</div>
+<div class="line"><a name="l00917"></a><span class="lineno">  917</span>&#160;            <span class="keywordflow">return</span> std::visit([&amp;arg](<span class="keyword">auto</span>&amp;&amp; otherArg) -&gt; <span class="keywordtype">bool</span> {</div>
+<div class="line"><a name="l00918"></a><span class="lineno">  918</span>&#160;                <span class="keywordflow">return</span> arg.contains(otherArg);</div>
+<div class="line"><a name="l00919"></a><span class="lineno">  919</span>&#160;            }, other.shape);</div>
+<div class="line"><a name="l00920"></a><span class="lineno">  920</span>&#160;        }, shape);</div>
+<div class="line"><a name="l00921"></a><span class="lineno">  921</span>&#160;    }</div>
 </div><!-- fragment --><div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
@@ -268,14 +315,14 @@ template&lt;typename OtherBoostGeometryObj &gt; </div>
 <p>Returns true whether the geometry is covered by (inside-border common points are allowed) the input geometry. False otherwise. </p>
 <dl class="section warning"><dt>Warning</dt><dd>Not all geometry type combinations are supported (see data type support). </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="containers_8h_source.html#l00880">880</a> of file <a class="el" href="containers_8h_source.html">containers.h</a>.</p>
-<div class="fragment"><div class="line"><a name="l00880"></a><span class="lineno">  880</span>&#160;                                                             {</div>
-<div class="line"><a name="l00881"></a><span class="lineno">  881</span>&#160;        <span class="keywordflow">return</span> std::visit([&amp;other](<span class="keyword">auto</span>&amp;&amp; arg) -&gt; <span class="keywordtype">bool</span> {</div>
-<div class="line"><a name="l00882"></a><span class="lineno">  882</span>&#160;            <span class="keywordflow">return</span> std::visit([&amp;arg](<span class="keyword">auto</span>&amp;&amp; otherArg) -&gt; <span class="keywordtype">bool</span> {</div>
-<div class="line"><a name="l00883"></a><span class="lineno">  883</span>&#160;                <span class="keywordflow">return</span> arg.inside(otherArg);</div>
-<div class="line"><a name="l00884"></a><span class="lineno">  884</span>&#160;            }, other.shape);</div>
-<div class="line"><a name="l00885"></a><span class="lineno">  885</span>&#160;        }, shape);</div>
-<div class="line"><a name="l00886"></a><span class="lineno">  886</span>&#160;    }</div>
+<p class="definition">Definition at line <a class="el" href="containers_8h_source.html#l00903">903</a> of file <a class="el" href="containers_8h_source.html">containers.h</a>.</p>
+<div class="fragment"><div class="line"><a name="l00903"></a><span class="lineno">  903</span>&#160;                                                             {</div>
+<div class="line"><a name="l00904"></a><span class="lineno">  904</span>&#160;        <span class="keywordflow">return</span> std::visit([&amp;other](<span class="keyword">auto</span>&amp;&amp; arg) -&gt; <span class="keywordtype">bool</span> {</div>
+<div class="line"><a name="l00905"></a><span class="lineno">  905</span>&#160;            <span class="keywordflow">return</span> std::visit([&amp;arg](<span class="keyword">auto</span>&amp;&amp; otherArg) -&gt; <span class="keywordtype">bool</span> {</div>
+<div class="line"><a name="l00906"></a><span class="lineno">  906</span>&#160;                <span class="keywordflow">return</span> arg.inside(otherArg);</div>
+<div class="line"><a name="l00907"></a><span class="lineno">  907</span>&#160;            }, other.shape);</div>
+<div class="line"><a name="l00908"></a><span class="lineno">  908</span>&#160;        }, shape);</div>
+<div class="line"><a name="l00909"></a><span class="lineno">  909</span>&#160;    }</div>
 </div><!-- fragment --><div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
@@ -319,14 +366,14 @@ template&lt;typename OtherBoostGeometryObj &gt; </div>
 <p>Returns true whether the geometry covers (reverse of covered by) the input geometry. False otherwise. </p>
 <dl class="section warning"><dt>Warning</dt><dd>Not all geometry type combinations are supported (see data type support). </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="containers_8h_source.html#l00904">904</a> of file <a class="el" href="containers_8h_source.html">containers.h</a>.</p>
-<div class="fragment"><div class="line"><a name="l00904"></a><span class="lineno">  904</span>&#160;                                                          {</div>
-<div class="line"><a name="l00905"></a><span class="lineno">  905</span>&#160;        <span class="keywordflow">return</span> std::visit([&amp;other](<span class="keyword">auto</span>&amp;&amp; arg) -&gt; <span class="keywordtype">bool</span> {</div>
-<div class="line"><a name="l00906"></a><span class="lineno">  906</span>&#160;            <span class="keywordflow">return</span> std::visit([&amp;arg](<span class="keyword">auto</span>&amp;&amp; otherArg) -&gt; <span class="keywordtype">bool</span> {</div>
-<div class="line"><a name="l00907"></a><span class="lineno">  907</span>&#160;                <span class="keywordflow">return</span> arg.contains(otherArg);</div>
-<div class="line"><a name="l00908"></a><span class="lineno">  908</span>&#160;            }, other.shape);</div>
-<div class="line"><a name="l00909"></a><span class="lineno">  909</span>&#160;        }, shape);</div>
-<div class="line"><a name="l00910"></a><span class="lineno">  910</span>&#160;    }</div>
+<p class="definition">Definition at line <a class="el" href="containers_8h_source.html#l00927">927</a> of file <a class="el" href="containers_8h_source.html">containers.h</a>.</p>
+<div class="fragment"><div class="line"><a name="l00927"></a><span class="lineno">  927</span>&#160;                                                          {</div>
+<div class="line"><a name="l00928"></a><span class="lineno">  928</span>&#160;        <span class="keywordflow">return</span> std::visit([&amp;other](<span class="keyword">auto</span>&amp;&amp; arg) -&gt; <span class="keywordtype">bool</span> {</div>
+<div class="line"><a name="l00929"></a><span class="lineno">  929</span>&#160;            <span class="keywordflow">return</span> std::visit([&amp;arg](<span class="keyword">auto</span>&amp;&amp; otherArg) -&gt; <span class="keywordtype">bool</span> {</div>
+<div class="line"><a name="l00930"></a><span class="lineno">  930</span>&#160;                <span class="keywordflow">return</span> arg.contains(otherArg);</div>
+<div class="line"><a name="l00931"></a><span class="lineno">  931</span>&#160;            }, other.shape);</div>
+<div class="line"><a name="l00932"></a><span class="lineno">  932</span>&#160;        }, shape);</div>
+<div class="line"><a name="l00933"></a><span class="lineno">  933</span>&#160;    }</div>
 </div><!-- fragment --><div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
@@ -368,14 +415,14 @@ Here is the caller graph for this function:</div>
 <p>Generates and returns the DE-9IM mask of this geometry (as R) with the input geometry (as S) </p>
 <dl class="section warning"><dt>Warning</dt><dd>Not all geometry type combinations are supported (see data type support). </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="containers_8h_source.html#l00832">832</a> of file <a class="el" href="containers_8h_source.html">containers.h</a>.</p>
-<div class="fragment"><div class="line"><a name="l00832"></a><span class="lineno">  832</span>&#160;                                                       {</div>
-<div class="line"><a name="l00833"></a><span class="lineno">  833</span>&#160;        <span class="keywordflow">return</span> std::visit([&amp;other](<span class="keyword">auto</span>&amp;&amp; arg) -&gt; std::string {</div>
-<div class="line"><a name="l00834"></a><span class="lineno">  834</span>&#160;            <span class="keywordflow">return</span> std::visit([&amp;arg](<span class="keyword">auto</span>&amp;&amp; otherArg) -&gt; std::string {</div>
-<div class="line"><a name="l00835"></a><span class="lineno">  835</span>&#160;                <span class="keywordflow">return</span> arg.createMaskCode(otherArg);</div>
-<div class="line"><a name="l00836"></a><span class="lineno">  836</span>&#160;            }, other.shape);</div>
-<div class="line"><a name="l00837"></a><span class="lineno">  837</span>&#160;        }, shape);</div>
-<div class="line"><a name="l00838"></a><span class="lineno">  838</span>&#160;    }</div>
+<p class="definition">Definition at line <a class="el" href="containers_8h_source.html#l00855">855</a> of file <a class="el" href="containers_8h_source.html">containers.h</a>.</p>
+<div class="fragment"><div class="line"><a name="l00855"></a><span class="lineno">  855</span>&#160;                                                       {</div>
+<div class="line"><a name="l00856"></a><span class="lineno">  856</span>&#160;        <span class="keywordflow">return</span> std::visit([&amp;other](<span class="keyword">auto</span>&amp;&amp; arg) -&gt; std::string {</div>
+<div class="line"><a name="l00857"></a><span class="lineno">  857</span>&#160;            <span class="keywordflow">return</span> std::visit([&amp;arg](<span class="keyword">auto</span>&amp;&amp; otherArg) -&gt; std::string {</div>
+<div class="line"><a name="l00858"></a><span class="lineno">  858</span>&#160;                <span class="keywordflow">return</span> arg.createMaskCode(otherArg);</div>
+<div class="line"><a name="l00859"></a><span class="lineno">  859</span>&#160;            }, other.shape);</div>
+<div class="line"><a name="l00860"></a><span class="lineno">  860</span>&#160;        }, shape);</div>
+<div class="line"><a name="l00861"></a><span class="lineno">  861</span>&#160;    }</div>
 </div><!-- fragment --><div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
@@ -426,14 +473,14 @@ template&lt;typename OtherBoostGeometryObj &gt; </div>
 <p>Returns true whether the input geometry is disjoint (no common points) with this geometry. False otherwise. </p>
 <dl class="section warning"><dt>Warning</dt><dd>Not all geometry type combinations are supported (see data type support). </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="containers_8h_source.html#l00856">856</a> of file <a class="el" href="containers_8h_source.html">containers.h</a>.</p>
-<div class="fragment"><div class="line"><a name="l00856"></a><span class="lineno">  856</span>&#160;                                                            {</div>
-<div class="line"><a name="l00857"></a><span class="lineno">  857</span>&#160;        <span class="keywordflow">return</span> std::visit([&amp;other](<span class="keyword">auto</span>&amp;&amp; arg) -&gt; <span class="keywordtype">bool</span> {</div>
-<div class="line"><a name="l00858"></a><span class="lineno">  858</span>&#160;            <span class="keywordflow">return</span> std::visit([&amp;arg](<span class="keyword">auto</span>&amp;&amp; otherArg) -&gt; <span class="keywordtype">bool</span> {</div>
-<div class="line"><a name="l00859"></a><span class="lineno">  859</span>&#160;                <span class="keywordflow">return</span> arg.disjoint(otherArg);</div>
-<div class="line"><a name="l00860"></a><span class="lineno">  860</span>&#160;            }, other.shape);</div>
-<div class="line"><a name="l00861"></a><span class="lineno">  861</span>&#160;        }, shape);</div>
-<div class="line"><a name="l00862"></a><span class="lineno">  862</span>&#160;    }</div>
+<p class="definition">Definition at line <a class="el" href="containers_8h_source.html#l00879">879</a> of file <a class="el" href="containers_8h_source.html">containers.h</a>.</p>
+<div class="fragment"><div class="line"><a name="l00879"></a><span class="lineno">  879</span>&#160;                                                            {</div>
+<div class="line"><a name="l00880"></a><span class="lineno">  880</span>&#160;        <span class="keywordflow">return</span> std::visit([&amp;other](<span class="keyword">auto</span>&amp;&amp; arg) -&gt; <span class="keywordtype">bool</span> {</div>
+<div class="line"><a name="l00881"></a><span class="lineno">  881</span>&#160;            <span class="keywordflow">return</span> std::visit([&amp;arg](<span class="keyword">auto</span>&amp;&amp; otherArg) -&gt; <span class="keywordtype">bool</span> {</div>
+<div class="line"><a name="l00882"></a><span class="lineno">  882</span>&#160;                <span class="keywordflow">return</span> arg.disjoint(otherArg);</div>
+<div class="line"><a name="l00883"></a><span class="lineno">  883</span>&#160;            }, other.shape);</div>
+<div class="line"><a name="l00884"></a><span class="lineno">  884</span>&#160;        }, shape);</div>
+<div class="line"><a name="l00885"></a><span class="lineno">  885</span>&#160;    }</div>
 </div><!-- fragment --><div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
@@ -477,14 +524,14 @@ template&lt;typename OtherBoostGeometryObj &gt; </div>
 <p>Returns true whether the geometry is spatially equal the input geometry. False otherwise. </p>
 <dl class="section warning"><dt>Warning</dt><dd>Not all geometry type combinations are supported (see data type support). </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="containers_8h_source.html#l00929">929</a> of file <a class="el" href="containers_8h_source.html">containers.h</a>.</p>
-<div class="fragment"><div class="line"><a name="l00929"></a><span class="lineno">  929</span>&#160;                                                          {</div>
-<div class="line"><a name="l00930"></a><span class="lineno">  930</span>&#160;        <span class="keywordflow">return</span> std::visit([&amp;other](<span class="keyword">auto</span>&amp;&amp; arg) -&gt; <span class="keywordtype">bool</span> {</div>
-<div class="line"><a name="l00931"></a><span class="lineno">  931</span>&#160;            <span class="keywordflow">return</span> std::visit([&amp;arg](<span class="keyword">auto</span>&amp;&amp; otherArg) -&gt; <span class="keywordtype">bool</span> {</div>
-<div class="line"><a name="l00932"></a><span class="lineno">  932</span>&#160;                <span class="keywordflow">return</span> arg.equals(otherArg);</div>
-<div class="line"><a name="l00933"></a><span class="lineno">  933</span>&#160;            }, other.shape);</div>
-<div class="line"><a name="l00934"></a><span class="lineno">  934</span>&#160;        }, shape);</div>
-<div class="line"><a name="l00935"></a><span class="lineno">  935</span>&#160;    }</div>
+<p class="definition">Definition at line <a class="el" href="containers_8h_source.html#l00952">952</a> of file <a class="el" href="containers_8h_source.html">containers.h</a>.</p>
+<div class="fragment"><div class="line"><a name="l00952"></a><span class="lineno">  952</span>&#160;                                                          {</div>
+<div class="line"><a name="l00953"></a><span class="lineno">  953</span>&#160;        <span class="keywordflow">return</span> std::visit([&amp;other](<span class="keyword">auto</span>&amp;&amp; arg) -&gt; <span class="keywordtype">bool</span> {</div>
+<div class="line"><a name="l00954"></a><span class="lineno">  954</span>&#160;            <span class="keywordflow">return</span> std::visit([&amp;arg](<span class="keyword">auto</span>&amp;&amp; otherArg) -&gt; <span class="keywordtype">bool</span> {</div>
+<div class="line"><a name="l00955"></a><span class="lineno">  955</span>&#160;                <span class="keywordflow">return</span> arg.equals(otherArg);</div>
+<div class="line"><a name="l00956"></a><span class="lineno">  956</span>&#160;            }, other.shape);</div>
+<div class="line"><a name="l00957"></a><span class="lineno">  957</span>&#160;        }, shape);</div>
+<div class="line"><a name="l00958"></a><span class="lineno">  958</span>&#160;    }</div>
 </div><!-- fragment --><div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
@@ -498,6 +545,84 @@ Here is the caller graph for this function:</div>
 </map>
 </div>
 
+</div>
+</div>
+<a id="abf82afd926b451a9f13da02ff42e0315"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#abf82afd926b451a9f13da02ff42e0315">&#9670;&nbsp;</a></span>getPartitionClass()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">TwoLayerClassE Shape::getPartitionClass </td>
+          <td>(</td>
+          <td class="paramtype">int&#160;</td>
+          <td class="paramname"><em>partitionIndex</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>returns the partition class for partition number 'partitionIndex' in the partitions list. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">partitionIndex</td><td>indicates the offset (index) of the requested partition from [0, partitionCount-1]. </td></tr>
+  </table>
+  </dd>
+</dl>
+
+<p class="definition">Definition at line <a class="el" href="containers_8h_source.html#l00774">774</a> of file <a class="el" href="containers_8h_source.html">containers.h</a>.</p>
+<div class="fragment"><div class="line"><a name="l00774"></a><span class="lineno">  774</span>&#160;                                                                {</div>
+<div class="line"><a name="l00775"></a><span class="lineno">  775</span>&#160;        <span class="keywordflow">return</span> (TwoLayerClassE) partitions[partitionIndex * 2 + 1];</div>
+<div class="line"><a name="l00776"></a><span class="lineno">  776</span>&#160;    }</div>
+</div><!-- fragment -->
+</div>
+</div>
+<a id="ae2fa8d64c1d9e3ac31802476d0328f78"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ae2fa8d64c1d9e3ac31802476d0328f78">&#9670;&nbsp;</a></span>getPartitionID()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">int Shape::getPartitionID </td>
+          <td>(</td>
+          <td class="paramtype">int&#160;</td>
+          <td class="paramname"><em>partitionIndex</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>returns the partition ID for partition number 'partitionIndex' in the partitions list. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">partitionIndex</td><td>indicates the offset (index) of the requested partition from [0, partitionCount-1]. </td></tr>
+  </table>
+  </dd>
+</dl>
+
+<p class="definition">Definition at line <a class="el" href="containers_8h_source.html#l00768">768</a> of file <a class="el" href="containers_8h_source.html">containers.h</a>.</p>
+<div class="fragment"><div class="line"><a name="l00768"></a><span class="lineno">  768</span>&#160;                                                  {</div>
+<div class="line"><a name="l00769"></a><span class="lineno">  769</span>&#160;        <span class="keywordflow">return</span> partitions[partitionIndex * 2];</div>
+<div class="line"><a name="l00770"></a><span class="lineno">  770</span>&#160;    }</div>
+</div><!-- fragment -->
 </div>
 </div>
 <a id="a0739ef5490685ef2c389e578fa26b361"></a>
@@ -529,14 +654,14 @@ template&lt;typename OtherBoostGeometryObj &gt; </div>
 <p>Returns true whether the geometry is completely inside (no inside-border common points) the input geometry. False otherwise. </p>
 <dl class="section warning"><dt>Warning</dt><dd>Not all geometry type combinations are supported (see data type support). </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="containers_8h_source.html#l00868">868</a> of file <a class="el" href="containers_8h_source.html">containers.h</a>.</p>
-<div class="fragment"><div class="line"><a name="l00868"></a><span class="lineno">  868</span>&#160;                                                          {</div>
-<div class="line"><a name="l00869"></a><span class="lineno">  869</span>&#160;        <span class="keywordflow">return</span> std::visit([&amp;other](<span class="keyword">auto</span>&amp;&amp; arg) -&gt; <span class="keywordtype">bool</span> {</div>
-<div class="line"><a name="l00870"></a><span class="lineno">  870</span>&#160;            <span class="keywordflow">return</span> std::visit([&amp;arg](<span class="keyword">auto</span>&amp;&amp; otherArg) -&gt; <span class="keywordtype">bool</span> {</div>
-<div class="line"><a name="l00871"></a><span class="lineno">  871</span>&#160;                <span class="keywordflow">return</span> arg.inside(otherArg);</div>
-<div class="line"><a name="l00872"></a><span class="lineno">  872</span>&#160;            }, other.shape);</div>
-<div class="line"><a name="l00873"></a><span class="lineno">  873</span>&#160;        }, shape);</div>
-<div class="line"><a name="l00874"></a><span class="lineno">  874</span>&#160;    }</div>
+<p class="definition">Definition at line <a class="el" href="containers_8h_source.html#l00891">891</a> of file <a class="el" href="containers_8h_source.html">containers.h</a>.</p>
+<div class="fragment"><div class="line"><a name="l00891"></a><span class="lineno">  891</span>&#160;                                                          {</div>
+<div class="line"><a name="l00892"></a><span class="lineno">  892</span>&#160;        <span class="keywordflow">return</span> std::visit([&amp;other](<span class="keyword">auto</span>&amp;&amp; arg) -&gt; <span class="keywordtype">bool</span> {</div>
+<div class="line"><a name="l00893"></a><span class="lineno">  893</span>&#160;            <span class="keywordflow">return</span> std::visit([&amp;arg](<span class="keyword">auto</span>&amp;&amp; otherArg) -&gt; <span class="keywordtype">bool</span> {</div>
+<div class="line"><a name="l00894"></a><span class="lineno">  894</span>&#160;                <span class="keywordflow">return</span> arg.inside(otherArg);</div>
+<div class="line"><a name="l00895"></a><span class="lineno">  895</span>&#160;            }, other.shape);</div>
+<div class="line"><a name="l00896"></a><span class="lineno">  896</span>&#160;        }, shape);</div>
+<div class="line"><a name="l00897"></a><span class="lineno">  897</span>&#160;    }</div>
 </div><!-- fragment --><div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
@@ -580,14 +705,14 @@ template&lt;typename OtherBoostGeometryObj &gt; </div>
 <p>Returns true whether the input geometry intersects (border or area) with this geometry. False otherwise. </p>
 <dl class="section warning"><dt>Warning</dt><dd>Not all geometry type combinations are supported (see data type support). </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="containers_8h_source.html#l00844">844</a> of file <a class="el" href="containers_8h_source.html">containers.h</a>.</p>
-<div class="fragment"><div class="line"><a name="l00844"></a><span class="lineno">  844</span>&#160;                                                              {</div>
-<div class="line"><a name="l00845"></a><span class="lineno">  845</span>&#160;        <span class="keywordflow">return</span> std::visit([&amp;other](<span class="keyword">auto</span>&amp;&amp; arg) -&gt; <span class="keywordtype">bool</span> {</div>
-<div class="line"><a name="l00846"></a><span class="lineno">  846</span>&#160;            <span class="keywordflow">return</span> std::visit([&amp;arg](<span class="keyword">auto</span>&amp;&amp; otherArg) -&gt; <span class="keywordtype">bool</span> {</div>
-<div class="line"><a name="l00847"></a><span class="lineno">  847</span>&#160;                <span class="keywordflow">return</span> arg.intersects(otherArg);</div>
-<div class="line"><a name="l00848"></a><span class="lineno">  848</span>&#160;            }, other.shape);</div>
-<div class="line"><a name="l00849"></a><span class="lineno">  849</span>&#160;        }, shape);</div>
-<div class="line"><a name="l00850"></a><span class="lineno">  850</span>&#160;    }</div>
+<p class="definition">Definition at line <a class="el" href="containers_8h_source.html#l00867">867</a> of file <a class="el" href="containers_8h_source.html">containers.h</a>.</p>
+<div class="fragment"><div class="line"><a name="l00867"></a><span class="lineno">  867</span>&#160;                                                              {</div>
+<div class="line"><a name="l00868"></a><span class="lineno">  868</span>&#160;        <span class="keywordflow">return</span> std::visit([&amp;other](<span class="keyword">auto</span>&amp;&amp; arg) -&gt; <span class="keywordtype">bool</span> {</div>
+<div class="line"><a name="l00869"></a><span class="lineno">  869</span>&#160;            <span class="keywordflow">return</span> std::visit([&amp;arg](<span class="keyword">auto</span>&amp;&amp; otherArg) -&gt; <span class="keywordtype">bool</span> {</div>
+<div class="line"><a name="l00870"></a><span class="lineno">  870</span>&#160;                <span class="keywordflow">return</span> arg.intersects(otherArg);</div>
+<div class="line"><a name="l00871"></a><span class="lineno">  871</span>&#160;            }, other.shape);</div>
+<div class="line"><a name="l00872"></a><span class="lineno">  872</span>&#160;        }, shape);</div>
+<div class="line"><a name="l00873"></a><span class="lineno">  873</span>&#160;    }</div>
 </div><!-- fragment --><div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
@@ -631,14 +756,14 @@ template&lt;typename OtherBoostGeometryObj &gt; </div>
 <p>Returns true whether the geometry meets (touches) the input geometry (their insides do not have common points, but their borders do). False otherwise. </p>
 <dl class="section warning"><dt>Warning</dt><dd>Not all geometry type combinations are supported (see data type support). </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="containers_8h_source.html#l00917">917</a> of file <a class="el" href="containers_8h_source.html">containers.h</a>.</p>
-<div class="fragment"><div class="line"><a name="l00917"></a><span class="lineno">  917</span>&#160;                                                         {</div>
-<div class="line"><a name="l00918"></a><span class="lineno">  918</span>&#160;        <span class="keywordflow">return</span> std::visit([&amp;other](<span class="keyword">auto</span>&amp;&amp; arg) -&gt; <span class="keywordtype">bool</span> {</div>
-<div class="line"><a name="l00919"></a><span class="lineno">  919</span>&#160;            <span class="keywordflow">return</span> std::visit([&amp;arg](<span class="keyword">auto</span>&amp;&amp; otherArg) -&gt; <span class="keywordtype">bool</span> {</div>
-<div class="line"><a name="l00920"></a><span class="lineno">  920</span>&#160;                <span class="keywordflow">return</span> arg.meets(otherArg);</div>
-<div class="line"><a name="l00921"></a><span class="lineno">  921</span>&#160;            }, other.shape);</div>
-<div class="line"><a name="l00922"></a><span class="lineno">  922</span>&#160;        }, shape);</div>
-<div class="line"><a name="l00923"></a><span class="lineno">  923</span>&#160;    }</div>
+<p class="definition">Definition at line <a class="el" href="containers_8h_source.html#l00940">940</a> of file <a class="el" href="containers_8h_source.html">containers.h</a>.</p>
+<div class="fragment"><div class="line"><a name="l00940"></a><span class="lineno">  940</span>&#160;                                                         {</div>
+<div class="line"><a name="l00941"></a><span class="lineno">  941</span>&#160;        <span class="keywordflow">return</span> std::visit([&amp;other](<span class="keyword">auto</span>&amp;&amp; arg) -&gt; <span class="keywordtype">bool</span> {</div>
+<div class="line"><a name="l00942"></a><span class="lineno">  942</span>&#160;            <span class="keywordflow">return</span> std::visit([&amp;arg](<span class="keyword">auto</span>&amp;&amp; otherArg) -&gt; <span class="keywordtype">bool</span> {</div>
+<div class="line"><a name="l00943"></a><span class="lineno">  943</span>&#160;                <span class="keywordflow">return</span> arg.meets(otherArg);</div>
+<div class="line"><a name="l00944"></a><span class="lineno">  944</span>&#160;            }, other.shape);</div>
+<div class="line"><a name="l00945"></a><span class="lineno">  945</span>&#160;        }, shape);</div>
+<div class="line"><a name="l00946"></a><span class="lineno">  946</span>&#160;    }</div>
 </div><!-- fragment --><div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
@@ -705,39 +830,13 @@ Here is the caller graph for this function:</div>
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="containers_8h_source.html#l00784">784</a> of file <a class="el" href="containers_8h_source.html">containers.h</a>.</p>
-<div class="fragment"><div class="line"><a name="l00784"></a><span class="lineno">  784</span>&#160;                                                                {</div>
-<div class="line"><a name="l00785"></a><span class="lineno">  785</span>&#160;        std::visit([index, &amp;x, &amp;y](<span class="keyword">auto</span>&amp;&amp; arg) {</div>
-<div class="line"><a name="l00786"></a><span class="lineno">  786</span>&#160;            arg.modifyBoostPointByIndex(index, x, y);</div>
-<div class="line"><a name="l00787"></a><span class="lineno">  787</span>&#160;        }, shape);</div>
-<div class="line"><a name="l00788"></a><span class="lineno">  788</span>&#160;    }</div>
+<p class="definition">Definition at line <a class="el" href="containers_8h_source.html#l00807">807</a> of file <a class="el" href="containers_8h_source.html">containers.h</a>.</p>
+<div class="fragment"><div class="line"><a name="l00807"></a><span class="lineno">  807</span>&#160;                                                                {</div>
+<div class="line"><a name="l00808"></a><span class="lineno">  808</span>&#160;        std::visit([index, &amp;x, &amp;y](<span class="keyword">auto</span>&amp;&amp; arg) {</div>
+<div class="line"><a name="l00809"></a><span class="lineno">  809</span>&#160;            arg.modifyBoostPointByIndex(index, x, y);</div>
+<div class="line"><a name="l00810"></a><span class="lineno">  810</span>&#160;        }, shape);</div>
+<div class="line"><a name="l00811"></a><span class="lineno">  811</span>&#160;    }</div>
 </div><!-- fragment -->
-</div>
-</div>
-<h2 class="groupheader">Member Data Documentation</h2>
-<a id="ae160e73c713890a7f23e91a133b30dad"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ae160e73c713890a7f23e91a133b30dad">&#9670;&nbsp;</a></span>partitions</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">std::unordered_map&lt;size_t, TwoLayerClassE&gt; Shape::partitions</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p>The object's partition index, containing info about the partitions that this object intersects with and its two-layer index class in each of them. </p>
-<dl class="params"><dt>Parameters</dt><dd>
-  <table class="params">
-    <tr><td class="paramname">key</td><td><a class="el" href="structPartition.html" title="Holds all necessary partition information.">Partition</a> ID. </td></tr>
-    <tr><td class="paramname">value</td><td>The two-layer index class of the object in that partition. </td></tr>
-  </table>
-  </dd>
-</dl>
-
-<p class="definition">Definition at line <a class="el" href="containers_8h_source.html#l00737">737</a> of file <a class="el" href="containers_8h_source.html">containers.h</a>.</p>
-
 </div>
 </div>
 <hr/>The documentation for this struct was generated from the following file:<ul>

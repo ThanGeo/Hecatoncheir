@@ -151,43 +151,42 @@ DB_STATUS&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href=
 <div class="line"><a name="l00067"></a><span class="lineno">   67</span>&#160;                    <a class="code" href="namespacelogger.html#a53f34feeb22a94db295af05b8b2aab5c">logger::log_error</a>(DBERR_DISK_READ_FAILED, <span class="stringliteral">&quot;Couldn&#39;t read the partition IDs&quot;</span>);</div>
 <div class="line"><a name="l00068"></a><span class="lineno">   68</span>&#160;                    <span class="keywordflow">return</span> DBERR_DISK_READ_FAILED;</div>
 <div class="line"><a name="l00069"></a><span class="lineno">   69</span>&#160;                }</div>
-<div class="line"><a name="l00070"></a><span class="lineno">   70</span>&#160;                <span class="comment">// store partitions info</span></div>
-<div class="line"><a name="l00071"></a><span class="lineno">   71</span>&#160;                <span class="keywordflow">for</span> (<span class="keywordtype">int</span> i=0; i&lt;partitionCount * 2; i+=2) {</div>
-<div class="line"><a name="l00072"></a><span class="lineno">   72</span>&#160;                    <span class="keywordtype">object</span>.partitions[partitionVector.at(i)] = (TwoLayerClassE) partitionVector.at(i+1);</div>
-<div class="line"><a name="l00073"></a><span class="lineno">   73</span>&#160;                }</div>
-<div class="line"><a name="l00074"></a><span class="lineno">   74</span>&#160;                <span class="comment">// read vertex count</span></div>
-<div class="line"><a name="l00075"></a><span class="lineno">   75</span>&#160;                <span class="keywordtype">int</span> vertexCount;</div>
-<div class="line"><a name="l00076"></a><span class="lineno">   76</span>&#160;                elementsRead = fread(&amp;vertexCount, <span class="keyword">sizeof</span>(<span class="keywordtype">int</span>), 1, pFile);</div>
-<div class="line"><a name="l00077"></a><span class="lineno">   77</span>&#160;                <span class="keywordflow">if</span> (elementsRead != 1) {</div>
-<div class="line"><a name="l00078"></a><span class="lineno">   78</span>&#160;                    <a class="code" href="namespacelogger.html#a53f34feeb22a94db295af05b8b2aab5c">logger::log_error</a>(DBERR_DISK_READ_FAILED, <span class="stringliteral">&quot;Couldn&#39;t read the vertex count&quot;</span>);</div>
-<div class="line"><a name="l00079"></a><span class="lineno">   79</span>&#160;                    <span class="keywordflow">return</span> DBERR_DISK_READ_FAILED;</div>
-<div class="line"><a name="l00080"></a><span class="lineno">   80</span>&#160;                }</div>
-<div class="line"><a name="l00081"></a><span class="lineno">   81</span>&#160;                <span class="comment">// read the points</span></div>
-<div class="line"><a name="l00082"></a><span class="lineno">   82</span>&#160;                std::vector&lt;double&gt; coords(vertexCount*2);</div>
-<div class="line"><a name="l00083"></a><span class="lineno">   83</span>&#160;                elementsRead = fread(coords.data(), <span class="keyword">sizeof</span>(<span class="keywordtype">double</span>), vertexCount*2, pFile);</div>
-<div class="line"><a name="l00084"></a><span class="lineno">   84</span>&#160;                <span class="keywordflow">if</span> (elementsRead != vertexCount*2) {</div>
-<div class="line"><a name="l00085"></a><span class="lineno">   85</span>&#160;                    <a class="code" href="namespacelogger.html#a53f34feeb22a94db295af05b8b2aab5c">logger::log_error</a>(DBERR_DISK_READ_FAILED, <span class="stringliteral">&quot;Couldn&#39;t read the vertices&quot;</span>);</div>
-<div class="line"><a name="l00086"></a><span class="lineno">   86</span>&#160;                    <span class="keywordflow">return</span> DBERR_DISK_READ_FAILED;</div>
-<div class="line"><a name="l00087"></a><span class="lineno">   87</span>&#160;                }</div>
-<div class="line"><a name="l00088"></a><span class="lineno">   88</span>&#160;                <span class="comment">// reset mbr</span></div>
-<div class="line"><a name="l00089"></a><span class="lineno">   89</span>&#160;                <span class="keywordtype">object</span>.mbr.pMin.x = std::numeric_limits&lt;int&gt;::max();</div>
-<div class="line"><a name="l00090"></a><span class="lineno">   90</span>&#160;                <span class="keywordtype">object</span>.mbr.pMin.y = std::numeric_limits&lt;int&gt;::max();</div>
-<div class="line"><a name="l00091"></a><span class="lineno">   91</span>&#160;                <span class="keywordtype">object</span>.mbr.pMax.x = -std::numeric_limits&lt;int&gt;::max();</div>
-<div class="line"><a name="l00092"></a><span class="lineno">   92</span>&#160;                <span class="keywordtype">object</span>.mbr.pMax.y = -std::numeric_limits&lt;int&gt;::max();</div>
-<div class="line"><a name="l00093"></a><span class="lineno">   93</span>&#160;                <span class="keywordflow">for</span> (<span class="keyword">auto</span> it = coords.begin(); it != coords.end(); it += 2) {</div>
-<div class="line"><a name="l00094"></a><span class="lineno">   94</span>&#160;                    <span class="comment">// mbr</span></div>
-<div class="line"><a name="l00095"></a><span class="lineno">   95</span>&#160;                    <span class="keywordtype">object</span>.mbr.pMin.x = std::min(<span class="keywordtype">object</span>.mbr.pMin.x, *it);</div>
-<div class="line"><a name="l00096"></a><span class="lineno">   96</span>&#160;                    <span class="keywordtype">object</span>.mbr.pMin.y = std::min(<span class="keywordtype">object</span>.mbr.pMin.y, *(it+1));</div>
-<div class="line"><a name="l00097"></a><span class="lineno">   97</span>&#160;                    <span class="keywordtype">object</span>.mbr.pMax.x = std::max(<span class="keywordtype">object</span>.mbr.pMax.x, *it);</div>
-<div class="line"><a name="l00098"></a><span class="lineno">   98</span>&#160;                    <span class="keywordtype">object</span>.mbr.pMax.y = std::max(<span class="keywordtype">object</span>.mbr.pMax.y, *(it+1));</div>
-<div class="line"><a name="l00099"></a><span class="lineno">   99</span>&#160;                    <span class="comment">// vector data</span></div>
-<div class="line"><a name="l00100"></a><span class="lineno">  100</span>&#160;                    <span class="keywordtype">object</span>.addPoint(*it, *(it+1));</div>
-<div class="line"><a name="l00101"></a><span class="lineno">  101</span>&#160;                }</div>
-<div class="line"><a name="l00102"></a><span class="lineno">  102</span>&#160;                <span class="comment">// correct</span></div>
-<div class="line"><a name="l00103"></a><span class="lineno">  103</span>&#160;                <span class="keywordtype">object</span>.correctGeometry();</div>
-<div class="line"><a name="l00104"></a><span class="lineno">  104</span>&#160;                </div>
-<div class="line"><a name="l00105"></a><span class="lineno">  105</span>&#160;                <span class="keywordflow">return</span> DBERR_OK;</div>
-<div class="line"><a name="l00106"></a><span class="lineno">  106</span>&#160;            }</div>
+<div class="line"><a name="l00070"></a><span class="lineno">   70</span>&#160;                <span class="comment">// set the partitions in the object</span></div>
+<div class="line"><a name="l00071"></a><span class="lineno">   71</span>&#160;                <span class="keywordtype">object</span>.setPartitions(partitionVector, partitionCount);</div>
+<div class="line"><a name="l00072"></a><span class="lineno">   72</span>&#160; </div>
+<div class="line"><a name="l00073"></a><span class="lineno">   73</span>&#160;                <span class="comment">// read vertex count</span></div>
+<div class="line"><a name="l00074"></a><span class="lineno">   74</span>&#160;                <span class="keywordtype">int</span> vertexCount;</div>
+<div class="line"><a name="l00075"></a><span class="lineno">   75</span>&#160;                elementsRead = fread(&amp;vertexCount, <span class="keyword">sizeof</span>(<span class="keywordtype">int</span>), 1, pFile);</div>
+<div class="line"><a name="l00076"></a><span class="lineno">   76</span>&#160;                <span class="keywordflow">if</span> (elementsRead != 1) {</div>
+<div class="line"><a name="l00077"></a><span class="lineno">   77</span>&#160;                    <a class="code" href="namespacelogger.html#a53f34feeb22a94db295af05b8b2aab5c">logger::log_error</a>(DBERR_DISK_READ_FAILED, <span class="stringliteral">&quot;Couldn&#39;t read the vertex count&quot;</span>);</div>
+<div class="line"><a name="l00078"></a><span class="lineno">   78</span>&#160;                    <span class="keywordflow">return</span> DBERR_DISK_READ_FAILED;</div>
+<div class="line"><a name="l00079"></a><span class="lineno">   79</span>&#160;                }</div>
+<div class="line"><a name="l00080"></a><span class="lineno">   80</span>&#160;                <span class="comment">// read the points</span></div>
+<div class="line"><a name="l00081"></a><span class="lineno">   81</span>&#160;                std::vector&lt;double&gt; coords(vertexCount*2);</div>
+<div class="line"><a name="l00082"></a><span class="lineno">   82</span>&#160;                elementsRead = fread(coords.data(), <span class="keyword">sizeof</span>(<span class="keywordtype">double</span>), vertexCount*2, pFile);</div>
+<div class="line"><a name="l00083"></a><span class="lineno">   83</span>&#160;                <span class="keywordflow">if</span> (elementsRead != vertexCount*2) {</div>
+<div class="line"><a name="l00084"></a><span class="lineno">   84</span>&#160;                    <a class="code" href="namespacelogger.html#a53f34feeb22a94db295af05b8b2aab5c">logger::log_error</a>(DBERR_DISK_READ_FAILED, <span class="stringliteral">&quot;Couldn&#39;t read the vertices&quot;</span>);</div>
+<div class="line"><a name="l00085"></a><span class="lineno">   85</span>&#160;                    <span class="keywordflow">return</span> DBERR_DISK_READ_FAILED;</div>
+<div class="line"><a name="l00086"></a><span class="lineno">   86</span>&#160;                }</div>
+<div class="line"><a name="l00087"></a><span class="lineno">   87</span>&#160;                <span class="comment">// reset mbr</span></div>
+<div class="line"><a name="l00088"></a><span class="lineno">   88</span>&#160;                <span class="keywordtype">object</span>.mbr.pMin.x = std::numeric_limits&lt;int&gt;::max();</div>
+<div class="line"><a name="l00089"></a><span class="lineno">   89</span>&#160;                <span class="keywordtype">object</span>.mbr.pMin.y = std::numeric_limits&lt;int&gt;::max();</div>
+<div class="line"><a name="l00090"></a><span class="lineno">   90</span>&#160;                <span class="keywordtype">object</span>.mbr.pMax.x = -std::numeric_limits&lt;int&gt;::max();</div>
+<div class="line"><a name="l00091"></a><span class="lineno">   91</span>&#160;                <span class="keywordtype">object</span>.mbr.pMax.y = -std::numeric_limits&lt;int&gt;::max();</div>
+<div class="line"><a name="l00092"></a><span class="lineno">   92</span>&#160;                <span class="keywordflow">for</span> (<span class="keyword">auto</span> it = coords.begin(); it != coords.end(); it += 2) {</div>
+<div class="line"><a name="l00093"></a><span class="lineno">   93</span>&#160;                    <span class="comment">// mbr</span></div>
+<div class="line"><a name="l00094"></a><span class="lineno">   94</span>&#160;                    <span class="keywordtype">object</span>.mbr.pMin.x = std::min(<span class="keywordtype">object</span>.mbr.pMin.x, *it);</div>
+<div class="line"><a name="l00095"></a><span class="lineno">   95</span>&#160;                    <span class="keywordtype">object</span>.mbr.pMin.y = std::min(<span class="keywordtype">object</span>.mbr.pMin.y, *(it+1));</div>
+<div class="line"><a name="l00096"></a><span class="lineno">   96</span>&#160;                    <span class="keywordtype">object</span>.mbr.pMax.x = std::max(<span class="keywordtype">object</span>.mbr.pMax.x, *it);</div>
+<div class="line"><a name="l00097"></a><span class="lineno">   97</span>&#160;                    <span class="keywordtype">object</span>.mbr.pMax.y = std::max(<span class="keywordtype">object</span>.mbr.pMax.y, *(it+1));</div>
+<div class="line"><a name="l00098"></a><span class="lineno">   98</span>&#160;                    <span class="comment">// vector data</span></div>
+<div class="line"><a name="l00099"></a><span class="lineno">   99</span>&#160;                    <span class="keywordtype">object</span>.addPoint(*it, *(it+1));</div>
+<div class="line"><a name="l00100"></a><span class="lineno">  100</span>&#160;                }</div>
+<div class="line"><a name="l00101"></a><span class="lineno">  101</span>&#160;                <span class="comment">// correct</span></div>
+<div class="line"><a name="l00102"></a><span class="lineno">  102</span>&#160;                <span class="keywordtype">object</span>.correctGeometry();</div>
+<div class="line"><a name="l00103"></a><span class="lineno">  103</span>&#160;                </div>
+<div class="line"><a name="l00104"></a><span class="lineno">  104</span>&#160;                <span class="keywordflow">return</span> DBERR_OK;</div>
+<div class="line"><a name="l00105"></a><span class="lineno">  105</span>&#160;            }</div>
 <div class="ttc" id="anamespacelogger_html_a53f34feeb22a94db295af05b8b2aab5c"><div class="ttname"><a href="namespacelogger.html#a53f34feeb22a94db295af05b8b2aab5c">logger::log_error</a></div><div class="ttdeci">void log_error(int errorCode, T first, Args... rest)</div><div class="ttdoc">Error logging function with template arguments. Separates input parameters with spaces....</div><div class="ttdef"><b>Definition:</b> <a href="utils_8h_source.html#l00096">utils.h:96</a></div></div>
 </div><!-- fragment --><div class="dynheader">
 Here is the call graph for this function:</div>

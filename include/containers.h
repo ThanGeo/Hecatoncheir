@@ -724,6 +724,8 @@ private:
      * @warning Direct access is not encouraged. See the member method definitions for more.
      */
     ShapeVariant shape;
+    std::vector<int> partitions;
+    int partitionCount;
 public:
     /** @brief the object's ID, as read by the data file. */
     size_t recID;
@@ -734,7 +736,6 @@ public:
      * @param key Partition ID.
      * @param value The two-layer index class of the object in that partition.
      */
-    std::unordered_map<size_t, TwoLayerClassE> partitions;
 
     /** @brief Default empty Shape constructor. */
     Shape() {}
@@ -759,6 +760,28 @@ public:
             else
                 return "Unknown type";
         }, shape);
+    }
+
+    /** @brief returns the partition ID for partition number 'partitionIndex' in the partitions list.
+     * @param partitionIndex indicates the offset (index) of the requested partition from [0, partitionCount-1].
+     */
+    inline int getPartitionID(int partitionIndex) {
+        return partitions[partitionIndex * 2];
+    }
+    /** @brief returns the partition class for partition number 'partitionIndex' in the partitions list.
+     * @param partitionIndex indicates the offset (index) of the requested partition from [0, partitionCount-1].
+     */
+    inline TwoLayerClassE getPartitionClass(int partitionIndex) {
+        return (TwoLayerClassE) partitions[partitionIndex * 2 + 1];
+    }
+
+    inline void setPartitions(std::vector<int> &newPartitions, int partitionCount) {
+        this->partitionCount = partitionCount;
+        this->partitions = newPartitions;
+    }
+
+    inline int getPartitionCount() {
+        return partitionCount;
     }
 
     /** @brief Adds a point to the boost geometry (see derived method definitions). */

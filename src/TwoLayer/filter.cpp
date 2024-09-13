@@ -431,10 +431,8 @@ namespace twolayer
          * optimized two-layer MBR filter for find topological relation queries, with intermediate filter forwarding
          */
         
-        static DB_STATUS evaluate(QueryOutput &queryOutput) {
+        static DB_STATUS evaluate(Dataset* R, Dataset* S, QueryOutput &queryOutput) {
             DB_STATUS ret = DBERR_OK;
-            Dataset* R = g_config.datasetInfo.getDatasetR();
-            Dataset* S = g_config.datasetInfo.getDatasetS();
             // here the final results will be stored
             #pragma omp parallel reduction(query_output_reduction:queryOutput)
             {
@@ -867,10 +865,8 @@ namespace twolayer
          * simple two-layer MBR intersection filter with intermediate filter forwarding
          */
         
-        static DB_STATUS evaluate(QueryOutput &queryOutput) {
+        static DB_STATUS evaluate(Dataset* R, Dataset* S, QueryOutput &queryOutput) {
             DB_STATUS ret = DBERR_OK;
-            Dataset* R = g_config.datasetInfo.getDatasetR();
-            Dataset* S = g_config.datasetInfo.getDatasetS();
             // R->printPartitions();
             // here the final results will be stored
             #pragma omp parallel reduction(query_output_reduction:queryOutput)
@@ -978,11 +974,14 @@ namespace twolayer
         DB_STATUS ret = DBERR_OK;
         // first, reset any query outputs
         g_queryOutput.reset();
+        // get the datasets
+        Dataset* R = g_config.datasetInfo.getDatasetR();
+        Dataset* S = g_config.datasetInfo.getDatasetS();
         // process based on query type
         switch (g_config.queryInfo.type) {
             case Q_RANGE:
                 // todo: double check with dimitris. Is the filter the same for range? what about point data?
-                ret = intersectionMBRfilter::evaluate(queryOutput);
+                ret = intersectionMBRfilter::evaluate(R, S, queryOutput);
                 if (ret != DBERR_OK) {
                     logger::log_error(ret, "Intersection MBR filter failed");
                     return ret;
@@ -996,14 +995,14 @@ namespace twolayer
             case Q_CONTAINS:
             case Q_COVERS:
             case Q_COVERED_BY:
-                ret = intersectionMBRfilter::evaluate(queryOutput);
+                ret = intersectionMBRfilter::evaluate(R, S, queryOutput);
                 if (ret != DBERR_OK) {
                     logger::log_error(ret, "Intersection MBR filter failed");
                     return ret;
                 }
                 break;
             case Q_FIND_RELATION:
-                ret = topologyMBRfilter::evaluate(queryOutput);
+                ret = topologyMBRfilter::evaluate(R, S, queryOutput);
                 if (ret != DBERR_OK) {
                     logger::log_error(ret, "Topology MBR filter failed");
                     return ret;

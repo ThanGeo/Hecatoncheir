@@ -114,7 +114,7 @@ std::unordered_map&lt; int, size_t &gt;&#160;</td><td class="memItemRight" valig
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="containers_8h_source.html#l01048">1048</a> of file <a class="el" href="containers_8h_source.html">containers.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="containers_8h_source.html#l01071">1071</a> of file <a class="el" href="containers_8h_source.html">containers.h</a>.</p>
 </div><h2 class="groupheader">Member Function Documentation</h2>
 <a id="ae929e428c40274230f4b2d0b7129b983"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#ae929e428c40274230f4b2d0b7129b983">&#9670;&nbsp;</a></span>addObject()</h2>
@@ -158,25 +158,34 @@ std::unordered_map&lt; int, size_t &gt;&#160;</td><td class="memItemRight" valig
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="containers_8cpp_source.html#l00473">473</a> of file <a class="el" href="containers_8cpp_source.html">containers.cpp</a>.</p>
-<div class="fragment"><div class="line"><a name="l00473"></a><span class="lineno">  473</span>&#160;                                                                                         {</div>
-<div class="line"><a name="l00474"></a><span class="lineno">  474</span>&#160;    <span class="keyword">auto</span> it = partitionMap.find(partitionID);</div>
-<div class="line"><a name="l00475"></a><span class="lineno">  475</span>&#160;    <span class="keywordflow">if</span> (it == partitionMap.end()) {</div>
-<div class="line"><a name="l00476"></a><span class="lineno">  476</span>&#160;        <span class="comment">// new partition</span></div>
-<div class="line"><a name="l00477"></a><span class="lineno">  477</span>&#160;        <a class="code" href="structPartition.html">Partition</a> partition(partitionID);</div>
-<div class="line"><a name="l00478"></a><span class="lineno">  478</span>&#160;        <span class="comment">// add object reference</span></div>
-<div class="line"><a name="l00479"></a><span class="lineno">  479</span>&#160;        partition.addObjectOfClass(objectRef, classType);</div>
-<div class="line"><a name="l00480"></a><span class="lineno">  480</span>&#160;        <span class="comment">// save partition</span></div>
-<div class="line"><a name="l00481"></a><span class="lineno">  481</span>&#160;        partitions.push_back(partition);</div>
-<div class="line"><a name="l00482"></a><span class="lineno">  482</span>&#160;        <span class="keywordtype">int</span> newIndex = partitions.size() - 1;</div>
-<div class="line"><a name="l00483"></a><span class="lineno">  483</span>&#160;        partitionMap[partitionID] = newIndex;</div>
-<div class="line"><a name="l00484"></a><span class="lineno">  484</span>&#160;    } <span class="keywordflow">else</span> {</div>
-<div class="line"><a name="l00485"></a><span class="lineno">  485</span>&#160;        <span class="comment">// existing partition</span></div>
-<div class="line"><a name="l00486"></a><span class="lineno">  486</span>&#160;        partitions[it-&gt;second].addObjectOfClass(objectRef, classType);</div>
-<div class="line"><a name="l00487"></a><span class="lineno">  487</span>&#160;    }</div>
-<div class="line"><a name="l00488"></a><span class="lineno">  488</span>&#160;}</div>
-<div class="ttc" id="astructPartition_html"><div class="ttname"><a href="structPartition.html">Partition</a></div><div class="ttdoc">Holds all necessary partition information.</div><div class="ttdef"><b>Definition:</b> <a href="containers_8h_source.html#l01024">containers.h:1024</a></div></div>
-</div><!-- fragment -->
+<p class="definition">Definition at line <a class="el" href="containers_8cpp_source.html#l00469">469</a> of file <a class="el" href="containers_8cpp_source.html">containers.cpp</a>.</p>
+<div class="fragment"><div class="line"><a name="l00469"></a><span class="lineno">  469</span>&#160;                                                                                         {</div>
+<div class="line"><a name="l00470"></a><span class="lineno">  470</span>&#160;    <span class="keyword">auto</span> it = partitionMap.find(partitionID);</div>
+<div class="line"><a name="l00471"></a><span class="lineno">  471</span>&#160;    <span class="keywordflow">if</span> (it == partitionMap.end()) {</div>
+<div class="line"><a name="l00472"></a><span class="lineno">  472</span>&#160;        <span class="comment">// new partition</span></div>
+<div class="line"><a name="l00473"></a><span class="lineno">  473</span>&#160;        <a class="code" href="structPartition.html">Partition</a> partition(partitionID);</div>
+<div class="line"><a name="l00474"></a><span class="lineno">  474</span>&#160;        <span class="comment">// add object reference</span></div>
+<div class="line"><a name="l00475"></a><span class="lineno">  475</span>&#160;        partition.addObjectOfClass(objectRef, classType);</div>
+<div class="line"><a name="l00476"></a><span class="lineno">  476</span>&#160;        <span class="comment">// save partition</span></div>
+<div class="line"><a name="l00477"></a><span class="lineno">  477</span>&#160;        partitions.push_back(partition);</div>
+<div class="line"><a name="l00478"></a><span class="lineno">  478</span>&#160;        <span class="keywordtype">int</span> newIndex = partitions.size() - 1;</div>
+<div class="line"><a name="l00479"></a><span class="lineno">  479</span>&#160;        partitionMap[partitionID] = newIndex;</div>
+<div class="line"><a name="l00480"></a><span class="lineno">  480</span>&#160;    } <span class="keywordflow">else</span> {</div>
+<div class="line"><a name="l00481"></a><span class="lineno">  481</span>&#160;        <span class="comment">// existing partition</span></div>
+<div class="line"><a name="l00482"></a><span class="lineno">  482</span>&#160;        partitions[it-&gt;second].addObjectOfClass(objectRef, classType);</div>
+<div class="line"><a name="l00483"></a><span class="lineno">  483</span>&#160;    }</div>
+<div class="line"><a name="l00484"></a><span class="lineno">  484</span>&#160;}</div>
+<div class="ttc" id="astructPartition_html"><div class="ttname"><a href="structPartition.html">Partition</a></div><div class="ttdoc">Holds all necessary partition information.</div><div class="ttdef"><b>Definition:</b> <a href="containers_8h_source.html#l01047">containers.h:1047</a></div></div>
+</div><!-- fragment --><div class="dynheader">
+Here is the caller graph for this function:</div>
+<div class="dyncontent">
+<div class="center"><img src="structTwoLayerIndex_ae929e428c40274230f4b2d0b7129b983_icgraph.png" border="0" usemap="#astructTwoLayerIndex_ae929e428c40274230f4b2d0b7129b983_icgraph" alt=""/></div>
+<map name="astructTwoLayerIndex_ae929e428c40274230f4b2d0b7129b983_icgraph" id="astructTwoLayerIndex_ae929e428c40274230f4b2d0b7129b983_icgraph">
+<area shape="rect" title="Adds an object to a partition with partitionID, with the specified classType and returns a pointer to..." alt="" coords="188,5,365,32"/>
+<area shape="rect" href="structDataset.html#a417254634e955b40239fe866835a756a" title="Adds a Shape object into the two layer index and the reference map." alt="" coords="5,5,140,32"/>
+</map>
+</div>
+
 </div>
 </div>
 <hr/>The documentation for this struct was generated from the following files:<ul>

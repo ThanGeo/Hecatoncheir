@@ -179,7 +179,7 @@ ApproximationTypeE&#160;</td><td class="memItemRight" valign="bottom"><b>approxT
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock"><p>All dataset related information. </p>
 
-<p class="definition">Definition at line <a class="el" href="containers_8h_source.html#l01080">1080</a> of file <a class="el" href="containers_8h_source.html">containers.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="containers_8h_source.html#l01103">1103</a> of file <a class="el" href="containers_8h_source.html">containers.h</a>.</p>
 </div><h2 class="groupheader">Member Function Documentation</h2>
 <a id="a3d59b3e2ea35367bd88776afd2391c94"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a3d59b3e2ea35367bd88776afd2391c94">&#9670;&nbsp;</a></span>addAprilDataToApproximationDataMap()</h2>
@@ -214,23 +214,23 @@ ApproximationTypeE&#160;</td><td class="memItemRight" valign="bottom"><b>approxT
 </div><div class="memdoc">
 <dl class="section warning"><dt>Warning</dt><dd>UNSUPPORTED </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="containers_8cpp_source.html#l00296">296</a> of file <a class="el" href="containers_8cpp_source.html">containers.cpp</a>.</p>
-<div class="fragment"><div class="line"><a name="l00296"></a><span class="lineno">  296</span>&#160;                                                                                                                     {</div>
-<div class="line"><a name="l00297"></a><span class="lineno">  297</span>&#160;    <span class="comment">// store april data</span></div>
-<div class="line"><a name="l00298"></a><span class="lineno">  298</span>&#160;    this-&gt;<a class="code" href="structDataset.html#ad3b176a14bd5857ccb6752922f3203bd">sectionMap</a>[sectionID].aprilData[recID] = aprilData;</div>
-<div class="line"><a name="l00299"></a><span class="lineno">  299</span>&#160;    <span class="comment">// store mapping recID -&gt; sectionID</span></div>
-<div class="line"><a name="l00300"></a><span class="lineno">  300</span>&#160;    <span class="keyword">auto</span> it = this-&gt;<a class="code" href="structDataset.html#a066a8adb737e33d43a900faa5b155ae7">recToSectionIdMap</a>.find(recID);</div>
-<div class="line"><a name="l00301"></a><span class="lineno">  301</span>&#160;    <span class="keywordflow">if</span> (it != this-&gt;<a class="code" href="structDataset.html#a066a8adb737e33d43a900faa5b155ae7">recToSectionIdMap</a>.end()) {</div>
-<div class="line"><a name="l00302"></a><span class="lineno">  302</span>&#160;        <span class="comment">// exists, append</span></div>
-<div class="line"><a name="l00303"></a><span class="lineno">  303</span>&#160;        it-&gt;second.emplace_back(sectionID);</div>
-<div class="line"><a name="l00304"></a><span class="lineno">  304</span>&#160;    } <span class="keywordflow">else</span> {</div>
-<div class="line"><a name="l00305"></a><span class="lineno">  305</span>&#160;        <span class="comment">// doesnt exist, new entry</span></div>
-<div class="line"><a name="l00306"></a><span class="lineno">  306</span>&#160;        std::vector&lt;uint&gt; sectionIDs = {sectionID};</div>
-<div class="line"><a name="l00307"></a><span class="lineno">  307</span>&#160;        this-&gt;<a class="code" href="structDataset.html#a066a8adb737e33d43a900faa5b155ae7">recToSectionIdMap</a>[recID] = sectionIDs;</div>
-<div class="line"><a name="l00308"></a><span class="lineno">  308</span>&#160;    }</div>
-<div class="line"><a name="l00309"></a><span class="lineno">  309</span>&#160;}</div>
-<div class="ttc" id="astructDataset_html_a066a8adb737e33d43a900faa5b155ae7"><div class="ttname"><a href="structDataset.html#a066a8adb737e33d43a900faa5b155ae7">Dataset::recToSectionIdMap</a></div><div class="ttdeci">std::unordered_map&lt; size_t, std::vector&lt; uint &gt; &gt; recToSectionIdMap</div><div class="ttdef"><b>Definition:</b> <a href="containers_8h_source.html#l01100">containers.h:1100</a></div></div>
-<div class="ttc" id="astructDataset_html_ad3b176a14bd5857ccb6752922f3203bd"><div class="ttname"><a href="structDataset.html#ad3b176a14bd5857ccb6752922f3203bd">Dataset::sectionMap</a></div><div class="ttdeci">std::unordered_map&lt; uint, Section &gt; sectionMap</div><div class="ttdef"><b>Definition:</b> <a href="containers_8h_source.html#l01098">containers.h:1098</a></div></div>
+<p class="definition">Definition at line <a class="el" href="containers_8cpp_source.html#l00289">289</a> of file <a class="el" href="containers_8cpp_source.html">containers.cpp</a>.</p>
+<div class="fragment"><div class="line"><a name="l00289"></a><span class="lineno">  289</span>&#160;                                                                                                                     {</div>
+<div class="line"><a name="l00290"></a><span class="lineno">  290</span>&#160;    <span class="comment">// store april data</span></div>
+<div class="line"><a name="l00291"></a><span class="lineno">  291</span>&#160;    this-&gt;<a class="code" href="structDataset.html#ad3b176a14bd5857ccb6752922f3203bd">sectionMap</a>[sectionID].aprilData[recID] = aprilData;</div>
+<div class="line"><a name="l00292"></a><span class="lineno">  292</span>&#160;    <span class="comment">// store mapping recID -&gt; sectionID</span></div>
+<div class="line"><a name="l00293"></a><span class="lineno">  293</span>&#160;    <span class="keyword">auto</span> it = this-&gt;<a class="code" href="structDataset.html#a066a8adb737e33d43a900faa5b155ae7">recToSectionIdMap</a>.find(recID);</div>
+<div class="line"><a name="l00294"></a><span class="lineno">  294</span>&#160;    <span class="keywordflow">if</span> (it != this-&gt;<a class="code" href="structDataset.html#a066a8adb737e33d43a900faa5b155ae7">recToSectionIdMap</a>.end()) {</div>
+<div class="line"><a name="l00295"></a><span class="lineno">  295</span>&#160;        <span class="comment">// exists, append</span></div>
+<div class="line"><a name="l00296"></a><span class="lineno">  296</span>&#160;        it-&gt;second.emplace_back(sectionID);</div>
+<div class="line"><a name="l00297"></a><span class="lineno">  297</span>&#160;    } <span class="keywordflow">else</span> {</div>
+<div class="line"><a name="l00298"></a><span class="lineno">  298</span>&#160;        <span class="comment">// doesnt exist, new entry</span></div>
+<div class="line"><a name="l00299"></a><span class="lineno">  299</span>&#160;        std::vector&lt;uint&gt; sectionIDs = {sectionID};</div>
+<div class="line"><a name="l00300"></a><span class="lineno">  300</span>&#160;        this-&gt;<a class="code" href="structDataset.html#a066a8adb737e33d43a900faa5b155ae7">recToSectionIdMap</a>[recID] = sectionIDs;</div>
+<div class="line"><a name="l00301"></a><span class="lineno">  301</span>&#160;    }</div>
+<div class="line"><a name="l00302"></a><span class="lineno">  302</span>&#160;}</div>
+<div class="ttc" id="astructDataset_html_a066a8adb737e33d43a900faa5b155ae7"><div class="ttname"><a href="structDataset.html#a066a8adb737e33d43a900faa5b155ae7">Dataset::recToSectionIdMap</a></div><div class="ttdeci">std::unordered_map&lt; size_t, std::vector&lt; uint &gt; &gt; recToSectionIdMap</div><div class="ttdef"><b>Definition:</b> <a href="containers_8h_source.html#l01123">containers.h:1123</a></div></div>
+<div class="ttc" id="astructDataset_html_ad3b176a14bd5857ccb6752922f3203bd"><div class="ttname"><a href="structDataset.html#ad3b176a14bd5857ccb6752922f3203bd">Dataset::sectionMap</a></div><div class="ttdeci">std::unordered_map&lt; uint, Section &gt; sectionMap</div><div class="ttdef"><b>Definition:</b> <a href="containers_8h_source.html#l01121">containers.h:1121</a></div></div>
 </div><!-- fragment -->
 </div>
 </div>
@@ -286,29 +286,29 @@ ApproximationTypeE&#160;</td><td class="memItemRight" valign="bottom"><b>approxT
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="containers_8cpp_source.html#l00326">326</a> of file <a class="el" href="containers_8cpp_source.html">containers.cpp</a>.</p>
-<div class="fragment"><div class="line"><a name="l00326"></a><span class="lineno">  326</span>&#160;                                                                                                                                                            {</div>
-<div class="line"><a name="l00327"></a><span class="lineno">  327</span>&#160;    <span class="comment">// retrieve section</span></div>
-<div class="line"><a name="l00328"></a><span class="lineno">  328</span>&#160;    <span class="keyword">auto</span> secIT = this-&gt;<a class="code" href="structDataset.html#ad3b176a14bd5857ccb6752922f3203bd">sectionMap</a>.find(sectionID);</div>
-<div class="line"><a name="l00329"></a><span class="lineno">  329</span>&#160;    <span class="keywordflow">if</span> (secIT == this-&gt;<a class="code" href="structDataset.html#ad3b176a14bd5857ccb6752922f3203bd">sectionMap</a>.end()) {</div>
-<div class="line"><a name="l00330"></a><span class="lineno">  330</span>&#160;        <a class="code" href="namespacelogger.html#a53f34feeb22a94db295af05b8b2aab5c">logger::log_error</a>(DBERR_INVALID_PARAMETER, <span class="stringliteral">&quot;could not find section ID&quot;</span>, sectionID, <span class="stringliteral">&quot;in section map of dataset&quot;</span>, this-&gt;nickname);</div>
-<div class="line"><a name="l00331"></a><span class="lineno">  331</span>&#160;        <span class="keywordflow">return</span>;</div>
-<div class="line"><a name="l00332"></a><span class="lineno">  332</span>&#160;    }</div>
-<div class="line"><a name="l00333"></a><span class="lineno">  333</span>&#160;    <span class="comment">// retrieve object</span></div>
-<div class="line"><a name="l00334"></a><span class="lineno">  334</span>&#160;    <span class="keyword">auto</span> it = secIT-&gt;second.aprilData.find(recID);</div>
-<div class="line"><a name="l00335"></a><span class="lineno">  335</span>&#160;    <span class="keywordflow">if</span> (it == secIT-&gt;second.aprilData.end()) {</div>
-<div class="line"><a name="l00336"></a><span class="lineno">  336</span>&#160;        <a class="code" href="namespacelogger.html#a53f34feeb22a94db295af05b8b2aab5c">logger::log_error</a>(DBERR_INVALID_PARAMETER, <span class="stringliteral">&quot;could not find recID&quot;</span>, recID, <span class="stringliteral">&quot;in section map of dataset&quot;</span>, this-&gt;nickname);</div>
-<div class="line"><a name="l00337"></a><span class="lineno">  337</span>&#160;        <span class="keywordflow">return</span>;</div>
-<div class="line"><a name="l00338"></a><span class="lineno">  338</span>&#160;    }</div>
-<div class="line"><a name="l00339"></a><span class="lineno">  339</span>&#160;    <span class="comment">// replace intervals in april data</span></div>
-<div class="line"><a name="l00340"></a><span class="lineno">  340</span>&#160;    <span class="keywordflow">if</span> (ALL) {</div>
-<div class="line"><a name="l00341"></a><span class="lineno">  341</span>&#160;        it-&gt;second.numIntervalsALL = numIntervals;</div>
-<div class="line"><a name="l00342"></a><span class="lineno">  342</span>&#160;        it-&gt;second.intervalsALL = intervals;</div>
-<div class="line"><a name="l00343"></a><span class="lineno">  343</span>&#160;    } <span class="keywordflow">else</span> {</div>
-<div class="line"><a name="l00344"></a><span class="lineno">  344</span>&#160;        it-&gt;second.numIntervalsFULL = numIntervals;</div>
-<div class="line"><a name="l00345"></a><span class="lineno">  345</span>&#160;        it-&gt;second.intervalsFULL = intervals;</div>
-<div class="line"><a name="l00346"></a><span class="lineno">  346</span>&#160;    }</div>
-<div class="line"><a name="l00347"></a><span class="lineno">  347</span>&#160;}</div>
+<p class="definition">Definition at line <a class="el" href="containers_8cpp_source.html#l00319">319</a> of file <a class="el" href="containers_8cpp_source.html">containers.cpp</a>.</p>
+<div class="fragment"><div class="line"><a name="l00319"></a><span class="lineno">  319</span>&#160;                                                                                                                                                            {</div>
+<div class="line"><a name="l00320"></a><span class="lineno">  320</span>&#160;    <span class="comment">// retrieve section</span></div>
+<div class="line"><a name="l00321"></a><span class="lineno">  321</span>&#160;    <span class="keyword">auto</span> secIT = this-&gt;<a class="code" href="structDataset.html#ad3b176a14bd5857ccb6752922f3203bd">sectionMap</a>.find(sectionID);</div>
+<div class="line"><a name="l00322"></a><span class="lineno">  322</span>&#160;    <span class="keywordflow">if</span> (secIT == this-&gt;<a class="code" href="structDataset.html#ad3b176a14bd5857ccb6752922f3203bd">sectionMap</a>.end()) {</div>
+<div class="line"><a name="l00323"></a><span class="lineno">  323</span>&#160;        <a class="code" href="namespacelogger.html#a53f34feeb22a94db295af05b8b2aab5c">logger::log_error</a>(DBERR_INVALID_PARAMETER, <span class="stringliteral">&quot;could not find section ID&quot;</span>, sectionID, <span class="stringliteral">&quot;in section map of dataset&quot;</span>, this-&gt;nickname);</div>
+<div class="line"><a name="l00324"></a><span class="lineno">  324</span>&#160;        <span class="keywordflow">return</span>;</div>
+<div class="line"><a name="l00325"></a><span class="lineno">  325</span>&#160;    }</div>
+<div class="line"><a name="l00326"></a><span class="lineno">  326</span>&#160;    <span class="comment">// retrieve object</span></div>
+<div class="line"><a name="l00327"></a><span class="lineno">  327</span>&#160;    <span class="keyword">auto</span> it = secIT-&gt;second.aprilData.find(recID);</div>
+<div class="line"><a name="l00328"></a><span class="lineno">  328</span>&#160;    <span class="keywordflow">if</span> (it == secIT-&gt;second.aprilData.end()) {</div>
+<div class="line"><a name="l00329"></a><span class="lineno">  329</span>&#160;        <a class="code" href="namespacelogger.html#a53f34feeb22a94db295af05b8b2aab5c">logger::log_error</a>(DBERR_INVALID_PARAMETER, <span class="stringliteral">&quot;could not find recID&quot;</span>, recID, <span class="stringliteral">&quot;in section map of dataset&quot;</span>, this-&gt;nickname);</div>
+<div class="line"><a name="l00330"></a><span class="lineno">  330</span>&#160;        <span class="keywordflow">return</span>;</div>
+<div class="line"><a name="l00331"></a><span class="lineno">  331</span>&#160;    }</div>
+<div class="line"><a name="l00332"></a><span class="lineno">  332</span>&#160;    <span class="comment">// replace intervals in april data</span></div>
+<div class="line"><a name="l00333"></a><span class="lineno">  333</span>&#160;    <span class="keywordflow">if</span> (ALL) {</div>
+<div class="line"><a name="l00334"></a><span class="lineno">  334</span>&#160;        it-&gt;second.numIntervalsALL = numIntervals;</div>
+<div class="line"><a name="l00335"></a><span class="lineno">  335</span>&#160;        it-&gt;second.intervalsALL = intervals;</div>
+<div class="line"><a name="l00336"></a><span class="lineno">  336</span>&#160;    } <span class="keywordflow">else</span> {</div>
+<div class="line"><a name="l00337"></a><span class="lineno">  337</span>&#160;        it-&gt;second.numIntervalsFULL = numIntervals;</div>
+<div class="line"><a name="l00338"></a><span class="lineno">  338</span>&#160;        it-&gt;second.intervalsFULL = intervals;</div>
+<div class="line"><a name="l00339"></a><span class="lineno">  339</span>&#160;    }</div>
+<div class="line"><a name="l00340"></a><span class="lineno">  340</span>&#160;}</div>
 <div class="ttc" id="anamespacelogger_html_a53f34feeb22a94db295af05b8b2aab5c"><div class="ttname"><a href="namespacelogger.html#a53f34feeb22a94db295af05b8b2aab5c">logger::log_error</a></div><div class="ttdeci">void log_error(int errorCode, T first, Args... rest)</div><div class="ttdoc">Error logging function with template arguments. Separates input parameters with spaces....</div><div class="ttdef"><b>Definition:</b> <a href="utils_8h_source.html#l00096">utils.h:96</a></div></div>
 </div><!-- fragment --><div class="dynheader">
 Here is the call graph for this function:</div>
@@ -353,34 +353,29 @@ Here is the call graph for this function:</div>
 <div class="line"><a name="l00195"></a><span class="lineno">  195</span>&#160;        <span class="keywordflow">return</span> DBERR_INVALID_KEY;</div>
 <div class="line"><a name="l00196"></a><span class="lineno">  196</span>&#160;    }</div>
 <div class="line"><a name="l00197"></a><span class="lineno">  197</span>&#160;    <span class="comment">// insert reference to partition index</span></div>
-<div class="line"><a name="l00198"></a><span class="lineno">  198</span>&#160;    <span class="keywordflow">for</span> (<span class="keyword">auto</span> &amp;partitionIT: <span class="keywordtype">object</span>.partitions) {</div>
-<div class="line"><a name="l00199"></a><span class="lineno">  199</span>&#160;        <span class="keywordtype">int</span> partitionID = partitionIT.first;</div>
-<div class="line"><a name="l00200"></a><span class="lineno">  200</span>&#160;        TwoLayerClassE classType = (TwoLayerClassE) partitionIT.second;</div>
-<div class="line"><a name="l00201"></a><span class="lineno">  201</span>&#160;        <span class="comment">// add to twolayer index</span></div>
-<div class="line"><a name="l00202"></a><span class="lineno">  202</span>&#160;        this-&gt;twoLayerIndex.addObject(partitionID, classType, objectRef);</div>
-<div class="line"><a name="l00203"></a><span class="lineno">  203</span>&#160;        <span class="comment">// if (partitionID == 289605) {</span></div>
-<div class="line"><a name="l00204"></a><span class="lineno">  204</span>&#160;        <span class="comment">//     printf(&quot;added object %ld to partition %d\n&quot;, object.recID, partitionID);</span></div>
-<div class="line"><a name="l00205"></a><span class="lineno">  205</span>&#160;        <span class="comment">//     printf(&quot;Partitions from disk: %ld\n&quot;, object.partitions.size());</span></div>
-<div class="line"><a name="l00206"></a><span class="lineno">  206</span>&#160;        <span class="comment">// }</span></div>
-<div class="line"><a name="l00207"></a><span class="lineno">  207</span>&#160;    }</div>
-<div class="line"><a name="l00208"></a><span class="lineno">  208</span>&#160;    <span class="comment">// keep the ID in the list</span></div>
-<div class="line"><a name="l00209"></a><span class="lineno">  209</span>&#160;    objectIDs.push_back(<span class="keywordtype">object</span>.recID);</div>
-<div class="line"><a name="l00211"></a><span class="lineno">  211</span>&#160;    this-&gt;<a class="code" href="structDataset.html#aad72c5baa46b4858c89e315061632f0f">addObjectToSectionMap</a>(0, <span class="keywordtype">object</span>.recID);</div>
-<div class="line"><a name="l00212"></a><span class="lineno">  212</span>&#160; </div>
-<div class="line"><a name="l00213"></a><span class="lineno">  213</span>&#160;    <span class="keywordflow">return</span> DBERR_OK;</div>
-<div class="line"><a name="l00214"></a><span class="lineno">  214</span>&#160;}</div>
+<div class="line"><a name="l00198"></a><span class="lineno">  198</span>&#160;    <span class="keywordflow">for</span> (<span class="keywordtype">int</span> i=0; i&lt;<span class="keywordtype">object</span>.getPartitionCount(); i++) {</div>
+<div class="line"><a name="l00199"></a><span class="lineno">  199</span>&#160;        this-&gt;twoLayerIndex.<a class="code" href="structTwoLayerIndex.html#ae929e428c40274230f4b2d0b7129b983">addObject</a>(<span class="keywordtype">object</span>.getPartitionID(i), <span class="keywordtype">object</span>.getPartitionClass(i), objectRef);</div>
+<div class="line"><a name="l00200"></a><span class="lineno">  200</span>&#160;    }</div>
+<div class="line"><a name="l00201"></a><span class="lineno">  201</span>&#160;    <span class="comment">// keep the ID in the list</span></div>
+<div class="line"><a name="l00202"></a><span class="lineno">  202</span>&#160;    objectIDs.push_back(<span class="keywordtype">object</span>.recID);</div>
+<div class="line"><a name="l00204"></a><span class="lineno">  204</span>&#160;    this-&gt;<a class="code" href="structDataset.html#aad72c5baa46b4858c89e315061632f0f">addObjectToSectionMap</a>(0, <span class="keywordtype">object</span>.recID);</div>
+<div class="line"><a name="l00205"></a><span class="lineno">  205</span>&#160; </div>
+<div class="line"><a name="l00206"></a><span class="lineno">  206</span>&#160;    <span class="keywordflow">return</span> DBERR_OK;</div>
+<div class="line"><a name="l00207"></a><span class="lineno">  207</span>&#160;}</div>
 <div class="ttc" id="astructDataset_html_a2407297a4ceb58310cfd562510762c93"><div class="ttname"><a href="structDataset.html#a2407297a4ceb58310cfd562510762c93">Dataset::getObject</a></div><div class="ttdeci">Shape * getObject(size_t recID)</div><div class="ttdoc">Returns a reference to the object with the given ID.</div><div class="ttdef"><b>Definition:</b> <a href="containers_8cpp_source.html#l00180">containers.cpp:180</a></div></div>
-<div class="ttc" id="astructDataset_html_aad72c5baa46b4858c89e315061632f0f"><div class="ttname"><a href="structDataset.html#aad72c5baa46b4858c89e315061632f0f">Dataset::addObjectToSectionMap</a></div><div class="ttdeci">void addObjectToSectionMap(const uint sectionID, const size_t recID)</div><div class="ttdoc">Adds the given object ID to the specified section ID.</div><div class="ttdef"><b>Definition:</b> <a href="containers_8cpp_source.html#l00311">containers.cpp:311</a></div></div>
+<div class="ttc" id="astructDataset_html_aad72c5baa46b4858c89e315061632f0f"><div class="ttname"><a href="structDataset.html#aad72c5baa46b4858c89e315061632f0f">Dataset::addObjectToSectionMap</a></div><div class="ttdeci">void addObjectToSectionMap(const uint sectionID, const size_t recID)</div><div class="ttdoc">Adds the given object ID to the specified section ID.</div><div class="ttdef"><b>Definition:</b> <a href="containers_8cpp_source.html#l00304">containers.cpp:304</a></div></div>
 <div class="ttc" id="astructShape_html"><div class="ttname"><a href="structShape.html">Shape</a></div><div class="ttdoc">A spatial object. Could be point, linestring, rectangle or polygon, as specified by its 'dataType' fi...</div><div class="ttdef"><b>Definition:</b> <a href="containers_8h_source.html#l00719">containers.h:719</a></div></div>
+<div class="ttc" id="astructTwoLayerIndex_html_ae929e428c40274230f4b2d0b7129b983"><div class="ttname"><a href="structTwoLayerIndex.html#ae929e428c40274230f4b2d0b7129b983">TwoLayerIndex::addObject</a></div><div class="ttdeci">void addObject(int partitionID, TwoLayerClassE classType, Shape *objectRef)</div><div class="ttdoc">Adds an object to a partition with partitionID, with the specified classType and returns a pointer to...</div><div class="ttdef"><b>Definition:</b> <a href="containers_8cpp_source.html#l00469">containers.cpp:469</a></div></div>
 </div><!-- fragment --><div class="dynheader">
 Here is the call graph for this function:</div>
 <div class="dyncontent">
 <div class="center"><img src="structDataset_a417254634e955b40239fe866835a756a_cgraph.png" border="0" usemap="#astructDataset_a417254634e955b40239fe866835a756a_cgraph" alt=""/></div>
 <map name="astructDataset_a417254634e955b40239fe866835a756a_cgraph" id="astructDataset_a417254634e955b40239fe866835a756a_cgraph">
-<area shape="rect" title="Adds a Shape object into the two layer index and the reference map." alt="" coords="5,56,140,83"/>
-<area shape="rect" href="structDataset.html#aad72c5baa46b4858c89e315061632f0f" title="Adds the given object ID to the specified section ID." alt="" coords="188,5,407,32"/>
-<area shape="rect" href="structDataset.html#a2407297a4ceb58310cfd562510762c93" title="Returns a reference to the object with the given ID." alt="" coords="231,56,363,83"/>
-<area shape="rect" href="namespacelogger.html#a53f34feeb22a94db295af05b8b2aab5c" title="Error logging function with template arguments. Separates input parameters with spaces...." alt="" coords="240,107,355,133"/>
+<area shape="rect" title="Adds a Shape object into the two layer index and the reference map." alt="" coords="5,81,140,108"/>
+<area shape="rect" href="structTwoLayerIndex.html#ae929e428c40274230f4b2d0b7129b983" title="Adds an object to a partition with partitionID, with the specified classType and returns a pointer to..." alt="" coords="209,5,386,32"/>
+<area shape="rect" href="structDataset.html#aad72c5baa46b4858c89e315061632f0f" title="Adds the given object ID to the specified section ID." alt="" coords="188,56,407,83"/>
+<area shape="rect" href="structDataset.html#a2407297a4ceb58310cfd562510762c93" title="Returns a reference to the object with the given ID." alt="" coords="231,107,363,133"/>
+<area shape="rect" href="namespacelogger.html#a53f34feeb22a94db295af05b8b2aab5c" title="Error logging function with template arguments. Separates input parameters with spaces...." alt="" coords="240,157,355,184"/>
 </map>
 </div>
 
@@ -415,21 +410,21 @@ Here is the call graph for this function:</div>
 <p>Adds the given object ID to the specified section ID. </p>
 <dl class="section warning"><dt>Warning</dt><dd>UNSUPPORTED for sections IDs different than 0 (1 partition) </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="containers_8cpp_source.html#l00311">311</a> of file <a class="el" href="containers_8cpp_source.html">containers.cpp</a>.</p>
-<div class="fragment"><div class="line"><a name="l00311"></a><span class="lineno">  311</span>&#160;                                                                            {</div>
-<div class="line"><a name="l00312"></a><span class="lineno">  312</span>&#160;    <a class="code" href="structAprilData.html">AprilData</a> aprilData;</div>
-<div class="line"><a name="l00313"></a><span class="lineno">  313</span>&#160;    this-&gt;<a class="code" href="structDataset.html#ad3b176a14bd5857ccb6752922f3203bd">sectionMap</a>[sectionID].aprilData[recID] = aprilData;</div>
-<div class="line"><a name="l00314"></a><span class="lineno">  314</span>&#160;    <span class="comment">// store mapping recID -&gt; sectionID</span></div>
-<div class="line"><a name="l00315"></a><span class="lineno">  315</span>&#160;    <span class="keyword">auto</span> it = this-&gt;<a class="code" href="structDataset.html#a066a8adb737e33d43a900faa5b155ae7">recToSectionIdMap</a>.find(recID);</div>
-<div class="line"><a name="l00316"></a><span class="lineno">  316</span>&#160;    <span class="keywordflow">if</span> (it != this-&gt;<a class="code" href="structDataset.html#a066a8adb737e33d43a900faa5b155ae7">recToSectionIdMap</a>.end()) {</div>
-<div class="line"><a name="l00317"></a><span class="lineno">  317</span>&#160;        <span class="comment">// exists</span></div>
-<div class="line"><a name="l00318"></a><span class="lineno">  318</span>&#160;        it-&gt;second.emplace_back(sectionID);</div>
-<div class="line"><a name="l00319"></a><span class="lineno">  319</span>&#160;    } <span class="keywordflow">else</span> {</div>
-<div class="line"><a name="l00320"></a><span class="lineno">  320</span>&#160;        <span class="comment">// doesnt exist, new entry</span></div>
-<div class="line"><a name="l00321"></a><span class="lineno">  321</span>&#160;        std::vector&lt;uint&gt; sectionIDs = {sectionID};</div>
-<div class="line"><a name="l00322"></a><span class="lineno">  322</span>&#160;        this-&gt;<a class="code" href="structDataset.html#a066a8adb737e33d43a900faa5b155ae7">recToSectionIdMap</a>[recID] = sectionIDs;</div>
-<div class="line"><a name="l00323"></a><span class="lineno">  323</span>&#160;    }</div>
-<div class="line"><a name="l00324"></a><span class="lineno">  324</span>&#160;}</div>
+<p class="definition">Definition at line <a class="el" href="containers_8cpp_source.html#l00304">304</a> of file <a class="el" href="containers_8cpp_source.html">containers.cpp</a>.</p>
+<div class="fragment"><div class="line"><a name="l00304"></a><span class="lineno">  304</span>&#160;                                                                            {</div>
+<div class="line"><a name="l00305"></a><span class="lineno">  305</span>&#160;    <a class="code" href="structAprilData.html">AprilData</a> aprilData;</div>
+<div class="line"><a name="l00306"></a><span class="lineno">  306</span>&#160;    this-&gt;<a class="code" href="structDataset.html#ad3b176a14bd5857ccb6752922f3203bd">sectionMap</a>[sectionID].aprilData[recID] = aprilData;</div>
+<div class="line"><a name="l00307"></a><span class="lineno">  307</span>&#160;    <span class="comment">// store mapping recID -&gt; sectionID</span></div>
+<div class="line"><a name="l00308"></a><span class="lineno">  308</span>&#160;    <span class="keyword">auto</span> it = this-&gt;<a class="code" href="structDataset.html#a066a8adb737e33d43a900faa5b155ae7">recToSectionIdMap</a>.find(recID);</div>
+<div class="line"><a name="l00309"></a><span class="lineno">  309</span>&#160;    <span class="keywordflow">if</span> (it != this-&gt;<a class="code" href="structDataset.html#a066a8adb737e33d43a900faa5b155ae7">recToSectionIdMap</a>.end()) {</div>
+<div class="line"><a name="l00310"></a><span class="lineno">  310</span>&#160;        <span class="comment">// exists</span></div>
+<div class="line"><a name="l00311"></a><span class="lineno">  311</span>&#160;        it-&gt;second.emplace_back(sectionID);</div>
+<div class="line"><a name="l00312"></a><span class="lineno">  312</span>&#160;    } <span class="keywordflow">else</span> {</div>
+<div class="line"><a name="l00313"></a><span class="lineno">  313</span>&#160;        <span class="comment">// doesnt exist, new entry</span></div>
+<div class="line"><a name="l00314"></a><span class="lineno">  314</span>&#160;        std::vector&lt;uint&gt; sectionIDs = {sectionID};</div>
+<div class="line"><a name="l00315"></a><span class="lineno">  315</span>&#160;        this-&gt;<a class="code" href="structDataset.html#a066a8adb737e33d43a900faa5b155ae7">recToSectionIdMap</a>[recID] = sectionIDs;</div>
+<div class="line"><a name="l00316"></a><span class="lineno">  316</span>&#160;    }</div>
+<div class="line"><a name="l00317"></a><span class="lineno">  317</span>&#160;}</div>
 <div class="ttc" id="astructAprilData_html"><div class="ttname"><a href="structAprilData.html">AprilData</a></div><div class="ttdoc">Holds all the APRIL related info for a single object.</div><div class="ttdef"><b>Definition:</b> <a href="containers_8h_source.html#l00031">containers.h:31</a></div></div>
 </div><!-- fragment --><div class="dynheader">
 Here is the caller graph for this function:</div>
@@ -473,36 +468,36 @@ Here is the caller graph for this function:</div>
 <p>Deserializes the given serialized buffer of the specified size into this <a class="el" href="structDataset.html" title="All dataset related information.">Dataset</a> object. </p>
 <dl class="section warning"><dt>Warning</dt><dd>Caller is responsible for the validity of the input buffer. </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="containers_8cpp_source.html#l00266">266</a> of file <a class="el" href="containers_8cpp_source.html">containers.cpp</a>.</p>
-<div class="fragment"><div class="line"><a name="l00266"></a><span class="lineno">  266</span>&#160;                                                            {</div>
-<div class="line"><a name="l00267"></a><span class="lineno">  267</span>&#160;    <span class="keywordtype">int</span> nicknameLength;</div>
-<div class="line"><a name="l00268"></a><span class="lineno">  268</span>&#160;    <span class="keywordtype">int</span> position = 0;</div>
-<div class="line"><a name="l00269"></a><span class="lineno">  269</span>&#160;    <span class="keywordtype">double</span> xMin, yMin, xMax, yMax;</div>
-<div class="line"><a name="l00270"></a><span class="lineno">  270</span>&#160;    </div>
-<div class="line"><a name="l00271"></a><span class="lineno">  271</span>&#160;    <span class="comment">// dataset data type</span></div>
-<div class="line"><a name="l00272"></a><span class="lineno">  272</span>&#160;    memcpy(&amp;dataType, buffer + position, <span class="keyword">sizeof</span>(DataTypeE));</div>
-<div class="line"><a name="l00273"></a><span class="lineno">  273</span>&#160;    position += <span class="keyword">sizeof</span>(DataTypeE);</div>
-<div class="line"><a name="l00274"></a><span class="lineno">  274</span>&#160;    <span class="comment">// dataset nickname length + string</span></div>
-<div class="line"><a name="l00275"></a><span class="lineno">  275</span>&#160;    memcpy(&amp;nicknameLength, buffer + position, <span class="keyword">sizeof</span>(<span class="keywordtype">int</span>));</div>
-<div class="line"><a name="l00276"></a><span class="lineno">  276</span>&#160;    position += <span class="keyword">sizeof</span>(int);</div>
-<div class="line"><a name="l00277"></a><span class="lineno">  277</span>&#160;    nickname.assign(buffer + position, nicknameLength);</div>
-<div class="line"><a name="l00278"></a><span class="lineno">  278</span>&#160;    position += nicknameLength * <span class="keyword">sizeof</span>(char);</div>
-<div class="line"><a name="l00279"></a><span class="lineno">  279</span>&#160;    <span class="comment">// dataset dataspace MBR</span></div>
-<div class="line"><a name="l00280"></a><span class="lineno">  280</span>&#160;    memcpy(&amp;xMin, buffer + position, <span class="keyword">sizeof</span>(<span class="keywordtype">double</span>));</div>
-<div class="line"><a name="l00281"></a><span class="lineno">  281</span>&#160;    position += <span class="keyword">sizeof</span>(double);</div>
-<div class="line"><a name="l00282"></a><span class="lineno">  282</span>&#160;    memcpy(&amp;yMin, buffer + position, <span class="keyword">sizeof</span>(<span class="keywordtype">double</span>));</div>
-<div class="line"><a name="l00283"></a><span class="lineno">  283</span>&#160;    position += <span class="keyword">sizeof</span>(double);</div>
-<div class="line"><a name="l00284"></a><span class="lineno">  284</span>&#160;    memcpy(&amp;xMax, buffer + position, <span class="keyword">sizeof</span>(<span class="keywordtype">double</span>));</div>
-<div class="line"><a name="l00285"></a><span class="lineno">  285</span>&#160;    position += <span class="keyword">sizeof</span>(double);</div>
-<div class="line"><a name="l00286"></a><span class="lineno">  286</span>&#160;    memcpy(&amp;yMax, buffer + position, <span class="keyword">sizeof</span>(<span class="keywordtype">double</span>));</div>
-<div class="line"><a name="l00287"></a><span class="lineno">  287</span>&#160;    position += <span class="keyword">sizeof</span>(double);</div>
-<div class="line"><a name="l00288"></a><span class="lineno">  288</span>&#160;    <span class="comment">// set</span></div>
-<div class="line"><a name="l00289"></a><span class="lineno">  289</span>&#160;    dataspaceInfo.set(xMin, yMin, xMax, yMax);</div>
-<div class="line"><a name="l00290"></a><span class="lineno">  290</span>&#160; </div>
-<div class="line"><a name="l00291"></a><span class="lineno">  291</span>&#160;    <span class="keywordflow">if</span> (position == bufferSize) {</div>
-<div class="line"><a name="l00292"></a><span class="lineno">  292</span>&#160;        <span class="comment">// all is well</span></div>
-<div class="line"><a name="l00293"></a><span class="lineno">  293</span>&#160;    }</div>
-<div class="line"><a name="l00294"></a><span class="lineno">  294</span>&#160;}</div>
+<p class="definition">Definition at line <a class="el" href="containers_8cpp_source.html#l00259">259</a> of file <a class="el" href="containers_8cpp_source.html">containers.cpp</a>.</p>
+<div class="fragment"><div class="line"><a name="l00259"></a><span class="lineno">  259</span>&#160;                                                            {</div>
+<div class="line"><a name="l00260"></a><span class="lineno">  260</span>&#160;    <span class="keywordtype">int</span> nicknameLength;</div>
+<div class="line"><a name="l00261"></a><span class="lineno">  261</span>&#160;    <span class="keywordtype">int</span> position = 0;</div>
+<div class="line"><a name="l00262"></a><span class="lineno">  262</span>&#160;    <span class="keywordtype">double</span> xMin, yMin, xMax, yMax;</div>
+<div class="line"><a name="l00263"></a><span class="lineno">  263</span>&#160;    </div>
+<div class="line"><a name="l00264"></a><span class="lineno">  264</span>&#160;    <span class="comment">// dataset data type</span></div>
+<div class="line"><a name="l00265"></a><span class="lineno">  265</span>&#160;    memcpy(&amp;dataType, buffer + position, <span class="keyword">sizeof</span>(DataTypeE));</div>
+<div class="line"><a name="l00266"></a><span class="lineno">  266</span>&#160;    position += <span class="keyword">sizeof</span>(DataTypeE);</div>
+<div class="line"><a name="l00267"></a><span class="lineno">  267</span>&#160;    <span class="comment">// dataset nickname length + string</span></div>
+<div class="line"><a name="l00268"></a><span class="lineno">  268</span>&#160;    memcpy(&amp;nicknameLength, buffer + position, <span class="keyword">sizeof</span>(<span class="keywordtype">int</span>));</div>
+<div class="line"><a name="l00269"></a><span class="lineno">  269</span>&#160;    position += <span class="keyword">sizeof</span>(int);</div>
+<div class="line"><a name="l00270"></a><span class="lineno">  270</span>&#160;    nickname.assign(buffer + position, nicknameLength);</div>
+<div class="line"><a name="l00271"></a><span class="lineno">  271</span>&#160;    position += nicknameLength * <span class="keyword">sizeof</span>(char);</div>
+<div class="line"><a name="l00272"></a><span class="lineno">  272</span>&#160;    <span class="comment">// dataset dataspace MBR</span></div>
+<div class="line"><a name="l00273"></a><span class="lineno">  273</span>&#160;    memcpy(&amp;xMin, buffer + position, <span class="keyword">sizeof</span>(<span class="keywordtype">double</span>));</div>
+<div class="line"><a name="l00274"></a><span class="lineno">  274</span>&#160;    position += <span class="keyword">sizeof</span>(double);</div>
+<div class="line"><a name="l00275"></a><span class="lineno">  275</span>&#160;    memcpy(&amp;yMin, buffer + position, <span class="keyword">sizeof</span>(<span class="keywordtype">double</span>));</div>
+<div class="line"><a name="l00276"></a><span class="lineno">  276</span>&#160;    position += <span class="keyword">sizeof</span>(double);</div>
+<div class="line"><a name="l00277"></a><span class="lineno">  277</span>&#160;    memcpy(&amp;xMax, buffer + position, <span class="keyword">sizeof</span>(<span class="keywordtype">double</span>));</div>
+<div class="line"><a name="l00278"></a><span class="lineno">  278</span>&#160;    position += <span class="keyword">sizeof</span>(double);</div>
+<div class="line"><a name="l00279"></a><span class="lineno">  279</span>&#160;    memcpy(&amp;yMax, buffer + position, <span class="keyword">sizeof</span>(<span class="keywordtype">double</span>));</div>
+<div class="line"><a name="l00280"></a><span class="lineno">  280</span>&#160;    position += <span class="keyword">sizeof</span>(double);</div>
+<div class="line"><a name="l00281"></a><span class="lineno">  281</span>&#160;    <span class="comment">// set</span></div>
+<div class="line"><a name="l00282"></a><span class="lineno">  282</span>&#160;    dataspaceInfo.set(xMin, yMin, xMax, yMax);</div>
+<div class="line"><a name="l00283"></a><span class="lineno">  283</span>&#160; </div>
+<div class="line"><a name="l00284"></a><span class="lineno">  284</span>&#160;    <span class="keywordflow">if</span> (position == bufferSize) {</div>
+<div class="line"><a name="l00285"></a><span class="lineno">  285</span>&#160;        <span class="comment">// all is well</span></div>
+<div class="line"><a name="l00286"></a><span class="lineno">  286</span>&#160;    }</div>
+<div class="line"><a name="l00287"></a><span class="lineno">  287</span>&#160;}</div>
 </div><!-- fragment -->
 </div>
 </div>
@@ -525,42 +520,42 @@ Here is the caller graph for this function:</div>
 <p>Serializes the dataset object (only the important stuff). </p>
 <p>serialize dataset info (only specific stuff) </p>
 
-<p class="definition">Definition at line <a class="el" href="containers_8cpp_source.html#l00231">231</a> of file <a class="el" href="containers_8cpp_source.html">containers.cpp</a>.</p>
-<div class="fragment"><div class="line"><a name="l00231"></a><span class="lineno">  231</span>&#160;                                    {</div>
-<div class="line"><a name="l00232"></a><span class="lineno">  232</span>&#160;    <span class="keywordtype">int</span> position = 0;</div>
-<div class="line"><a name="l00233"></a><span class="lineno">  233</span>&#160;    <span class="comment">// calculate size</span></div>
-<div class="line"><a name="l00234"></a><span class="lineno">  234</span>&#160;    <span class="keywordtype">int</span> bufferSize = <a class="code" href="structDataset.html#af83cba15f19a6dad7259c0db5d71a172">calculateBufferSize</a>();</div>
-<div class="line"><a name="l00235"></a><span class="lineno">  235</span>&#160;    <span class="comment">// allocate space</span></div>
-<div class="line"><a name="l00236"></a><span class="lineno">  236</span>&#160;    <span class="keywordtype">char</span>* localBuffer = (<span class="keywordtype">char</span>*) malloc(bufferSize * <span class="keyword">sizeof</span>(<span class="keywordtype">char</span>));</div>
-<div class="line"><a name="l00237"></a><span class="lineno">  237</span>&#160; </div>
-<div class="line"><a name="l00238"></a><span class="lineno">  238</span>&#160;    <span class="keywordflow">if</span> (localBuffer == NULL) {</div>
-<div class="line"><a name="l00239"></a><span class="lineno">  239</span>&#160;        <span class="comment">// malloc failed</span></div>
-<div class="line"><a name="l00240"></a><span class="lineno">  240</span>&#160;        <span class="keywordflow">return</span> -1;</div>
-<div class="line"><a name="l00241"></a><span class="lineno">  241</span>&#160;    }</div>
-<div class="line"><a name="l00242"></a><span class="lineno">  242</span>&#160; </div>
-<div class="line"><a name="l00243"></a><span class="lineno">  243</span>&#160;    <span class="comment">// add datatype</span></div>
-<div class="line"><a name="l00244"></a><span class="lineno">  244</span>&#160;    memcpy(localBuffer + position, &amp;dataType, <span class="keyword">sizeof</span>(DataTypeE));</div>
-<div class="line"><a name="l00245"></a><span class="lineno">  245</span>&#160;    position += <span class="keyword">sizeof</span>(DataTypeE);</div>
-<div class="line"><a name="l00246"></a><span class="lineno">  246</span>&#160;    <span class="comment">// add dataset nickname length + string</span></div>
-<div class="line"><a name="l00247"></a><span class="lineno">  247</span>&#160;    <span class="keywordtype">int</span> nicknameLength = nickname.length();</div>
-<div class="line"><a name="l00248"></a><span class="lineno">  248</span>&#160;    memcpy(localBuffer + position, &amp;nicknameLength, <span class="keyword">sizeof</span>(<span class="keywordtype">int</span>));</div>
-<div class="line"><a name="l00249"></a><span class="lineno">  249</span>&#160;    position += <span class="keyword">sizeof</span>(int);</div>
-<div class="line"><a name="l00250"></a><span class="lineno">  250</span>&#160;    memcpy(localBuffer + position, nickname.data(), nicknameLength);</div>
-<div class="line"><a name="l00251"></a><span class="lineno">  251</span>&#160;    position += nicknameLength * <span class="keyword">sizeof</span>(char);</div>
-<div class="line"><a name="l00252"></a><span class="lineno">  252</span>&#160;    <span class="comment">// add dataset&#39;s dataspace MBR</span></div>
-<div class="line"><a name="l00253"></a><span class="lineno">  253</span>&#160;    memcpy(localBuffer + position, &amp;dataspaceInfo.xMinGlobal, <span class="keyword">sizeof</span>(<span class="keywordtype">double</span>));</div>
-<div class="line"><a name="l00254"></a><span class="lineno">  254</span>&#160;    position += <span class="keyword">sizeof</span>(double);</div>
-<div class="line"><a name="l00255"></a><span class="lineno">  255</span>&#160;    memcpy(localBuffer + position, &amp;dataspaceInfo.yMinGlobal, <span class="keyword">sizeof</span>(<span class="keywordtype">double</span>));</div>
-<div class="line"><a name="l00256"></a><span class="lineno">  256</span>&#160;    position += <span class="keyword">sizeof</span>(double);</div>
-<div class="line"><a name="l00257"></a><span class="lineno">  257</span>&#160;    memcpy(localBuffer + position, &amp;dataspaceInfo.xMaxGlobal, <span class="keyword">sizeof</span>(<span class="keywordtype">double</span>));</div>
-<div class="line"><a name="l00258"></a><span class="lineno">  258</span>&#160;    position += <span class="keyword">sizeof</span>(double);</div>
-<div class="line"><a name="l00259"></a><span class="lineno">  259</span>&#160;    memcpy(localBuffer + position, &amp;dataspaceInfo.yMaxGlobal, <span class="keyword">sizeof</span>(<span class="keywordtype">double</span>));</div>
-<div class="line"><a name="l00260"></a><span class="lineno">  260</span>&#160;    position += <span class="keyword">sizeof</span>(double);</div>
-<div class="line"><a name="l00261"></a><span class="lineno">  261</span>&#160;    <span class="comment">// set and return</span></div>
-<div class="line"><a name="l00262"></a><span class="lineno">  262</span>&#160;    (*buffer) = localBuffer;</div>
-<div class="line"><a name="l00263"></a><span class="lineno">  263</span>&#160;    <span class="keywordflow">return</span> bufferSize;</div>
-<div class="line"><a name="l00264"></a><span class="lineno">  264</span>&#160;}</div>
-<div class="ttc" id="astructDataset_html_af83cba15f19a6dad7259c0db5d71a172"><div class="ttname"><a href="structDataset.html#af83cba15f19a6dad7259c0db5d71a172">Dataset::calculateBufferSize</a></div><div class="ttdeci">int calculateBufferSize()</div><div class="ttdoc">Calculate the size needed for the dataset serialization.</div><div class="ttdef"><b>Definition:</b> <a href="containers_8cpp_source.html#l00216">containers.cpp:216</a></div></div>
+<p class="definition">Definition at line <a class="el" href="containers_8cpp_source.html#l00224">224</a> of file <a class="el" href="containers_8cpp_source.html">containers.cpp</a>.</p>
+<div class="fragment"><div class="line"><a name="l00224"></a><span class="lineno">  224</span>&#160;                                    {</div>
+<div class="line"><a name="l00225"></a><span class="lineno">  225</span>&#160;    <span class="keywordtype">int</span> position = 0;</div>
+<div class="line"><a name="l00226"></a><span class="lineno">  226</span>&#160;    <span class="comment">// calculate size</span></div>
+<div class="line"><a name="l00227"></a><span class="lineno">  227</span>&#160;    <span class="keywordtype">int</span> bufferSize = <a class="code" href="structDataset.html#af83cba15f19a6dad7259c0db5d71a172">calculateBufferSize</a>();</div>
+<div class="line"><a name="l00228"></a><span class="lineno">  228</span>&#160;    <span class="comment">// allocate space</span></div>
+<div class="line"><a name="l00229"></a><span class="lineno">  229</span>&#160;    <span class="keywordtype">char</span>* localBuffer = (<span class="keywordtype">char</span>*) malloc(bufferSize * <span class="keyword">sizeof</span>(<span class="keywordtype">char</span>));</div>
+<div class="line"><a name="l00230"></a><span class="lineno">  230</span>&#160; </div>
+<div class="line"><a name="l00231"></a><span class="lineno">  231</span>&#160;    <span class="keywordflow">if</span> (localBuffer == NULL) {</div>
+<div class="line"><a name="l00232"></a><span class="lineno">  232</span>&#160;        <span class="comment">// malloc failed</span></div>
+<div class="line"><a name="l00233"></a><span class="lineno">  233</span>&#160;        <span class="keywordflow">return</span> -1;</div>
+<div class="line"><a name="l00234"></a><span class="lineno">  234</span>&#160;    }</div>
+<div class="line"><a name="l00235"></a><span class="lineno">  235</span>&#160; </div>
+<div class="line"><a name="l00236"></a><span class="lineno">  236</span>&#160;    <span class="comment">// add datatype</span></div>
+<div class="line"><a name="l00237"></a><span class="lineno">  237</span>&#160;    memcpy(localBuffer + position, &amp;dataType, <span class="keyword">sizeof</span>(DataTypeE));</div>
+<div class="line"><a name="l00238"></a><span class="lineno">  238</span>&#160;    position += <span class="keyword">sizeof</span>(DataTypeE);</div>
+<div class="line"><a name="l00239"></a><span class="lineno">  239</span>&#160;    <span class="comment">// add dataset nickname length + string</span></div>
+<div class="line"><a name="l00240"></a><span class="lineno">  240</span>&#160;    <span class="keywordtype">int</span> nicknameLength = nickname.length();</div>
+<div class="line"><a name="l00241"></a><span class="lineno">  241</span>&#160;    memcpy(localBuffer + position, &amp;nicknameLength, <span class="keyword">sizeof</span>(<span class="keywordtype">int</span>));</div>
+<div class="line"><a name="l00242"></a><span class="lineno">  242</span>&#160;    position += <span class="keyword">sizeof</span>(int);</div>
+<div class="line"><a name="l00243"></a><span class="lineno">  243</span>&#160;    memcpy(localBuffer + position, nickname.data(), nicknameLength);</div>
+<div class="line"><a name="l00244"></a><span class="lineno">  244</span>&#160;    position += nicknameLength * <span class="keyword">sizeof</span>(char);</div>
+<div class="line"><a name="l00245"></a><span class="lineno">  245</span>&#160;    <span class="comment">// add dataset&#39;s dataspace MBR</span></div>
+<div class="line"><a name="l00246"></a><span class="lineno">  246</span>&#160;    memcpy(localBuffer + position, &amp;dataspaceInfo.xMinGlobal, <span class="keyword">sizeof</span>(<span class="keywordtype">double</span>));</div>
+<div class="line"><a name="l00247"></a><span class="lineno">  247</span>&#160;    position += <span class="keyword">sizeof</span>(double);</div>
+<div class="line"><a name="l00248"></a><span class="lineno">  248</span>&#160;    memcpy(localBuffer + position, &amp;dataspaceInfo.yMinGlobal, <span class="keyword">sizeof</span>(<span class="keywordtype">double</span>));</div>
+<div class="line"><a name="l00249"></a><span class="lineno">  249</span>&#160;    position += <span class="keyword">sizeof</span>(double);</div>
+<div class="line"><a name="l00250"></a><span class="lineno">  250</span>&#160;    memcpy(localBuffer + position, &amp;dataspaceInfo.xMaxGlobal, <span class="keyword">sizeof</span>(<span class="keywordtype">double</span>));</div>
+<div class="line"><a name="l00251"></a><span class="lineno">  251</span>&#160;    position += <span class="keyword">sizeof</span>(double);</div>
+<div class="line"><a name="l00252"></a><span class="lineno">  252</span>&#160;    memcpy(localBuffer + position, &amp;dataspaceInfo.yMaxGlobal, <span class="keyword">sizeof</span>(<span class="keywordtype">double</span>));</div>
+<div class="line"><a name="l00253"></a><span class="lineno">  253</span>&#160;    position += <span class="keyword">sizeof</span>(double);</div>
+<div class="line"><a name="l00254"></a><span class="lineno">  254</span>&#160;    <span class="comment">// set and return</span></div>
+<div class="line"><a name="l00255"></a><span class="lineno">  255</span>&#160;    (*buffer) = localBuffer;</div>
+<div class="line"><a name="l00256"></a><span class="lineno">  256</span>&#160;    <span class="keywordflow">return</span> bufferSize;</div>
+<div class="line"><a name="l00257"></a><span class="lineno">  257</span>&#160;}</div>
+<div class="ttc" id="astructDataset_html_af83cba15f19a6dad7259c0db5d71a172"><div class="ttname"><a href="structDataset.html#af83cba15f19a6dad7259c0db5d71a172">Dataset::calculateBufferSize</a></div><div class="ttdeci">int calculateBufferSize()</div><div class="ttdoc">Calculate the size needed for the dataset serialization.</div><div class="ttdef"><b>Definition:</b> <a href="containers_8cpp_source.html#l00209">containers.cpp:209</a></div></div>
 </div><!-- fragment --><div class="dynheader">
 Here is the call graph for this function:</div>
 <div class="dyncontent">
@@ -596,7 +591,7 @@ Here is the caller graph for this function:</div>
 </div><div class="memdoc">
 <p>map: key,value = recID,vector&lt;sectionID&gt;: maps recs to sections </p>
 
-<p class="definition">Definition at line <a class="el" href="containers_8h_source.html#l01100">1100</a> of file <a class="el" href="containers_8h_source.html">containers.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="containers_8h_source.html#l01123">1123</a> of file <a class="el" href="containers_8h_source.html">containers.h</a>.</p>
 
 </div>
 </div>
@@ -613,7 +608,7 @@ Here is the caller graph for this function:</div>
 </div><div class="memdoc">
 <p><a class="el" href="structSection.html" title="Holds information about sections, i.e. APRIL partitions.">Section</a> mapping. key,value = sectionID,(unordered map of key,value = recID,aprilData) </p><dl class="section warning"><dt>Warning</dt><dd>only sectionID = 0 is supported currently. </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="containers_8h_source.html#l01098">1098</a> of file <a class="el" href="containers_8h_source.html">containers.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="containers_8h_source.html#l01121">1121</a> of file <a class="el" href="containers_8h_source.html">containers.h</a>.</p>
 
 </div>
 </div>

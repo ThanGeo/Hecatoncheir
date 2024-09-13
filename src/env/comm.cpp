@@ -296,7 +296,7 @@ namespace comm
                 continueListening = 0;
                 // and write total objects in the begining of the partitioned file
                 ret = storage::writer::updateObjectCountInFile(outFile, dataset->totalObjects);
-                logger::log_success("Saved", dataset->totalObjects,"total objects.");
+                // logger::log_success("Saved", dataset->totalObjects,"total objects.");
                 if (ret != DBERR_OK) {
                     logger::log_error(DBERR_DISK_WRITE_FAILED, "Failed when updating partition file object count");
                     return DBERR_DISK_WRITE_FAILED;

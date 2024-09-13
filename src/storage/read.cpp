@@ -67,10 +67,9 @@ namespace storage
                     logger::log_error(DBERR_DISK_READ_FAILED, "Couldn't read the partition IDs");
                     return DBERR_DISK_READ_FAILED;
                 }
-                // store partitions info
-                for (int i=0; i<partitionCount * 2; i+=2) {
-                    object.partitions[partitionVector.at(i)] = (TwoLayerClassE) partitionVector.at(i+1);
-                }
+                // set the partitions in the object
+                object.setPartitions(partitionVector, partitionCount);
+
                 // read vertex count
                 int vertexCount;
                 elementsRead = fread(&vertexCount, sizeof(int), 1, pFile);
