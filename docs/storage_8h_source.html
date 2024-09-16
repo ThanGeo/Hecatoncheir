@@ -80,25 +80,24 @@ $(function() {
 <div class="line"><a name="l00007"></a><span class="lineno">    7</span>&#160;{</div>
 <div class="line"><a name="l00009"></a><span class="lineno">    9</span>&#160;    <span class="keyword">namespace </span>writer</div>
 <div class="line"><a name="l00010"></a><span class="lineno">   10</span>&#160;    {</div>
-<div class="line"><a name="l00018"></a><span class="lineno">   18</span>&#160;        DB_STATUS <a class="code" href="namespaceAPRIL_1_1writer.html#a4e37845d20ded52b2c86dda2f275aa13">saveAPRILForObject</a>(FILE* pFileALL, FILE* pFileFULL, <span class="keywordtype">size_t</span> recID, uint sectionID, <a class="code" href="structAprilData.html">AprilData</a>* aprilData);</div>
-<div class="line"><a name="l00019"></a><span class="lineno">   19</span>&#160; </div>
-<div class="line"><a name="l00025"></a><span class="lineno">   25</span>&#160;        DB_STATUS <a class="code" href="namespaceAPRIL_1_1writer.html#abc696cb76fd7e57c526d1162755fd1f1">saveAPRILForDataset</a>(FILE* pFileALL, FILE* pFileFULL, <a class="code" href="structDataset.html">Dataset</a> &amp;dataset);</div>
-<div class="line"><a name="l00026"></a><span class="lineno">   26</span>&#160;    }</div>
-<div class="line"><a name="l00027"></a><span class="lineno">   27</span>&#160; </div>
-<div class="line"><a name="l00029"></a><span class="lineno">   29</span>&#160;    <span class="keyword">namespace </span>reader</div>
-<div class="line"><a name="l00030"></a><span class="lineno">   30</span>&#160;    {</div>
-<div class="line"><a name="l00032"></a><span class="lineno">   32</span>&#160;        DB_STATUS <a class="code" href="namespaceAPRIL_1_1reader.html#a2d98041f84dc2707edb0141cdbb54fd5">loadAPRIL</a>(<a class="code" href="structDataset.html">Dataset</a> &amp;dataset);</div>
-<div class="line"><a name="l00033"></a><span class="lineno">   33</span>&#160;    }</div>
-<div class="line"><a name="l00034"></a><span class="lineno">   34</span>&#160;}</div>
-<div class="line"><a name="l00035"></a><span class="lineno">   35</span>&#160; </div>
-<div class="line"><a name="l00036"></a><span class="lineno">   36</span>&#160;<span class="preprocessor">#endif</span></div>
+<div class="line"><a name="l00017"></a><span class="lineno">   17</span>&#160;        DB_STATUS <a class="code" href="namespaceAPRIL_1_1writer.html#a64719c04c426ca575293f479dde57317">saveAPRIL</a>(FILE* pFile, <span class="keywordtype">size_t</span> recID, uint sectionID, <a class="code" href="structAprilData.html">AprilData</a>* aprilData);</div>
+<div class="line"><a name="l00018"></a><span class="lineno">   18</span>&#160; </div>
+<div class="line"><a name="l00023"></a><span class="lineno">   23</span>&#160;        DB_STATUS <a class="code" href="namespaceAPRIL_1_1writer.html#a64719c04c426ca575293f479dde57317">saveAPRIL</a>(FILE* pFile, <a class="code" href="structDataset.html">Dataset</a> &amp;dataset);</div>
+<div class="line"><a name="l00024"></a><span class="lineno">   24</span>&#160;    }</div>
+<div class="line"><a name="l00025"></a><span class="lineno">   25</span>&#160; </div>
+<div class="line"><a name="l00027"></a><span class="lineno">   27</span>&#160;    <span class="keyword">namespace </span>reader</div>
+<div class="line"><a name="l00028"></a><span class="lineno">   28</span>&#160;    {</div>
+<div class="line"><a name="l00030"></a><span class="lineno">   30</span>&#160;        DB_STATUS <a class="code" href="namespaceAPRIL_1_1reader.html#a2d98041f84dc2707edb0141cdbb54fd5">loadAPRIL</a>(<a class="code" href="structDataset.html">Dataset</a> &amp;dataset);</div>
+<div class="line"><a name="l00031"></a><span class="lineno">   31</span>&#160;    }</div>
+<div class="line"><a name="l00032"></a><span class="lineno">   32</span>&#160;}</div>
+<div class="line"><a name="l00033"></a><span class="lineno">   33</span>&#160; </div>
+<div class="line"><a name="l00034"></a><span class="lineno">   34</span>&#160;<span class="preprocessor">#endif</span></div>
 <div class="ttc" id="acontainers_8h_html"><div class="ttname"><a href="containers_8h.html">containers.h</a></div><div class="ttdoc">Contains the struct definitions.</div></div>
-<div class="ttc" id="anamespaceAPRIL_1_1reader_html_a2d98041f84dc2707edb0141cdbb54fd5"><div class="ttname"><a href="namespaceAPRIL_1_1reader.html#a2d98041f84dc2707edb0141cdbb54fd5">APRIL::reader::loadAPRIL</a></div><div class="ttdeci">DB_STATUS loadAPRIL(Dataset &amp;dataset)</div><div class="ttdoc">Loads all APRIL data for a dataset from disk.</div><div class="ttdef"><b>Definition:</b> <a href="storage_8cpp_source.html#l00163">storage.cpp:163</a></div></div>
-<div class="ttc" id="anamespaceAPRIL_1_1writer_html_a4e37845d20ded52b2c86dda2f275aa13"><div class="ttname"><a href="namespaceAPRIL_1_1writer.html#a4e37845d20ded52b2c86dda2f275aa13">APRIL::writer::saveAPRILForObject</a></div><div class="ttdeci">DB_STATUS saveAPRILForObject(FILE *pFileALL, FILE *pFileFULL, size_t recID, uint sectionID, AprilData *aprilData)</div><div class="ttdoc">Saves the APRIL data of an object on disk, using the given file pointers.</div><div class="ttdef"><b>Definition:</b> <a href="storage_8cpp_source.html#l00007">storage.cpp:7</a></div></div>
-<div class="ttc" id="anamespaceAPRIL_1_1writer_html_abc696cb76fd7e57c526d1162755fd1f1"><div class="ttname"><a href="namespaceAPRIL_1_1writer.html#abc696cb76fd7e57c526d1162755fd1f1">APRIL::writer::saveAPRILForDataset</a></div><div class="ttdeci">DB_STATUS saveAPRILForDataset(FILE *pFileALL, FILE *pFileFULL, Dataset &amp;dataset)</div><div class="ttdoc">Saves the APRIL data of an object on disk, using the given file pointers.</div><div class="ttdef"><b>Definition:</b> <a href="storage_8cpp_source.html#l00052">storage.cpp:52</a></div></div>
+<div class="ttc" id="anamespaceAPRIL_1_1reader_html_a2d98041f84dc2707edb0141cdbb54fd5"><div class="ttname"><a href="namespaceAPRIL_1_1reader.html#a2d98041f84dc2707edb0141cdbb54fd5">APRIL::reader::loadAPRIL</a></div><div class="ttdeci">DB_STATUS loadAPRIL(Dataset &amp;dataset)</div><div class="ttdoc">Loads all APRIL data for a dataset from disk.</div><div class="ttdef"><b>Definition:</b> <a href="storage_8cpp_source.html#l00118">storage.cpp:118</a></div></div>
+<div class="ttc" id="anamespaceAPRIL_1_1writer_html_a64719c04c426ca575293f479dde57317"><div class="ttname"><a href="namespaceAPRIL_1_1writer.html#a64719c04c426ca575293f479dde57317">APRIL::writer::saveAPRIL</a></div><div class="ttdeci">DB_STATUS saveAPRIL(FILE *pFile, size_t recID, uint sectionID, AprilData *aprilData)</div><div class="ttdoc">Saves the APRIL data of an object on disk, using the given file pointer.</div><div class="ttdef"><b>Definition:</b> <a href="storage_8cpp_source.html#l00007">storage.cpp:7</a></div></div>
 <div class="ttc" id="anamespaceAPRIL_html"><div class="ttname"><a href="namespaceAPRIL.html">APRIL</a></div><div class="ttdoc">APRIL related methods.</div><div class="ttdef"><b>Definition:</b> <a href="APRIL_2filter_8cpp_source.html#l00004">filter.cpp:5</a></div></div>
 <div class="ttc" id="astructAprilData_html"><div class="ttname"><a href="structAprilData.html">AprilData</a></div><div class="ttdoc">Holds all the APRIL related info for a single object.</div><div class="ttdef"><b>Definition:</b> <a href="containers_8h_source.html#l00031">containers.h:31</a></div></div>
-<div class="ttc" id="astructDataset_html"><div class="ttname"><a href="structDataset.html">Dataset</a></div><div class="ttdoc">All dataset related information.</div><div class="ttdef"><b>Definition:</b> <a href="containers_8h_source.html#l01171">containers.h:1171</a></div></div>
+<div class="ttc" id="astructDataset_html"><div class="ttname"><a href="structDataset.html">Dataset</a></div><div class="ttdoc">All dataset related information.</div><div class="ttdef"><b>Definition:</b> <a href="containers_8h_source.html#l01169">containers.h:1169</a></div></div>
 </div><!-- fragment --></div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>

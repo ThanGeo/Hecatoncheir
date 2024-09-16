@@ -1,5 +1,5 @@
 var searchData=
 [
-  ['classindex_485',['classIndex',['../structPartition.html#ae373cfcbd8a107fa63323de8ad0bb324',1,'Partition']]],
-  ['compression_486',['compression',['../structAprilConfig.html#aa9cb5efd0181f683977e172f8923094f',1,'AprilConfig']]]
+  ['distgriddataspaceinfo_483',['distGridDataspaceInfo',['../structPartitioningMethod.html#adbdfe8ff3a0d48c23e69e581035a7f7e',1,'PartitioningMethod']]],
+  ['distpartitionsperdim_484',['distPartitionsPerDim',['../structPartitioningMethod.html#aea4645ae36d8ce941dcfc708febd0ab7',1,'PartitioningMethod']]]
 ];

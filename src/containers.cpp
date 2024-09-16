@@ -339,6 +339,20 @@ void Dataset::addIntervalsToAprilData(const uint sectionID, const size_t recID, 
     }
 }
 
+void Dataset::addAprilData(const uint sectionID, const size_t recID, const AprilData &aprilData) {
+    this->sectionMap[sectionID].aprilData[recID] = aprilData;
+    // store mapping recID -> sectionID
+    auto it = this->recToSectionIdMap.find(recID);
+    if (it != this->recToSectionIdMap.end()) {
+        // exists
+        it->second.emplace_back(sectionID);
+    } else {
+        // doesnt exist, new entry
+        std::vector<uint> sectionIDs = {sectionID};
+        this->recToSectionIdMap[recID] = sectionIDs;
+    }
+}
+
 AprilData* Dataset::getAprilDataBySectionAndObjectID(uint sectionID, size_t recID) {
     auto sec = this->sectionMap.find(sectionID);
     if (sec != this->sectionMap.end()){

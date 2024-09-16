@@ -1,5 +1,5 @@
 var searchData=
 [
-  ['numintervalsall_497',['numIntervalsALL',['../structAprilData.html#a6953d20b44f87555bb35e894278f999b',1,'AprilData']]],
-  ['numintervalsfull_498',['numIntervalsFULL',['../structAprilData.html#ab02c90f05b91dc00e862397ebef5d7b1',1,'AprilData']]]
+  ['partgriddataspaceinfo_495',['partGridDataspaceInfo',['../structTwoGridPartitioning.html#a688bf2456fefd2227b4eb2b4b3d92bf0',1,'TwoGridPartitioning']]],
+  ['partitions_496',['partitions',['../structAprilConfig.html#aa5c6709f24bcb627b5885d34d0e5e746',1,'AprilConfig']]]
 ];

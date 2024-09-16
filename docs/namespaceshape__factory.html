@@ -130,27 +130,27 @@ Functions</h2></td></tr>
 </dl>
 <dl class="section return"><dt>Returns</dt><dd>DB_STATUS returns the status value of the operation </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="containers_8cpp_source.html#l00847">847</a> of file <a class="el" href="containers_8cpp_source.html">containers.cpp</a>.</p>
-<div class="fragment"><div class="line"><a name="l00847"></a><span class="lineno">  847</span>&#160;                                                             {</div>
-<div class="line"><a name="l00848"></a><span class="lineno">  848</span>&#160;        <span class="keywordflow">switch</span> (dataType) {</div>
-<div class="line"><a name="l00849"></a><span class="lineno">  849</span>&#160;            <span class="keywordflow">case</span> DT_POINT:</div>
-<div class="line"><a name="l00850"></a><span class="lineno">  850</span>&#160;                <span class="keywordtype">object</span> = createEmptyPointShape();</div>
-<div class="line"><a name="l00851"></a><span class="lineno">  851</span>&#160;                <span class="keywordflow">break</span>;</div>
-<div class="line"><a name="l00852"></a><span class="lineno">  852</span>&#160;            <span class="keywordflow">case</span> DT_LINESTRING:</div>
-<div class="line"><a name="l00853"></a><span class="lineno">  853</span>&#160;                <span class="keywordtype">object</span> = createEmptyLineStringShape();</div>
-<div class="line"><a name="l00854"></a><span class="lineno">  854</span>&#160;                <span class="keywordflow">break</span>;</div>
-<div class="line"><a name="l00855"></a><span class="lineno">  855</span>&#160;            <span class="keywordflow">case</span> DT_RECTANGLE:</div>
-<div class="line"><a name="l00856"></a><span class="lineno">  856</span>&#160;                <span class="keywordtype">object</span> = createEmptyRectangleShape();</div>
-<div class="line"><a name="l00857"></a><span class="lineno">  857</span>&#160;                <span class="keywordflow">break</span>;</div>
-<div class="line"><a name="l00858"></a><span class="lineno">  858</span>&#160;            <span class="keywordflow">case</span> DT_POLYGON:</div>
-<div class="line"><a name="l00859"></a><span class="lineno">  859</span>&#160;                <span class="keywordtype">object</span> = createEmptyPolygonShape();</div>
-<div class="line"><a name="l00860"></a><span class="lineno">  860</span>&#160;                <span class="keywordflow">break</span>;</div>
-<div class="line"><a name="l00861"></a><span class="lineno">  861</span>&#160;            <span class="keywordflow">default</span>:</div>
-<div class="line"><a name="l00862"></a><span class="lineno">  862</span>&#160;                <a class="code" href="namespacelogger.html#a53f34feeb22a94db295af05b8b2aab5c">logger::log_error</a>(DBERR_INVALID_DATATYPE, <span class="stringliteral">&quot;Invalid datatype in factory method:&quot;</span>, dataType);</div>
-<div class="line"><a name="l00863"></a><span class="lineno">  863</span>&#160;                <span class="keywordflow">return</span> DBERR_INVALID_DATATYPE;</div>
-<div class="line"><a name="l00864"></a><span class="lineno">  864</span>&#160;        }</div>
-<div class="line"><a name="l00865"></a><span class="lineno">  865</span>&#160;        <span class="keywordflow">return</span> DBERR_OK;</div>
-<div class="line"><a name="l00866"></a><span class="lineno">  866</span>&#160;    }</div>
+<p class="definition">Definition at line <a class="el" href="containers_8cpp_source.html#l00861">861</a> of file <a class="el" href="containers_8cpp_source.html">containers.cpp</a>.</p>
+<div class="fragment"><div class="line"><a name="l00861"></a><span class="lineno">  861</span>&#160;                                                             {</div>
+<div class="line"><a name="l00862"></a><span class="lineno">  862</span>&#160;        <span class="keywordflow">switch</span> (dataType) {</div>
+<div class="line"><a name="l00863"></a><span class="lineno">  863</span>&#160;            <span class="keywordflow">case</span> DT_POINT:</div>
+<div class="line"><a name="l00864"></a><span class="lineno">  864</span>&#160;                <span class="keywordtype">object</span> = createEmptyPointShape();</div>
+<div class="line"><a name="l00865"></a><span class="lineno">  865</span>&#160;                <span class="keywordflow">break</span>;</div>
+<div class="line"><a name="l00866"></a><span class="lineno">  866</span>&#160;            <span class="keywordflow">case</span> DT_LINESTRING:</div>
+<div class="line"><a name="l00867"></a><span class="lineno">  867</span>&#160;                <span class="keywordtype">object</span> = createEmptyLineStringShape();</div>
+<div class="line"><a name="l00868"></a><span class="lineno">  868</span>&#160;                <span class="keywordflow">break</span>;</div>
+<div class="line"><a name="l00869"></a><span class="lineno">  869</span>&#160;            <span class="keywordflow">case</span> DT_RECTANGLE:</div>
+<div class="line"><a name="l00870"></a><span class="lineno">  870</span>&#160;                <span class="keywordtype">object</span> = createEmptyRectangleShape();</div>
+<div class="line"><a name="l00871"></a><span class="lineno">  871</span>&#160;                <span class="keywordflow">break</span>;</div>
+<div class="line"><a name="l00872"></a><span class="lineno">  872</span>&#160;            <span class="keywordflow">case</span> DT_POLYGON:</div>
+<div class="line"><a name="l00873"></a><span class="lineno">  873</span>&#160;                <span class="keywordtype">object</span> = createEmptyPolygonShape();</div>
+<div class="line"><a name="l00874"></a><span class="lineno">  874</span>&#160;                <span class="keywordflow">break</span>;</div>
+<div class="line"><a name="l00875"></a><span class="lineno">  875</span>&#160;            <span class="keywordflow">default</span>:</div>
+<div class="line"><a name="l00876"></a><span class="lineno">  876</span>&#160;                <a class="code" href="namespacelogger.html#a53f34feeb22a94db295af05b8b2aab5c">logger::log_error</a>(DBERR_INVALID_DATATYPE, <span class="stringliteral">&quot;Invalid datatype in factory method:&quot;</span>, dataType);</div>
+<div class="line"><a name="l00877"></a><span class="lineno">  877</span>&#160;                <span class="keywordflow">return</span> DBERR_INVALID_DATATYPE;</div>
+<div class="line"><a name="l00878"></a><span class="lineno">  878</span>&#160;        }</div>
+<div class="line"><a name="l00879"></a><span class="lineno">  879</span>&#160;        <span class="keywordflow">return</span> DBERR_OK;</div>
+<div class="line"><a name="l00880"></a><span class="lineno">  880</span>&#160;    }</div>
 <div class="ttc" id="anamespacelogger_html_a53f34feeb22a94db295af05b8b2aab5c"><div class="ttname"><a href="namespacelogger.html#a53f34feeb22a94db295af05b8b2aab5c">logger::log_error</a></div><div class="ttdeci">void log_error(int errorCode, T first, Args... rest)</div><div class="ttdoc">Error logging function with template arguments. Separates input parameters with spaces....</div><div class="ttdef"><b>Definition:</b> <a href="utils_8h_source.html#l00096">utils.h:96</a></div></div>
 </div><!-- fragment --><div class="dynheader">
 Here is the call graph for this function:</div>

@@ -86,10 +86,8 @@ struct AprilConfig {
          * @warning Only 1 partition is supported currently.
          */
         int partitions = 1;
-        /** @brief The A-list intervals filepath on disk. */
-        std::string ALL_intervals_path;
-        /** @brief The F-list intervals filepath on disk. */
-        std::string FULL_intervals_path;
+        /** @brief The APRIL filepath on disk. */
+        std::string filepath;
 
     /** @brief Sets the Hilbert curve order N. */
     void setN(int N);
@@ -1211,6 +1209,7 @@ struct Dataset{
      * @param ALL Specfies whether the input intervals represent the A-list or not (F-list otherwise).
      */
     void addIntervalsToAprilData(const uint sectionID, const size_t recID, const int numIntervals, const std::vector<uint32_t> &intervals, const bool ALL);
+    void addAprilData(const uint sectionID, const size_t recID, const AprilData &aprilData);
     /** @brief Returns a reference to the April Data of the given object's ID in section ID */
     AprilData* getAprilDataBySectionAndObjectID(uint sectionID, size_t recID);
     /** @brief Sets the april data in the dataset for the given object ID and section ID */

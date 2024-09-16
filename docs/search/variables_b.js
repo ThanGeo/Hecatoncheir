@@ -1,4 +1,4 @@
 var searchData=
 [
-  ['sectionmap_503',['sectionMap',['../structDataset.html#ad3b176a14bd5857ccb6752922f3203bd',1,'Dataset']]]
+  ['type_500',['type',['../structPartitioningMethod.html#a01d4b1138f1544dfb0c75e4fb3c50e80',1,'PartitioningMethod']]]
 ];

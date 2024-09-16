@@ -115,6 +115,9 @@ int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="struc
 <tr class="memitem:ac41e9e409e3d41186de8c6482e956859"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structDataset.html#ac41e9e409e3d41186de8c6482e956859">addIntervalsToAprilData</a> (const uint sectionID, const size_t recID, const int numIntervals, const std::vector&lt; uint32_t &gt; &amp;intervals, const bool ALL)</td></tr>
 <tr class="memdesc:ac41e9e409e3d41186de8c6482e956859"><td class="mdescLeft">&#160;</td><td class="mdescRight">Adds the given intervals into the given object with recID in the given section with section ID.  <a href="structDataset.html#ac41e9e409e3d41186de8c6482e956859">More...</a><br /></td></tr>
 <tr class="separator:ac41e9e409e3d41186de8c6482e956859"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a328c53d20b6cc3e00735cfa2673624da"><td class="memItemLeft" align="right" valign="top"><a id="a328c53d20b6cc3e00735cfa2673624da"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>addAprilData</b> (const uint sectionID, const size_t recID, const <a class="el" href="structAprilData.html">AprilData</a> &amp;aprilData)</td></tr>
+<tr class="separator:a328c53d20b6cc3e00735cfa2673624da"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a35bb9622b885986f5e7edc7585a5b603"><td class="memItemLeft" align="right" valign="top"><a id="a35bb9622b885986f5e7edc7585a5b603"></a>
 <a class="el" href="structAprilData.html">AprilData</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structDataset.html#a35bb9622b885986f5e7edc7585a5b603">getAprilDataBySectionAndObjectID</a> (uint sectionID, size_t recID)</td></tr>
 <tr class="memdesc:a35bb9622b885986f5e7edc7585a5b603"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns a reference to the April Data of the given object's ID in section ID. <br /></td></tr>
@@ -179,7 +182,7 @@ ApproximationTypeE&#160;</td><td class="memItemRight" valign="bottom"><b>approxT
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock"><p>All dataset related information. </p>
 
-<p class="definition">Definition at line <a class="el" href="containers_8h_source.html#l01171">1171</a> of file <a class="el" href="containers_8h_source.html">containers.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="containers_8h_source.html#l01169">1169</a> of file <a class="el" href="containers_8h_source.html">containers.h</a>.</p>
 </div><h2 class="groupheader">Member Function Documentation</h2>
 <a id="a3d59b3e2ea35367bd88776afd2391c94"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a3d59b3e2ea35367bd88776afd2391c94">&#9670;&nbsp;</a></span>addAprilDataToApproximationDataMap()</h2>
@@ -229,8 +232,8 @@ ApproximationTypeE&#160;</td><td class="memItemRight" valign="bottom"><b>approxT
 <div class="line"><a name="l00300"></a><span class="lineno">  300</span>&#160;        this-&gt;<a class="code" href="structDataset.html#a066a8adb737e33d43a900faa5b155ae7">recToSectionIdMap</a>[recID] = sectionIDs;</div>
 <div class="line"><a name="l00301"></a><span class="lineno">  301</span>&#160;    }</div>
 <div class="line"><a name="l00302"></a><span class="lineno">  302</span>&#160;}</div>
-<div class="ttc" id="astructDataset_html_a066a8adb737e33d43a900faa5b155ae7"><div class="ttname"><a href="structDataset.html#a066a8adb737e33d43a900faa5b155ae7">Dataset::recToSectionIdMap</a></div><div class="ttdeci">std::unordered_map&lt; size_t, std::vector&lt; uint &gt; &gt; recToSectionIdMap</div><div class="ttdef"><b>Definition:</b> <a href="containers_8h_source.html#l01191">containers.h:1191</a></div></div>
-<div class="ttc" id="astructDataset_html_ad3b176a14bd5857ccb6752922f3203bd"><div class="ttname"><a href="structDataset.html#ad3b176a14bd5857ccb6752922f3203bd">Dataset::sectionMap</a></div><div class="ttdeci">std::unordered_map&lt; uint, Section &gt; sectionMap</div><div class="ttdef"><b>Definition:</b> <a href="containers_8h_source.html#l01189">containers.h:1189</a></div></div>
+<div class="ttc" id="astructDataset_html_a066a8adb737e33d43a900faa5b155ae7"><div class="ttname"><a href="structDataset.html#a066a8adb737e33d43a900faa5b155ae7">Dataset::recToSectionIdMap</a></div><div class="ttdeci">std::unordered_map&lt; size_t, std::vector&lt; uint &gt; &gt; recToSectionIdMap</div><div class="ttdef"><b>Definition:</b> <a href="containers_8h_source.html#l01189">containers.h:1189</a></div></div>
+<div class="ttc" id="astructDataset_html_ad3b176a14bd5857ccb6752922f3203bd"><div class="ttname"><a href="structDataset.html#ad3b176a14bd5857ccb6752922f3203bd">Dataset::sectionMap</a></div><div class="ttdeci">std::unordered_map&lt; uint, Section &gt; sectionMap</div><div class="ttdef"><b>Definition:</b> <a href="containers_8h_source.html#l01187">containers.h:1187</a></div></div>
 </div><!-- fragment -->
 </div>
 </div>
@@ -364,8 +367,8 @@ Here is the call graph for this function:</div>
 <div class="line"><a name="l00207"></a><span class="lineno">  207</span>&#160;}</div>
 <div class="ttc" id="astructDataset_html_a2407297a4ceb58310cfd562510762c93"><div class="ttname"><a href="structDataset.html#a2407297a4ceb58310cfd562510762c93">Dataset::getObject</a></div><div class="ttdeci">Shape * getObject(size_t recID)</div><div class="ttdoc">Returns a reference to the object with the given ID.</div><div class="ttdef"><b>Definition:</b> <a href="containers_8cpp_source.html#l00180">containers.cpp:180</a></div></div>
 <div class="ttc" id="astructDataset_html_aad72c5baa46b4858c89e315061632f0f"><div class="ttname"><a href="structDataset.html#aad72c5baa46b4858c89e315061632f0f">Dataset::addObjectToSectionMap</a></div><div class="ttdeci">void addObjectToSectionMap(const uint sectionID, const size_t recID)</div><div class="ttdoc">Adds the given object ID to the specified section ID.</div><div class="ttdef"><b>Definition:</b> <a href="containers_8cpp_source.html#l00304">containers.cpp:304</a></div></div>
-<div class="ttc" id="astructShape_html"><div class="ttname"><a href="structShape.html">Shape</a></div><div class="ttdoc">A spatial object. Could be point, linestring, rectangle or polygon, as specified by its 'dataType' fi...</div><div class="ttdef"><b>Definition:</b> <a href="containers_8h_source.html#l00719">containers.h:719</a></div></div>
-<div class="ttc" id="astructTwoLayerIndex_html_ae929e428c40274230f4b2d0b7129b983"><div class="ttname"><a href="structTwoLayerIndex.html#ae929e428c40274230f4b2d0b7129b983">TwoLayerIndex::addObject</a></div><div class="ttdeci">void addObject(int partitionID, TwoLayerClassE classType, Shape *objectRef)</div><div class="ttdoc">Adds an object to a partition with partitionID, with the specified classType and returns a pointer to...</div><div class="ttdef"><b>Definition:</b> <a href="containers_8cpp_source.html#l00466">containers.cpp:466</a></div></div>
+<div class="ttc" id="astructShape_html"><div class="ttname"><a href="structShape.html">Shape</a></div><div class="ttdoc">A spatial object. Could be point, linestring, rectangle or polygon, as specified by its 'dataType' fi...</div><div class="ttdef"><b>Definition:</b> <a href="containers_8h_source.html#l00717">containers.h:717</a></div></div>
+<div class="ttc" id="astructTwoLayerIndex_html_ae929e428c40274230f4b2d0b7129b983"><div class="ttname"><a href="structTwoLayerIndex.html#ae929e428c40274230f4b2d0b7129b983">TwoLayerIndex::addObject</a></div><div class="ttdeci">void addObject(int partitionID, TwoLayerClassE classType, Shape *objectRef)</div><div class="ttdoc">Adds an object to a partition with partitionID, with the specified classType and returns a pointer to...</div><div class="ttdef"><b>Definition:</b> <a href="containers_8cpp_source.html#l00480">containers.cpp:480</a></div></div>
 </div><!-- fragment --><div class="dynheader">
 Here is the call graph for this function:</div>
 <div class="dyncontent">
@@ -591,7 +594,7 @@ Here is the caller graph for this function:</div>
 </div><div class="memdoc">
 <p>map: key,value = recID,vector&lt;sectionID&gt;: maps recs to sections </p>
 
-<p class="definition">Definition at line <a class="el" href="containers_8h_source.html#l01191">1191</a> of file <a class="el" href="containers_8h_source.html">containers.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="containers_8h_source.html#l01189">1189</a> of file <a class="el" href="containers_8h_source.html">containers.h</a>.</p>
 
 </div>
 </div>
@@ -608,7 +611,7 @@ Here is the caller graph for this function:</div>
 </div><div class="memdoc">
 <p><a class="el" href="structSection.html" title="Holds information about sections, i.e. APRIL partitions.">Section</a> mapping. key,value = sectionID,(unordered map of key,value = recID,aprilData) </p><dl class="section warning"><dt>Warning</dt><dd>only sectionID = 0 is supported currently. </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="containers_8h_source.html#l01189">1189</a> of file <a class="el" href="containers_8h_source.html">containers.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="containers_8h_source.html#l01187">1187</a> of file <a class="el" href="containers_8h_source.html">containers.h</a>.</p>
 
 </div>
 </div>

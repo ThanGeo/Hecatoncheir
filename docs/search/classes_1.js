@@ -1,4 +1,4 @@
 var searchData=
 [
-  ['batch_256',['Batch',['../structBatch.html',1,'']]]
+  ['batch_254',['Batch',['../structBatch.html',1,'']]]
 ];

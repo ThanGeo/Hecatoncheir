@@ -31,15 +31,13 @@ namespace storage
             logger::log_error(DBERR_MISSING_PATH, "Approximation path is missing");
             return DBERR_MISSING_PATH;
         }
-        dataset.aprilConfig.ALL_intervals_path = g_config.dirPaths.approximationPath + dataset.nickname + "_A";
-        dataset.aprilConfig.FULL_intervals_path = g_config.dirPaths.approximationPath + dataset.nickname + "_F";
+        dataset.aprilConfig.filepath = g_config.dirPaths.approximationPath + dataset.nickname + "_APRIL";
         if (dataset.approxType == AT_APRIL) {
             std::string aprilTail = "";
             aprilTail += "_" + std::to_string(dataset.aprilConfig.getN());
             aprilTail += "_" + std::to_string(dataset.aprilConfig.compression);
             aprilTail += "_" + std::to_string(dataset.aprilConfig.partitions) + ".dat";
-            dataset.aprilConfig.ALL_intervals_path += aprilTail;
-            dataset.aprilConfig.FULL_intervals_path += aprilTail;
+            dataset.aprilConfig.filepath += aprilTail;
         } else {
             logger::log_error(DBERR_FEATURE_UNSUPPORTED, "Approximation type not supported:", dataset.approxType);
             return DBERR_FEATURE_UNSUPPORTED;
