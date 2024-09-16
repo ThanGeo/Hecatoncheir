@@ -1,7 +1,7 @@
 var searchData=
 [
-  ['query_270',['Query',['../structQuery.html',1,'']]],
-  ['queryinfo_271',['QueryInfo',['../structQueryInfo.html',1,'']]],
-  ['queryoutput_272',['QueryOutput',['../structQueryOutput.html',1,'']]],
-  ['querystatement_273',['QueryStatement',['../structQueryStatement.html',1,'']]]
+  ['pair_5fhash_269',['pair_hash',['../structparser_1_1pair__hash.html',1,'parser']]],
+  ['partition_270',['Partition',['../structPartition.html',1,'']]],
+  ['partitioningmethod_271',['PartitioningMethod',['../structPartitioningMethod.html',1,'']]],
+  ['point_272',['Point',['../structPoint.html',1,'']]]
 ];

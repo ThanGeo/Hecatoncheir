@@ -32,7 +32,7 @@ namespace comm
         @brief Serializes a geometry batch and sends it to the appropriate ranks.
          * All the information is stored in the batch.
          */
-        DB_STATUS serializeAndSendGeometryBatch(GeometryBatch* batch);
+        DB_STATUS serializeAndSendGeometryBatch(Batch* batch);
 
         /** @brief Broadcasts the configured system options to all participants. */
         DB_STATUS broadcastSysInfo();

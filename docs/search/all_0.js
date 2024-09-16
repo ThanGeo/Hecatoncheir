@@ -9,7 +9,7 @@ var searchData=
   ['addobjecttosectionmap_6',['addObjectToSectionMap',['../structDataset.html#aad72c5baa46b4858c89e315061632f0f',1,'Dataset']]],
   ['addpoint_7',['addPoint',['../structShape.html#aa890f29b52525ba1fcddcc48834114df',1,'Shape::addPoint()'],['../structGeometryWrapper_3_01bg__point__xy_01_4.html#a9493feed74216b33a5d05b94ea603016',1,'GeometryWrapper&lt; bg_point_xy &gt;::addPoint()']]],
   ['all_5fintervals_5fpath_8',['ALL_intervals_path',['../structAprilConfig.html#a52e1f0fb719f26c3ec8e9e97388b4a4b',1,'AprilConfig']]],
-  ['appendbatchtopartitionfile_9',['appendBatchToPartitionFile',['../namespacestorage_1_1writer_1_1partitionFile.html#a215cd59d41ad2fac5452800fb772c7c3',1,'storage::writer::partitionFile']]],
+  ['appendbatchtopartitionfile_9',['appendBatchToPartitionFile',['../namespacestorage_1_1writer_1_1partitionFile.html#a39cbfdf7879d145d8ccf12d81a9900a7',1,'storage::writer::partitionFile']]],
   ['appenddatasetinfotopartitionfile_10',['appendDatasetInfoToPartitionFile',['../namespacestorage_1_1writer_1_1partitionFile.html#a137e5f27e1c50032f92ba1748b5453e3',1,'storage::writer::partitionFile']]],
   ['approximationinfo_11',['ApproximationInfo',['../structApproximationInfo.html',1,'']]],
   ['april_12',['APRIL',['../namespaceAPRIL.html',1,'']]],

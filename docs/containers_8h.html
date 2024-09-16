@@ -187,7 +187,7 @@ Classes</h2></td></tr>
 <tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Struct for Minimum Bounding Rectangles (<a class="el" href="structMBR.html" title="Struct for Minimum Bounding Rectangles (MBR).">MBR</a>).  <a href="structMBR.html#details">More...</a><br /></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structGeometryWrapper.html">GeometryWrapper&lt; GeometryType &gt;</a></td></tr>
-<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Wrapper class for the <a class="el" href="structGeometry.html" title="Simple Geometry object used only in the data partitioning/broadcasting.">Geometry</a> objects.  <a href="structGeometryWrapper.html#details">More...</a><br /></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Wrapper class for the Geometry objects.  <a href="structGeometryWrapper.html#details">More...</a><br /></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structGeometryWrapper_3_01bg__point__xy_01_4.html">GeometryWrapper&lt; bg_point_xy &gt;</a></td></tr>
 <tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight"><a class="el" href="structPoint.html" title="Struct for 2-dimension points with double coordinates x and y (lon, lat).">Point</a> geometry derived struct.  <a href="structGeometryWrapper_3_01bg__point__xy_01_4.html#details">More...</a><br /></td></tr>
@@ -252,11 +252,8 @@ Classes</h2></td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structConfig.html">Config</a></td></tr>
 <tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">The main configuration struct. Holds all necessary configuration options.  <a href="structConfig.html#details">More...</a><br /></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structGeometry.html">Geometry</a></td></tr>
-<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Simple <a class="el" href="structGeometry.html" title="Simple Geometry object used only in the data partitioning/broadcasting.">Geometry</a> object used only in the data partitioning/broadcasting.  <a href="structGeometry.html#details">More...</a><br /></td></tr>
-<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structGeometryBatch.html">GeometryBatch</a></td></tr>
-<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">A batch containing multiple objects for the batch partitioning/broadcasting.  <a href="structGeometryBatch.html#details">More...</a><br /></td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structBatch.html">Batch</a></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">A batch containing multiple objects for the batch partitioning/broadcasting.  <a href="structBatch.html#details">More...</a><br /></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="namespaces"></a>
@@ -297,6 +294,9 @@ Functions</h2></td></tr>
 <tr class="memitem:a82366b8983159157225ae8fc134591e6"><td class="memItemLeft" align="right" valign="top"><a id="a82366b8983159157225ae8fc134591e6"></a>
 <a class="el" href="structShape.html">Shape</a>&#160;</td><td class="memItemRight" valign="bottom"><b>shape_factory::createEmptyRectangleShape</b> ()</td></tr>
 <tr class="separator:a82366b8983159157225ae8fc134591e6"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a9cfdd488a7326f2b4d5fb52df3034832"><td class="memItemLeft" align="right" valign="top">DB_STATUS&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespaceshape__factory.html#a9cfdd488a7326f2b4d5fb52df3034832">shape_factory::createEmpty</a> (DataTypeE dataType, <a class="el" href="structShape.html">Shape</a> &amp;object)</td></tr>
+<tr class="memdesc:a9cfdd488a7326f2b4d5fb52df3034832"><td class="mdescLeft">&#160;</td><td class="mdescRight">creates an empty shape object of the specified data type.  <a href="namespaceshape__factory.html#a9cfdd488a7326f2b4d5fb52df3034832">More...</a><br /></td></tr>
+<tr class="separator:a9cfdd488a7326f2b4d5fb52df3034832"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a400895c559428b8743d12bf43ce597ef"><td class="memItemLeft" align="right" valign="top"><a id="a400895c559428b8743d12bf43ce597ef"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="containers_8h.html#a400895c559428b8743d12bf43ce597ef">queryResultReductionFunc</a> (<a class="el" href="structQueryOutput.html">QueryOutput</a> &amp;in, <a class="el" href="structQueryOutput.html">QueryOutput</a> &amp;out)</td></tr>
 <tr class="memdesc:a400895c559428b8743d12bf43ce597ef"><td class="mdescLeft">&#160;</td><td class="mdescRight">Based on query type in config, it thread-safely appends new results to the query output in parallel. Used only in parallel sections for OpenMP. <br /></td></tr>

@@ -85,10 +85,7 @@ namespace storage
                     return DBERR_DISK_READ_FAILED;
                 }
                 // reset mbr
-                object.mbr.pMin.x = std::numeric_limits<int>::max();
-                object.mbr.pMin.y = std::numeric_limits<int>::max();
-                object.mbr.pMax.x = -std::numeric_limits<int>::max();
-                object.mbr.pMax.y = -std::numeric_limits<int>::max();
+                object.resetMBR();
                 for (auto it = coords.begin(); it != coords.end(); it += 2) {
                     // mbr
                     object.mbr.pMin.x = std::min(object.mbr.pMin.x, *it);
@@ -100,6 +97,13 @@ namespace storage
                 }
                 // correct
                 object.correctGeometry();
+
+                // printf("Object %ld has %d partitions:\n ", object.recID, object.getPartitionCount());
+                // std::vector<int>* partitionRef = object.getPartitionsRef();
+                // for (int i=0; i<object.getPartitionCount(); i++) {
+                //     printf("(%d,%s),", object.getPartitionID(i), mapping::twoLayerClassIntToStr(object.getPartitionClass(i)).c_str());
+                // }
+                // printf("\n");
                 
                 return DBERR_OK;
             }

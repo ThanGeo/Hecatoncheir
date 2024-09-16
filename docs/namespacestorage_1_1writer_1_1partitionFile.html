@@ -83,10 +83,10 @@ Functions</h2></td></tr>
 DB_STATUS&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacestorage_1_1writer_1_1partitionFile.html#a137e5f27e1c50032f92ba1748b5453e3">appendDatasetInfoToPartitionFile</a> (FILE *outFile, <a class="el" href="structDataset.html">Dataset</a> *dataset)</td></tr>
 <tr class="memdesc:a137e5f27e1c50032f92ba1748b5453e3"><td class="mdescLeft">&#160;</td><td class="mdescRight">Appends the dataset's info into an already opened partition file. The file pointer must point to an already opened partition data file and its position should be at the begining, write after the object count (offset += sizeof(size_t)). <br /></td></tr>
 <tr class="separator:a137e5f27e1c50032f92ba1748b5453e3"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a215cd59d41ad2fac5452800fb772c7c3"><td class="memItemLeft" align="right" valign="top"><a id="a215cd59d41ad2fac5452800fb772c7c3"></a>
-DB_STATUS&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacestorage_1_1writer_1_1partitionFile.html#a215cd59d41ad2fac5452800fb772c7c3">appendBatchToPartitionFile</a> (FILE *outFile, <a class="el" href="structGeometryBatch.html">GeometryBatch</a> *batch, <a class="el" href="structDataset.html">Dataset</a> *dataset)</td></tr>
-<tr class="memdesc:a215cd59d41ad2fac5452800fb772c7c3"><td class="mdescLeft">&#160;</td><td class="mdescRight">Appends a geometry batch to an already opened partition file. The file pointer must point to an already opened partition data file and its position should be at the begining. <br /></td></tr>
-<tr class="separator:a215cd59d41ad2fac5452800fb772c7c3"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a39cbfdf7879d145d8ccf12d81a9900a7"><td class="memItemLeft" align="right" valign="top"><a id="a39cbfdf7879d145d8ccf12d81a9900a7"></a>
+DB_STATUS&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacestorage_1_1writer_1_1partitionFile.html#a39cbfdf7879d145d8ccf12d81a9900a7">appendBatchToPartitionFile</a> (FILE *outFile, <a class="el" href="structBatch.html">Batch</a> *batch, <a class="el" href="structDataset.html">Dataset</a> *dataset)</td></tr>
+<tr class="memdesc:a39cbfdf7879d145d8ccf12d81a9900a7"><td class="mdescLeft">&#160;</td><td class="mdescRight">Appends a geometry batch to an already opened partition file. The file pointer must point to an already opened partition data file and its position should be at the begining. <br /></td></tr>
+<tr class="separator:a39cbfdf7879d145d8ccf12d81a9900a7"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock"><p>Methods for the partitioned data writing. </p>

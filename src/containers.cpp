@@ -575,71 +575,44 @@ void DatasetInfo::updateDataspace() {
     }
 }
 
-Geometry::Geometry(size_t recID, int vertexCount, std::vector<double> &coords) {
-    this->recID = recID;
-    this->vertexCount = vertexCount;
-    this->coords = coords;
-}
+Batch::Batch(){}
 
-Geometry::Geometry(size_t recID, std::vector<int> &partitions, int vertexCount, std::vector<double> &coords) {
-    this->recID = recID;
-    this->partitions = partitions;
-    this->partitionCount = partitions.size() / 2; 
-    this->vertexCount = vertexCount;
-    this->coords = coords;
-}
-
-void Geometry::setPartitions(std::vector<int> &ids, std::vector<TwoLayerClassE> &classes) {
-    for (int i=0; i<ids.size(); i++) {
-        partitions.emplace_back(ids.at(i));
-        partitions.emplace_back(classes.at(i));
-    }
-    this->partitionCount = ids.size();
-}
-
-void Geometry::setPartitions(std::vector<int> &ids) {
-    for (int i=0; i<ids.size(); i++) {
-        partitions.emplace_back(ids.at(i));
-        partitions.emplace_back(CLASS_NONE);
-    }
-    this->partitionCount = ids.size();
-}
-
-bool GeometryBatch::isValid() {
+bool Batch::isValid() {
     return !(destRank == -1 || tag == -1 || comm == nullptr);
 }
 
-void GeometryBatch::addGeometryToBatch(Geometry &geometry) {
-    geometries.emplace_back(geometry);
+void Batch::addObjectToBatch(Shape &object) {
+    objects.emplace_back(object);
     objectCount += 1;
 }
 
-void GeometryBatch::setDestNodeRank(int destRank) {
+void Batch::setDestNodeRank(int destRank) {
     this->destRank = destRank;
 }
 
 // calculate the size needed for the serialization buffer
-int GeometryBatch::calculateBufferSize() {
+int Batch::calculateBufferSize() {
     int size = 0;
+    size += sizeof(DataTypeE);                        // datatype
     size += sizeof(size_t);                        // objectCount
     
-    for (auto &it: geometries) {
+    for (auto &it: objects) {
         size += sizeof(size_t); // recID
         size += sizeof(int);    // partition count
-        size += it.partitions.size() * 2 * sizeof(int); // partitions id + class
-        size += sizeof(it.vertexCount); // vertex count
-        size += it.vertexCount * 2 * sizeof(double);    // vertices
+        size += it.getPartitionCount() * 2 * sizeof(int); // partitions id + class
+        size += sizeof(it.getVertexCount()); // vertex count
+        size += it.getVertexCount() * 2 * sizeof(double);    // vertices
     }
     
     return size;
 }
 
-void GeometryBatch::clear() {
+void Batch::clear() {
     objectCount = 0;
-    geometries.clear();
+    objects.clear();
 }
 
-int GeometryBatch::serialize(char **buffer) {
+int Batch::serialize(char **buffer) {
     // calculate size
     int bufferSize = calculateBufferSize();
     // allocate space
@@ -650,22 +623,45 @@ int GeometryBatch::serialize(char **buffer) {
     }
     char* localBuffer = *buffer;
 
+    // add data type
+    *reinterpret_cast<DataTypeE*>(localBuffer) = dataType;
+    localBuffer += sizeof(DataTypeE);
     // add object count
     *reinterpret_cast<size_t*>(localBuffer) = objectCount;
     localBuffer += sizeof(size_t);
 
     // add batch geometry info
-    for (auto &it : geometries) {
+    for (auto &it : objects) {
         *reinterpret_cast<size_t*>(localBuffer) = it.recID;
         localBuffer += sizeof(size_t);
-        *reinterpret_cast<int*>(localBuffer) = it.partitionCount;
+        *reinterpret_cast<int*>(localBuffer) = it.getPartitionCount();
         localBuffer += sizeof(int);
-        std::memcpy(localBuffer, it.partitions.data(), it.partitionCount * 2 * sizeof(int));
-        localBuffer += it.partitionCount * 2 * sizeof(int);
-        *reinterpret_cast<int*>(localBuffer) = it.vertexCount;
+        std::memcpy(localBuffer, it.getPartitionsRef()->data(), it.getPartitionCount() * 2 * sizeof(int));
+        localBuffer += it.getPartitionCount() * 2 * sizeof(int);
+       
+        *reinterpret_cast<int*>(localBuffer) = it.getVertexCount();
         localBuffer += sizeof(int);
-        std::memcpy(localBuffer, it.coords.data(), it.vertexCount * 2 * sizeof(double));
-        localBuffer += it.vertexCount * 2 * sizeof(double);
+
+        // get reference to points in boost geometry format
+        const std::vector<bg_point_xy>* pointsRef = it.getReferenceToPoints();
+        // transform to continuous double vector
+        std::vector<double> pointsList(it.getVertexCount()*2);
+        for (int i=0; i<it.getVertexCount(); i++) {
+            pointsList[i*2] = pointsRef->at(i).x(); 
+            pointsList[i*2+1] = pointsRef->at(i).y(); 
+        }
+        // copy points to buffer
+        std::memcpy(localBuffer, pointsList.data(), it.getVertexCount() * 2 * sizeof(double));
+        localBuffer += it.getVertexCount() * 2 * sizeof(double);
+
+
+        // printf("Serialized Object %ld with %d partitions:\n ", it.recID, it.getPartitionCount());
+        // std::vector<int>* partitionRef = it.getPartitionsRef();
+        // for (int i=0; i<it.getPartitionCount(); i++) {
+        //     printf("(%d,%s),", it.getPartitionID(i), mapping::twoLayerClassIntToStr(it.getPartitionClass(i)).c_str());
+        // }
+        // printf("\n");
+        // it.printGeometry();
     }
 
     return bufferSize;
@@ -676,33 +672,46 @@ int GeometryBatch::serialize(char **buffer) {
  * The caller must free the buffer memory
  * @param buffer 
  */
-void GeometryBatch::deserialize(const char *buffer, int bufferSize) {
-    size_t recID;
+DB_STATUS Batch::deserialize(const char *buffer, int bufferSize) {
+    DB_STATUS ret = DBERR_OK;
     int vertexCount, partitionCount;
     const char *localBuffer = buffer;
+
+    // get data type
+    DataTypeE dataType = *reinterpret_cast<const DataTypeE*>(localBuffer);
+    localBuffer += sizeof(DataTypeE);
 
     // get object count
     size_t objectCount = *reinterpret_cast<const size_t*>(localBuffer);
     localBuffer += sizeof(size_t);
 
     // extend reserve space
-    geometries.reserve(geometries.size() + objectCount);
+    objects.reserve(objects.size() + objectCount);
+
+    // empty shape object
+    Shape object;
+    ret = shape_factory::createEmpty(dataType, object);
+    if (ret != DBERR_OK) {
+        return ret;
+    }
 
     // deserialize fields for each object in the batch
     for (size_t i=0; i<objectCount; i++) {
+        // reset object
+        object.reset();
         // rec id
-        recID = *reinterpret_cast<const size_t*>(localBuffer);
+        object.recID = *reinterpret_cast<const size_t*>(localBuffer);
         localBuffer += sizeof(size_t);
-        // partition count
+        // partitions + partition count
         partitionCount = *reinterpret_cast<const int*>(localBuffer);
         localBuffer += sizeof(int);
-        // partitions
         std::vector<int> partitions(partitionCount * 2);
         const int* partitionPtr = reinterpret_cast<const int*>(localBuffer);
         for (size_t j = 0; j < partitionCount*2; j++) {
             partitions[j] = partitionPtr[j];
         }
         localBuffer += partitionCount * 2 * sizeof(int);
+        object.setPartitions(partitions, partitionCount);
         // vertex count
         vertexCount = *reinterpret_cast<const int*>(localBuffer);
         localBuffer += sizeof(int);
@@ -713,11 +722,21 @@ void GeometryBatch::deserialize(const char *buffer, int bufferSize) {
             coords[j] = vertexDataPtr[j];
         }
         localBuffer += vertexCount * 2 * sizeof(double);
-        
+        object.setPoints(coords);
+
+        // printf("Deserialized Object %ld with %d partitions:\n ", object.recID, object.getPartitionCount());
+        // std::vector<int>* partitionRef = object.getPartitionsRef();
+        // for (int i=0; i<object.getPartitionCount(); i++) {
+        //     printf("(%d,%s),", object.getPartitionID(i), mapping::twoLayerClassIntToStr(object.getPartitionClass(i)).c_str());
+        // }
+        // printf("\n");
+        // object.printGeometry();
+
         // add to batch
-        Geometry geometry(recID, partitions, vertexCount, coords);
-        this->addGeometryToBatch(geometry);
+        this->addObjectToBatch(object);
     }
+
+    return ret;
 }
 
 int TwoGridPartitioning::getDistributionGridPartitionID(int i, int j) {
@@ -823,6 +842,27 @@ namespace shape_factory
 
     Shape createEmptyRectangleShape() {
         return Shape(RectangleWrapper());
+    }
+
+    DB_STATUS createEmpty(DataTypeE dataType, Shape &object) {
+        switch (dataType) {
+            case DT_POINT:
+                object = createEmptyPointShape();
+                break;
+            case DT_LINESTRING:
+                object = createEmptyLineStringShape();
+                break;
+            case DT_RECTANGLE:
+                object = createEmptyRectangleShape();
+                break;
+            case DT_POLYGON:
+                object = createEmptyPolygonShape();
+                break;
+            default:
+                logger::log_error(DBERR_INVALID_DATATYPE, "Invalid datatype in factory method:", dataType);
+                return DBERR_INVALID_DATATYPE;
+        }
+        return DBERR_OK;
     }
 }
 

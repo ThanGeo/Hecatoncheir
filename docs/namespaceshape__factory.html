@@ -87,10 +87,93 @@ Functions</h2></td></tr>
 <tr class="memitem:a82366b8983159157225ae8fc134591e6"><td class="memItemLeft" align="right" valign="top"><a id="a82366b8983159157225ae8fc134591e6"></a>
 <a class="el" href="structShape.html">Shape</a>&#160;</td><td class="memItemRight" valign="bottom"><b>createEmptyRectangleShape</b> ()</td></tr>
 <tr class="separator:a82366b8983159157225ae8fc134591e6"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a9cfdd488a7326f2b4d5fb52df3034832"><td class="memItemLeft" align="right" valign="top">DB_STATUS&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespaceshape__factory.html#a9cfdd488a7326f2b4d5fb52df3034832">createEmpty</a> (DataTypeE dataType, <a class="el" href="structShape.html">Shape</a> &amp;object)</td></tr>
+<tr class="memdesc:a9cfdd488a7326f2b4d5fb52df3034832"><td class="mdescLeft">&#160;</td><td class="mdescRight">creates an empty shape object of the specified data type.  <a href="namespaceshape__factory.html#a9cfdd488a7326f2b4d5fb52df3034832">More...</a><br /></td></tr>
+<tr class="separator:a9cfdd488a7326f2b4d5fb52df3034832"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock"><p>contains the factory methods for generating geometry wrapper derived objects. </p>
-</div></div><!-- contents -->
+</div><h2 class="groupheader">Function Documentation</h2>
+<a id="a9cfdd488a7326f2b4d5fb52df3034832"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a9cfdd488a7326f2b4d5fb52df3034832">&#9670;&nbsp;</a></span>createEmpty()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">DB_STATUS shape_factory::createEmpty </td>
+          <td>(</td>
+          <td class="paramtype">DataTypeE&#160;</td>
+          <td class="paramname"><em>dataType</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="structShape.html">Shape</a> &amp;&#160;</td>
+          <td class="paramname"><em>object</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>creates an empty shape object of the specified data type. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">dataType</td><td>the requested data type of the <a class="el" href="structShape.html" title="A spatial object. Could be point, linestring, rectangle or polygon, as specified by its &#39;dataType&#39; fi...">Shape</a> object </td></tr>
+    <tr><td class="paramname">object</td><td>the return value where the empty object will be stored </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd>DB_STATUS returns the status value of the operation </dd></dl>
+
+<p class="definition">Definition at line <a class="el" href="containers_8cpp_source.html#l00847">847</a> of file <a class="el" href="containers_8cpp_source.html">containers.cpp</a>.</p>
+<div class="fragment"><div class="line"><a name="l00847"></a><span class="lineno">  847</span>&#160;                                                             {</div>
+<div class="line"><a name="l00848"></a><span class="lineno">  848</span>&#160;        <span class="keywordflow">switch</span> (dataType) {</div>
+<div class="line"><a name="l00849"></a><span class="lineno">  849</span>&#160;            <span class="keywordflow">case</span> DT_POINT:</div>
+<div class="line"><a name="l00850"></a><span class="lineno">  850</span>&#160;                <span class="keywordtype">object</span> = createEmptyPointShape();</div>
+<div class="line"><a name="l00851"></a><span class="lineno">  851</span>&#160;                <span class="keywordflow">break</span>;</div>
+<div class="line"><a name="l00852"></a><span class="lineno">  852</span>&#160;            <span class="keywordflow">case</span> DT_LINESTRING:</div>
+<div class="line"><a name="l00853"></a><span class="lineno">  853</span>&#160;                <span class="keywordtype">object</span> = createEmptyLineStringShape();</div>
+<div class="line"><a name="l00854"></a><span class="lineno">  854</span>&#160;                <span class="keywordflow">break</span>;</div>
+<div class="line"><a name="l00855"></a><span class="lineno">  855</span>&#160;            <span class="keywordflow">case</span> DT_RECTANGLE:</div>
+<div class="line"><a name="l00856"></a><span class="lineno">  856</span>&#160;                <span class="keywordtype">object</span> = createEmptyRectangleShape();</div>
+<div class="line"><a name="l00857"></a><span class="lineno">  857</span>&#160;                <span class="keywordflow">break</span>;</div>
+<div class="line"><a name="l00858"></a><span class="lineno">  858</span>&#160;            <span class="keywordflow">case</span> DT_POLYGON:</div>
+<div class="line"><a name="l00859"></a><span class="lineno">  859</span>&#160;                <span class="keywordtype">object</span> = createEmptyPolygonShape();</div>
+<div class="line"><a name="l00860"></a><span class="lineno">  860</span>&#160;                <span class="keywordflow">break</span>;</div>
+<div class="line"><a name="l00861"></a><span class="lineno">  861</span>&#160;            <span class="keywordflow">default</span>:</div>
+<div class="line"><a name="l00862"></a><span class="lineno">  862</span>&#160;                <a class="code" href="namespacelogger.html#a53f34feeb22a94db295af05b8b2aab5c">logger::log_error</a>(DBERR_INVALID_DATATYPE, <span class="stringliteral">&quot;Invalid datatype in factory method:&quot;</span>, dataType);</div>
+<div class="line"><a name="l00863"></a><span class="lineno">  863</span>&#160;                <span class="keywordflow">return</span> DBERR_INVALID_DATATYPE;</div>
+<div class="line"><a name="l00864"></a><span class="lineno">  864</span>&#160;        }</div>
+<div class="line"><a name="l00865"></a><span class="lineno">  865</span>&#160;        <span class="keywordflow">return</span> DBERR_OK;</div>
+<div class="line"><a name="l00866"></a><span class="lineno">  866</span>&#160;    }</div>
+<div class="ttc" id="anamespacelogger_html_a53f34feeb22a94db295af05b8b2aab5c"><div class="ttname"><a href="namespacelogger.html#a53f34feeb22a94db295af05b8b2aab5c">logger::log_error</a></div><div class="ttdeci">void log_error(int errorCode, T first, Args... rest)</div><div class="ttdoc">Error logging function with template arguments. Separates input parameters with spaces....</div><div class="ttdef"><b>Definition:</b> <a href="utils_8h_source.html#l00096">utils.h:96</a></div></div>
+</div><!-- fragment --><div class="dynheader">
+Here is the call graph for this function:</div>
+<div class="dyncontent">
+<div class="center"><img src="namespaceshape__factory_a9cfdd488a7326f2b4d5fb52df3034832_cgraph.png" border="0" usemap="#anamespaceshape__factory_a9cfdd488a7326f2b4d5fb52df3034832_cgraph" alt=""/></div>
+<map name="anamespaceshape__factory_a9cfdd488a7326f2b4d5fb52df3034832_cgraph" id="anamespaceshape__factory_a9cfdd488a7326f2b4d5fb52df3034832_cgraph">
+<area shape="rect" title="creates an empty shape object of the specified data type." alt="" coords="5,5,192,32"/>
+<area shape="rect" href="namespacelogger.html#a53f34feeb22a94db295af05b8b2aab5c" title="Error logging function with template arguments. Separates input parameters with spaces...." alt="" coords="240,5,355,32"/>
+</map>
+</div>
+<div class="dynheader">
+Here is the caller graph for this function:</div>
+<div class="dyncontent">
+<div class="center"><img src="namespaceshape__factory_a9cfdd488a7326f2b4d5fb52df3034832_icgraph.png" border="0" usemap="#anamespaceshape__factory_a9cfdd488a7326f2b4d5fb52df3034832_icgraph" alt=""/></div>
+<map name="anamespaceshape__factory_a9cfdd488a7326f2b4d5fb52df3034832_icgraph" id="anamespaceshape__factory_a9cfdd488a7326f2b4d5fb52df3034832_icgraph">
+<area shape="rect" title="creates an empty shape object of the specified data type." alt="" coords="180,5,367,32"/>
+<area shape="rect" href="structBatch.html#a20591aa6b7564041ad45ef54c784a9fe" title="fills the struct with data from the input serialized buffer The caller must free the buffer memory" alt="" coords="5,5,132,32"/>
+</map>
+</div>
+
+</div>
+</div>
+</div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
 Generated by&#160;<a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1

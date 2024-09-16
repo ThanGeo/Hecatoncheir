@@ -23,7 +23,7 @@ namespace partitioning
 
 
     /** @brief Calculates all partition two-layer classes for a given batch, based on the partitioning method specified in the global configuration. */
-    DB_STATUS calculateTwoLayerClasses(GeometryBatch &batch);
+    DB_STATUS calculateTwoLayerClasses(Batch &batch);
 }
 
 #endif

@@ -21,7 +21,7 @@ namespace storage
             /** @brief Appends a geometry batch to an already opened partition file.
              * The file pointer must point to an already opened partition data file and its position should be at the begining.
              */
-            DB_STATUS appendBatchToPartitionFile(FILE* outFile, GeometryBatch* batch, Dataset* dataset);
+            DB_STATUS appendBatchToPartitionFile(FILE* outFile, Batch* batch, Dataset* dataset);
 
         }
         /**

@@ -18,11 +18,11 @@ namespace partitioning
      * @param[out] partitionIDs The partition IDs that intersect with the MBR.
      * @param[out] twoLayerClasses The MBR's two-layer index classification for each individual intersecting partition.
      */
-    static DB_STATUS getPartitionsForMBR(double xMin, double yMin, double xMax, double yMax, std::vector<int> &partitionIDs){
-        int minPartitionX = (xMin - g_config.datasetInfo.dataspaceInfo.xMinGlobal) / (g_config.datasetInfo.dataspaceInfo.xExtent / g_config.partitioningMethod->getDistributionPPD());
-        int minPartitionY = (yMin - g_config.datasetInfo.dataspaceInfo.yMinGlobal) / (g_config.datasetInfo.dataspaceInfo.yExtent / g_config.partitioningMethod->getDistributionPPD());
-        int maxPartitionX = (xMax - g_config.datasetInfo.dataspaceInfo.xMinGlobal) / (g_config.datasetInfo.dataspaceInfo.xExtent / g_config.partitioningMethod->getDistributionPPD());
-        int maxPartitionY = (yMax - g_config.datasetInfo.dataspaceInfo.yMinGlobal) / (g_config.datasetInfo.dataspaceInfo.yExtent / g_config.partitioningMethod->getDistributionPPD());
+    static DB_STATUS getPartitionsForMBR(MBR &mbr, std::vector<int> &partitionIDs){
+        int minPartitionX = (mbr.pMin.x - g_config.datasetInfo.dataspaceInfo.xMinGlobal) / (g_config.datasetInfo.dataspaceInfo.xExtent / g_config.partitioningMethod->getDistributionPPD());
+        int minPartitionY = (mbr.pMin.y - g_config.datasetInfo.dataspaceInfo.yMinGlobal) / (g_config.datasetInfo.dataspaceInfo.yExtent / g_config.partitioningMethod->getDistributionPPD());
+        int maxPartitionX = (mbr.pMax.x - g_config.datasetInfo.dataspaceInfo.xMinGlobal) / (g_config.datasetInfo.dataspaceInfo.xExtent / g_config.partitioningMethod->getDistributionPPD());
+        int maxPartitionY = (mbr.pMax.y - g_config.datasetInfo.dataspaceInfo.yMinGlobal) / (g_config.datasetInfo.dataspaceInfo.yExtent / g_config.partitioningMethod->getDistributionPPD());
         
         int startPartitionID = g_config.partitioningMethod->getDistributionGridPartitionID(minPartitionX, minPartitionY);
         int lastPartitionID = g_config.partitioningMethod->getDistributionGridPartitionID(maxPartitionX, maxPartitionY);
@@ -31,7 +31,7 @@ namespace partitioning
             return DBERR_INVALID_PARTITION;
         }
         if (lastPartitionID < 0 || lastPartitionID > g_config.partitioningMethod->getDistributionPPD() * g_config.partitioningMethod->getDistributionPPD() -1) {
-            logger::log_error(DBERR_INVALID_PARTITION, "Last partition ID calculated wrong: MBR(", xMin, yMin, xMax, yMax, ")");
+            logger::log_error(DBERR_INVALID_PARTITION, "Last partition ID calculated wrong: MBR(", mbr.pMin.x, mbr.pMin.y, mbr.pMax.x, mbr.pMax.y, ")");
             return DBERR_INVALID_PARTITION;
         }
         // create the distribution grid partition list for the object
@@ -44,17 +44,32 @@ namespace partitioning
         return DBERR_OK;
     }
 
-    static DB_STATUS initializeBatchMap(std::unordered_map<int,GeometryBatch> &batchMap) {
+    static DB_STATUS initializeBatchMap(std::unordered_map<int,Batch> &batchMap, DataTypeE dataType) {
         // initialize batches
         for (int i=0; i<g_world_size; i++) {
-            GeometryBatch batch;
+            Batch batch;
+            batch.dataType = dataType;
+            switch (dataType) {
+                case DT_POINT:
+                    batch.tag = MSG_BATCH_POINT;
+                    break;
+                case DT_LINESTRING:
+                    batch.tag = MSG_BATCH_LINESTRING;
+                    break;
+                case DT_POLYGON:
+                    batch.tag = MSG_BATCH_POLYGON;
+                    break;
+                case DT_RECTANGLE:
+                default:
+                    logger::log_error(DBERR_INVALID_DATATYPE, "Invalid datatype for batch:", dataType);
+                    return DBERR_INVALID_DATATYPE;
+            }
             batch.destRank = i;
             if (i > 0) {
                 batch.comm = &g_global_comm;
             } else {
                 batch.comm = &g_local_comm;
             }
-            batch.tag = MSG_BATCH_POLYGON;
             batch.maxObjectCount = g_config.partitioningMethod->getBatchSize();
             batchMap[i] = batch;
         }
@@ -64,16 +79,15 @@ namespace partitioning
     /** @brief Assigns a geometry to the appropriate batches based on overlapping partition IDs.
      * If the batch is full after the insertion, it is sent and cleared before returning.
      */
-    static DB_STATUS assignGeometryToBatches(Geometry &geometry, double geoXmin, double geoYmin, double geoXmax, double geoYmax, std::unordered_map<int,GeometryBatch> &batchMap, int &batchesSent) {
-        // printf("Handling geometry with id %ld\n", geometry.recID);
+    static DB_STATUS assignObjectToBatches(Shape &object, std::unordered_map<int,Batch> &batchMap, int &batchesSent) {
         // find partition IDs and the class of the geometry in each distribution partition
         std::vector<int> partitionIDs;
-        DB_STATUS ret = partitioning::getPartitionsForMBR(geoXmin, geoYmin, geoXmax, geoYmax, partitionIDs);
+        DB_STATUS ret = partitioning::getPartitionsForMBR(object.mbr, partitionIDs);
         if (ret != DBERR_OK) {
             return ret;
         }
         // set partitions to object
-        geometry.setPartitions(partitionIDs);
+        object.initPartitions(partitionIDs);
         // find which nodes need to receive this geometry
         std::vector<bool> bitVector(g_world_size, false);
         // get receiving worker ranks
@@ -92,23 +106,34 @@ namespace partitioning
                     logger::log_error(DBERR_INVALID_PARAMETER, "Error fetching batch for node", nodeRank);
                     return DBERR_INVALID_PARAMETER;
                 }
-                GeometryBatch *batch = &it->second;
-
+                Batch *batch = &it->second;
                 // make a copy of the geometry, to adjust the partitions specifically for this node
                 // remove any partitions that are irrelevant to this noderank
-                Geometry geometryCopy = geometry;
-                for(auto it = geometryCopy.partitions.begin(); it != geometryCopy.partitions.end();) {
+                Shape objectCopy = object;
+                std::vector<int> partitionsCopy = objectCopy.getPartitions();
+                for (auto it = partitionsCopy.begin(); it != partitionsCopy.end();) {
                     int assignedNodeRank = g_config.partitioningMethod->getNodeRankForPartitionID(*it);
                     if (assignedNodeRank != nodeRank) {
-                        it = geometryCopy.partitions.erase(it);
-                        it = geometryCopy.partitions.erase(it);
-                        geometryCopy.partitionCount--;
+                        it = partitionsCopy.erase(it);
+                        it = partitionsCopy.erase(it);
                     } else {
                         it += 2;
                     }
                 }
+
+                // set new partitions to the copy
+                objectCopy.setPartitions(partitionsCopy, partitionsCopy.size() / 2);
+
+                // printf("Object %ld has %d partitions:\n ", object.recID, object.getPartitionCount());
+                // std::vector<int>* partitionRef = object.getPartitionsRef();
+                // for (int i=0; i<object.getPartitionCount(); i++) {
+                //     printf("(%d,%s),", object.getPartitionID(i), mapping::twoLayerClassIntToStr(object.getPartitionClass(i)).c_str());
+                // }
+                // printf("\n");
+
                 // add moddified geometry to this batch
-                batch->addGeometryToBatch(geometryCopy);
+                // logger::log_task("Added geometry", objectCopy.recID, " to batch");
+                batch->addObjectToBatch(objectCopy);
                 // printf("Added geometry %ld to batch\n", geometryCopy.recID);
                 // if batch is full, send and reset
                 if (batch->objectCount >= batch->maxObjectCount) {
@@ -211,18 +236,18 @@ namespace partitioning
         return ret;
     }
 
-    static DB_STATUS loadCSVDatasetAndPartition(std::string &datasetPath) {
+    static DB_STATUS loadCSVDatasetAndPartition(Dataset &dataset) {
         DB_STATUS ret = DBERR_OK;
         // initialize batches
-        std::unordered_map<int,GeometryBatch> batchMap;
-        ret = initializeBatchMap(batchMap);
+        std::unordered_map<int,Batch> batchMap;
+        ret = initializeBatchMap(batchMap, dataset.dataType);
         if (ret != DBERR_OK) {
             return ret;
         }
         // open file
-        std::ifstream fin(datasetPath);
+        std::ifstream fin(dataset.path);
         if (!fin.is_open()) {
-            logger::log_error(DBERR_MISSING_FILE, "Failed to open dataset path:", datasetPath);
+            logger::log_error(DBERR_MISSING_FILE, "Failed to open dataset path:", dataset.path);
             return DBERR_MISSING_FILE;
         }
         std::string line;
@@ -234,9 +259,7 @@ namespace partitioning
         int batchesSent = 0;
         #pragma omp parallel firstprivate(batchMap, line, objectCount) reduction(+:batchesSent)
         {
-            size_t recID;
             int partitionID;
-            int vertexCount;
             double x,y;
             double xMin, yMin, xMax, yMax;
             DB_STATUS local_ret = DBERR_OK;
@@ -251,9 +274,9 @@ namespace partitioning
             }
             // logger::log_task("will handle lines", fromLine, "to", toLine);
             // open file
-            std::ifstream fin(datasetPath);
+            std::ifstream fin(dataset.path);
             if (!fin.is_open()) {
-                logger::log_error(DBERR_MISSING_FILE, "Failed to open dataset path:", datasetPath);
+                logger::log_error(DBERR_MISSING_FILE, "Failed to open dataset path:", dataset.path);
                 #pragma omp cancel parallel
                 ret = DBERR_MISSING_FILE;
             }
@@ -261,83 +284,89 @@ namespace partitioning
             for (size_t i=0; i<fromLine; i++) {
                 fin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
             }
-            // loop
-            size_t currentLine = fromLine;
-            std::string token;
-            while (true) {
-                // printf("Parsing line %ld/%ld\n", currentLine, toLine);
-                // next object
-                std::getline(fin, line);                
-                std::stringstream ss(line);
-                xMin = std::numeric_limits<int>::max();
-                yMin = std::numeric_limits<int>::max();
-                xMax = -std::numeric_limits<int>::max();
-                yMax = -std::numeric_limits<int>::max();
-                // recID
-                std::getline(ss, token, ',');
-                recID = (size_t) std::stoull(token);
-                // Read the coords x,y
-                vertexCount = 0;
-                std::vector<double> coords;
-                while (std::getline(ss, token, ',')) {
-                    std::stringstream coordStream(token);
-                    // Split the x and y values
-                    std::getline(coordStream, token, ' ');
-                    x = std::stof(token);
-                    std::getline(coordStream, token, ' ');
-                    y = std::stof(token);
-                    // store
-                    coords.emplace_back(x);
-                    coords.emplace_back(y);
-                    // MBR
-                    xMin = std::min(xMin, x);
-                    yMin = std::min(yMin, y);
-                    xMax = std::max(xMax, x);
-                    yMax = std::max(yMax, y);
-                    vertexCount += 1;
-                }
-                // create serializable object
-                Geometry geometry(recID, vertexCount, coords);
-                // assign to appropriate batches
-                local_ret = assignGeometryToBatches(geometry, xMin, yMin, xMax, yMax, batchMap, batchesSent);
-                if (ret != DBERR_OK) {
-                    #pragma omp cancel parallel
-                    ret = local_ret;
-                    break;
-                }
-                currentLine += 1;
-                if (currentLine >= toLine) {
-                    // the last line for this thread has been read
-                    break;
-                }
-            }
-            // send any remaining non-empty batches
-            for (int i=0; i<g_world_size; i++) {
-                // fetch batch
-                auto it = batchMap.find(i);
-                if (it == batchMap.end()) {
-                    logger::log_error(DBERR_INVALID_PARAMETER, "Error fetching batch for node", i);
-                    #pragma omp cancel parallel
-                    ret = DBERR_INVALID_PARAMETER;
-                }
-                GeometryBatch *batch = &it->second;
-                if (batch->objectCount > 0) {
-                    local_ret = comm::controller::serializeAndSendGeometryBatch(batch);
-                    if (local_ret != DBERR_OK) {
+
+            // create empty object based on data type
+            Shape object;
+            local_ret = shape_factory::createEmpty(dataset.dataType, object);
+            if (local_ret != DBERR_OK) {
+                #pragma omp cancel parallel
+                ret = local_ret;
+            } else {
+                // shape created
+                // loop
+                size_t currentLine = fromLine;
+                std::string token;
+                while (true) {
+                    // reset shape object
+                    object.reset();
+                    // next object
+                    std::getline(fin, line);                
+                    std::stringstream ss(line);
+                    xMin = std::numeric_limits<int>::max();
+                    yMin = std::numeric_limits<int>::max();
+                    xMax = -std::numeric_limits<int>::max();
+                    yMax = -std::numeric_limits<int>::max();
+                    // recID
+                    std::getline(ss, token, ',');
+                    object.recID = (size_t) std::stoull(token);
+                    while (std::getline(ss, token, ',')) {
+                        std::stringstream coordStream(token);
+                        // Split the x and y values
+                        std::getline(coordStream, token, ' ');
+                        x = std::stof(token);
+                        std::getline(coordStream, token, ' ');
+                        y = std::stof(token);
+                        // add point
+                        object.addPoint(x, y);
+                        // MBR
+                        xMin = std::min(xMin, x);
+                        yMin = std::min(yMin, y);
+                        xMax = std::max(xMax, x);
+                        yMax = std::max(yMax, y);
+                    }
+                    object.correctGeometry();
+                    object.setMBR(xMin, yMin, xMax, yMax);
+                    // assign to appropriate batches
+                    local_ret = assignObjectToBatches(object, batchMap, batchesSent);
+                    if (ret != DBERR_OK) {
                         #pragma omp cancel parallel
                         ret = local_ret;
                         break;
                     }
-                    // empty the batch
-                    batch->clear();
-                    // count the batch
-                    batchesSent += 1;
+                    currentLine += 1;
+                    if (currentLine >= toLine) {
+                        // the last line for this thread has been read
+                        break;
+                    }
                 }
-            }
-            // close file
-            fin.close();
-        }
-        // check if it finished successfully
+                // send any remaining non-empty batches
+                for (int i=0; i<g_world_size; i++) {
+                    // fetch batch
+                    auto it = batchMap.find(i);
+                    if (it == batchMap.end()) {
+                        logger::log_error(DBERR_INVALID_PARAMETER, "Error fetching batch for node", i);
+                        #pragma omp cancel parallel
+                        ret = DBERR_INVALID_PARAMETER;
+                    }
+                    Batch *batch = &it->second;
+                    if (batch->objectCount > 0) {
+                        local_ret = comm::controller::serializeAndSendGeometryBatch(batch);
+                        if (local_ret != DBERR_OK) {
+                            #pragma omp cancel parallel
+                            ret = local_ret;
+                            break;
+                        }
+                        // empty the batch
+                        batch->clear();
+                        // count the batch
+                        batchesSent += 1;
+                    }
+                }
+                // close file
+                fin.close();
+            } // end of loop
+        } // end of parallel region
+        // check if operation finished successfully
         if (ret != DBERR_OK) {
             return ret;
         }
@@ -349,7 +378,7 @@ namespace partitioning
                 logger::log_error(DBERR_INVALID_PARAMETER, "Error fetching batch for node", i);
                 return DBERR_INVALID_PARAMETER;
             }
-            GeometryBatch *batch = &it->second;
+            Batch *batch = &it->second;
             ret = comm::controller::serializeAndSendGeometryBatch(batch);
             if (ret != DBERR_OK) {
                 return ret;
@@ -375,7 +404,7 @@ namespace partitioning
         }
        
         // finally, load data and partition to workers
-        ret = loadCSVDatasetAndPartition(dataset.path);
+        ret = loadCSVDatasetAndPartition(dataset);
         if (ret != DBERR_OK) {
             return ret;
         }
@@ -441,17 +470,18 @@ namespace partitioning
     {
         /** @brief The agent repartitions the geometry using a finer grid as defined by the two-grid partitioning
          *  and sets the geometry's class in each partition. */
-        static DB_STATUS setPartitionClassesForGeometry(Geometry &geometry){
-            // get object's MBR
+        static DB_STATUS setPartitionClassesForObject(Shape &object){
+            // calculate the object's MBR
+            const std::vector<bg_point_xy>* pointsRef = object.getReferenceToPoints();
             double xMin = std::numeric_limits<int>::max();
             double yMin = std::numeric_limits<int>::max();
             double xMax = -std::numeric_limits<int>::max();
             double yMax = -std::numeric_limits<int>::max();
-            for (int i=0; i<geometry.coords.size(); i+= 2) {
-                xMin = std::min(xMin, geometry.coords[i]);
-                yMin = std::min(yMin, geometry.coords[i+1]);
-                xMax = std::max(xMax, geometry.coords[i]);
-                yMax = std::max(yMax, geometry.coords[i+1]);
+            for (auto &it: *pointsRef) {
+                xMin = std::min(xMin, it.x());
+                yMin = std::min(yMin, it.y());
+                xMax = std::max(xMax, it.x());
+                yMax = std::max(yMax, it.y());
             }             
             // if (geometry.recID == 10582) {
             //     printf("MBR: (%f,%f),(%f,%f)\n", xMin, yMin, xMax, yMax);
@@ -460,9 +490,9 @@ namespace partitioning
             // vector for the new partitions
             std::vector<int> newPartitions;
             // for each distribution partition
-            for (int i=0; i < geometry.partitionCount; i++) {
+            for (int i=0; i < object.getPartitionCount(); i++) {
                 // get the partition ID, no two layer class set yet
-                int distPartitionID = geometry.partitions[i*2];
+                int distPartitionID = object.getPartitionID(i);
                 // get the partition's indices
                 int distPartitionIndexX, distPartitionIndexY;
                 g_config.partitioningMethod->getDistributionGridPartitionIndices(distPartitionID, distPartitionIndexX, distPartitionIndexY);
@@ -555,9 +585,7 @@ namespace partitioning
                 }
             }
             // replace into object
-            geometry.partitions = newPartitions;
-            geometry.partitionCount = newPartitions.size() / 2;
-            
+            object.setPartitions(newPartitions, newPartitions.size() / 2);
             return DBERR_OK;
         }
     }
@@ -565,22 +593,23 @@ namespace partitioning
     namespace round_robin
     {
         /** @brief The agent sets the geometry's class in its partitions, as set by the round robin partitioning. */
-        static DB_STATUS setPartitionClassesForGeometry(Geometry &geometry){
-            // get object's MBR
+        static DB_STATUS setPartitionClassesForObject(Shape &object){
+            // calculate the object's MBR
+            const std::vector<bg_point_xy>* pointsRef = object.getReferenceToPoints();
             double xMin = std::numeric_limits<int>::max();
             double yMin = std::numeric_limits<int>::max();
             double xMax = -std::numeric_limits<int>::max();
             double yMax = -std::numeric_limits<int>::max();
-            for (int i=0; i<geometry.coords.size(); i+= 2) {
-                xMin = std::min(xMin, geometry.coords[i]);
-                yMin = std::min(yMin, geometry.coords[i+1]);
-                xMax = std::max(xMax, geometry.coords[i]);
-                yMax = std::max(yMax, geometry.coords[i+1]);
-            }
+            for (auto &it: *pointsRef) {
+                xMin = std::min(xMin, it.x());
+                yMin = std::min(yMin, it.y());
+                xMax = std::max(xMax, it.x());
+                yMax = std::max(yMax, it.y());
+            }          
             // for each distribution partition
-            for (int i=0; i < geometry.partitionCount; i++) {
+            for (int i=0; i < object.getPartitionCount(); i++) {
                 // get the partition ID, no two layer class set yet
-                int distPartitionID = geometry.partitions[i*2];
+                int distPartitionID = object.getPartitionID(i);
                 // get the partition's indices
                 int distPartitionIndexX, distPartitionIndexY;
                 g_config.partitioningMethod->getDistributionGridPartitionIndices(distPartitionID, distPartitionIndexX, distPartitionIndexY);
@@ -590,13 +619,13 @@ namespace partitioning
                 // get the object's class
                 TwoLayerClassE objectClass = getTwoLayerClassForMBRandPartition(xMin, yMin, distPartitionXmin, distPartitionYmin);
                 // fill in the partition's two layer class data
-                geometry.partitions.at((i*2)+1) = objectClass;
+                object.setPartitionClass(i, objectClass);
             }
             return DBERR_OK;
         }
     }
 
-    DB_STATUS calculateTwoLayerClasses(GeometryBatch &batch) {
+    DB_STATUS calculateTwoLayerClasses(Batch &batch) {
         DB_STATUS ret = DBERR_OK;
         // classify based on partitioning method
         switch (g_config.partitioningMethod->type) {
@@ -606,11 +635,11 @@ namespace partitioning
                     int tid = omp_get_thread_num();
                     DB_STATUS local_ret = DBERR_OK;
                     #pragma omp for
-                    for (int i=0; i<batch.geometries.size(); i++) {
+                    for (int i=0; i<batch.objectCount; i++) {
                         // determine the two layer classes for each partition of the object in the fine grid
-                        local_ret = round_robin::setPartitionClassesForGeometry(batch.geometries[i]);
+                        local_ret = round_robin::setPartitionClassesForObject(batch.objects[i]);
                         if (local_ret != DBERR_OK) {
-                            logger::log_error(ret, "Setting partition classes for object with ID", batch.geometries[i].recID, "failed.");
+                            logger::log_error(ret, "Setting partition classes for object with ID", batch.objects[i].recID, "failed.");
                             #pragma omp cancel for
                             ret = local_ret;
                         }
@@ -623,11 +652,12 @@ namespace partitioning
                     int tid = omp_get_thread_num();
                     DB_STATUS local_ret = DBERR_OK;
                     #pragma omp for
-                    for (int i=0; i<batch.geometries.size(); i++) {
+                    for (int i=0; i<batch.objectCount; i++) {
+                    // for (int i=0; i<batch.objects.size(); i++) {
                         // determine the two layer classes for each partition of the object in the fine grid
-                        local_ret = two_grid::setPartitionClassesForGeometry(batch.geometries[i]);
+                        local_ret = two_grid::setPartitionClassesForObject(batch.objects[i]);
                         if (local_ret != DBERR_OK) {
-                            logger::log_error(ret, "Setting partition classes for object with ID", batch.geometries[i].recID, "failed.");
+                            logger::log_error(ret, "Setting partition classes for object with ID", batch.objects[i].recID, "failed.");
                             #pragma omp cancel for
                             ret = local_ret;
                         }

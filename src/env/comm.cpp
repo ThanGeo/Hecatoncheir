@@ -2,9 +2,14 @@
 
 namespace comm 
 {
+    /** @brief Returns the object count of a serialized batch message.
+     * @details The first value (sizeof(DataTypeE)) indicates the data type of the objects in the message.
+     * The second value (sizeof(size_t) is the object count.)
+     */
     static size_t getBatchObjectCountFromMessage(SerializedMsg<char> &msg) {
         size_t objectCount = -1;
-        memcpy(&objectCount, msg.data, sizeof(size_t));
+        size_t offset = sizeof(DataTypeE);  // batch object count is after the data type value
+        memcpy(&objectCount, &msg.data[offset], sizeof(size_t));
         return objectCount;
     }
 
@@ -274,7 +279,7 @@ namespace comm
         */
         static DB_STATUS deserializeBatchMessageAndStore(char *buffer, int bufferSize, FILE* outFile, Dataset *dataset, int &continueListening) {
             DB_STATUS ret = DBERR_OK;
-            GeometryBatch batch;
+            Batch batch;
             // deserialize the batch
             batch.deserialize(buffer, bufferSize);
             // calculate two layer classes for each object, in each partition
@@ -283,9 +288,9 @@ namespace comm
                 logger::log_error(ret, "Calculating two layer index classes failed for batch.");
                 return ret;
             }
+            // logger::log_success("Received batch with", batch.objectCount, "objects");
             if (batch.objectCount > 0) {
                 // do stuff
-                // logger::log_success("Received batch with", batch.objectCount, "objects");
                 ret = storage::writer::partitionFile::appendBatchToPartitionFile(outFile, &batch, dataset);
                 if (ret != DBERR_OK) {
                     logger::log_error(DBERR_DISK_WRITE_FAILED, "Failed when writing batch to partition file");
@@ -833,7 +838,7 @@ STOP_LISTENING:
     namespace controller
     {
         
-        DB_STATUS serializeAndSendGeometryBatch(GeometryBatch* batch) {
+        DB_STATUS serializeAndSendGeometryBatch(Batch* batch) {
             DB_STATUS ret = DBERR_OK;
             SerializedMsg<char> msg(MPI_CHAR);
             // check if batch is valid
@@ -854,10 +859,9 @@ STOP_LISTENING:
                 logger::log_error(ret, "Sending serialized geometry batch failed");
                 return ret;
             }
+            // logger::log_task("sent batch");
             return ret;
         }
-
-        
 
         DB_STATUS broadcastSysInfo() {
             SerializedMsg<char> msgPack(MPI_CHAR);

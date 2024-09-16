@@ -762,26 +762,83 @@ public:
         }, shape);
     }
 
-    /** @brief returns the partition ID for partition number 'partitionIndex' in the partitions list.
+    /** @brief Returns the partition ID for partition number 'partitionIndex' in the partitions list.
      * @param partitionIndex indicates the offset (index) of the requested partition from [0, partitionCount-1].
      */
     inline int getPartitionID(int partitionIndex) {
         return partitions[partitionIndex * 2];
     }
-    /** @brief returns the partition class for partition number 'partitionIndex' in the partitions list.
+    /** @brief Returns the partition class for partition number 'partitionIndex' in the partitions list.
      * @param partitionIndex indicates the offset (index) of the requested partition from [0, partitionCount-1].
      */
     inline TwoLayerClassE getPartitionClass(int partitionIndex) {
         return (TwoLayerClassE) partitions[partitionIndex * 2 + 1];
     }
 
+    inline void setPartitionClass(int partitionIndex, TwoLayerClassE classType) {
+        partitions[partitionIndex * 2 + 1] = classType;
+    }
+
+    /** @brief Sets the object's partitions (partitionCount in total) to the given list of partitions.
+     * @param newPartitions Contains consecutive double values that represent pairs <partitionID, classType>. 
+     * Has size partitionCount * 2.
+     * @param partitionCount The total number of partitions represented by the list.
+     */
     inline void setPartitions(std::vector<int> &newPartitions, int partitionCount) {
         this->partitionCount = partitionCount;
         this->partitions = newPartitions;
     }
 
+    /** @brief Initializes the list of partitions based on the input partition ids. All classes are set to the invalid (empty) class. */
+    inline void initPartitions(std::vector<int> &partitionIDs) {
+        partitionCount = partitionIDs.size();
+        partitions.reserve(partitionCount * 2);
+        for (auto &it: partitionIDs) {
+            partitions.push_back(it);
+            partitions.push_back(CLASS_NONE);
+        }
+    }
+
     inline int getPartitionCount() {
         return partitionCount;
+    }
+
+    inline std::vector<int> getPartitions() {
+        return partitions;
+    }
+
+    inline std::vector<int>* getPartitionsRef() {
+        return &partitions;
+    }
+
+    /** @brief Sets the shape's mbr. If the max values are larger than the min values, it fixes this by swapping them. */
+    inline void setMBR(double xMin, double yMin, double xMax, double yMax) {
+        mbr.pMin.x = std::min(xMin, xMax);
+        mbr.pMin.y = std::min(yMin, yMax);
+        mbr.pMax.x = std::max(xMin, xMax);
+        mbr.pMax.y = std::max(yMin, yMax);
+    }
+
+    inline void resetMBR() {
+        mbr.pMin.x = std::numeric_limits<int>::max();
+        mbr.pMin.y = std::numeric_limits<int>::max();
+        mbr.pMax.x = -std::numeric_limits<int>::max();
+        mbr.pMax.y = -std::numeric_limits<int>::max();
+    }
+
+    void resetPoints() {
+        std::visit([](auto&& arg) {
+            arg.reset();
+        }, shape);
+    }
+
+    /** @brief Resets the boost geometry object. */
+    void reset() {
+        recID = 0;
+        resetMBR();
+        partitions.clear();
+        partitionCount = 0;
+        resetPoints();
     }
 
     /** @brief Adds a point to the boost geometry (see derived method definitions). */
@@ -797,6 +854,20 @@ public:
         std::visit([](auto&& arg) {
             arg.correctGeometry();
         }, shape);
+    }
+
+    /** @brief Sets the shape's boost geometry points and MBR to the new list. */
+    void setPoints(std::vector<double> &coords) {
+        resetPoints();
+        resetMBR();
+        for (int i=0; i<coords.size(); i+=2) {
+            addPoint(coords[i], coords[i+1]);
+            mbr.pMin.x = std::min(mbr.pMin.x, coords[i]);
+            mbr.pMin.y = std::min(mbr.pMin.y, coords[i+1]);
+            mbr.pMax.x = std::max(mbr.pMax.x, coords[i]);
+            mbr.pMax.y = std::max(mbr.pMax.y, coords[i+1]);
+        }
+        correctGeometry();
     }
 
     /** @brief Modifies the point specified by 'index' with the new values x,y. (see derived method definitions) 
@@ -815,16 +886,6 @@ public:
         printf("id: %zu\n", recID);
         std::visit([](auto&& arg) {
             arg.printGeometry();
-        }, shape);
-    }
-
-    /** @brief Resets the boost geometry object. */
-    void reset() {
-        recID = 0;
-        mbr = MBR();
-        partitions.clear();
-        std::visit([](auto&& arg) {
-            arg.reset();
         }, shape);
     }
 
@@ -972,6 +1033,13 @@ namespace shape_factory
     Shape createEmptyPolygonShape();
     Shape createEmptyLineStringShape();
     Shape createEmptyRectangleShape();
+
+    /** @brief creates an empty shape object of the specified data type.
+     * @param dataType the requested data type of the Shape object
+     * @param object the return value where the empty object will be stored
+     * @return DB_STATUS returns the status value of the operation
+    */
+    DB_STATUS createEmpty(DataTypeE dataType, Shape &object);
 }
 
 /**
@@ -1452,37 +1520,24 @@ struct Config {
     QueryInfo queryInfo;
 };
 
-/** @brief Simple Geometry object used only in the data partitioning/broadcasting.
- * @todo Redundant. Maybe use the Shape struct.
- */
-struct Geometry {
-    size_t recID;
-    int partitionCount;
-    std::vector<int> partitions;    // tuples of <partition ID, twolayer class>
-    int vertexCount;
-    std::vector<double> coords;
-
-    Geometry(size_t recID, int vertexCount, std::vector<double> &coords);
-    Geometry(size_t recID, std::vector<int> &partitions, int vertexCount, std::vector<double> &coords);
-    void setPartitions(std::vector<int> &ids);
-    void setPartitions(std::vector<int> &ids, std::vector<TwoLayerClassE> &classes);
-};
-
 /**
  * @brief A batch containing multiple objects for the batch partitioning/broadcasting.
  */
-struct GeometryBatch {
+struct Batch {
+    DataType dataType;
     // serializable
     size_t objectCount = 0;
-    std::vector<Geometry> geometries;
+    std::vector<Shape> objects;
     // unserializable/unclearable (todo: make const?)
     int destRank = -1;   // destination node rank
     size_t maxObjectCount; 
     MPI_Comm* comm; // communicator that the batch will be send through
     int tag = -1;        // MPI tag = indicates spatial data type
 
+    Batch();
+
     bool isValid();
-    void addGeometryToBatch(Geometry &geometry);
+    void addObjectToBatch(Shape &object);
     void setDestNodeRank(int destRank);
 
     // calculate the size needed for the serialization buffer
@@ -1500,7 +1555,7 @@ struct GeometryBatch {
     @brief fills the struct with data from the input serialized buffer
      * The caller must free the buffer memory
      */
-    void deserialize(const char *buffer, int bufferSize);
+    DB_STATUS deserialize(const char *buffer, int bufferSize);
 
 };
 
