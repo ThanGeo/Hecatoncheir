@@ -12,7 +12,7 @@ namespace twolayer
                 // count as MBR filter result
                 queryOutput.countMBRresult();
                 // if intermediate filter is enabled
-                if (g_config.queryInfo.IntermediateFilter) {
+                if (g_config.queryMetadata.IntermediateFilter) {
                     // forward to intermediate filter
                     ret = APRIL::topology::IntermediateFilterEntrypoint(objR, objS, mbrRelationCase, queryOutput);
                     if (ret != DBERR_OK) {
@@ -534,7 +534,7 @@ namespace twolayer
             // count as MBR filter result
             queryOutput.countMBRresult();
             // check if intermediate filter is enabled
-            if (g_config.queryInfo.IntermediateFilter) {
+            if (g_config.queryMetadata.IntermediateFilter) {
                 // forward to intermediate filter
                 ret = APRIL::standard::IntermediateFilterEntrypoint(objR, objS, queryOutput);
                 if (ret != DBERR_OK) {
@@ -544,7 +544,7 @@ namespace twolayer
                 // count refinement candidates
                 queryOutput.countRefinementCandidate();
                 // forward to refinement
-                ret = refinement::relate::refinementEntrypoint(objR, objS, g_config.queryInfo.type, queryOutput);
+                ret = refinement::relate::refinementEntrypoint(objR, objS, g_config.queryMetadata.type, queryOutput);
                 if (ret != DBERR_OK) {
                     logger::log_error(ret, "Refinement failed");
                 }
@@ -975,10 +975,10 @@ namespace twolayer
         // first, reset any query outputs
         g_queryOutput.reset();
         // get the datasets
-        Dataset* R = g_config.datasetInfo.getDatasetR();
-        Dataset* S = g_config.datasetInfo.getDatasetS();
+        Dataset* R = g_config.datasetMetadata.getDatasetR();
+        Dataset* S = g_config.datasetMetadata.getDatasetS();
         // process based on query type
-        switch (g_config.queryInfo.type) {
+        switch (g_config.queryMetadata.type) {
             case Q_RANGE:
                 // todo: double check with dimitris. Is the filter the same for range? what about point data?
                 ret = intersectionMBRfilter::evaluate(R, S, queryOutput);
@@ -1009,7 +1009,7 @@ namespace twolayer
                 }
                 break;
             default:
-                logger::log_error(DBERR_FEATURE_UNSUPPORTED, "Query type not supported:", mapping::queryTypeIntToStr(g_config.queryInfo.type));
+                logger::log_error(DBERR_FEATURE_UNSUPPORTED, "Query type not supported:", mapping::queryTypeIntToStr(g_config.queryMetadata.type));
                 return DBERR_FEATURE_UNSUPPORTED;
         }
 

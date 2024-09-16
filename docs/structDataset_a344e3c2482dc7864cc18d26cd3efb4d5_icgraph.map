@@ -1,4 +1,4 @@
 <map id="Dataset::serialize" name="Dataset::serialize">
-<area shape="rect" id="node1" title="Serializes the dataset object (only the important stuff)." alt="" coords="208,13,332,39"/>
-<area shape="rect" id="node2" href="$namespacecomm_1_1controller_1_1host.html#a0311bb6b9dffa1af0415761b6675c19c" title="Packs and broadcasts the dataset info to all worker nodes." alt="" coords="5,5,160,47"/>
+<area shape="rect" id="node1" title="Serializes the dataset object (only the important stuff)." alt="" coords="240,13,364,39"/>
+<area shape="rect" id="node2" href="$namespacecomm_1_1controller_1_1host.html#a6363e14474a57fb5f933bc9c0f21c791" title="Packs and broadcasts the dataset metadata to all worker nodes." alt="" coords="5,5,192,47"/>
 </map>

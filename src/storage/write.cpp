@@ -6,7 +6,7 @@ namespace storage
     {
         namespace partitionFile
         {
-            DB_STATUS appendDatasetInfoToPartitionFile(FILE* outFile, Dataset* dataset) {
+            DB_STATUS appendDatasetMetadataToPartitionFile(FILE* outFile, Dataset* dataset) {
                 // datatype
                 fwrite(&dataset->dataType, sizeof(DataTypeE), 1, outFile);
                 // nikcname length + string
@@ -14,11 +14,11 @@ namespace storage
                 fwrite(&length, sizeof(int), 1, outFile);
                 fwrite(dataset->nickname.data(), length * sizeof(char), length, outFile);
                 // dataspace MBR
-                fwrite(&dataset->dataspaceInfo.xMinGlobal, sizeof(double), 1, outFile);
-                fwrite(&dataset->dataspaceInfo.yMinGlobal, sizeof(double), 1, outFile);
-                fwrite(&dataset->dataspaceInfo.xMaxGlobal, sizeof(double), 1, outFile);
-                fwrite(&dataset->dataspaceInfo.yMaxGlobal, sizeof(double), 1, outFile);
-                // logger::log_success("Wrote:", dataset->dataspaceInfo.xMinGlobal, dataset->dataspaceInfo.yMinGlobal, dataset->dataspaceInfo.xMaxGlobal, dataset->dataspaceInfo.yMaxGlobal);
+                fwrite(&dataset->dataspaceMetadata.xMinGlobal, sizeof(double), 1, outFile);
+                fwrite(&dataset->dataspaceMetadata.yMinGlobal, sizeof(double), 1, outFile);
+                fwrite(&dataset->dataspaceMetadata.xMaxGlobal, sizeof(double), 1, outFile);
+                fwrite(&dataset->dataspaceMetadata.yMaxGlobal, sizeof(double), 1, outFile);
+                // logger::log_success("Wrote:", dataset->dataspaceMetadata.xMinGlobal, dataset->dataspaceMetadata.yMinGlobal, dataset->dataspaceMetadata.xMaxGlobal, dataset->dataspaceMetadata.yMaxGlobal);
                 return DBERR_OK;
             }
 

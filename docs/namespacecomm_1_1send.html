@@ -88,9 +88,9 @@ Functions</h2></td></tr>
 <tr class="memitem:aae1afcd943b42c7fb32529f12dc04773"><td class="memItemLeft" align="right" valign="top">DB_STATUS&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacecomm_1_1send.html#aae1afcd943b42c7fb32529f12dc04773">sendInstructionMessage</a> (int destRank, int tag, MPI_Comm &amp;comm)</td></tr>
 <tr class="memdesc:aae1afcd943b42c7fb32529f12dc04773"><td class="mdescLeft">&#160;</td><td class="mdescRight">Sends an instruction message.  <a href="namespacecomm_1_1send.html#aae1afcd943b42c7fb32529f12dc04773">More...</a><br /></td></tr>
 <tr class="separator:aae1afcd943b42c7fb32529f12dc04773"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a957a232117c997041219541f64cfb883"><td class="memItemLeft" align="right" valign="top">DB_STATUS&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacecomm_1_1send.html#a957a232117c997041219541f64cfb883">sendDatasetInfoMessage</a> (<a class="el" href="structSerializedMsg.html">SerializedMsg</a>&lt; char &gt; &amp;datasetInfoMsg, int destRank, int tag, MPI_Comm &amp;comm)</td></tr>
-<tr class="memdesc:a957a232117c997041219541f64cfb883"><td class="mdescLeft">&#160;</td><td class="mdescRight">Sends a message containing dataset info.  <a href="namespacecomm_1_1send.html#a957a232117c997041219541f64cfb883">More...</a><br /></td></tr>
-<tr class="separator:a957a232117c997041219541f64cfb883"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a120924b4c884d68c551ec8ca984fdb95"><td class="memItemLeft" align="right" valign="top">DB_STATUS&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacecomm_1_1send.html#a120924b4c884d68c551ec8ca984fdb95">sendDatasetMetadataMessage</a> (<a class="el" href="structSerializedMsg.html">SerializedMsg</a>&lt; char &gt; &amp;datasetMetadataMsg, int destRank, int tag, MPI_Comm &amp;comm)</td></tr>
+<tr class="memdesc:a120924b4c884d68c551ec8ca984fdb95"><td class="mdescLeft">&#160;</td><td class="mdescRight">Sends a message containing dataset metadata.  <a href="namespacecomm_1_1send.html#a120924b4c884d68c551ec8ca984fdb95">More...</a><br /></td></tr>
+<tr class="separator:a120924b4c884d68c551ec8ca984fdb95"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a4f12a0d1d10e10111a2cea02c29c7b1b"><td class="memTemplParams" colspan="2">template&lt;typename T &gt; </td></tr>
 <tr class="memitem:a4f12a0d1d10e10111a2cea02c29c7b1b"><td class="memTemplItemLeft" align="right" valign="top">DB_STATUS&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="namespacecomm_1_1send.html#a4f12a0d1d10e10111a2cea02c29c7b1b">sendMessage</a> (<a class="el" href="structSerializedMsg.html">SerializedMsg</a>&lt; T &gt; &amp;msg, int destRank, int tag, MPI_Comm &amp;comm)</td></tr>
 <tr class="memdesc:a4f12a0d1d10e10111a2cea02c29c7b1b"><td class="mdescLeft">&#160;</td><td class="mdescRight">Sends a serialized message of template type T.  <a href="namespacecomm_1_1send.html#a4f12a0d1d10e10111a2cea02c29c7b1b">More...</a><br /></td></tr>
@@ -100,17 +100,17 @@ Functions</h2></td></tr>
 <div class="textblock"><p>Methods for sending messages. </p>
 <dl class="todo"><dt><b><a class="el" href="todo.html#_todo000001">Todo:</a></b></dt><dd>Merge some methods like sendResponse and sendInstruction message (or even more) into a single one for multi-use. </dd></dl>
 </div><h2 class="groupheader">Function Documentation</h2>
-<a id="a957a232117c997041219541f64cfb883"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a957a232117c997041219541f64cfb883">&#9670;&nbsp;</a></span>sendDatasetInfoMessage()</h2>
+<a id="a120924b4c884d68c551ec8ca984fdb95"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a120924b4c884d68c551ec8ca984fdb95">&#9670;&nbsp;</a></span>sendDatasetMetadataMessage()</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">DB_STATUS comm::send::sendDatasetInfoMessage </td>
+          <td class="memname">DB_STATUS comm::send::sendDatasetMetadataMessage </td>
           <td>(</td>
           <td class="paramtype"><a class="el" href="structSerializedMsg.html">SerializedMsg</a>&lt; char &gt; &amp;&#160;</td>
-          <td class="paramname"><em>datasetInfoMsg</em>, </td>
+          <td class="paramname"><em>datasetMetadataMsg</em>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
@@ -138,10 +138,10 @@ Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p>Sends a message containing dataset info. </p>
+<p>Sends a message containing dataset metadata. </p>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
-    <tr><td class="paramdir">[in]</td><td class="paramname">datasetInfoMsg</td><td>The already serialized message. </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">datasetMetadataMsg</td><td>The already serialized message. </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">destRank</td><td>The rank of the destination of the message. </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">tag</td><td>The tag of the message. </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">comm</td><td>The communicator through which the message will be sent through. </td></tr>
@@ -150,14 +150,14 @@ Functions</h2></td></tr>
 </dl>
 
 <p class="definition">Definition at line <a class="el" href="send_8cpp_source.html#l00048">48</a> of file <a class="el" href="send_8cpp_source.html">send.cpp</a>.</p>
-<div class="fragment"><div class="line"><a name="l00048"></a><span class="lineno">   48</span>&#160;                                                                                                                     {</div>
+<div class="fragment"><div class="line"><a name="l00048"></a><span class="lineno">   48</span>&#160;                                                                                                                             {</div>
 <div class="line"><a name="l00049"></a><span class="lineno">   49</span>&#160;            <span class="comment">// check tag validity</span></div>
-<div class="line"><a name="l00050"></a><span class="lineno">   50</span>&#160;            <span class="keywordflow">if</span> (tag != MSG_DATASET_INFO) {</div>
-<div class="line"><a name="l00051"></a><span class="lineno">   51</span>&#160;                <a class="code" href="namespacelogger.html#a53f34feeb22a94db295af05b8b2aab5c">logger::log_error</a>(DBERR_COMM_INVALID_MSG_TAG, <span class="stringliteral">&quot;Dataset info messages must have the appropriate tag. Current tag&quot;</span>, tag);</div>
+<div class="line"><a name="l00050"></a><span class="lineno">   50</span>&#160;            <span class="keywordflow">if</span> (tag != MSG_DATASET_METADATA) {</div>
+<div class="line"><a name="l00051"></a><span class="lineno">   51</span>&#160;                <a class="code" href="namespacelogger.html#a53f34feeb22a94db295af05b8b2aab5c">logger::log_error</a>(DBERR_COMM_INVALID_MSG_TAG, <span class="stringliteral">&quot;Dataset metadata messages must have the appropriate tag. Current tag&quot;</span>, tag);</div>
 <div class="line"><a name="l00052"></a><span class="lineno">   52</span>&#160;                <span class="keywordflow">return</span> DBERR_COMM_INVALID_MSG_TAG;</div>
 <div class="line"><a name="l00053"></a><span class="lineno">   53</span>&#160;            }</div>
 <div class="line"><a name="l00054"></a><span class="lineno">   54</span>&#160;            <span class="comment">// send the message</span></div>
-<div class="line"><a name="l00055"></a><span class="lineno">   55</span>&#160;            <span class="keywordtype">int</span> mpi_ret = MPI_Send(datasetInfoMsg.data, datasetInfoMsg.count, MPI_CHAR, destRank, tag, <a class="code" href="namespacecomm.html">comm</a>);</div>
+<div class="line"><a name="l00055"></a><span class="lineno">   55</span>&#160;            <span class="keywordtype">int</span> mpi_ret = MPI_Send(datasetMetadataMsg.data, datasetMetadataMsg.count, MPI_CHAR, destRank, tag, <a class="code" href="namespacecomm.html">comm</a>);</div>
 <div class="line"><a name="l00056"></a><span class="lineno">   56</span>&#160;            <span class="keywordflow">if</span> (mpi_ret != MPI_SUCCESS) {</div>
 <div class="line"><a name="l00057"></a><span class="lineno">   57</span>&#160;                <a class="code" href="namespacelogger.html#a53f34feeb22a94db295af05b8b2aab5c">logger::log_error</a>(DBERR_COMM_SEND, <span class="stringliteral">&quot;Send message with tag&quot;</span>, tag);</div>
 <div class="line"><a name="l00058"></a><span class="lineno">   58</span>&#160;                <span class="keywordflow">return</span> DBERR_COMM_SEND;</div>
@@ -169,10 +169,10 @@ Functions</h2></td></tr>
 </div><!-- fragment --><div class="dynheader">
 Here is the call graph for this function:</div>
 <div class="dyncontent">
-<div class="center"><img src="namespacecomm_1_1send_a957a232117c997041219541f64cfb883_cgraph.png" border="0" usemap="#anamespacecomm_1_1send_a957a232117c997041219541f64cfb883_cgraph" alt=""/></div>
-<map name="anamespacecomm_1_1send_a957a232117c997041219541f64cfb883_cgraph" id="anamespacecomm_1_1send_a957a232117c997041219541f64cfb883_cgraph">
-<area shape="rect" title="Sends a message containing dataset info." alt="" coords="5,5,204,47"/>
-<area shape="rect" href="namespacelogger.html#a53f34feeb22a94db295af05b8b2aab5c" title="Error logging function with template arguments. Separates input parameters with spaces...." alt="" coords="252,13,367,39"/>
+<div class="center"><img src="namespacecomm_1_1send_a120924b4c884d68c551ec8ca984fdb95_cgraph.png" border="0" usemap="#anamespacecomm_1_1send_a120924b4c884d68c551ec8ca984fdb95_cgraph" alt=""/></div>
+<map name="anamespacecomm_1_1send_a120924b4c884d68c551ec8ca984fdb95_cgraph" id="anamespacecomm_1_1send_a120924b4c884d68c551ec8ca984fdb95_cgraph">
+<area shape="rect" title="Sends a message containing dataset metadata." alt="" coords="5,5,236,47"/>
+<area shape="rect" href="namespacelogger.html#a53f34feeb22a94db295af05b8b2aab5c" title="Error logging function with template arguments. Separates input parameters with spaces...." alt="" coords="284,13,399,39"/>
 </map>
 </div>
 

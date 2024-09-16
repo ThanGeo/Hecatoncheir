@@ -4,8 +4,8 @@ namespace storage
 {
     DB_STATUS generatePartitionFilePath(Dataset &dataset) {
         if (dataset.nickname == "") {
-            logger::log_error(DBERR_MISSING_DATASET_INFO, "Dataset nickname is missing, cannot generate partition filepath");
-            return DBERR_MISSING_DATASET_INFO;
+            logger::log_error(DBERR_MISSING_DATASET_METADATA, "Dataset nickname is missing, cannot generate partition filepath");
+            return DBERR_MISSING_DATASET_METADATA;
         }
         if (g_config.dirPaths.partitionsPath == "") {
             logger::log_error(DBERR_MISSING_PATH, "Partition path is missing");
@@ -24,8 +24,8 @@ namespace storage
 
     DB_STATUS generateAPRILFilePath(Dataset &dataset) {
         if (dataset.nickname == "") {
-            logger::log_error(DBERR_MISSING_DATASET_INFO, "Dataset nickname is missing, cannot generate partition filepath");
-            return DBERR_MISSING_DATASET_INFO;
+            logger::log_error(DBERR_MISSING_DATASET_METADATA, "Dataset nickname is missing, cannot generate partition filepath");
+            return DBERR_MISSING_DATASET_METADATA;
         }
         if (g_config.dirPaths.approximationPath == "") {
             logger::log_error(DBERR_MISSING_PATH, "Approximation path is missing");

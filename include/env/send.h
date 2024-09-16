@@ -34,13 +34,13 @@ namespace comm
          */
         DB_STATUS sendInstructionMessage(int destRank, int tag, MPI_Comm &comm);
         
-        /** @brief Sends a message containing dataset info.
-         * @param[in] datasetInfoMsg The already serialized message.
+        /** @brief Sends a message containing dataset metadata.
+         * @param[in] datasetMetadataMsg The already serialized message.
          * @param[in] destRank The rank of the destination of the message.
          * @param[in] tag The tag of the message.
          * @param[in] comm The communicator through which the message will be sent through.
          */
-        DB_STATUS sendDatasetInfoMessage(SerializedMsg<char> &datasetInfoMsg, int destRank, int tag, MPI_Comm &comm);
+        DB_STATUS sendDatasetMetadataMessage(SerializedMsg<char> &datasetMetadataMsg, int destRank, int tag, MPI_Comm &comm);
         
 
         /** @brief Sends a serialized message of template type T.

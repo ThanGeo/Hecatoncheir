@@ -81,10 +81,10 @@ Collaboration diagram for Dataset:</div>
 <div class="dyncontent">
 <div class="center"><img src="structDataset__coll__graph.png" border="0" usemap="#aDataset_coll__map" alt="Collaboration graph"/></div>
 <map name="aDataset_coll__map" id="aDataset_coll__map">
-<area shape="rect" title="All dataset related information." alt="" coords="158,95,226,121"/>
-<area shape="rect" href="structDataspaceInfo.html" title="All dataspace related info, filled in after loading the dataset(s)." alt="" coords="5,5,112,32"/>
-<area shape="rect" href="structTwoLayerIndex.html" title="Holds all two&#45;layer related index information." alt="" coords="137,5,247,32"/>
-<area shape="rect" href="structAprilConfig.html" title="Contains all relevant APRIL configuration parameters." alt="" coords="271,5,358,32"/>
+<area shape="rect" title="All dataset related information." alt="" coords="176,95,244,121"/>
+<area shape="rect" href="structTwoLayerIndex.html" title="Holds all two&#45;layer related index information." alt="" coords="5,5,116,32"/>
+<area shape="rect" href="structDataspaceMetadata.html" title="All dataspace related metadata, filled in after loading the dataset(s)." alt="" coords="141,5,279,32"/>
+<area shape="rect" href="structAprilConfig.html" title="Contains all relevant APRIL configuration parameters." alt="" coords="316,5,403,32"/>
 </map>
 <center><span class="legend">[<a href="graph_legend.html">legend</a>]</span></center></div>
 <table class="memberdecls">
@@ -153,9 +153,9 @@ std::string&#160;</td><td class="memItemRight" valign="bottom"><b>datasetName</b
 <tr class="memitem:a862c9fc35f80c659e6b2babda786f45b"><td class="memItemLeft" align="right" valign="top"><a id="a862c9fc35f80c659e6b2babda786f45b"></a>
 std::string&#160;</td><td class="memItemRight" valign="bottom"><b>nickname</b></td></tr>
 <tr class="separator:a862c9fc35f80c659e6b2babda786f45b"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a939fc40cffb4214846f386dbb7540232"><td class="memItemLeft" align="right" valign="top"><a id="a939fc40cffb4214846f386dbb7540232"></a>
-<a class="el" href="structDataspaceInfo.html">DataspaceInfo</a>&#160;</td><td class="memItemRight" valign="bottom"><b>dataspaceInfo</b></td></tr>
-<tr class="separator:a939fc40cffb4214846f386dbb7540232"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a9567382439dc887615d8171d27ac9ad4"><td class="memItemLeft" align="right" valign="top"><a id="a9567382439dc887615d8171d27ac9ad4"></a>
+<a class="el" href="structDataspaceMetadata.html">DataspaceMetadata</a>&#160;</td><td class="memItemRight" valign="bottom"><b>dataspaceMetadata</b></td></tr>
+<tr class="separator:a9567382439dc887615d8171d27ac9ad4"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a1ae2d7c570cdef922948efdd2945b884"><td class="memItemLeft" align="right" valign="top"><a id="a1ae2d7c570cdef922948efdd2945b884"></a>
 size_t&#160;</td><td class="memItemRight" valign="bottom"><b>totalObjects</b> = 0</td></tr>
 <tr class="separator:a1ae2d7c570cdef922948efdd2945b884"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -428,7 +428,7 @@ Here is the call graph for this function:</div>
 <div class="line"><a name="l00315"></a><span class="lineno">  315</span>&#160;        this-&gt;<a class="code" href="structDataset.html#a066a8adb737e33d43a900faa5b155ae7">recToSectionIdMap</a>[recID] = sectionIDs;</div>
 <div class="line"><a name="l00316"></a><span class="lineno">  316</span>&#160;    }</div>
 <div class="line"><a name="l00317"></a><span class="lineno">  317</span>&#160;}</div>
-<div class="ttc" id="astructAprilData_html"><div class="ttname"><a href="structAprilData.html">AprilData</a></div><div class="ttdoc">Holds all the APRIL related info for a single object.</div><div class="ttdef"><b>Definition:</b> <a href="containers_8h_source.html#l00031">containers.h:31</a></div></div>
+<div class="ttc" id="astructAprilData_html"><div class="ttname"><a href="structAprilData.html">AprilData</a></div><div class="ttdoc">Holds all the APRIL related metadata for a single object.</div><div class="ttdef"><b>Definition:</b> <a href="containers_8h_source.html#l00031">containers.h:31</a></div></div>
 </div><!-- fragment --><div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
@@ -495,7 +495,7 @@ Here is the caller graph for this function:</div>
 <div class="line"><a name="l00279"></a><span class="lineno">  279</span>&#160;    memcpy(&amp;yMax, buffer + position, <span class="keyword">sizeof</span>(<span class="keywordtype">double</span>));</div>
 <div class="line"><a name="l00280"></a><span class="lineno">  280</span>&#160;    position += <span class="keyword">sizeof</span>(double);</div>
 <div class="line"><a name="l00281"></a><span class="lineno">  281</span>&#160;    <span class="comment">// set</span></div>
-<div class="line"><a name="l00282"></a><span class="lineno">  282</span>&#160;    dataspaceInfo.set(xMin, yMin, xMax, yMax);</div>
+<div class="line"><a name="l00282"></a><span class="lineno">  282</span>&#160;    dataspaceMetadata.set(xMin, yMin, xMax, yMax);</div>
 <div class="line"><a name="l00283"></a><span class="lineno">  283</span>&#160; </div>
 <div class="line"><a name="l00284"></a><span class="lineno">  284</span>&#160;    <span class="keywordflow">if</span> (position == bufferSize) {</div>
 <div class="line"><a name="l00285"></a><span class="lineno">  285</span>&#160;        <span class="comment">// all is well</span></div>
@@ -521,7 +521,7 @@ Here is the caller graph for this function:</div>
 </div><div class="memdoc">
 
 <p>Serializes the dataset object (only the important stuff). </p>
-<p>serialize dataset info (only specific stuff) </p>
+<p>serialize dataset metadata (only specific stuff) </p>
 
 <p class="definition">Definition at line <a class="el" href="containers_8cpp_source.html#l00224">224</a> of file <a class="el" href="containers_8cpp_source.html">containers.cpp</a>.</p>
 <div class="fragment"><div class="line"><a name="l00224"></a><span class="lineno">  224</span>&#160;                                    {</div>
@@ -546,13 +546,13 @@ Here is the caller graph for this function:</div>
 <div class="line"><a name="l00243"></a><span class="lineno">  243</span>&#160;    memcpy(localBuffer + position, nickname.data(), nicknameLength);</div>
 <div class="line"><a name="l00244"></a><span class="lineno">  244</span>&#160;    position += nicknameLength * <span class="keyword">sizeof</span>(char);</div>
 <div class="line"><a name="l00245"></a><span class="lineno">  245</span>&#160;    <span class="comment">// add dataset&#39;s dataspace MBR</span></div>
-<div class="line"><a name="l00246"></a><span class="lineno">  246</span>&#160;    memcpy(localBuffer + position, &amp;dataspaceInfo.xMinGlobal, <span class="keyword">sizeof</span>(<span class="keywordtype">double</span>));</div>
+<div class="line"><a name="l00246"></a><span class="lineno">  246</span>&#160;    memcpy(localBuffer + position, &amp;dataspaceMetadata.xMinGlobal, <span class="keyword">sizeof</span>(<span class="keywordtype">double</span>));</div>
 <div class="line"><a name="l00247"></a><span class="lineno">  247</span>&#160;    position += <span class="keyword">sizeof</span>(double);</div>
-<div class="line"><a name="l00248"></a><span class="lineno">  248</span>&#160;    memcpy(localBuffer + position, &amp;dataspaceInfo.yMinGlobal, <span class="keyword">sizeof</span>(<span class="keywordtype">double</span>));</div>
+<div class="line"><a name="l00248"></a><span class="lineno">  248</span>&#160;    memcpy(localBuffer + position, &amp;dataspaceMetadata.yMinGlobal, <span class="keyword">sizeof</span>(<span class="keywordtype">double</span>));</div>
 <div class="line"><a name="l00249"></a><span class="lineno">  249</span>&#160;    position += <span class="keyword">sizeof</span>(double);</div>
-<div class="line"><a name="l00250"></a><span class="lineno">  250</span>&#160;    memcpy(localBuffer + position, &amp;dataspaceInfo.xMaxGlobal, <span class="keyword">sizeof</span>(<span class="keywordtype">double</span>));</div>
+<div class="line"><a name="l00250"></a><span class="lineno">  250</span>&#160;    memcpy(localBuffer + position, &amp;dataspaceMetadata.xMaxGlobal, <span class="keyword">sizeof</span>(<span class="keywordtype">double</span>));</div>
 <div class="line"><a name="l00251"></a><span class="lineno">  251</span>&#160;    position += <span class="keyword">sizeof</span>(double);</div>
-<div class="line"><a name="l00252"></a><span class="lineno">  252</span>&#160;    memcpy(localBuffer + position, &amp;dataspaceInfo.yMaxGlobal, <span class="keyword">sizeof</span>(<span class="keywordtype">double</span>));</div>
+<div class="line"><a name="l00252"></a><span class="lineno">  252</span>&#160;    memcpy(localBuffer + position, &amp;dataspaceMetadata.yMaxGlobal, <span class="keyword">sizeof</span>(<span class="keywordtype">double</span>));</div>
 <div class="line"><a name="l00253"></a><span class="lineno">  253</span>&#160;    position += <span class="keyword">sizeof</span>(double);</div>
 <div class="line"><a name="l00254"></a><span class="lineno">  254</span>&#160;    <span class="comment">// set and return</span></div>
 <div class="line"><a name="l00255"></a><span class="lineno">  255</span>&#160;    (*buffer) = localBuffer;</div>
@@ -573,8 +573,8 @@ Here is the caller graph for this function:</div>
 <div class="dyncontent">
 <div class="center"><img src="structDataset_a344e3c2482dc7864cc18d26cd3efb4d5_icgraph.png" border="0" usemap="#astructDataset_a344e3c2482dc7864cc18d26cd3efb4d5_icgraph" alt=""/></div>
 <map name="astructDataset_a344e3c2482dc7864cc18d26cd3efb4d5_icgraph" id="astructDataset_a344e3c2482dc7864cc18d26cd3efb4d5_icgraph">
-<area shape="rect" title="Serializes the dataset object (only the important stuff)." alt="" coords="208,13,332,39"/>
-<area shape="rect" href="namespacecomm_1_1controller_1_1host.html#a0311bb6b9dffa1af0415761b6675c19c" title="Packs and broadcasts the dataset info to all worker nodes." alt="" coords="5,5,160,47"/>
+<area shape="rect" title="Serializes the dataset object (only the important stuff)." alt="" coords="240,13,364,39"/>
+<area shape="rect" href="namespacecomm_1_1controller_1_1host.html#a6363e14474a57fb5f933bc9c0f21c791" title="Packs and broadcasts the dataset metadata to all worker nodes." alt="" coords="5,5,192,47"/>
 </map>
 </div>
 

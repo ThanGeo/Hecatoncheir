@@ -496,7 +496,7 @@ namespace APRIL
             DB_STATUS init(Dataset &dataset) {
                 DB_STATUS ret = DBERR_OK;
                 // init rasterization environment
-                ret = setRasterBounds(dataset.dataspaceInfo.xMinGlobal, dataset.dataspaceInfo.yMinGlobal, dataset.dataspaceInfo.xMaxGlobal, dataset.dataspaceInfo.yMaxGlobal);
+                ret = setRasterBounds(dataset.dataspaceMetadata.xMinGlobal, dataset.dataspaceMetadata.yMinGlobal, dataset.dataspaceMetadata.xMaxGlobal, dataset.dataspaceMetadata.yMaxGlobal);
                 if (ret != DBERR_OK) {
                     return DBERR_INVALID_PARAMETER;
                 }
@@ -519,8 +519,8 @@ namespace APRIL
                 }
                 // dummy object
                 Shape object;
-                // next read the dataset info
-                ret = storage::reader::partitionFile::loadDatasetInfo(pFile, &dataset);
+                // next read the dataset metadata
+                ret = storage::reader::partitionFile::loadDatasetMetadata(pFile, &dataset);
                 if (ret != DBERR_OK) {
                     goto CLOSE_AND_EXIT;
                 }
@@ -652,7 +652,7 @@ namespace APRIL
             DB_STATUS init(Dataset &dataset) {
                 DB_STATUS ret = DBERR_OK;
                 // init rasterization environment
-                ret = setRasterBounds(dataset.dataspaceInfo.xMinGlobal, dataset.dataspaceInfo.yMinGlobal, dataset.dataspaceInfo.xMaxGlobal, dataset.dataspaceInfo.yMaxGlobal);
+                ret = setRasterBounds(dataset.dataspaceMetadata.xMinGlobal, dataset.dataspaceMetadata.yMinGlobal, dataset.dataspaceMetadata.xMaxGlobal, dataset.dataspaceMetadata.yMaxGlobal);
                 if (ret != DBERR_OK) {
                     return DBERR_INVALID_PARAMETER;
                 }

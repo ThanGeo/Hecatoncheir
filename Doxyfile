@@ -778,10 +778,10 @@ LAYOUT_FILE            =
 # The CITE_BIB_FILES tag can be used to specify one or more bib files containing
 # the reference definitions. This must be a list of .bib files. The .bib
 # extension is automatically appended if omitted. This requires the bibtex tool
-# to be installed. See also https://en.wikipedia.org/wiki/BibTeX for more info.
+# to be installed. See also https://en.wikipedia.org/wiki/BibTeX for more metadata.
 # For LaTeX the style of the bibliography can be controlled using
 # LATEX_BIB_STYLE. To use this feature you need bibtex and perl available in the
-# search path. See also \cite for info how to create references.
+# search path. See also \cite for metadata how to create references.
 
 CITE_BIB_FILES         =
 
@@ -1910,7 +1910,7 @@ LATEX_SOURCE_CODE      = NO
 
 # The LATEX_BIB_STYLE tag can be used to specify the style to use for the
 # bibliography, e.g. plainnat, or ieeetr. See
-# https://en.wikipedia.org/wiki/BibTeX and \cite for more info.
+# https://en.wikipedia.org/wiki/BibTeX and \cite for more metadata.
 # The default value is: plain.
 # This tag requires that the tag GENERATE_LATEX is set to YES.
 

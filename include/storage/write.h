@@ -12,11 +12,11 @@ namespace storage
         /** @brief Methods for the partitioned data writing. */
         namespace partitionFile
         {
-            /** @brief Appends the dataset's info into an already opened partition file.
+            /** @brief Appends the dataset's metadata into an already opened partition file.
              * The file pointer must point to an already opened partition data file and its position should be at the begining, 
              * write after the object count (offset += sizeof(size_t)).
              */
-            DB_STATUS appendDatasetInfoToPartitionFile(FILE* outFile, Dataset* dataset);
+            DB_STATUS appendDatasetMetadataToPartitionFile(FILE* outFile, Dataset* dataset);
             
             /** @brief Appends a geometry batch to an already opened partition file.
              * The file pointer must point to an already opened partition data file and its position should be at the begining.

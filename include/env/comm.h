@@ -35,7 +35,7 @@ namespace comm
         DB_STATUS serializeAndSendGeometryBatch(Batch* batch);
 
         /** @brief Broadcasts the configured system options to all participants. */
-        DB_STATUS broadcastSysInfo();
+        DB_STATUS broadcastSysMetadata();
 
         /** @brief The controller listens (probes) for inbound messages from other controllers or the local agent.*/
         DB_STATUS listen();
@@ -43,8 +43,8 @@ namespace comm
         /** @brief The host controller's communication methods. */
         namespace host
         {
-            /** @brief Packs and broadcasts the dataset info to all worker nodes. */
-            DB_STATUS broadcastDatasetInfo(Dataset* dataset);
+            /** @brief Packs and broadcasts the dataset metadata to all worker nodes. */
+            DB_STATUS broadcastDatasetMetadata(Dataset* dataset);
 
             /** @brief Gathers responses (ACK/NACK) from workers or the local agent about the last instructed action/job. */
             DB_STATUS gatherResponses();

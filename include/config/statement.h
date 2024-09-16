@@ -24,7 +24,7 @@ struct DatasetStatement {
     double xMinGlobal, yMinGlobal, xMaxGlobal, yMaxGlobal;
 };
 
-/** @brief Statement containing the query info. */
+/** @brief Statement containing the query metadata. */
 struct QueryStatement {
     std::string queryType = "";
 };

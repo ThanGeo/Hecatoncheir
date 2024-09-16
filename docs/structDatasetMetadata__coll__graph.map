@@ -1,0 +1,4 @@
+<map id="DatasetMetadata" name="DatasetMetadata">
+<area shape="rect" id="node1" title="Holds the dataset(s) related metadata in the configuration." alt="" coords="13,95,136,121"/>
+<area shape="rect" id="node2" href="$structDataspaceMetadata.html" title="All dataspace related metadata, filled in after loading the dataset(s)." alt="" coords="5,5,144,32"/>
+</map>

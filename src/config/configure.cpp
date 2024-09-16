@@ -69,8 +69,8 @@ namespace configurer
     DB_STATUS createConfiguration() {
         DB_STATUS ret = DBERR_OK;
         logger::log_task("*** Action: SETUP SYSTEM");
-        // broadcast system info
-        ret = comm::controller::broadcastSysInfo();
+        // broadcast system metadata
+        ret = comm::controller::broadcastSysMetadata();
         if (ret != DBERR_OK) {
             return ret;
         }
@@ -85,27 +85,27 @@ namespace configurer
     }
 
 
-    DB_STATUS setDatasetInfo(DatasetStatement* datasetStmt) {
+    DB_STATUS setDatasetMetadata(DatasetStatement* datasetStmt) {
         if (datasetStmt->datasetCount == 0) {
             // no datasets
-            g_config.datasetInfo.clear();
+            g_config.datasetMetadata.clear();
             return DBERR_OK;
         } else {
             // at least one dataset
             Dataset R;
-            // set dataspace info
+            // set dataspace metadata
             if (datasetStmt->boundsSet) {
-                g_config.datasetInfo.dataspaceInfo.xMinGlobal = datasetStmt->xMinGlobal;
-                g_config.datasetInfo.dataspaceInfo.yMinGlobal = datasetStmt->yMinGlobal;
-                g_config.datasetInfo.dataspaceInfo.xMaxGlobal = datasetStmt->xMaxGlobal;
-                g_config.datasetInfo.dataspaceInfo.yMaxGlobal = datasetStmt->yMaxGlobal;
-                g_config.datasetInfo.dataspaceInfo.xExtent = g_config.datasetInfo.dataspaceInfo.xMaxGlobal - g_config.datasetInfo.dataspaceInfo.xMinGlobal;
-                g_config.datasetInfo.dataspaceInfo.yExtent = g_config.datasetInfo.dataspaceInfo.yMaxGlobal - g_config.datasetInfo.dataspaceInfo.yMinGlobal;
-                g_config.datasetInfo.dataspaceInfo.boundsSet = true;
+                g_config.datasetMetadata.dataspaceMetadata.xMinGlobal = datasetStmt->xMinGlobal;
+                g_config.datasetMetadata.dataspaceMetadata.yMinGlobal = datasetStmt->yMinGlobal;
+                g_config.datasetMetadata.dataspaceMetadata.xMaxGlobal = datasetStmt->xMaxGlobal;
+                g_config.datasetMetadata.dataspaceMetadata.yMaxGlobal = datasetStmt->yMaxGlobal;
+                g_config.datasetMetadata.dataspaceMetadata.xExtent = g_config.datasetMetadata.dataspaceMetadata.xMaxGlobal - g_config.datasetMetadata.dataspaceMetadata.xMinGlobal;
+                g_config.datasetMetadata.dataspaceMetadata.yExtent = g_config.datasetMetadata.dataspaceMetadata.yMaxGlobal - g_config.datasetMetadata.dataspaceMetadata.yMinGlobal;
+                g_config.datasetMetadata.dataspaceMetadata.boundsSet = true;
             }
             
             // fill dataset R fields
-            R.dataspaceInfo = g_config.datasetInfo.dataspaceInfo;
+            R.dataspaceMetadata = g_config.datasetMetadata.dataspaceMetadata;
             R.dataType = datasetStmt->datatypeR;
             R.path = datasetStmt->datasetPathR;
             R.nickname = datasetStmt->datasetNicknameR;
@@ -113,7 +113,7 @@ namespace configurer
             R.fileType = (FileTypeE) mapping::fileTypeTextToInt(datasetStmt->filetypeR);
             
             // add to config
-            DB_STATUS ret = g_config.datasetInfo.addDataset(DATASET_R, R);
+            DB_STATUS ret = g_config.datasetMetadata.addDataset(DATASET_R, R);
             if (ret != DBERR_OK) {
                 logger::log_error(ret, "Failed to add dataset R in configuration. Dataset nickname:", datasetStmt->datasetNicknameR, "Dataset idx: DATASET_R");
                 return ret;
@@ -121,15 +121,15 @@ namespace configurer
             
             if (datasetStmt->datasetCount == 2) {
                 Dataset S;
-                // build dataset S objects (inherit the same dataspace info)
-                S.dataspaceInfo = g_config.datasetInfo.dataspaceInfo;
+                // build dataset S objects (inherit the same dataspace metadata)
+                S.dataspaceMetadata = g_config.datasetMetadata.dataspaceMetadata;
                 S.dataType = datasetStmt->datatypeS;
                 S.path = datasetStmt->datasetPathS;
                 S.nickname = datasetStmt->datasetNicknameS;
                 S.datasetName = getFileNameFromPath(S.path);
                 S.fileType = (FileTypeE) mapping::fileTypeTextToInt(datasetStmt->filetypeS);
                 // add to config
-                DB_STATUS ret = g_config.datasetInfo.addDataset(DATASET_S, S);
+                DB_STATUS ret = g_config.datasetMetadata.addDataset(DATASET_S, S);
                 if (ret != DBERR_OK) {
                     logger::log_error(ret, "Failed to add dataset S in configuration. Dataset nickname:", datasetStmt->datasetNicknameS, "Dataset idx: DATASET_S");
                     return ret;

@@ -7,7 +7,7 @@ namespace storage
 
         namespace partitionFile
         {
-            DB_STATUS loadDatasetInfo(FILE* pFile, Dataset *dataset) {
+            DB_STATUS loadDatasetMetadata(FILE* pFile, Dataset *dataset) {
                 DB_STATUS ret = DBERR_OK;
                 double xMin, yMin, xMax, yMax;
                 int length;
@@ -41,8 +41,8 @@ namespace storage
                     logger::log_error(DBERR_DISK_READ_FAILED, "Couldn't read the dataset's dataspace MBR");
                     return DBERR_DISK_READ_FAILED;
                 }
-                dataset->dataspaceInfo.set(xMin, yMin, xMax, yMax);
-                // logger::log_success("loaded dataset info:", dataset.totalObjects, dataset.dataType, dataset.nickname, dataset.dataspaceInfo.xMinGlobal, dataset.dataspaceInfo.yMinGlobal, dataset.dataspaceInfo.xMaxGlobal, dataset.dataspaceInfo.yMaxGlobal);
+                dataset->dataspaceMetadata.set(xMin, yMin, xMax, yMax);
+                // logger::log_success("loaded dataset metadata:", dataset.totalObjects, dataset.dataType, dataset.nickname, dataset.dataspaceMetadata.xMinGlobal, dataset.dataspaceMetadata.yMinGlobal, dataset.dataspaceMetadata.xMaxGlobal, dataset.dataspaceMetadata.yMaxGlobal);
                 return ret;
             }
 
@@ -203,10 +203,10 @@ namespace storage
                     logger::log_error(DBERR_MISSING_FILE, "Could not open partitioned dataset file from path:", dataset->path);
                     return DBERR_MISSING_FILE;
                 }
-                // dataset info
-                ret = loadDatasetInfo(pFile, dataset);
+                // dataset metadata
+                ret = loadDatasetMetadata(pFile, dataset);
                 if (ret != DBERR_OK) {
-                    logger::log_error(ret, "Failed to load dataset info");
+                    logger::log_error(ret, "Failed to load dataset metadata");
                     goto CLOSE_AND_EXIT;
                 }
                 // dataset contents based on type

@@ -1,11 +1,11 @@
 var searchData=
 [
-  ['packaprilinfo_405',['packAPRILInfo',['../namespacepack.html#a1160e896f00685ddf5456809d8378bd7',1,'pack']]],
+  ['packaprilmetadata_405',['packAPRILMetadata',['../namespacepack.html#affaa17ea1cf08177d1b9fd492b443bf2',1,'pack']]],
   ['packdatasetloadmsg_406',['packDatasetLoadMsg',['../namespacepack.html#a8fceef8bc9cf59e27dc2ea668ea90ea7',1,'pack']]],
   ['packdatasetsnicknames_407',['packDatasetsNicknames',['../namespacepack.html#aae3de028552d7b91d182771b6e173626',1,'pack']]],
-  ['packqueryinfo_408',['packQueryInfo',['../namespacepack.html#a2884151006e7c00e61044c99ba1a89c0',1,'pack']]],
+  ['packquerymetadata_408',['packQueryMetadata',['../namespacepack.html#a5cb18e0fc70cb7cb95827a28d5f97309',1,'pack']]],
   ['packqueryresults_409',['packQueryResults',['../namespacepack.html#adbfa9fd238bc8162cef6207c823a395b',1,'pack']]],
-  ['packsysteminfo_410',['packSystemInfo',['../namespacepack.html#ace5e5339b0f498cc37cf05ea9eea6680',1,'pack']]],
+  ['packsystemmetadata_410',['packSystemMetadata',['../namespacepack.html#a1297fa0d8131f420e84f65e05b6c9eeb',1,'pack']]],
   ['parse_411',['parse',['../namespaceparser.html#aaf3716532dd70ed06384fcd75ba203e2',1,'parser']]],
   ['partition_412',['Partition',['../structPartition.html#a1606e14e14a9d7cf8e58dc2b613a2357',1,'Partition']]],
   ['partitiondataset_413',['partitionDataset',['../namespacepartitioning.html#a5f7aef01c8b2d7c6a89ee75018c45591',1,'partitioning']]],

@@ -15,7 +15,7 @@ namespace comm
 
     /**
     @brief probes for a message in the given communicator with the specified parameters.
-     * if it exists, its info is stored in the status parameters.
+     * if it exists, its metadata is stored in the status parameters.
      * returns true/false if a message that fits the parameters exists.
      * Does not receive the message, must call MPI_Recv for that.
      */
@@ -128,7 +128,7 @@ namespace comm
 
         /**
         @brief Forwards a serialized batch message received through sourceComm to destrank, through destComm
-         * The message has to be already probed (info stored in status)
+         * The message has to be already probed (metadata stored in status)
          * 
          * @param status 
          * @return DB_STATUS 
@@ -159,7 +159,7 @@ namespace comm
             return ret;
         }
 
-        static DB_STATUS forwardAPRILInfoMessage(MPI_Comm sourceComm, int destRank, MPI_Comm destComm, MPI_Status &status) {
+        static DB_STATUS forwardAPRILMetadataMessage(MPI_Comm sourceComm, int destRank, MPI_Comm destComm, MPI_Status &status) {
             SerializedMsg<int> msg(MPI_INT);
             // receive the message
             DB_STATUS ret = recv::receiveMessage(status, msg.type, sourceComm, msg);
@@ -244,7 +244,7 @@ namespace comm
             return ret;
         }
 
-        static DB_STATUS forwardQueryInfoMessage(MPI_Comm sourceComm, int destRank, MPI_Comm destComm, MPI_Status &status) {
+        static DB_STATUS forwardQueryMetadataMessage(MPI_Comm sourceComm, int destRank, MPI_Comm destComm, MPI_Status &status) {
             SerializedMsg<int> msg(MPI_INT);
             // receive the message
             DB_STATUS ret = recv::receiveMessage(status, msg.type, sourceComm, msg);
@@ -273,7 +273,7 @@ namespace comm
         /** @brief Deserializes a serialized batch message and stores its data on disk and in the proper containers in-memory. 
          * @param[in] buffer The serialized batch message
          * @param[in] bufferSize The message's size
-         * @param[in] outFile A file pointer pointing to an already open partition file on disk. Its position should be after the object count/dataset info position.
+         * @param[in] outFile A file pointer pointing to an already open partition file on disk. Its position should be after the object count/dataset metadata position.
          * @param[in] dataset The dataset getting partitioned
          * @param[out] continueListening If the message is empty (0 objects aster serialization), then it signals the end of the partitioning for the dataset.
         */
@@ -340,9 +340,9 @@ namespace comm
             return ret;
         }
 
-        static DB_STATUS generateDatasetFromMessage(SerializedMsg<char> &datasetInfoMsg, Dataset &dataset) {
+        static DB_STATUS generateDatasetFromMessage(SerializedMsg<char> &datasetMetadataMsg, Dataset &dataset) {
             // deserialize message
-            dataset.deserialize(datasetInfoMsg.data, datasetInfoMsg.count);
+            dataset.deserialize(datasetMetadataMsg.data, datasetMetadataMsg.count);
             // generate partition filepath
             DB_STATUS ret = storage::generatePartitionFilePath(dataset);
             if (ret != DBERR_OK) {
@@ -354,38 +354,38 @@ namespace comm
         static DB_STATUS listenForDatasetPartitioning(MPI_Status status) {
             Dataset dataset;
             FILE* outFile;
-            SerializedMsg<char> datasetInfoMsg(MPI_CHAR);
+            SerializedMsg<char> datasetMetadataMsg(MPI_CHAR);
             int listen = 1;
             size_t dummy = 0;
 
-            // proble blockingly for the dataset info
+            // proble blockingly for the dataset metadata
             DB_STATUS ret = probeBlocking(PARENT_RANK, MPI_ANY_TAG, g_local_comm, status);
             if (ret != DBERR_OK) {
                 return ret;
             }
             // verify that it is the proper message
-            if (status.MPI_TAG != MSG_DATASET_INFO) {
-                logger::log_error(DBERR_COMM_WRONG_MESSAGE_ORDER, "Partitioning: Expected dataset info message but received message with tag", status.MPI_TAG);
+            if (status.MPI_TAG != MSG_DATASET_METADATA) {
+                logger::log_error(DBERR_COMM_WRONG_MESSAGE_ORDER, "Partitioning: Expected dataset metadata message but received message with tag", status.MPI_TAG);
                 return DBERR_COMM_WRONG_MESSAGE_ORDER;
             }
-            // retrieve dataset info pack
-            ret = recv::receiveMessage(status, datasetInfoMsg.type, g_local_comm, datasetInfoMsg);
+            // retrieve dataset metadata pack
+            ret = recv::receiveMessage(status, datasetMetadataMsg.type, g_local_comm, datasetMetadataMsg);
             if (ret != DBERR_OK) {
-                logger::log_error(ret, "Failed pulling the dataset info message");
+                logger::log_error(ret, "Failed pulling the dataset metadata message");
                 goto STOP_LISTENING;
             }
             // create dataset from the received message
-            ret = generateDatasetFromMessage(datasetInfoMsg, dataset);
+            ret = generateDatasetFromMessage(datasetMetadataMsg, dataset);
             if (ret != DBERR_OK) {
-                logger::log_error(ret, "Failed creating the dataset from the dataset info message");
+                logger::log_error(ret, "Failed creating the dataset from the dataset metadata message");
                 goto STOP_LISTENING;
             }
-            // update the grids' dataspace info in the partitioning object 
-            g_config.partitioningMethod->setDistGridDataspace(dataset.dataspaceInfo);
-            g_config.partitioningMethod->setPartGridDataspace(dataset.dataspaceInfo);
+            // update the grids' dataspace metadata in the partitioning object 
+            g_config.partitioningMethod->setDistGridDataspace(dataset.dataspaceMetadata);
+            g_config.partitioningMethod->setPartGridDataspace(dataset.dataspaceMetadata);
 
             // free memory
-            free(datasetInfoMsg.data);
+            free(datasetMetadataMsg.data);
             
             // open the partition data file
             outFile = fopen(dataset.path.c_str(), "wb+");
@@ -398,10 +398,10 @@ namespace comm
             // it will be corrected when the batches are finished
             fwrite(&dummy, sizeof(size_t), 1, outFile);
 
-            // write the dataset info to the partition file
-            ret = storage::writer::partitionFile::appendDatasetInfoToPartitionFile(outFile, &dataset);
+            // write the dataset metadata to the partition file
+            ret = storage::writer::partitionFile::appendDatasetMetadataToPartitionFile(outFile, &dataset);
             if (ret != DBERR_OK) {
-                logger::log_error(ret, "Failed while writing the dataset info to the partition file");
+                logger::log_error(ret, "Failed while writing the dataset metadata to the partition file");
                 goto STOP_LISTENING;
             }
 
@@ -432,7 +432,7 @@ namespace comm
                         }  
                         break;
                     default:
-                        logger::log_error(DBERR_COMM_WRONG_MESSAGE_ORDER, "After the dataset info pack, only geometry packs are expected. Received message with tag", status.MPI_TAG);
+                        logger::log_error(DBERR_COMM_WRONG_MESSAGE_ORDER, "After the dataset metadata pack, only geometry packs are expected. Received message with tag", status.MPI_TAG);
                         ret = DBERR_COMM_WRONG_MESSAGE_ORDER;
                         goto STOP_LISTENING;
                 }
@@ -493,19 +493,19 @@ STOP_LISTENING:
             return ret;
         }
 
-        static DB_STATUS handleSysInfoMessage(MPI_Status status) {
+        static DB_STATUS handleSysMetadataMessage(MPI_Status status) {
             SerializedMsg<char> msg(MPI_CHAR);
             // receive the message
             DB_STATUS ret = recv::receiveMessage(status, msg.type, g_local_comm, msg);
             if (ret != DBERR_OK) {
                 return ret;
             }
-            // unpack info and store
-            ret = unpack::unpackSystemInfo(msg);
+            // unpack metadata and store
+            ret = unpack::unpackSystemMetadata(msg);
             if (ret != DBERR_OK) {
                 return ret;
             }
-            // printf("Partitioning info set: Type %d, dPPD %d, pPPD %d\n", g_config.partitioningMethod->getType(), g_config.partitioningMethod->getDistributionPPD(), g_config.partitioningMethod->getPartitioningPPD());
+            // printf("Partitioning metadata set: Type %d, dPPD %d, pPPD %d\n", g_config.partitioningMethod->getType(), g_config.partitioningMethod->getDistributionPPD(), g_config.partitioningMethod->getPartitioningPPD());
             // verify local directories
             ret = configurer::verifySystemDirectories();
             if (ret != DBERR_OK) {
@@ -530,21 +530,21 @@ STOP_LISTENING:
                     logger::log_error(ret, "Send NACK failed.");
                     return ret;
                 }
-                logger::log_error(ret, "Handling system info message failed");
+                logger::log_error(ret, "Handling system metadata message failed");
                 return errorCode;
             }
             return ret;
         }
 
-        static DB_STATUS handleAPRILInfoMessage(MPI_Status status) {
+        static DB_STATUS handleAPRILMetadataMessage(MPI_Status status) {
             SerializedMsg<int> msg(MPI_INT);
             // receive the message
             DB_STATUS ret = recv::receiveMessage(status, msg.type, g_local_comm, msg);
             if (ret != DBERR_OK) {
                 return ret;
             }
-            // unpack info and store
-            ret = unpack::unpackAPRILInfo(msg);
+            // unpack metadata and store
+            ret = unpack::unpackAPRILMetadata(msg);
             if (ret != DBERR_OK) {
                 return ret;
             }
@@ -552,7 +552,7 @@ STOP_LISTENING:
             free(msg.data);
 
             // create the APRIL approximations for the dataset(s)
-            for (auto& it: g_config.datasetInfo.datasets) {
+            for (auto& it: g_config.datasetMetadata.datasets) {
                 // ret = APRIL::generation::disk::init(it.second);
                 ret = APRIL::generation::memory::init(it.second);
                 if (ret != DBERR_OK) {
@@ -595,15 +595,15 @@ STOP_LISTENING:
             return ret;
         }
 
-        static DB_STATUS handleQueryInfoMessage(MPI_Status status) {
+        static DB_STATUS handleQueryMetadataMessage(MPI_Status status) {
             SerializedMsg<int> msg(MPI_INT);
             // receive the message
             DB_STATUS ret = recv::receiveMessage(status, msg.type, g_local_comm, msg);
             if (ret != DBERR_OK) {
                 return ret;
             }
-            // unpack info and store
-            ret = unpack::unpackQueryInfo(msg);
+            // unpack metadata and store
+            ret = unpack::unpackQueryMetadata(msg);
             if (ret != DBERR_OK) {
                 return ret;
             }
@@ -638,7 +638,7 @@ STOP_LISTENING:
                 // create empty dataset;
                 Dataset dataset;
                 DatasetIndexE datasetIndex;
-                // unpack info and store
+                // unpack metadata and store
                 ret = unpack::unpackDatasetLoadMsg(msg, dataset, datasetIndex);
                 if (ret != DBERR_OK) {
                     goto EXIT_SAFELY;
@@ -651,13 +651,13 @@ STOP_LISTENING:
                     goto EXIT_SAFELY;
                 }
                 // add the EMPTY dataset to the configuration
-                ret = g_config.datasetInfo.addDataset(datasetIndex, dataset);
+                ret = g_config.datasetMetadata.addDataset(datasetIndex, dataset);
                 if (ret != DBERR_OK) {
                     logger::log_error(ret, "Failed to add dataset to configuration. Dataset nickname:", dataset.nickname, "dataset index:", datasetIndex);
                     goto EXIT_SAFELY;
                 }
                 // get the dataset's reference
-                Dataset *datasetRef = g_config.datasetInfo.getDatasetByIdx(datasetIndex);
+                Dataset *datasetRef = g_config.datasetMetadata.getDatasetByIdx(datasetIndex);
                 if (datasetRef == nullptr) {
                     return DBERR_NULL_PTR_EXCEPTION;
                 }
@@ -667,18 +667,18 @@ STOP_LISTENING:
                     logger::log_error(DBERR_DISK_READ_FAILED, "Failed loading partition file MBRs");
                     goto EXIT_SAFELY;
                 }  
-                // // dont forget to update the dataspace info of the configuration
-                // g_config.datasetInfo.updateDataspace();
+                // // dont forget to update the dataspace metadata of the configuration
+                // g_config.datasetMetadata.updateDataspace();
                 // // verification prints
                 // if (datasetIndex == DATASET_R) {
-                //     printf("Loaded dataset R %s:\n", g_config.datasetInfo.getDatasetR()->nickname.c_str());
-                //     // g_config.datasetInfo.getDatasetR()->printObjectsGeometries();
-                //     // g_config.datasetInfo.getDatasetR()->printObjectsPartitions();
-                //     g_config.datasetInfo.getDatasetR()->printPartitions();
+                //     printf("Loaded dataset R %s:\n", g_config.datasetMetadata.getDatasetR()->nickname.c_str());
+                //     // g_config.datasetMetadata.getDatasetR()->printObjectsGeometries();
+                //     // g_config.datasetMetadata.getDatasetR()->printObjectsPartitions();
+                //     g_config.datasetMetadata.getDatasetR()->printPartitions();
                 // } else if (datasetIndex == DATASET_S) {
-                //     // printf("Loaded dataset S %s. Objects:\n", g_config.datasetInfo.getDatasetS()->nickname.c_str());
-                //     // g_config.datasetInfo.getDatasetS()->printObjectsGeometries();
-                //     // g_config.datasetInfo.getDatasetS()->printObjectsPartitions();
+                //     // printf("Loaded dataset S %s. Objects:\n", g_config.datasetMetadata.getDatasetS()->nickname.c_str());
+                //     // g_config.datasetMetadata.getDatasetS()->printObjectsGeometries();
+                //     // g_config.datasetMetadata.getDatasetS()->printObjectsPartitions();
                 // }
             }
 EXIT_SAFELY:
@@ -709,8 +709,8 @@ EXIT_SAFELY:
             if (ret != DBERR_OK) {
                 goto EXIT_SAFELY;
             }
-            // unpack info and store
-            ret = unpack::unpackAPRILInfo(msg);
+            // unpack metadata and store
+            ret = unpack::unpackAPRILMetadata(msg);
             if (ret != DBERR_OK) {
                 goto EXIT_SAFELY;
             }
@@ -718,8 +718,8 @@ EXIT_SAFELY:
             free(msg.data);
             
             // load APRIL for each dataset
-            for (auto &it: g_config.datasetInfo.datasets) {
-                // logger::log_task("APRIL info: N =", dataset.aprilConfig.getN(), "compression = ", dataset.aprilConfig.compression, "partitions = ", dataset.aprilConfig.partitions);
+            for (auto &it: g_config.datasetMetadata.datasets) {
+                // logger::log_task("APRIL metadata: N =", dataset.aprilConfig.getN(), "compression = ", dataset.aprilConfig.compression, "partitions = ", dataset.aprilConfig.partitions);
                 // set approximation type for dataset
                 it.second.approxType = AT_APRIL;
                 // generate APRIL filepaths
@@ -758,7 +758,7 @@ EXIT_SAFELY:
 
         /**
         @brief pulls incoming message sent by the local controller 
-         * (the one probed last, whose info is stored in the status parameter)
+         * (the one probed last, whose metadata is stored in the status parameter)
          * Based on the tag of the message, it performs the corresponding request.
          */
         static DB_STATUS pullIncoming(MPI_Status status) {
@@ -772,14 +772,14 @@ EXIT_SAFELY:
             /* non-instruction message */
             switch (status.MPI_TAG) {
                 case MSG_SYS_INFO:
-                    ret = handleSysInfoMessage(status);
+                    ret = handleSysMetadataMessage(status);
                     if (ret != DBERR_OK) {
                         return ret;
                     }
                     break;
                 case MSG_APRIL_CREATE:
-                    /* APRIL info message */
-                    ret = handleAPRILInfoMessage(status);
+                    /* APRIL metadata message */
+                    ret = handleAPRILMetadataMessage(status);
                     if (ret != DBERR_OK) {
                         return ret;
                     }
@@ -799,8 +799,8 @@ EXIT_SAFELY:
                     }
                     break;
                 case MSG_QUERY_INIT:
-                    /* query info */
-                    ret = handleQueryInfoMessage(status);
+                    /* query metadata */
+                    ret = handleQueryMetadataMessage(status);
                     if (ret != DBERR_OK) {
                         return ret;
                     }
@@ -863,10 +863,10 @@ STOP_LISTENING:
             return ret;
         }
 
-        DB_STATUS broadcastSysInfo() {
+        DB_STATUS broadcastSysMetadata() {
             SerializedMsg<char> msgPack(MPI_CHAR);
             // serialize
-            DB_STATUS ret = pack::packSystemInfo(msgPack);
+            DB_STATUS ret = pack::packSystemMetadata(msgPack);
             if (ret != DBERR_OK) {
                 return ret;
             }
@@ -884,49 +884,49 @@ STOP_LISTENING:
         }
 
         /**
-        @brief Pulls and forwards a dataset info message to the local agent
+        @brief Pulls and forwards a dataset metadata message to the local agent
          * 
          * @param status 
          * @return DB_STATUS 
          */
-        static DB_STATUS forwardDatasetInfoToAgent(MPI_Status status) {
+        static DB_STATUS forwardDatasetMetadataToAgent(MPI_Status status) {
             DB_STATUS ret = DBERR_OK;
             int tag = status.MPI_TAG;
-            SerializedMsg<char> datasetInfoMsg(MPI_CHAR);
-            // receive dataset info message
-            ret = recv::receiveMessage(status, datasetInfoMsg.type, g_global_comm, datasetInfoMsg);
+            SerializedMsg<char> datasetMetadataMsg(MPI_CHAR);
+            // receive dataset metadata message
+            ret = recv::receiveMessage(status, datasetMetadataMsg.type, g_global_comm, datasetMetadataMsg);
             if (ret != DBERR_OK) {
-                logger::log_error(ret, "Failed pulling the dataset info message");
+                logger::log_error(ret, "Failed pulling the dataset metadata message");
                 return ret;
             }
             // send
-            ret = send::sendDatasetInfoMessage(datasetInfoMsg, AGENT_RANK, status.MPI_TAG, g_local_comm);
+            ret = send::sendDatasetMetadataMessage(datasetMetadataMsg, AGENT_RANK, status.MPI_TAG, g_local_comm);
             if (ret != DBERR_OK) {
                 return ret;
             } 
             // free temp memory
-            free(datasetInfoMsg.data);
+            free(datasetMetadataMsg.data);
             return ret;
         }
 
         static DB_STATUS listenForDatasetPartitioning(MPI_Status status) {
-            // proble blockingly for the dataset info
+            // proble blockingly for the dataset metadata
             DB_STATUS ret = probeBlocking(g_host_rank, MPI_ANY_TAG, g_global_comm, status);
             if (ret != DBERR_OK) {
                 return ret;
             }
             // verify that it is the proper message
-            if (status.MPI_TAG != MSG_DATASET_INFO) {
-                logger::log_error(DBERR_COMM_WRONG_MESSAGE_ORDER, "Partitioning: Expected dataset info message but received message with tag", status.MPI_TAG);
+            if (status.MPI_TAG != MSG_DATASET_METADATA) {
+                logger::log_error(DBERR_COMM_WRONG_MESSAGE_ORDER, "Partitioning: Expected dataset metadata message but received message with tag", status.MPI_TAG);
                 return DBERR_COMM_WRONG_MESSAGE_ORDER;
             }
-            // forward dataset info to agent
+            // forward dataset metadata to agent
             int listen = 1;
-            ret = forwardDatasetInfoToAgent(status);
+            ret = forwardDatasetMetadataToAgent(status);
             if (ret != DBERR_OK) {
                 return ret;
             }
-            // next, listen for the infoPacks and coordPacks explicitly
+            // next, listen for the metadataPacks and coordPacks explicitly
             while(listen) {
                 // proble blockingly
                 ret = probeBlocking(g_host_rank, MPI_ANY_TAG, g_global_comm, status);
@@ -953,7 +953,7 @@ STOP_LISTENING:
                         } 
                         break;
                     default:
-                        logger::log_error(DBERR_COMM_WRONG_MESSAGE_ORDER, "After the dataset info pack, only batch messages are expected");
+                        logger::log_error(DBERR_COMM_WRONG_MESSAGE_ORDER, "After the dataset metadata pack, only batch messages are expected");
                         return DBERR_COMM_WRONG_MESSAGE_ORDER;
                 }
             }
@@ -969,7 +969,7 @@ STOP_LISTENING:
 
         /**
         @brief pulls incoming message sent by the host controller 
-         * (the one probed last, whose info is stored in the status parameter)
+         * (the one probed last, whose metadata is stored in the status parameter)
          * Based on the tag of the message, it performs the corresponding request.
          * The controller almost always forwards the message to its local agent.
          * @param status 
@@ -1015,7 +1015,7 @@ STOP_LISTENING:
                     /* int messages, wait for response */
                     {
                         SerializedMsg<int> msg;
-                        // ret = forward::forwardAPRILInfoMessage(g_global_comm, AGENT_RANK, g_local_comm, status);
+                        // ret = forward::forwardAPRILMetadataMessage(g_global_comm, AGENT_RANK, g_local_comm, status);
                         ret = forward::forwardAndWaitResponse(msg, status);
                         if (ret != DBERR_OK) {
                             return ret;
@@ -1024,7 +1024,7 @@ STOP_LISTENING:
                     }
                 case MSG_QUERY_INIT:
                     /* int messages, wait for results */
-                    ret = forward::forwardQueryInfoMessage(g_global_comm, AGENT_RANK, g_local_comm, status);
+                    ret = forward::forwardQueryMetadataMessage(g_global_comm, AGENT_RANK, g_local_comm, status);
                     if (ret != DBERR_OK) {
                         return ret;
                     }  
@@ -1077,7 +1077,7 @@ STOP_LISTENING:
          */
         namespace host
         {
-            DB_STATUS broadcastDatasetInfo(Dataset* dataset) {
+            DB_STATUS broadcastDatasetMetadata(Dataset* dataset) {
                 SerializedMsg<char> msgPack(MPI_CHAR);
                 // serialize
                 msgPack.count = dataset->serialize(&msgPack.data);
@@ -1086,9 +1086,9 @@ STOP_LISTENING:
                     return DBERR_MALLOC_FAILED;
                 }
                 // broadcast the pack
-                DB_STATUS ret = broadcast::broadcastMessage(msgPack, MSG_DATASET_INFO);
+                DB_STATUS ret = broadcast::broadcastMessage(msgPack, MSG_DATASET_METADATA);
                 if (ret != DBERR_OK) {
-                    logger::log_error(ret, "Failed to broadcast dataset info");
+                    logger::log_error(ret, "Failed to broadcast dataset metadata");
                     return ret;
                 }
                 // free
@@ -1189,7 +1189,7 @@ STOP_LISTENING:
                         }
                         // todo: check tag?
                         // receive results
-                        local_ret = handleQueryResultMessage(status, g_local_comm, g_config.queryInfo.type, localQueryOutput);
+                        local_ret = handleQueryResultMessage(status, g_local_comm, g_config.queryMetadata.type, localQueryOutput);
                         if (local_ret != DBERR_OK) {
                             #pragma omp cancel parallel
                             threadThatFailed = tid;
@@ -1205,7 +1205,7 @@ STOP_LISTENING:
                         }
                         // todo: check tag?
                         // receive results
-                        local_ret = handleQueryResultMessage(status, g_global_comm, g_config.queryInfo.type, localQueryOutput);
+                        local_ret = handleQueryResultMessage(status, g_global_comm, g_config.queryMetadata.type, localQueryOutput);
                         if (local_ret != DBERR_OK) {
                             #pragma omp cancel parallel
                             threadThatFailed = tid;
@@ -1216,7 +1216,7 @@ STOP_LISTENING:
                     queryOutput.queryResults += localQueryOutput.queryResults;
                     queryOutput.postMBRFilterCandidates += localQueryOutput.postMBRFilterCandidates;
                     queryOutput.refinementCandidates += localQueryOutput.refinementCandidates;
-                    switch (g_config.queryInfo.type) {
+                    switch (g_config.queryMetadata.type) {
                         case Q_RANGE:
                         case Q_DISJOINT:
                         case Q_INTERSECT:
@@ -1235,7 +1235,7 @@ STOP_LISTENING:
                             }
                             break;
                         default:
-                            logger::log_error(DBERR_QUERY_INVALID_TYPE, "Invalid query type:", g_config.queryInfo.type);
+                            logger::log_error(DBERR_QUERY_INVALID_TYPE, "Invalid query type:", g_config.queryMetadata.type);
                             threadThatFailed = tid;
                             ret = DBERR_QUERY_INVALID_TYPE;
                             break;

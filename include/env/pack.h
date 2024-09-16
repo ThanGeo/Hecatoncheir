@@ -7,8 +7,8 @@
 /** @brief Methods that pack information for MPI communication into serialized messages. */
 namespace pack
 {
-    /** @brief Packs necessary system info for broadcast like number of partitions, system setup type etc. */
-    DB_STATUS packSystemInfo(SerializedMsg<char> &sysInfoMsg);
+    /** @brief Packs necessary system metadata for broadcast like number of partitions, system setup type etc. */
+    DB_STATUS packSystemMetadata(SerializedMsg<char> &sysMetadataMsg);
 
     /** @brief Prints the contents of a message pack. */
     template <typename T> 
@@ -26,11 +26,11 @@ namespace pack
         }
     }
     
-    /** @brief Packs the april configuration info into a serialized message. */
-    DB_STATUS packAPRILInfo(AprilConfig &aprilConfig, SerializedMsg<int> &aprilInfoMsg);
+    /** @brief Packs the april configuration metadata into a serialized message. */
+    DB_STATUS packAPRILMetadata(AprilConfig &aprilConfig, SerializedMsg<int> &aprilMetadataMsg);
 
-    /** @brief Packs the query info into a serialized message. */
-    DB_STATUS packQueryInfo(QueryInfo &queryInfo, SerializedMsg<int> &queryInfoMsg);
+    /** @brief Packs the query metadata into a serialized message. */
+    DB_STATUS packQueryMetadata(QueryMetadata &queryMetadata, SerializedMsg<int> &queryMetadataMsg);
 
     /** @brief Packs the loaded dataset nicknames (both R and S, or only R if there's no S)
      * @note The datasets must be already loaded in the configuration.
@@ -47,14 +47,14 @@ namespace pack
 /** @brief Methos that unpack serialized messages and extract their contents, based on message type. */
 namespace unpack
 {   
-    /** @brief Unpacks a system info serialized message. */
-    DB_STATUS unpackSystemInfo(SerializedMsg<char> &sysInfoMsg);
+    /** @brief Unpacks a system metadata serialized message. */
+    DB_STATUS unpackSystemMetadata(SerializedMsg<char> &sysMetadataMsg);
 
-    /** @brief Unpacks an APRIL configuration info serialized message. */
-    DB_STATUS unpackAPRILInfo(SerializedMsg<int> &aprilInfoMsg);
+    /** @brief Unpacks an APRIL configuration metadata serialized message. */
+    DB_STATUS unpackAPRILMetadata(SerializedMsg<int> &aprilMetadataMsg);
 
-    /** @brief Unpacks an query info serialized message. */
-    DB_STATUS unpackQueryInfo(SerializedMsg<int> &queryInfoMsg);
+    /** @brief Unpacks an query metadata serialized message. */
+    DB_STATUS unpackQueryMetadata(SerializedMsg<int> &queryMetadataMsg);
 
     /** @brief Unpacks a query results serialized message. */
     DB_STATUS unpackQueryResults(SerializedMsg<int> &queryResultsMsg, QueryTypeE queryType, QueryOutput &queryOutput);

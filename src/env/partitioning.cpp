@@ -19,10 +19,10 @@ namespace partitioning
      * @param[out] twoLayerClasses The MBR's two-layer index classification for each individual intersecting partition.
      */
     static DB_STATUS getPartitionsForMBR(MBR &mbr, std::vector<int> &partitionIDs){
-        int minPartitionX = (mbr.pMin.x - g_config.datasetInfo.dataspaceInfo.xMinGlobal) / (g_config.datasetInfo.dataspaceInfo.xExtent / g_config.partitioningMethod->getDistributionPPD());
-        int minPartitionY = (mbr.pMin.y - g_config.datasetInfo.dataspaceInfo.yMinGlobal) / (g_config.datasetInfo.dataspaceInfo.yExtent / g_config.partitioningMethod->getDistributionPPD());
-        int maxPartitionX = (mbr.pMax.x - g_config.datasetInfo.dataspaceInfo.xMinGlobal) / (g_config.datasetInfo.dataspaceInfo.xExtent / g_config.partitioningMethod->getDistributionPPD());
-        int maxPartitionY = (mbr.pMax.y - g_config.datasetInfo.dataspaceInfo.yMinGlobal) / (g_config.datasetInfo.dataspaceInfo.yExtent / g_config.partitioningMethod->getDistributionPPD());
+        int minPartitionX = (mbr.pMin.x - g_config.datasetMetadata.dataspaceMetadata.xMinGlobal) / (g_config.datasetMetadata.dataspaceMetadata.xExtent / g_config.partitioningMethod->getDistributionPPD());
+        int minPartitionY = (mbr.pMin.y - g_config.datasetMetadata.dataspaceMetadata.yMinGlobal) / (g_config.datasetMetadata.dataspaceMetadata.yExtent / g_config.partitioningMethod->getDistributionPPD());
+        int maxPartitionX = (mbr.pMax.x - g_config.datasetMetadata.dataspaceMetadata.xMinGlobal) / (g_config.datasetMetadata.dataspaceMetadata.xExtent / g_config.partitioningMethod->getDistributionPPD());
+        int maxPartitionY = (mbr.pMax.y - g_config.datasetMetadata.dataspaceMetadata.yMinGlobal) / (g_config.datasetMetadata.dataspaceMetadata.yExtent / g_config.partitioningMethod->getDistributionPPD());
         
         int startPartitionID = g_config.partitioningMethod->getDistributionGridPartitionID(minPartitionX, minPartitionY);
         int lastPartitionID = g_config.partitioningMethod->getDistributionGridPartitionID(maxPartitionX, maxPartitionY);
@@ -232,7 +232,7 @@ namespace partitioning
             return ret;
         }
         // set extent
-        dataset.dataspaceInfo.set(global_xMin, global_yMin, global_xMax, global_yMax);
+        dataset.dataspaceMetadata.set(global_xMin, global_yMin, global_xMax, global_yMax);
         return ret;
     }
 
@@ -397,8 +397,8 @@ namespace partitioning
             return ret;
         }
         
-        // broadcast the dataset info to the nodes
-        ret = comm::controller::host::broadcastDatasetInfo(&dataset);
+        // broadcast the dataset metadata to the nodes
+        ret = comm::controller::host::broadcastDatasetMetadata(&dataset);
         if (ret != DBERR_OK) {
             return ret;
         }
@@ -499,10 +499,10 @@ namespace partitioning
                 // get the global partition's extents
                 // printf("Distribution grid partition ID: %d (%d,%d)\n", distPartitionID, distPartitionIndexX, distPartitionIndexY);
                 // calculate the partition's bounds in the distribution grid
-                double distPartitionXmin = g_config.partitioningMethod->distGridDataspaceInfo.xMinGlobal + (distPartitionIndexX * g_config.partitioningMethod->getDistPartionExtentX());
-                double distPartitionYmin = g_config.partitioningMethod->distGridDataspaceInfo.yMinGlobal + (distPartitionIndexY * g_config.partitioningMethod->getDistPartionExtentY());
-                double distPartitionXmax = g_config.partitioningMethod->distGridDataspaceInfo.xMinGlobal + ((distPartitionIndexX+1) * g_config.partitioningMethod->getDistPartionExtentX());
-                double distPartitionYmax = g_config.partitioningMethod->distGridDataspaceInfo.yMinGlobal + ((distPartitionIndexY+1) * g_config.partitioningMethod->getDistPartionExtentY());
+                double distPartitionXmin = g_config.partitioningMethod->distGridDataspaceMetadata.xMinGlobal + (distPartitionIndexX * g_config.partitioningMethod->getDistPartionExtentX());
+                double distPartitionYmin = g_config.partitioningMethod->distGridDataspaceMetadata.yMinGlobal + (distPartitionIndexY * g_config.partitioningMethod->getDistPartionExtentY());
+                double distPartitionXmax = g_config.partitioningMethod->distGridDataspaceMetadata.xMinGlobal + ((distPartitionIndexX+1) * g_config.partitioningMethod->getDistPartionExtentX());
+                double distPartitionYmax = g_config.partitioningMethod->distGridDataspaceMetadata.yMinGlobal + ((distPartitionIndexY+1) * g_config.partitioningMethod->getDistPartionExtentY());
                 // printf("Distribution grid partition bounds: (%f,%f),(%f,%f),(%f,%f),(%f,%f)\n", distPartitionXmin, distPartitionYmin, distPartitionXmax, distPartitionYmin, distPartitionXmax, distPartitionYmax, distPartitionXmin, distPartitionYmax);
                 TwoLayerClassE objectClassInDistributionPartition = getTwoLayerClassForMBRandPartition(xMin, yMin, distPartitionXmin, distPartitionYmin);
                 // printf("Object class in parent partition: %s\n", mapping::twoLayerClassIntToStr(objectClassInDistributionPartition).c_str());
@@ -614,8 +614,8 @@ namespace partitioning
                 int distPartitionIndexX, distPartitionIndexY;
                 g_config.partitioningMethod->getDistributionGridPartitionIndices(distPartitionID, distPartitionIndexX, distPartitionIndexY);
                     // calculate the partition's bottom left point coordinates in the distribution grid to get the object's class
-                double distPartitionXmin = g_config.partitioningMethod->distGridDataspaceInfo.xMinGlobal + (distPartitionIndexX * g_config.partitioningMethod->getDistPartionExtentX());
-                double distPartitionYmin = g_config.partitioningMethod->distGridDataspaceInfo.yMinGlobal + (distPartitionIndexY * g_config.partitioningMethod->getDistPartionExtentY());
+                double distPartitionXmin = g_config.partitioningMethod->distGridDataspaceMetadata.xMinGlobal + (distPartitionIndexX * g_config.partitioningMethod->getDistPartionExtentX());
+                double distPartitionYmin = g_config.partitioningMethod->distGridDataspaceMetadata.yMinGlobal + (distPartitionIndexY * g_config.partitioningMethod->getDistPartionExtentY());
                 // get the object's class
                 TwoLayerClassE objectClass = getTwoLayerClassForMBRandPartition(xMin, yMin, distPartitionXmin, distPartitionYmin);
                 // fill in the partition's two layer class data

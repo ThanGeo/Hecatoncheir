@@ -1,0 +1,4 @@
+<map id="DatasetMetadata::addDataset" name="DatasetMetadata::addDataset">
+<area shape="rect" id="node1" title="adds a Dataset to the configuration&#39;s dataset metadata" alt="" coords="259,5,456,32"/>
+<area shape="rect" id="node2" href="$namespaceconfigurer.html#ac0d30631d9f4313516fe9aa3db83653e" title="Configures the specified dataset metadata from the input dataset statement." alt="" coords="5,5,211,32"/>
+</map>

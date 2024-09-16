@@ -5,7 +5,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=9"/>
 <meta name="generator" content="Doxygen 1.9.1"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>Hecatoncheir: ApproximationInfo Struct Reference</title>
+<title>Hecatoncheir: QueryMetadata Struct Reference</title>
 <link href="tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="jquery.js"></script>
 <script type="text/javascript" src="dynsections.js"></script>
@@ -64,47 +64,37 @@ $(function() {
 </div><!-- top -->
 <div class="header">
   <div class="summary">
-<a href="#pub-methods">Public Member Functions</a> &#124;
 <a href="#pub-attribs">Public Attributes</a> &#124;
-<a href="structApproximationInfo-members.html">List of all members</a>  </div>
+<a href="structQueryMetadata-members.html">List of all members</a>  </div>
   <div class="headertitle">
-<div class="title">ApproximationInfo Struct Reference</div>  </div>
+<div class="title">QueryMetadata Struct Reference</div>  </div>
 </div><!--header-->
 <div class="contents">
 
-<p>Holds all approximation related info.  
- <a href="structApproximationInfo.html#details">More...</a></p>
+<p>Holds all the query related metadata in the configuration.  
+ <a href="structQueryMetadata.html#details">More...</a></p>
 
 <p><code>#include &lt;<a class="el" href="containers_8h_source.html">containers.h</a>&gt;</code></p>
-<div class="dynheader">
-Collaboration diagram for ApproximationInfo:</div>
-<div class="dyncontent">
-<div class="center"><img src="structApproximationInfo__coll__graph.png" border="0" usemap="#aApproximationInfo_coll__map" alt="Collaboration graph"/></div>
-<map name="aApproximationInfo_coll__map" id="aApproximationInfo_coll__map">
-<area shape="rect" title="Holds all approximation related info." alt="" coords="5,95,132,121"/>
-<area shape="rect" href="structAprilConfig.html" title="Contains all relevant APRIL configuration parameters." alt="" coords="25,5,112,32"/>
-</map>
-<center><span class="legend">[<a href="graph_legend.html">legend</a>]</span></center></div>
 <table class="memberdecls">
-<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
-Public Member Functions</h2></td></tr>
-<tr class="memitem:a1c211b0222724a69883fc82a566105a1"><td class="memItemLeft" align="right" valign="top"><a id="a1c211b0222724a69883fc82a566105a1"></a>
-&#160;</td><td class="memItemRight" valign="bottom"><b>ApproximationInfo</b> (ApproximationTypeE type)</td></tr>
-<tr class="separator:a1c211b0222724a69883fc82a566105a1"><td class="memSeparator" colspan="2">&#160;</td></tr>
-</table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-attribs"></a>
 Public Attributes</h2></td></tr>
-<tr class="memitem:a756b80f34fc1a5a938b82125b7978ac8"><td class="memItemLeft" align="right" valign="top"><a id="a756b80f34fc1a5a938b82125b7978ac8"></a>
-ApproximationTypeE&#160;</td><td class="memItemRight" valign="bottom"><b>type</b></td></tr>
-<tr class="separator:a756b80f34fc1a5a938b82125b7978ac8"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a99715c691b7cd870d5c6a536f2f6ce6e"><td class="memItemLeft" align="right" valign="top"><a id="a99715c691b7cd870d5c6a536f2f6ce6e"></a>
-<a class="el" href="structAprilConfig.html">AprilConfig</a>&#160;</td><td class="memItemRight" valign="bottom"><b>aprilConfig</b></td></tr>
-<tr class="separator:a99715c691b7cd870d5c6a536f2f6ce6e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a5ad5e474550bb63f327a8cec0e0dce0f"><td class="memItemLeft" align="right" valign="top"><a id="a5ad5e474550bb63f327a8cec0e0dce0f"></a>
+QueryTypeE&#160;</td><td class="memItemRight" valign="bottom"><b>type</b> = Q_NONE</td></tr>
+<tr class="separator:a5ad5e474550bb63f327a8cec0e0dce0f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a06cbfd80d31f111bbfaaf7b010850057"><td class="memItemLeft" align="right" valign="top"><a id="a06cbfd80d31f111bbfaaf7b010850057"></a>
+int&#160;</td><td class="memItemRight" valign="bottom"><b>MBRFilter</b> = 1</td></tr>
+<tr class="separator:a06cbfd80d31f111bbfaaf7b010850057"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a2746e1a7e8f020059f2d6eeb232d177b"><td class="memItemLeft" align="right" valign="top"><a id="a2746e1a7e8f020059f2d6eeb232d177b"></a>
+int&#160;</td><td class="memItemRight" valign="bottom"><b>IntermediateFilter</b> = 1</td></tr>
+<tr class="separator:a2746e1a7e8f020059f2d6eeb232d177b"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a8d9038511b05a51bd238dd215493c8c2"><td class="memItemLeft" align="right" valign="top"><a id="a8d9038511b05a51bd238dd215493c8c2"></a>
+int&#160;</td><td class="memItemRight" valign="bottom"><b>Refinement</b> = 1</td></tr>
+<tr class="separator:a8d9038511b05a51bd238dd215493c8c2"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
-<div class="textblock"><p>Holds all approximation related info. </p>
+<div class="textblock"><p>Holds all the query related metadata in the configuration. </p>
 
-<p class="definition">Definition at line <a class="el" href="containers_8h_source.html#l01481">1481</a> of file <a class="el" href="containers_8h_source.html">containers.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="containers_8h_source.html#l01494">1494</a> of file <a class="el" href="containers_8h_source.html">containers.h</a>.</p>
 </div><hr/>The documentation for this struct was generated from the following file:<ul>
 <li>include/<a class="el" href="containers_8h_source.html">containers.h</a></li>
 </ul>

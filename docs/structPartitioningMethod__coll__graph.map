@@ -1,4 +1,4 @@
 <map id="PartitioningMethod" name="PartitioningMethod">
-<area shape="rect" id="node1" title="Base class for the partitioning methods (abstract class)." alt="" coords="5,95,136,121"/>
-<area shape="rect" id="node2" href="$structDataspaceInfo.html" title="All dataspace related info, filled in after loading the dataset(s)." alt="" coords="17,5,124,32"/>
+<area shape="rect" id="node1" title="Base class for the partitioning methods (abstract class)." alt="" coords="9,95,140,121"/>
+<area shape="rect" id="node2" href="$structDataspaceMetadata.html" title="All dataspace related metadata, filled in after loading the dataset(s)." alt="" coords="5,5,144,32"/>
 </map>

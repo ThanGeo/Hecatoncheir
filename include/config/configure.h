@@ -24,10 +24,10 @@ namespace configurer
     /** @brief Configures the system based on the parsed options. */
     DB_STATUS createConfiguration();
 
-    /** @brief Configures the specified dataset info from the input dataset statement. 
-     * @param[in] datasetStmt Contains all dataset related parsed info.
+    /** @brief Configures the specified dataset metadata from the input dataset statement. 
+     * @param[in] datasetStmt Contains all dataset related parsed metadata.
     */
-    DB_STATUS setDatasetInfo(DatasetStatement* datasetStmt);
+    DB_STATUS setDatasetMetadata(DatasetStatement* datasetStmt);
 }
 
 #endif

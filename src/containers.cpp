@@ -8,7 +8,7 @@ void queryResultReductionFunc(QueryOutput &in, QueryOutput &out) {
     out.queryResults += in.queryResults;
     out.postMBRFilterCandidates += in.postMBRFilterCandidates;
     out.refinementCandidates += in.refinementCandidates;
-    switch (g_config.queryInfo.type) {
+    switch (g_config.queryMetadata.type) {
         case Q_RANGE:
         case Q_DISJOINT:
         case Q_INTERSECT:
@@ -27,7 +27,7 @@ void queryResultReductionFunc(QueryOutput &in, QueryOutput &out) {
             }
             break;
         default:
-            logger::log_error(DBERR_QUERY_INVALID_TYPE, "Unsupported query type:", g_config.queryInfo.type);
+            logger::log_error(DBERR_QUERY_INVALID_TYPE, "Unsupported query type:", g_config.queryMetadata.type);
             break;
     }
 }
@@ -212,14 +212,14 @@ int Dataset::calculateBufferSize() {
     size += sizeof(DataTypeE);
     // dataset nickname: length + string
     size += sizeof(int) + (nickname.length() * sizeof(char));     
-    // dataset's dataspace info (MBR)
+    // dataset's dataspace metadata (MBR)
     size += 4 * sizeof(double);
     
     return size;
 }
 
 /**
- * serialize dataset info (only specific stuff)
+ * serialize dataset metadata (only specific stuff)
  */
 int Dataset::serialize(char **buffer) {
     int position = 0;
@@ -243,13 +243,13 @@ int Dataset::serialize(char **buffer) {
     memcpy(localBuffer + position, nickname.data(), nicknameLength);
     position += nicknameLength * sizeof(char);
     // add dataset's dataspace MBR
-    memcpy(localBuffer + position, &dataspaceInfo.xMinGlobal, sizeof(double));
+    memcpy(localBuffer + position, &dataspaceMetadata.xMinGlobal, sizeof(double));
     position += sizeof(double);
-    memcpy(localBuffer + position, &dataspaceInfo.yMinGlobal, sizeof(double));
+    memcpy(localBuffer + position, &dataspaceMetadata.yMinGlobal, sizeof(double));
     position += sizeof(double);
-    memcpy(localBuffer + position, &dataspaceInfo.xMaxGlobal, sizeof(double));
+    memcpy(localBuffer + position, &dataspaceMetadata.xMaxGlobal, sizeof(double));
     position += sizeof(double);
-    memcpy(localBuffer + position, &dataspaceInfo.yMaxGlobal, sizeof(double));
+    memcpy(localBuffer + position, &dataspaceMetadata.yMaxGlobal, sizeof(double));
     position += sizeof(double);
     // set and return
     (*buffer) = localBuffer;
@@ -279,7 +279,7 @@ void Dataset::deserialize(const char *buffer, int bufferSize) {
     memcpy(&yMax, buffer + position, sizeof(double));
     position += sizeof(double);
     // set
-    dataspaceInfo.set(xMin, yMin, xMax, yMax);
+    dataspaceMetadata.set(xMin, yMin, xMax, yMax);
 
     if (position == bufferSize) {
         // all is well
@@ -423,7 +423,7 @@ void Dataset::printPartitions() {
     }
 }
 
-Dataset* DatasetInfo::getDatasetByNickname(std::string &nickname) {
+Dataset* DatasetMetadata::getDatasetByNickname(std::string &nickname) {
     auto it = datasets.find(nickname);
     if (it == datasets.end()) {
         return nullptr;
@@ -431,14 +431,14 @@ Dataset* DatasetInfo::getDatasetByNickname(std::string &nickname) {
     return &it->second;
 }
 
-DataspaceInfo::DataspaceInfo() {
+DataspaceMetadata::DataspaceMetadata() {
     xMinGlobal = std::numeric_limits<int>::max();
     yMinGlobal = std::numeric_limits<int>::max();
     xMaxGlobal = -std::numeric_limits<int>::max();
     yMaxGlobal = -std::numeric_limits<int>::max();
 }
 
-void DataspaceInfo::set(double xMinGlobal, double yMinGlobal, double xMaxGlobal, double yMaxGlobal) {
+void DataspaceMetadata::set(double xMinGlobal, double yMinGlobal, double xMaxGlobal, double yMaxGlobal) {
     this->xMinGlobal = xMinGlobal - EPS;
     this->yMinGlobal = yMinGlobal - EPS;
     this->xMaxGlobal = xMaxGlobal + EPS;
@@ -453,7 +453,7 @@ void DataspaceInfo::set(double xMinGlobal, double yMinGlobal, double xMaxGlobal,
     // printf("-------------------------\n");
 }
 
-void DataspaceInfo::clear() {
+void DataspaceMetadata::clear() {
     xMinGlobal = 0;
     yMinGlobal = 0;
     xMaxGlobal = 0;
@@ -519,27 +519,27 @@ void TwoLayerIndex::sortPartitionsOnY() {
     }
 }
 
-int DatasetInfo::getNumberOfDatasets() {
+int DatasetMetadata::getNumberOfDatasets() {
     return numberOfDatasets;
 }
 
-void DatasetInfo::clear() {
+void DatasetMetadata::clear() {
     numberOfDatasets = 0;
     R = nullptr;
     S = nullptr;
     datasets.clear();
-    dataspaceInfo.clear();
+    dataspaceMetadata.clear();
 }
 
-Dataset* DatasetInfo::getDatasetR() {
+Dataset* DatasetMetadata::getDatasetR() {
     return R;
 }
 
-Dataset* DatasetInfo::getDatasetS() {
+Dataset* DatasetMetadata::getDatasetS() {
     return S;
 }
 
-Dataset* DatasetInfo::getDatasetByIdx(DatasetIndexE datasetIndex) {
+Dataset* DatasetMetadata::getDatasetByIdx(DatasetIndexE datasetIndex) {
     switch (datasetIndex) {
         case DATASET_R:
             return R;
@@ -550,10 +550,10 @@ Dataset* DatasetInfo::getDatasetByIdx(DatasetIndexE datasetIndex) {
     return nullptr;
 }
 /**
-@brief adds a Dataset to the configuration's dataset info
+@brief adds a Dataset to the configuration's dataset metadata
  * @warning it has to be an empty dataset BUT its nickname needs to be set
  */
-DB_STATUS DatasetInfo::addDataset(DatasetIndexE datasetIdx, Dataset &dataset) {
+DB_STATUS DatasetMetadata::addDataset(DatasetIndexE datasetIdx, Dataset &dataset) {
     // add to datasets struct
     datasets[dataset.nickname] = dataset;
     switch (datasetIdx) {
@@ -573,19 +573,19 @@ DB_STATUS DatasetInfo::addDataset(DatasetIndexE datasetIdx, Dataset &dataset) {
     return DBERR_OK;
 }
 
-void DatasetInfo::updateDataspace() {
+void DatasetMetadata::updateDataspace() {
     // find the bounds that enclose both datasets
     for (auto &it: datasets) {
-        dataspaceInfo.xMinGlobal = std::min(dataspaceInfo.xMinGlobal, it.second.dataspaceInfo.xMinGlobal);
-        dataspaceInfo.yMinGlobal = std::min(dataspaceInfo.yMinGlobal, it.second.dataspaceInfo.yMinGlobal);
-        dataspaceInfo.xMaxGlobal = std::max(dataspaceInfo.xMaxGlobal, it.second.dataspaceInfo.xMaxGlobal);
-        dataspaceInfo.yMaxGlobal = std::max(dataspaceInfo.yMaxGlobal, it.second.dataspaceInfo.yMaxGlobal);
+        dataspaceMetadata.xMinGlobal = std::min(dataspaceMetadata.xMinGlobal, it.second.dataspaceMetadata.xMinGlobal);
+        dataspaceMetadata.yMinGlobal = std::min(dataspaceMetadata.yMinGlobal, it.second.dataspaceMetadata.yMinGlobal);
+        dataspaceMetadata.xMaxGlobal = std::max(dataspaceMetadata.xMaxGlobal, it.second.dataspaceMetadata.xMaxGlobal);
+        dataspaceMetadata.yMaxGlobal = std::max(dataspaceMetadata.yMaxGlobal, it.second.dataspaceMetadata.yMaxGlobal);
     }
-    dataspaceInfo.xExtent = dataspaceInfo.xMaxGlobal - dataspaceInfo.xMinGlobal;
-    dataspaceInfo.yExtent = dataspaceInfo.yMaxGlobal - dataspaceInfo.yMinGlobal;
+    dataspaceMetadata.xExtent = dataspaceMetadata.xMaxGlobal - dataspaceMetadata.xMinGlobal;
+    dataspaceMetadata.yExtent = dataspaceMetadata.yMaxGlobal - dataspaceMetadata.yMinGlobal;
     // set as both datasets' bounds
     for (auto &it: datasets) {
-        it.second.dataspaceInfo = dataspaceInfo;
+        it.second.dataspaceMetadata = dataspaceMetadata;
     }
 }
 
@@ -644,7 +644,7 @@ int Batch::serialize(char **buffer) {
     *reinterpret_cast<size_t*>(localBuffer) = objectCount;
     localBuffer += sizeof(size_t);
 
-    // add batch geometry info
+    // add batch geometry metadata
     for (auto &it : objects) {
         *reinterpret_cast<size_t*>(localBuffer) = it.recID;
         localBuffer += sizeof(size_t);
@@ -777,13 +777,13 @@ int TwoGridPartitioning::getGlobalPPD() {
 }
 
 void TwoGridPartitioning::setPartGridDataspace(double xMin, double yMin, double xMax, double yMax) {
-    partGridDataspaceInfo.set(xMin, yMin, xMax, yMax);
-    partPartitionExtentX = partGridDataspaceInfo.xExtent / partPartitionsPerDim;
-    partPartitionExtentY = partGridDataspaceInfo.yExtent / partPartitionsPerDim;
+    partGridDataspaceMetadata.set(xMin, yMin, xMax, yMax);
+    partPartitionExtentX = partGridDataspaceMetadata.xExtent / partPartitionsPerDim;
+    partPartitionExtentY = partGridDataspaceMetadata.yExtent / partPartitionsPerDim;
 }
 
-void TwoGridPartitioning::setPartGridDataspace(DataspaceInfo &otherDataspaceInfo) {
-    partGridDataspaceInfo = otherDataspaceInfo;
+void TwoGridPartitioning::setPartGridDataspace(DataspaceMetadata &otherDataspaceMetadata) {
+    partGridDataspaceMetadata = otherDataspaceMetadata;
 }
 
 double TwoGridPartitioning::getPartPartionExtentX() {
@@ -824,11 +824,11 @@ int RoundRobinPartitioning::getGlobalPPD() {
 }
 
 void RoundRobinPartitioning::setPartGridDataspace(double xMin, double yMin, double xMax, double yMax) {
-    distGridDataspaceInfo.set(xMin, yMin, xMax, yMax);
+    distGridDataspaceMetadata.set(xMin, yMin, xMax, yMax);
 }
 
-void RoundRobinPartitioning::setPartGridDataspace(DataspaceInfo &otherDataspaceInfo) {
-    distGridDataspaceInfo = otherDataspaceInfo;
+void RoundRobinPartitioning::setPartGridDataspace(DataspaceMetadata &otherDataspaceMetadata) {
+    distGridDataspaceMetadata = otherDataspaceMetadata;
 }
 
 double RoundRobinPartitioning::getPartPartionExtentX() {

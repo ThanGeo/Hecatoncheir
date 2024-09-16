@@ -2,23 +2,23 @@
 
 namespace pack
 {
-    DB_STATUS packSystemInfo(SerializedMsg<char> &sysInfoMsg) {
-        sysInfoMsg.count = 0;
-        sysInfoMsg.count += sizeof(SystemSetupTypeE);      // cluster or local
-        sysInfoMsg.count += 2*sizeof(int);                  // dist + part partitions per dimension
-        sysInfoMsg.count += sizeof(int);                  // partitioning type
-        sysInfoMsg.count += sizeof(int) + g_config.dirPaths.dataPath.length() * sizeof(char);   // data directory path length + string
-        sysInfoMsg.count += 3 * sizeof(int);              // MBRFilter, IFilter, Refinement
+    DB_STATUS packSystemMetadata(SerializedMsg<char> &sysMetadataMsg) {
+        sysMetadataMsg.count = 0;
+        sysMetadataMsg.count += sizeof(SystemSetupTypeE);      // cluster or local
+        sysMetadataMsg.count += 2*sizeof(int);                  // dist + part partitions per dimension
+        sysMetadataMsg.count += sizeof(int);                  // partitioning type
+        sysMetadataMsg.count += sizeof(int) + g_config.dirPaths.dataPath.length() * sizeof(char);   // data directory path length + string
+        sysMetadataMsg.count += 3 * sizeof(int);              // MBRFilter, IFilter, Refinement
         
         // allocate space
-        sysInfoMsg.data = (char*) malloc(sysInfoMsg.count * sizeof(char));
-        if (sysInfoMsg.data == NULL) {
+        sysMetadataMsg.data = (char*) malloc(sysMetadataMsg.count * sizeof(char));
+        if (sysMetadataMsg.data == NULL) {
             // malloc failed
-            logger::log_error(DBERR_MALLOC_FAILED, "Malloc for pack system info failed");
+            logger::log_error(DBERR_MALLOC_FAILED, "Malloc for pack system metadata failed");
             return DBERR_MALLOC_FAILED;
         }
 
-        char* localBuffer = sysInfoMsg.data;
+        char* localBuffer = sysMetadataMsg.data;
 
         // put objects in buffer
         *reinterpret_cast<SystemSetupTypeE*>(localBuffer) = g_config.options.setupType;
@@ -37,54 +37,54 @@ namespace pack
         std::memcpy(localBuffer, g_config.dirPaths.dataPath.data(), g_config.dirPaths.dataPath.length() * sizeof(char));
         localBuffer += g_config.dirPaths.dataPath.length() * sizeof(char);
 
-        *reinterpret_cast<int*>(localBuffer) = g_config.queryInfo.MBRFilter;
+        *reinterpret_cast<int*>(localBuffer) = g_config.queryMetadata.MBRFilter;
         localBuffer += sizeof(int);
-        *reinterpret_cast<int*>(localBuffer) = g_config.queryInfo.IntermediateFilter;
+        *reinterpret_cast<int*>(localBuffer) = g_config.queryMetadata.IntermediateFilter;
         localBuffer += sizeof(int);
-        *reinterpret_cast<int*>(localBuffer) = g_config.queryInfo.Refinement;
+        *reinterpret_cast<int*>(localBuffer) = g_config.queryMetadata.Refinement;
         localBuffer += sizeof(int);
 
         return DBERR_OK;
     }
 
 
-    DB_STATUS packAPRILInfo(AprilConfig &aprilConfig, SerializedMsg<int> &aprilInfoMsg) {
-        aprilInfoMsg.count = 0;
-        aprilInfoMsg.count += 3;     // N, compression, partitions
+    DB_STATUS packAPRILMetadata(AprilConfig &aprilConfig, SerializedMsg<int> &aprilMetadataMsg) {
+        aprilMetadataMsg.count = 0;
+        aprilMetadataMsg.count += 3;     // N, compression, partitions
 
         // allocate space
-        aprilInfoMsg.data = (int*) malloc(aprilInfoMsg.count * sizeof(int));
-        if (aprilInfoMsg.data == NULL) {
+        aprilMetadataMsg.data = (int*) malloc(aprilMetadataMsg.count * sizeof(int));
+        if (aprilMetadataMsg.data == NULL) {
             // malloc failed
-            logger::log_error(DBERR_MALLOC_FAILED, "Malloc for april info failed");
+            logger::log_error(DBERR_MALLOC_FAILED, "Malloc for april metadata failed");
             return DBERR_MALLOC_FAILED;
         }
 
         // put objects in buffer
-        aprilInfoMsg.data[0] = aprilConfig.getN();
-        aprilInfoMsg.data[1] = aprilConfig.compression;
-        aprilInfoMsg.data[2] = aprilConfig.partitions;
+        aprilMetadataMsg.data[0] = aprilConfig.getN();
+        aprilMetadataMsg.data[1] = aprilConfig.compression;
+        aprilMetadataMsg.data[2] = aprilConfig.partitions;
 
         return DBERR_OK;
     }
 
-    DB_STATUS packQueryInfo(QueryInfo &queryInfo, SerializedMsg<int> &queryInfoMsg) {
-        queryInfoMsg.count = 0;
-        queryInfoMsg.count += 4;    // query type, MBR, intermediatefilter, refinement
+    DB_STATUS packQueryMetadata(QueryMetadata &queryMetadata, SerializedMsg<int> &queryMetadataMsg) {
+        queryMetadataMsg.count = 0;
+        queryMetadataMsg.count += 4;    // query type, MBR, intermediatefilter, refinement
 
         // allocate space
-        queryInfoMsg.data = (int*) malloc(queryInfoMsg.count * sizeof(int));
-        if (queryInfoMsg.data == NULL) {
+        queryMetadataMsg.data = (int*) malloc(queryMetadataMsg.count * sizeof(int));
+        if (queryMetadataMsg.data == NULL) {
             // malloc failed
-            logger::log_error(DBERR_MALLOC_FAILED, "Malloc for query info failed");
+            logger::log_error(DBERR_MALLOC_FAILED, "Malloc for query metadata failed");
             return DBERR_MALLOC_FAILED;
         }
 
         // put objects in buffer
-        queryInfoMsg.data[0] = queryInfo.type;
-        queryInfoMsg.data[1] = queryInfo.MBRFilter;
-        queryInfoMsg.data[2] = queryInfo.IntermediateFilter;
-        queryInfoMsg.data[3] = queryInfo.Refinement;
+        queryMetadataMsg.data[0] = queryMetadata.type;
+        queryMetadataMsg.data[1] = queryMetadata.MBRFilter;
+        queryMetadataMsg.data[2] = queryMetadata.IntermediateFilter;
+        queryMetadataMsg.data[3] = queryMetadata.Refinement;
 
         return DBERR_OK;
     }
@@ -95,7 +95,7 @@ namespace pack
         msg.count = 0;
 
         // get dataset R
-        Dataset* R = g_config.datasetInfo.getDatasetR();
+        Dataset* R = g_config.datasetMetadata.getDatasetR();
         if (R == nullptr) {
             return DBERR_OK;
         }
@@ -104,7 +104,7 @@ namespace pack
         // keep nickname
         nicknameR = R->nickname;
         // get dataset S
-        Dataset* S = g_config.datasetInfo.getDatasetS();
+        Dataset* S = g_config.datasetMetadata.getDatasetS();
         if (S != nullptr) {
             // count for buffer size
             msg.count += sizeof(int) + S->nickname.length() * sizeof(int);
@@ -115,7 +115,7 @@ namespace pack
         msg.data = (char*) malloc(msg.count * sizeof(char));
         if (msg.data == NULL) {
             // malloc failed
-            logger::log_error(DBERR_MALLOC_FAILED, "Malloc for pack system info failed");
+            logger::log_error(DBERR_MALLOC_FAILED, "Malloc for pack system metadata failed");
             return DBERR_MALLOC_FAILED;
         }
         
@@ -147,7 +147,7 @@ namespace pack
         msg.data = (char*) malloc(msg.count * sizeof(char));
         if (msg.data == NULL) {
             // malloc failed
-            logger::log_error(DBERR_MALLOC_FAILED, "Malloc for pack system info failed");
+            logger::log_error(DBERR_MALLOC_FAILED, "Malloc for pack system metadata failed");
             return DBERR_MALLOC_FAILED;
         }
         
@@ -169,7 +169,7 @@ namespace pack
     DB_STATUS packQueryResults(SerializedMsg<int> &msg, QueryOutput &queryOutput) {
         DB_STATUS ret = DBERR_OK;
         // serialize based on query type
-        switch (g_config.queryInfo.type) {
+        switch (g_config.queryMetadata.type) {
             case Q_RANGE:
             case Q_DISJOINT:
             case Q_INTERSECT:
@@ -219,7 +219,7 @@ namespace pack
                 msg.data[10] = queryOutput.getResultForTopologyRelation(TR_EQUAL);
                 break;
             default:
-                logger::log_error(DBERR_QUERY_INVALID_TYPE, "Invalid query type:", g_config.queryInfo.type);
+                logger::log_error(DBERR_QUERY_INVALID_TYPE, "Invalid query type:", g_config.queryMetadata.type);
                 return DBERR_QUERY_INVALID_TYPE;
         }
         return ret;
@@ -229,10 +229,10 @@ namespace pack
 
 namespace unpack
 {
-    DB_STATUS unpackSystemInfo(SerializedMsg<char> &sysInfoMsg) {
+    DB_STATUS unpackSystemMetadata(SerializedMsg<char> &sysMetadataMsg) {
         PartitioningTypeE partitioningType;
         int partPartitionsPerDim, distPartitionsPerDim;
-        char *localBuffer = sysInfoMsg.data;
+        char *localBuffer = sysMetadataMsg.data;
         // get system setup type
         g_config.options.setupType = *reinterpret_cast<const SystemSetupTypeE*>(localBuffer);
         localBuffer += sizeof(SystemSetupTypeE);
@@ -252,7 +252,7 @@ namespace unpack
             // batch size to zero and distribution ppd to zero, both irrelevant to worker
             g_config.partitioningMethod = new TwoGridPartitioning(partitioningType, 0, distPartitionsPerDim, partPartitionsPerDim);
         } else {
-            logger::log_error(DBERR_INVALID_PARAMETER, "Unknown partitioning type while unpacking system info:", partitioningType);
+            logger::log_error(DBERR_INVALID_PARAMETER, "Unknown partitioning type while unpacking system metadata:", partitioningType);
             return DBERR_INVALID_PARAMETER;
         }
         // get datapath length + string
@@ -264,41 +264,41 @@ namespace unpack
         localBuffer += length * sizeof(char);
         g_config.dirPaths.setNodeDataDirectories(datapath);
         // pipeline
-        g_config.queryInfo.MBRFilter = *reinterpret_cast<const int*>(localBuffer);
+        g_config.queryMetadata.MBRFilter = *reinterpret_cast<const int*>(localBuffer);
         localBuffer += sizeof(int);
-        g_config.queryInfo.IntermediateFilter = *reinterpret_cast<const int*>(localBuffer);
+        g_config.queryMetadata.IntermediateFilter = *reinterpret_cast<const int*>(localBuffer);
         localBuffer += sizeof(int);
-        g_config.queryInfo.Refinement = *reinterpret_cast<const int*>(localBuffer);
+        g_config.queryMetadata.Refinement = *reinterpret_cast<const int*>(localBuffer);
         localBuffer += sizeof(int);
 
         return DBERR_OK;
     }
 
-    DB_STATUS unpackAPRILInfo(SerializedMsg<int> &aprilInfoMsg) {
+    DB_STATUS unpackAPRILMetadata(SerializedMsg<int> &aprilMetadataMsg) {
         // N
-        int N = aprilInfoMsg.data[0];
-        g_config.approximationInfo.aprilConfig.setN(N);
+        int N = aprilMetadataMsg.data[0];
+        g_config.approximationMetadata.aprilConfig.setN(N);
         // compression
-        g_config.approximationInfo.aprilConfig.compression = aprilInfoMsg.data[1];
+        g_config.approximationMetadata.aprilConfig.compression = aprilMetadataMsg.data[1];
         // partitions
-        g_config.approximationInfo.aprilConfig.partitions = aprilInfoMsg.data[2];
+        g_config.approximationMetadata.aprilConfig.partitions = aprilMetadataMsg.data[2];
         // set type
-        g_config.approximationInfo.type = AT_APRIL;
-        for (auto& it: g_config.datasetInfo.datasets) {
+        g_config.approximationMetadata.type = AT_APRIL;
+        for (auto& it: g_config.datasetMetadata.datasets) {
             it.second.approxType = AT_APRIL;
             it.second.aprilConfig.setN(N);
-            it.second.aprilConfig.compression = g_config.approximationInfo.aprilConfig.compression;
-            it.second.aprilConfig.partitions = g_config.approximationInfo.aprilConfig.partitions;
+            it.second.aprilConfig.compression = g_config.approximationMetadata.aprilConfig.compression;
+            it.second.aprilConfig.partitions = g_config.approximationMetadata.aprilConfig.partitions;
         }
 
         return DBERR_OK;
     }
 
-    DB_STATUS unpackQueryInfo(SerializedMsg<int> &queryInfoMsg) {
-        g_config.queryInfo.type = (QueryTypeE) queryInfoMsg.data[0];
-        g_config.queryInfo.MBRFilter = queryInfoMsg.data[1];
-        g_config.queryInfo.IntermediateFilter = queryInfoMsg.data[2];
-        g_config.queryInfo.Refinement = queryInfoMsg.data[3];
+    DB_STATUS unpackQueryMetadata(SerializedMsg<int> &queryMetadataMsg) {
+        g_config.queryMetadata.type = (QueryTypeE) queryMetadataMsg.data[0];
+        g_config.queryMetadata.MBRFilter = queryMetadataMsg.data[1];
+        g_config.queryMetadata.IntermediateFilter = queryMetadataMsg.data[2];
+        g_config.queryMetadata.Refinement = queryMetadataMsg.data[3];
         
         return DBERR_OK;
     }
@@ -336,7 +336,7 @@ namespace unpack
                 queryOutput.setTopologyRelationResult(TR_EQUAL, queryResultsMsg.data[10]);
                 break;
             default:
-                logger::log_error(DBERR_QUERY_INVALID_TYPE, "Invalid query type:", g_config.queryInfo.type);
+                logger::log_error(DBERR_QUERY_INVALID_TYPE, "Invalid query type:", g_config.queryMetadata.type);
                 return DBERR_QUERY_INVALID_TYPE;
         }
         return DBERR_OK;

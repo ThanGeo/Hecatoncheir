@@ -21,7 +21,7 @@
 #include "env/comm_def.h"
 
 /**
- * @brief Holds all the APRIL related info for a single object
+ * @brief Holds all the APRIL related metadata for a single object
  * 
  * This struct contains two lists and their sizes, for APRIL's A-list and F-list.
  * The intervals' start,end are stored as consecutive numbers. 
@@ -729,7 +729,7 @@ public:
     size_t recID;
     /** @brief the object's MBR. */
     MBR mbr;
-    /** @brief The object's partition index, containing info about the partitions that this object intersects with
+    /** @brief The object's partition index, containing metadata about the partitions that this object intersects with
      * and its two-layer index class in each of them.
      * @param key Partition ID.
      * @param value The two-layer index class of the object in that partition.
@@ -1092,16 +1092,16 @@ struct Section {
     std::unordered_map<size_t, AprilData> aprilData;
 };
 
-/** @brief All dataspace related info, filled in after loading the dataset(s).
+/** @brief All dataspace related metadata, filled in after loading the dataset(s).
  * @param xMinGlobal, yMinGlobal, xMaxGlobal, yMaxGlobal The dataspace's borders (MBR).
  * @param xExtent, yExtent, maxExtent The dataspace's extent.
  */
-struct DataspaceInfo {
+struct DataspaceMetadata {
     double xMinGlobal, yMinGlobal, xMaxGlobal, yMaxGlobal;  // global bounds based on dataset bounds
     double xExtent, yExtent, maxExtent;
     bool boundsSet = false;
 
-    DataspaceInfo();
+    DataspaceMetadata();
     void set(double xMinGlobal, double yMinGlobal, double xMaxGlobal, double yMaxGlobal);
     void clear();
 };
@@ -1174,8 +1174,8 @@ struct Dataset{
     std::string datasetName;
     // as given by arguments and specified by datasets.ini config file
     std::string nickname;
-    // holds the dataset's dataspace info (MBR, extent)
-    DataspaceInfo dataspaceInfo;
+    // holds the dataset's dataspace metadata (MBR, extent)
+    DataspaceMetadata dataspaceMetadata;
     // unique object count
     size_t totalObjects = 0;
     std::vector<size_t> objectIDs;
@@ -1228,7 +1228,7 @@ struct Query{
     Dataset R;         // R: left dataset
     Dataset S;         // S: right dataset
     bool boundsSet = false;
-    DataspaceInfo dataspaceInfo;
+    DataspaceMetadata dataspaceMetadata;
 };
 
 /** @brief Holds all system-related directory paths.
@@ -1257,8 +1257,8 @@ struct PartitioningMethod {
     int distPartitionsPerDim;
     /** @brief The batch size for the data distribution, in number of objects. */             
     int batchSize;
-    /** @brief The distribution (coarse) grid's dataspace info. */
-    DataspaceInfo distGridDataspaceInfo;
+    /** @brief The distribution (coarse) grid's dataspace metadata. */
+    DataspaceMetadata distGridDataspaceMetadata;
     // The X,Y extents of a single partition in the distribution grid
     double distPartitionExtentX;
     double distPartitionExtentY;
@@ -1303,25 +1303,25 @@ struct PartitioningMethod {
     /** @brief Abstract method. Returns the number of partitions per dimension in the partitioning grid. */
     virtual int getGlobalPPD() = 0;
 
-    /** @brief Sets the distribution grid's dataspace info. (bounds and extent) */
+    /** @brief Sets the distribution grid's dataspace metadata. (bounds and extent) */
     void setDistGridDataspace(double xMin, double yMin, double xMax, double yMax) {
-        distGridDataspaceInfo.set(xMin, yMin, xMax, yMax);
-        distPartitionExtentX = distGridDataspaceInfo.xExtent / distPartitionsPerDim;
-        distPartitionExtentY = distGridDataspaceInfo.yExtent / distPartitionsPerDim;
+        distGridDataspaceMetadata.set(xMin, yMin, xMax, yMax);
+        distPartitionExtentX = distGridDataspaceMetadata.xExtent / distPartitionsPerDim;
+        distPartitionExtentY = distGridDataspaceMetadata.yExtent / distPartitionsPerDim;
     }
 
-     /** @brief Sets the distribution grid's dataspace info. (bounds and extent) */
-    void setDistGridDataspace(DataspaceInfo &otherDataspaceInfo) {
-        distGridDataspaceInfo = otherDataspaceInfo;
-        distPartitionExtentX = distGridDataspaceInfo.xExtent / distPartitionsPerDim;
-        distPartitionExtentY = distGridDataspaceInfo.yExtent / distPartitionsPerDim;
+     /** @brief Sets the distribution grid's dataspace metadata. (bounds and extent) */
+    void setDistGridDataspace(DataspaceMetadata &otherDataspaceMetadata) {
+        distGridDataspaceMetadata = otherDataspaceMetadata;
+        distPartitionExtentX = distGridDataspaceMetadata.xExtent / distPartitionsPerDim;
+        distPartitionExtentY = distGridDataspaceMetadata.yExtent / distPartitionsPerDim;
     }
 
-    /** @brief Abstract method. Sets the partitioning grid's dataspace info. */
+    /** @brief Abstract method. Sets the partitioning grid's dataspace metadata. */
     virtual void setPartGridDataspace(double xMin, double yMin, double xMax, double yMax) = 0;
 
-    /** @brief Set the fine grid's dataspace info. */
-    virtual void setPartGridDataspace(DataspaceInfo &otherDataspaceInfo) = 0;
+    /** @brief Set the fine grid's dataspace metadata. */
+    virtual void setPartGridDataspace(DataspaceMetadata &otherDataspaceMetadata) = 0;
 
     double getDistPartionExtentX() {
         return distPartitionExtentX;
@@ -1343,8 +1343,8 @@ private:
     /** @brief The global grid's number of partitions per dimension. = dPPD * pPPD */
     int globalPartitionsPerDim;
 public:
-    /** @brief The fine grid's dataspace info. */
-    DataspaceInfo partGridDataspaceInfo;
+    /** @brief The fine grid's dataspace metadata. */
+    DataspaceMetadata partGridDataspaceMetadata;
     // The X,Y extents of a single partition in the partitioning grid 
     double partPartitionExtentX;
     double partPartitionExtentY;
@@ -1369,11 +1369,11 @@ public:
     /** @brief Returns the partitioning (fine) grid's partitions per dimension number. */
     int getGlobalPPD() override;
 
-    /** @brief Set the fine grid's dataspace info. */
+    /** @brief Set the fine grid's dataspace metadata. */
     void setPartGridDataspace(double xMin, double yMin, double xMax, double yMax) override;
 
-    /** @brief Set the fine grid's dataspace info. */
-    void setPartGridDataspace(DataspaceInfo &otherDataspaceInfo) override;
+    /** @brief Set the fine grid's dataspace metadata. */
+    void setPartGridDataspace(DataspaceMetadata &otherDataspaceMetadata) override;
 
     double getPartPartionExtentX() override;
     double getPartPartionExtentY() override;
@@ -1405,7 +1405,7 @@ public:
     void setPartGridDataspace(double xMin, double yMin, double xMax, double yMax) override;
 
     /** @brief Dist grid = part grid. */
-    void setPartGridDataspace(DataspaceInfo &otherDataspaceInfo) override;
+    void setPartGridDataspace(DataspaceMetadata &otherDataspaceMetadata) override;
 
     double getPartPartionExtentX() override;
     double getPartPartionExtentY() override;
@@ -1413,7 +1413,7 @@ public:
 
 /** @brief Holds all partitioning related information.
  */
-// struct PartitioningInfo {
+// struct PartitioningMetadata {
 //     /** @brief The partitioning technique */
 //     PartitioningTypeE type;                 
 //     /** @brief The number of partitions per dimension */
@@ -1443,9 +1443,9 @@ struct Action {
     }
 };
 
-/** @brief Holds the dataset(s) related info in the configuration.
+/** @brief Holds the dataset(s) related metadata in the configuration.
  */
-struct DatasetInfo {
+struct DatasetMetadata {
 private:
     Dataset* R;
     Dataset* S;
@@ -1453,7 +1453,7 @@ private:
 
 public:
     std::unordered_map<std::string,Dataset> datasets;
-    DataspaceInfo dataspaceInfo;
+    DataspaceMetadata dataspaceMetadata;
     
     Dataset* getDatasetByNickname(std::string &nickname);
 
@@ -1468,7 +1468,7 @@ public:
     Dataset* getDatasetByIdx(DatasetIndexE datasetIndex);
 
     /**
-    @brief adds a Dataset to the configuration's dataset info
+    @brief adds a Dataset to the configuration's dataset metadata
      * @warning it has to be an empty dataset BUT its nickname needs to be set
      */
     DB_STATUS addDataset(DatasetIndexE datasetIdx, Dataset &dataset);
@@ -1476,29 +1476,29 @@ public:
     void updateDataspace();
 };
 
-/** @brief Holds all approximation related info.
+/** @brief Holds all approximation related metadata.
  */
-struct ApproximationInfo {
+struct ApproximationMetadata {
     ApproximationTypeE type;   // sets which of the following fields will be used
     AprilConfig aprilConfig;  
-    ApproximationInfo() {
+    ApproximationMetadata() {
         this->type = AT_NONE;
     }
-    ApproximationInfo(ApproximationTypeE type) {
+    ApproximationMetadata(ApproximationTypeE type) {
         this->type = type;
     }
 };
 
-/** @brief Holds all the query related info in the configuration.
+/** @brief Holds all the query related metadata in the configuration.
  */
-struct QueryInfo {
+struct QueryMetadata {
     QueryTypeE type = Q_NONE;
     int MBRFilter = 1;
     int IntermediateFilter = 1;
     int Refinement = 1;
 };
 
-/** @brief Holds all the system related info in the configuration.
+/** @brief Holds all the system related metadata in the configuration.
  */
 struct SystemOptions {
     SystemSetupTypeE setupType;
@@ -1512,11 +1512,11 @@ struct Config {
     DirectoryPaths dirPaths;
     SystemOptions options;
     std::vector<Action> actions;
-    // PartitioningInfo partitioningInfo;
+    // PartitioningMetadata partitioningMetadata;
     PartitioningMethod *partitioningMethod;
-    DatasetInfo datasetInfo;
-    ApproximationInfo approximationInfo;
-    QueryInfo queryInfo;
+    DatasetMetadata datasetMetadata;
+    ApproximationMetadata approximationMetadata;
+    QueryMetadata queryMetadata;
 };
 
 /**

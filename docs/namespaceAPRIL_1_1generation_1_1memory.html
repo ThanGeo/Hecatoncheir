@@ -109,7 +109,7 @@ Functions</h2></td></tr>
 <div class="fragment"><div class="line"><a name="l00652"></a><span class="lineno">  652</span>&#160;                                             {</div>
 <div class="line"><a name="l00653"></a><span class="lineno">  653</span>&#160;                DB_STATUS ret = DBERR_OK;</div>
 <div class="line"><a name="l00654"></a><span class="lineno">  654</span>&#160;                <span class="comment">// init rasterization environment</span></div>
-<div class="line"><a name="l00655"></a><span class="lineno">  655</span>&#160;                ret = setRasterBounds(dataset.dataspaceInfo.xMinGlobal, dataset.dataspaceInfo.yMinGlobal, dataset.dataspaceInfo.xMaxGlobal, dataset.dataspaceInfo.yMaxGlobal);</div>
+<div class="line"><a name="l00655"></a><span class="lineno">  655</span>&#160;                ret = setRasterBounds(dataset.dataspaceMetadata.xMinGlobal, dataset.dataspaceMetadata.yMinGlobal, dataset.dataspaceMetadata.xMaxGlobal, dataset.dataspaceMetadata.yMaxGlobal);</div>
 <div class="line"><a name="l00656"></a><span class="lineno">  656</span>&#160;                <span class="keywordflow">if</span> (ret != DBERR_OK) {</div>
 <div class="line"><a name="l00657"></a><span class="lineno">  657</span>&#160;                    <span class="keywordflow">return</span> DBERR_INVALID_PARAMETER;</div>
 <div class="line"><a name="l00658"></a><span class="lineno">  658</span>&#160;                }</div>

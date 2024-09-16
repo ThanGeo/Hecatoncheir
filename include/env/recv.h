@@ -29,7 +29,7 @@ namespace comm
         /**
         @brief Receives an already probed message.
          * the msgPack MPI datatype parameter must already be set (constructor handles that)
-         * @param[in] status Contains the probed message's status info.
+         * @param[in] status Contains the probed message's status metadata.
          * @param[in] dataType The message's data type.
          * @param[in] comm The communicator through which the message should be received.
          * @param[out] msgPack Where the message will be stored after received successfully.

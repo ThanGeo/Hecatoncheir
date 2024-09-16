@@ -91,7 +91,7 @@ Collaboration diagram for RoundRobinPartitioning:</div>
 <map name="aRoundRobinPartitioning_coll__map" id="aRoundRobinPartitioning_coll__map">
 <area shape="rect" title="Simple round&#45;robin partitioning method. Uses a single grid for the distribution and the partitioning." alt="" coords="5,171,164,197"/>
 <area shape="rect" href="structPartitioningMethod.html" title="Base class for the partitioning methods (abstract class)." alt="" coords="19,95,150,121"/>
-<area shape="rect" href="structDataspaceInfo.html" title="All dataspace related info, filled in after loading the dataset(s)." alt="" coords="31,5,138,32"/>
+<area shape="rect" href="structDataspaceMetadata.html" title="All dataspace related metadata, filled in after loading the dataset(s)." alt="" coords="15,5,154,32"/>
 </map>
 <center><span class="legend">[<a href="graph_legend.html">legend</a>]</span></center></div>
 <table class="memberdecls">
@@ -125,10 +125,10 @@ int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="struc
 void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structRoundRobinPartitioning.html#a79b26d963c3a6541c396b75da45ae777">setPartGridDataspace</a> (double xMin, double yMin, double xMax, double yMax) override</td></tr>
 <tr class="memdesc:a79b26d963c3a6541c396b75da45ae777"><td class="mdescLeft">&#160;</td><td class="mdescRight">Dist grid = part grid. <br /></td></tr>
 <tr class="separator:a79b26d963c3a6541c396b75da45ae777"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a4af922af1bb76e28f426c1c1fa1729bd"><td class="memItemLeft" align="right" valign="top"><a id="a4af922af1bb76e28f426c1c1fa1729bd"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structRoundRobinPartitioning.html#a4af922af1bb76e28f426c1c1fa1729bd">setPartGridDataspace</a> (<a class="el" href="structDataspaceInfo.html">DataspaceInfo</a> &amp;otherDataspaceInfo) override</td></tr>
-<tr class="memdesc:a4af922af1bb76e28f426c1c1fa1729bd"><td class="mdescLeft">&#160;</td><td class="mdescRight">Dist grid = part grid. <br /></td></tr>
-<tr class="separator:a4af922af1bb76e28f426c1c1fa1729bd"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:afb7a46701f6c10a6f15d009950ff100b"><td class="memItemLeft" align="right" valign="top"><a id="afb7a46701f6c10a6f15d009950ff100b"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structRoundRobinPartitioning.html#afb7a46701f6c10a6f15d009950ff100b">setPartGridDataspace</a> (<a class="el" href="structDataspaceMetadata.html">DataspaceMetadata</a> &amp;otherDataspaceMetadata) override</td></tr>
+<tr class="memdesc:afb7a46701f6c10a6f15d009950ff100b"><td class="mdescLeft">&#160;</td><td class="mdescRight">Dist grid = part grid. <br /></td></tr>
+<tr class="separator:afb7a46701f6c10a6f15d009950ff100b"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a9c7110b8651e4b6048d47ec0a2a159f1"><td class="memItemLeft" align="right" valign="top"><a id="a9c7110b8651e4b6048d47ec0a2a159f1"></a>
 double&#160;</td><td class="memItemRight" valign="bottom"><b>getPartPartionExtentX</b> () override</td></tr>
 <tr class="separator:a9c7110b8651e4b6048d47ec0a2a159f1"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -157,12 +157,12 @@ void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="stru
 <tr class="separator:a92842b964a0385e0a8dad13e91d8b9c7 inherit pub_methods_structPartitioningMethod"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a31e26f3e07d5277477f1ed9c93836f39 inherit pub_methods_structPartitioningMethod"><td class="memItemLeft" align="right" valign="top"><a id="a31e26f3e07d5277477f1ed9c93836f39"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structPartitioningMethod.html#a31e26f3e07d5277477f1ed9c93836f39">setDistGridDataspace</a> (double xMin, double yMin, double xMax, double yMax)</td></tr>
-<tr class="memdesc:a31e26f3e07d5277477f1ed9c93836f39 inherit pub_methods_structPartitioningMethod"><td class="mdescLeft">&#160;</td><td class="mdescRight">Sets the distribution grid's dataspace info. (bounds and extent) <br /></td></tr>
+<tr class="memdesc:a31e26f3e07d5277477f1ed9c93836f39 inherit pub_methods_structPartitioningMethod"><td class="mdescLeft">&#160;</td><td class="mdescRight">Sets the distribution grid's dataspace metadata. (bounds and extent) <br /></td></tr>
 <tr class="separator:a31e26f3e07d5277477f1ed9c93836f39 inherit pub_methods_structPartitioningMethod"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a838eb870bac155a53f58750c1ca6e539 inherit pub_methods_structPartitioningMethod"><td class="memItemLeft" align="right" valign="top"><a id="a838eb870bac155a53f58750c1ca6e539"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structPartitioningMethod.html#a838eb870bac155a53f58750c1ca6e539">setDistGridDataspace</a> (<a class="el" href="structDataspaceInfo.html">DataspaceInfo</a> &amp;otherDataspaceInfo)</td></tr>
-<tr class="memdesc:a838eb870bac155a53f58750c1ca6e539 inherit pub_methods_structPartitioningMethod"><td class="mdescLeft">&#160;</td><td class="mdescRight">Sets the distribution grid's dataspace info. (bounds and extent) <br /></td></tr>
-<tr class="separator:a838eb870bac155a53f58750c1ca6e539 inherit pub_methods_structPartitioningMethod"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aceed388f06cb490a644993a0d81623bc inherit pub_methods_structPartitioningMethod"><td class="memItemLeft" align="right" valign="top"><a id="aceed388f06cb490a644993a0d81623bc"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structPartitioningMethod.html#aceed388f06cb490a644993a0d81623bc">setDistGridDataspace</a> (<a class="el" href="structDataspaceMetadata.html">DataspaceMetadata</a> &amp;otherDataspaceMetadata)</td></tr>
+<tr class="memdesc:aceed388f06cb490a644993a0d81623bc inherit pub_methods_structPartitioningMethod"><td class="mdescLeft">&#160;</td><td class="mdescRight">Sets the distribution grid's dataspace metadata. (bounds and extent) <br /></td></tr>
+<tr class="separator:aceed388f06cb490a644993a0d81623bc inherit pub_methods_structPartitioningMethod"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a35ef9f217aaea6d7aa09b24e39dfa0bb inherit pub_methods_structPartitioningMethod"><td class="memItemLeft" align="right" valign="top"><a id="a35ef9f217aaea6d7aa09b24e39dfa0bb"></a>
 double&#160;</td><td class="memItemRight" valign="bottom"><b>getDistPartionExtentX</b> ()</td></tr>
 <tr class="separator:a35ef9f217aaea6d7aa09b24e39dfa0bb inherit pub_methods_structPartitioningMethod"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -185,10 +185,10 @@ int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="struc
 int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structPartitioningMethod.html#ac27d552ac93ac38c861ba160d7a3d02e">batchSize</a></td></tr>
 <tr class="memdesc:ac27d552ac93ac38c861ba160d7a3d02e inherit pub_attribs_structPartitioningMethod"><td class="mdescLeft">&#160;</td><td class="mdescRight">The batch size for the data distribution, in number of objects. <br /></td></tr>
 <tr class="separator:ac27d552ac93ac38c861ba160d7a3d02e inherit pub_attribs_structPartitioningMethod"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:adbdfe8ff3a0d48c23e69e581035a7f7e inherit pub_attribs_structPartitioningMethod"><td class="memItemLeft" align="right" valign="top"><a id="adbdfe8ff3a0d48c23e69e581035a7f7e"></a>
-<a class="el" href="structDataspaceInfo.html">DataspaceInfo</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structPartitioningMethod.html#adbdfe8ff3a0d48c23e69e581035a7f7e">distGridDataspaceInfo</a></td></tr>
-<tr class="memdesc:adbdfe8ff3a0d48c23e69e581035a7f7e inherit pub_attribs_structPartitioningMethod"><td class="mdescLeft">&#160;</td><td class="mdescRight">The distribution (coarse) grid's dataspace info. <br /></td></tr>
-<tr class="separator:adbdfe8ff3a0d48c23e69e581035a7f7e inherit pub_attribs_structPartitioningMethod"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab04e8b82d14f7c66ab185d9349b2ae7b inherit pub_attribs_structPartitioningMethod"><td class="memItemLeft" align="right" valign="top"><a id="ab04e8b82d14f7c66ab185d9349b2ae7b"></a>
+<a class="el" href="structDataspaceMetadata.html">DataspaceMetadata</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structPartitioningMethod.html#ab04e8b82d14f7c66ab185d9349b2ae7b">distGridDataspaceMetadata</a></td></tr>
+<tr class="memdesc:ab04e8b82d14f7c66ab185d9349b2ae7b inherit pub_attribs_structPartitioningMethod"><td class="mdescLeft">&#160;</td><td class="mdescRight">The distribution (coarse) grid's dataspace metadata. <br /></td></tr>
+<tr class="separator:ab04e8b82d14f7c66ab185d9349b2ae7b inherit pub_attribs_structPartitioningMethod"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aa58fd1dcafd432eeb9a95b6711ce4ac9 inherit pub_attribs_structPartitioningMethod"><td class="memItemLeft" align="right" valign="top"><a id="aa58fd1dcafd432eeb9a95b6711ce4ac9"></a>
 double&#160;</td><td class="memItemRight" valign="bottom"><b>distPartitionExtentX</b></td></tr>
 <tr class="separator:aa58fd1dcafd432eeb9a95b6711ce4ac9 inherit pub_attribs_structPartitioningMethod"><td class="memSeparator" colspan="2">&#160;</td></tr>

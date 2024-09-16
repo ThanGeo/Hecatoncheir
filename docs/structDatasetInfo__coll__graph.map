@@ -1,4 +1,0 @@
-<map id="DatasetInfo" name="DatasetInfo">
-<area shape="rect" id="node1" title="Holds the dataset(s) related info in the configuration." alt="" coords="13,95,104,121"/>
-<area shape="rect" id="node2" href="$structDataspaceInfo.html" title="All dataspace related info, filled in after loading the dataset(s)." alt="" coords="5,5,112,32"/>
-</map>

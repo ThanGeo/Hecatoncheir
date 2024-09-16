@@ -72,13 +72,13 @@ namespace parser
 
     static DB_STATUS verifyDatatypeCombinationForQueryType(QueryTypeE queryType) {
         // get number of datasets
-        int numberOfDatasets = g_config.datasetInfo.getNumberOfDatasets();
+        int numberOfDatasets = g_config.datasetMetadata.getNumberOfDatasets();
         // find if query type is supported
         auto queryIT = g_querySupportMap.find(queryType);
         if (queryIT != g_querySupportMap.end()) {
-            DataTypeE dataTypeR = g_config.datasetInfo.getDatasetR()->dataType;
+            DataTypeE dataTypeR = g_config.datasetMetadata.getDatasetR()->dataType;
             // todo: for queries with one dataset input, handle this accordingly
-            DataTypeE dataTypeS = g_config.datasetInfo.getDatasetS()->dataType;
+            DataTypeE dataTypeS = g_config.datasetMetadata.getDatasetS()->dataType;
             const auto& allowedCombinations = queryIT->second;
             auto dataTypesPair = std::make_pair(dataTypeR, dataTypeS);
             auto datatypesIT = allowedCombinations.find(dataTypesPair);
@@ -86,7 +86,7 @@ namespace parser
                 // query data types combination supported
                 return DBERR_OK;
             } else {
-                logger::log_error(DBERR_QUERY_INVALID_TYPE, "Data type combination unsupported for query", mapping::queryTypeIntToStr(g_config.queryInfo.type), "combination:", mapping::dataTypeIntToStr(dataTypeR), "and", mapping::dataTypeIntToStr(dataTypeS));
+                logger::log_error(DBERR_QUERY_INVALID_TYPE, "Data type combination unsupported for query", mapping::queryTypeIntToStr(g_config.queryMetadata.type), "combination:", mapping::dataTypeIntToStr(dataTypeR), "and", mapping::dataTypeIntToStr(dataTypeS));
                 return DBERR_QUERY_INVALID_TYPE;
             }
         }
@@ -96,31 +96,31 @@ namespace parser
     }
 
     static DB_STATUS loadAPRILconfig() {
-        ApproximationInfo approxInfo(AT_APRIL);
+        ApproximationMetadata approxMetadata(AT_APRIL);
 
         int N = system_config_pt.get<int>("APRIL.N");
         if (N < 10 || N > 16) {
             logger::log_error(DBERR_INVALID_PARAMETER, "APRIL granularity must be in range [10,16]. N:", N);
             return DBERR_INVALID_PARAMETER;
         }
-        approxInfo.aprilConfig.setN(N);
+        approxMetadata.aprilConfig.setN(N);
         
         int compression = system_config_pt.get<int>("APRIL.compression");
         if (compression != 0 && compression != 1) {
             logger::log_error(DBERR_INVALID_PARAMETER, "APRIL compression must be set to either 0 (disabled) or 1 (enabled). compression:", compression);
             return DBERR_INVALID_PARAMETER;
         }
-        approxInfo.aprilConfig.compression = compression;
+        approxMetadata.aprilConfig.compression = compression;
 
         int partitions = system_config_pt.get<int>("APRIL.partitions");
         if (partitions < 1 || partitions > 32) {
             logger::log_error(DBERR_INVALID_PARAMETER, "APRIL partitions must be in range [1,32]. partitions:", partitions);
             return DBERR_INVALID_PARAMETER;
         }
-        approxInfo.aprilConfig.partitions = partitions;
+        approxMetadata.aprilConfig.partitions = partitions;
 
         // set to global config
-        g_config.approximationInfo = approxInfo;
+        g_config.approximationMetadata = approxMetadata;
 
         return DBERR_OK;
     }
@@ -164,12 +164,12 @@ namespace parser
         }
         // load APRIL (after any creation and after the datasets have been loaded)
         // only of there is at least one dataset and the intermediate filter is enabled
-        if ((actionsStmt->loadDatasetR || actionsStmt->loadDatasetS) && g_config.queryInfo.IntermediateFilter) {
+        if ((actionsStmt->loadDatasetR || actionsStmt->loadDatasetS) && g_config.queryMetadata.IntermediateFilter) {
             Action action(ACTION_LOAD_APRIL);
             g_config.actions.emplace_back(action);
         }
         // queries
-        if (g_config.queryInfo.type != Q_NONE) {
+        if (g_config.queryMetadata.type != Q_NONE) {
             Action action(ACTION_QUERY);
             g_config.actions.emplace_back(action);
         }
@@ -371,7 +371,7 @@ namespace parser
         }
 
         // set to config
-        ret = configurer::setDatasetInfo(datasetStmt);
+        ret = configurer::setDatasetMetadata(datasetStmt);
         if (ret != DBERR_OK) {
             return ret;
         }
@@ -397,7 +397,7 @@ namespace parser
         }
 
         // set to configuration
-        g_config.queryInfo.type = (QueryTypeE) queryType;
+        g_config.queryMetadata.type = (QueryTypeE) queryType;
         
         return DBERR_OK;    
     }
@@ -417,18 +417,18 @@ namespace parser
             sysOpsStmt.nodeCount = system_config_pt.get<int>("Environment.nodeCount");
         }
         // load pipeline configuration
-        g_config.queryInfo.MBRFilter = system_config_pt.get<int>("Pipeline.MBRFilter");
-        if (g_config.queryInfo.MBRFilter != 0 && g_config.queryInfo.MBRFilter != 1) {
+        g_config.queryMetadata.MBRFilter = system_config_pt.get<int>("Pipeline.MBRFilter");
+        if (g_config.queryMetadata.MBRFilter != 0 && g_config.queryMetadata.MBRFilter != 1) {
             logger::log_error(DBERR_CONFIG_FILE, "MBRFilter setting in configuration file must be 0 or 1");
             return DBERR_CONFIG_FILE;
         }
-        g_config.queryInfo.IntermediateFilter = system_config_pt.get<int>("Pipeline.IFilter");
-        if (g_config.queryInfo.MBRFilter != 0 && g_config.queryInfo.MBRFilter != 1) {
+        g_config.queryMetadata.IntermediateFilter = system_config_pt.get<int>("Pipeline.IFilter");
+        if (g_config.queryMetadata.MBRFilter != 0 && g_config.queryMetadata.MBRFilter != 1) {
             logger::log_error(DBERR_CONFIG_FILE, "IFilter setting in configuration file must be 0 or 1");
             return DBERR_CONFIG_FILE;
         }
-        g_config.queryInfo.Refinement = system_config_pt.get<int>("Pipeline.Refinement");
-        if (g_config.queryInfo.MBRFilter != 0 && g_config.queryInfo.MBRFilter != 1) {
+        g_config.queryMetadata.Refinement = system_config_pt.get<int>("Pipeline.Refinement");
+        if (g_config.queryMetadata.MBRFilter != 0 && g_config.queryMetadata.MBRFilter != 1) {
             logger::log_error(DBERR_CONFIG_FILE, "Refinement setting in configuration file must be 0 or 1");
             return DBERR_CONFIG_FILE;
         }

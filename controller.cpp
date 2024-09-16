@@ -29,7 +29,7 @@ static void hostTerminate() {
 
 static void printResults() {
     logger::log_success("MBR Results:", g_queryOutput.postMBRFilterCandidates);
-    switch (g_config.queryInfo.type) {
+    switch (g_config.queryMetadata.type) {
         case Q_RANGE:
         case Q_DISJOINT:
         case Q_INTERSECT:
@@ -59,17 +59,17 @@ static void printResults() {
 }
 
 static DB_STATUS initAPRILCreation() {
-    SerializedMsg<int> aprilInfoMsg(MPI_INT);
-    // pack the APRIL info
-    DB_STATUS ret = pack::packAPRILInfo(g_config.approximationInfo.aprilConfig, aprilInfoMsg);
+    SerializedMsg<int> aprilMetadataMsg(MPI_INT);
+    // pack the APRIL metadata
+    DB_STATUS ret = pack::packAPRILMetadata(g_config.approximationMetadata.aprilConfig, aprilMetadataMsg);
     if (ret != DBERR_OK) {
-        logger::log_error(ret, "Failed to pack APRIL info");
+        logger::log_error(ret, "Failed to pack APRIL metadata");
         return ret;
     }
     // send to workers
-    ret = comm::broadcast::broadcastMessage(aprilInfoMsg, MSG_APRIL_CREATE);
+    ret = comm::broadcast::broadcastMessage(aprilMetadataMsg, MSG_APRIL_CREATE);
     if (ret != DBERR_OK) {
-        logger::log_error(ret, "Failed to broadcast APRIL info");
+        logger::log_error(ret, "Failed to broadcast APRIL metadata");
         return ret;
     }
     // measure response time
@@ -86,22 +86,22 @@ static DB_STATUS initAPRILCreation() {
 }
 
 static DB_STATUS initQueryExecution() {
-    SerializedMsg<int> queryInfoMsg(MPI_INT);
-    // pack the APRIL info
-    DB_STATUS ret = pack::packQueryInfo(g_config.queryInfo, queryInfoMsg);
+    SerializedMsg<int> queryMetadataMsg(MPI_INT);
+    // pack the APRIL metadata
+    DB_STATUS ret = pack::packQueryMetadata(g_config.queryMetadata, queryMetadataMsg);
     if (ret != DBERR_OK) {
-        logger::log_error(ret, "Failed to pack query info");
+        logger::log_error(ret, "Failed to pack query metadata");
         return ret;
     }
     // broadcast message
-    ret = comm::broadcast::broadcastMessage(queryInfoMsg, MSG_QUERY_INIT);
+    ret = comm::broadcast::broadcastMessage(queryMetadataMsg, MSG_QUERY_INIT);
     if (ret != DBERR_OK) {
-        logger::log_error(ret, "Failed to broadcast query info");
+        logger::log_error(ret, "Failed to broadcast query metadata");
         return ret;
     }
     // reset query outpyt
     g_queryOutput.reset();
-    logger::log_task("Processing query '", mapping::queryTypeIntToStr(g_config.queryInfo.type),"' on datasets", g_config.datasetInfo.getDatasetR()->nickname, "-", g_config.datasetInfo.getDatasetS()->nickname);
+    logger::log_task("Processing query '", mapping::queryTypeIntToStr(g_config.queryMetadata.type),"' on datasets", g_config.datasetMetadata.getDatasetR()->nickname, "-", g_config.datasetMetadata.getDatasetS()->nickname);
     // measure response time
     double startTime;
     startTime = mpi_timer::markTime();
@@ -120,7 +120,7 @@ static DB_STATUS initQueryExecution() {
 
 /** @brief initializes (broadcasts) the load specific dataset action for the given dataset */
 static DB_STATUS initLoadDataset(Dataset *dataset, DatasetIndexE datasetIndex) {
-    // send load instruction + dataset info
+    // send load instruction + dataset metadata
     DB_STATUS ret = DBERR_OK;
     // pack nicknames
     SerializedMsg<char> msg(MPI_CHAR);
@@ -132,7 +132,7 @@ static DB_STATUS initLoadDataset(Dataset *dataset, DatasetIndexE datasetIndex) {
     // broadcast message
     ret = comm::broadcast::broadcastMessage(msg, MSG_LOAD_DATASET);
     if (ret != DBERR_OK) {
-        logger::log_error(ret, "Failed to broadcast query info");
+        logger::log_error(ret, "Failed to broadcast query metadata");
         return ret;
     }
 
@@ -146,17 +146,17 @@ static DB_STATUS initLoadDataset(Dataset *dataset, DatasetIndexE datasetIndex) {
 }
 
 static DB_STATUS initLoadAPRIL() {
-    SerializedMsg<int> aprilInfoMsg(MPI_INT);
-    // pack the APRIL info
-    DB_STATUS ret = pack::packAPRILInfo(g_config.approximationInfo.aprilConfig, aprilInfoMsg);
+    SerializedMsg<int> aprilMetadataMsg(MPI_INT);
+    // pack the APRIL metadata
+    DB_STATUS ret = pack::packAPRILMetadata(g_config.approximationMetadata.aprilConfig, aprilMetadataMsg);
     if (ret != DBERR_OK) {
-        logger::log_error(ret, "Failed to pack APRIL info");
+        logger::log_error(ret, "Failed to pack APRIL metadata");
         return ret;
     }
     // send to workers
-    ret = comm::broadcast::broadcastMessage(aprilInfoMsg, MSG_LOAD_APRIL);
+    ret = comm::broadcast::broadcastMessage(aprilMetadataMsg, MSG_LOAD_APRIL);
     if (ret != DBERR_OK) {
-        logger::log_error(ret, "Failed to broadcast APRIL info");
+        logger::log_error(ret, "Failed to broadcast APRIL metadata");
         return ret;
     }
     // wait for responses by workers+agent that all is ok
@@ -169,9 +169,9 @@ static DB_STATUS initLoadAPRIL() {
 
 static DB_STATUS initPartitioning() {
     DB_STATUS ret = DBERR_OK;
-    for (auto &it: g_config.datasetInfo.datasets) {
-        Dataset* dataset = g_config.datasetInfo.getDatasetByNickname(it.second.nickname);
-        if (!dataset->dataspaceInfo.boundsSet) {
+    for (auto &it: g_config.datasetMetadata.datasets) {
+        Dataset* dataset = g_config.datasetMetadata.getDatasetByNickname(it.second.nickname);
+        if (!dataset->dataspaceMetadata.boundsSet) {
             ret = partitioning::calculateCSVDatasetDataspaceBounds(*dataset);
             if (ret != DBERR_OK) {
                 logger::log_error(ret, "Calculate CSV dataset dataspace bounds failed");
@@ -180,10 +180,10 @@ static DB_STATUS initPartitioning() {
         }
     }
     // update the global dataspace
-    g_config.datasetInfo.updateDataspace();
+    g_config.datasetMetadata.updateDataspace();
     // perform partitioning for each dataset
-    for (auto &it: g_config.datasetInfo.datasets) {
-        ret = partitioning::partitionDataset(g_config.datasetInfo.getDatasetByNickname(it.second.nickname));
+    for (auto &it: g_config.datasetMetadata.datasets) {
+        ret = partitioning::partitionDataset(g_config.datasetMetadata.getDatasetByNickname(it.second.nickname));
         if (ret != DBERR_OK) {
             logger::log_error(ret, "Partitioning dataset", it.second.nickname, "failed");
             return ret;
@@ -206,13 +206,13 @@ static DB_STATUS performActions() {
                 }
                 break;
             case ACTION_LOAD_DATASET_R:
-                ret = initLoadDataset(g_config.datasetInfo.getDatasetR(), DATASET_R);
+                ret = initLoadDataset(g_config.datasetMetadata.getDatasetR(), DATASET_R);
                 if (ret != DBERR_OK) {
                     return ret;
                 }
                 break;
             case ACTION_LOAD_DATASET_S:
-                ret = initLoadDataset(g_config.datasetInfo.getDatasetS(), DATASET_S);
+                ret = initLoadDataset(g_config.datasetMetadata.getDatasetS(), DATASET_S);
                 if (ret != DBERR_OK) {
                     return ret;
                 }
@@ -232,7 +232,7 @@ static DB_STATUS performActions() {
                 }
                 break;
             case ACTION_QUERY:
-                // send query info and begin evaluating
+                // send query metadata and begin evaluating
                 ret = initQueryExecution();
                 if (ret != DBERR_OK) {
                     return ret;
