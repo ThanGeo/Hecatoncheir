@@ -80,12 +80,18 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a06ff00f4394cac8f7c1e42f55ae6f5c7"><td class="memItemLeft" align="right" valign="top"><a id="a06ff00f4394cac8f7c1e42f55ae6f5c7"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>addPoint</b> (const double x, const double y)</td></tr>
 <tr class="separator:a06ff00f4394cac8f7c1e42f55ae6f5c7"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a3abd77a8464bec09ef151522d54ef072"><td class="memItemLeft" align="right" valign="top"><a id="a3abd77a8464bec09ef151522d54ef072"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>getBoostEnvelope</b> (bg_rectangle &amp;envelope)</td></tr>
+<tr class="separator:a3abd77a8464bec09ef151522d54ef072"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ad9f48255c7455127cda5378ba3a16fd8"><td class="memItemLeft" align="right" valign="top"><a id="ad9f48255c7455127cda5378ba3a16fd8"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>correctGeometry</b> ()</td></tr>
 <tr class="separator:ad9f48255c7455127cda5378ba3a16fd8"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a80f2856757ae8d342f57ec66fa80ca28"><td class="memItemLeft" align="right" valign="top"><a id="a80f2856757ae8d342f57ec66fa80ca28"></a>
 bool&#160;</td><td class="memItemRight" valign="bottom"><b>pipTest</b> (const bg_point_xy &amp;point) const</td></tr>
 <tr class="separator:a80f2856757ae8d342f57ec66fa80ca28"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a0bdc1ea364d0aba599e910b85faefedc"><td class="memItemLeft" align="right" valign="top"><a id="a0bdc1ea364d0aba599e910b85faefedc"></a>
+DB_STATUS&#160;</td><td class="memItemRight" valign="bottom"><b>setFromWKT</b> (std::string &amp;wktText)</td></tr>
+<tr class="separator:a0bdc1ea364d0aba599e910b85faefedc"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a5bc3dd77c0be12c7907df2bf8e3a262b"><td class="memItemLeft" align="right" valign="top"><a id="a5bc3dd77c0be12c7907df2bf8e3a262b"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>printGeometry</b> ()</td></tr>
 <tr class="separator:a5bc3dd77c0be12c7907df2bf8e3a262b"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -180,7 +186,7 @@ bg_linestring&#160;</td><td class="memItemRight" valign="bottom"><b>geometry</b>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock">
-<p class="definition">Definition at line <a class="el" href="containers_8h_source.html#l00441">441</a> of file <a class="el" href="containers_8h_source.html">containers.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="containers_8h_source.html#l00512">512</a> of file <a class="el" href="containers_8h_source.html">containers.h</a>.</p>
 </div><h2 class="groupheader">Member Function Documentation</h2>
 <a id="a833e0305dc8f5658c547d268c98fa348"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a833e0305dc8f5658c547d268c98fa348">&#9670;&nbsp;</a></span>createMaskCode()</h2>
@@ -209,11 +215,11 @@ bg_linestring&#160;</td><td class="memItemRight" valign="bottom"><b>geometry</b>
 <p>Overloaded method for creating the DE-9IM mask code for Linestring-Polygon cases. </p>
 <p>Define all forward declared member functions for the wrappers. They had to be forward-declared and later defined because of dependencies. </p>
 
-<p class="definition">Definition at line <a class="el" href="containers_8h_source.html#l00655">655</a> of file <a class="el" href="containers_8h_source.html">containers.h</a>.</p>
-<div class="fragment"><div class="line"><a name="l00655"></a><span class="lineno">  655</span>&#160;                                                                                                              {</div>
-<div class="line"><a name="l00656"></a><span class="lineno">  656</span>&#160;    boost::geometry::de9im::matrix matrix = boost::geometry::relation(geometry, other.geometry);</div>
-<div class="line"><a name="l00657"></a><span class="lineno">  657</span>&#160;    <span class="keywordflow">return</span> matrix.str();</div>
-<div class="line"><a name="l00658"></a><span class="lineno">  658</span>&#160;}</div>
+<p class="definition">Definition at line <a class="el" href="containers_8h_source.html#l00790">790</a> of file <a class="el" href="containers_8h_source.html">containers.h</a>.</p>
+<div class="fragment"><div class="line"><a name="l00790"></a><span class="lineno">  790</span>&#160;                                                                                                              {</div>
+<div class="line"><a name="l00791"></a><span class="lineno">  791</span>&#160;    boost::geometry::de9im::matrix matrix = boost::geometry::relation(geometry, other.geometry);</div>
+<div class="line"><a name="l00792"></a><span class="lineno">  792</span>&#160;    <span class="keywordflow">return</span> matrix.str();</div>
+<div class="line"><a name="l00793"></a><span class="lineno">  793</span>&#160;}</div>
 </div><!-- fragment -->
 </div>
 </div>

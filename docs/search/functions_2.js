@@ -1,11 +1,11 @@
 var searchData=
 [
   ['calculatebuffersize_332',['calculateBufferSize',['../structDataset.html#af83cba15f19a6dad7259c0db5d71a172',1,'Dataset']]],
-  ['calculatecsvdatasetdataspacebounds_333',['calculateCSVDatasetDataspaceBounds',['../namespacepartitioning.html#a873e77ab57aa73ee78177a287a686300',1,'partitioning']]],
-  ['calculatetwolayerclasses_334',['calculateTwoLayerClasses',['../namespacepartitioning.html#a5bd44055bc1559f514177c80119cb96c',1,'partitioning']]],
-  ['contains_335',['contains',['../structShape.html#a0b82933695d14e00333b3b8c19c3de1d',1,'Shape']]],
-  ['containscoversjoinapril_336',['containsCoversJoinAPRIL',['../namespaceAPRIL_1_1uncompressed_1_1standard.html#a4af8ef5707e4036375a8ab8f614bf11d',1,'APRIL::uncompressed::standard']]],
-  ['correctgeometry_337',['correctGeometry',['../structShape.html#a6ce053f37a7d3e8f85c40b6663d343aa',1,'Shape']]],
+  ['calculatetwolayerclasses_333',['calculateTwoLayerClasses',['../namespacepartitioning.html#a5bd44055bc1559f514177c80119cb96c',1,'partitioning']]],
+  ['contains_334',['contains',['../structShape.html#a0b82933695d14e00333b3b8c19c3de1d',1,'Shape']]],
+  ['containscoversjoinapril_335',['containsCoversJoinAPRIL',['../namespaceAPRIL_1_1uncompressed_1_1standard.html#a4af8ef5707e4036375a8ab8f614bf11d',1,'APRIL::uncompressed::standard']]],
+  ['correctgeometry_336',['correctGeometry',['../structShape.html#a6ce053f37a7d3e8f85c40b6663d343aa',1,'Shape']]],
+  ['countlinesinfile_337',['countLinesInFile',['../namespacestorage.html#ab551dead5b3b5c15f285adc03cefdedd',1,'storage']]],
   ['coveredby_338',['coveredBy',['../structShape.html#ae917c6c1d29646e27534f4cdc65036fe',1,'Shape']]],
   ['covers_339',['covers',['../structShape.html#a7c20890862aea7feb5bb0b74a2cdd015',1,'Shape']]],
   ['createconfiguration_340',['createConfiguration',['../namespaceconfigurer.html#affed3e4dc858a1c015e05cdbfec46880',1,'configurer']]],

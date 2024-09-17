@@ -169,20 +169,52 @@ static DB_STATUS initLoadAPRIL() {
 
 static DB_STATUS initPartitioning() {
     DB_STATUS ret = DBERR_OK;
+    // claculate dataset metadata if not given
     for (auto &it: g_config.datasetMetadata.datasets) {
         Dataset* dataset = g_config.datasetMetadata.getDatasetByNickname(it.second.nickname);
         if (!dataset->dataspaceMetadata.boundsSet) {
-            ret = partitioning::calculateCSVDatasetDataspaceBounds(*dataset);
-            if (ret != DBERR_OK) {
-                logger::log_error(ret, "Calculate CSV dataset dataspace bounds failed");
-                return ret;
+            
+            switch (dataset->fileType) {
+                case FT_CSV:
+                    ret = partitioning::csv::calculateDatasetMetadata(dataset);
+                    if (ret != DBERR_OK) {
+                        logger::log_error(ret, "Failed to calculate CSV dataset metadata.");
+                        return ret;
+                    }
+                    break;
+                case FT_WKT:
+                    ret = partitioning::wkt::calculateDatasetMetadata(dataset);
+                    if (ret != DBERR_OK) {
+                        logger::log_error(ret, "Failed to calculate WKT dataset metadata.");
+                        return ret;
+                    }
+                    break;
+                case FT_BINARY:
+                default:
+                    logger::log_error(DBERR_FEATURE_UNSUPPORTED, "Unsupported data file type:", dataset->fileType);
+                    break;
             }
+
         }
     }
     // update the global dataspace
     g_config.datasetMetadata.updateDataspace();
+    
     // perform partitioning for each dataset
     for (auto &it: g_config.datasetMetadata.datasets) {
+        // first, issue the partitioning instruction
+        ret = comm::broadcast::broadcastInstructionMessage(MSG_INSTR_PARTITIONING_INIT);
+        if (ret != DBERR_OK) {
+            return ret;
+        }
+        
+        // broadcast the dataset metadata to the nodes
+        ret = comm::controller::host::broadcastDatasetMetadata(&it.second);
+        if (ret != DBERR_OK) {
+            return ret;
+        }
+
+        // partition
         ret = partitioning::partitionDataset(g_config.datasetMetadata.getDatasetByNickname(it.second.nickname));
         if (ret != DBERR_OK) {
             logger::log_error(ret, "Partitioning dataset", it.second.nickname, "failed");

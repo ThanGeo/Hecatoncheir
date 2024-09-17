@@ -2,6 +2,7 @@
 #define D_STORAGE_UTILS_H
 
 #include "containers.h"
+#include "fstream"
 
 /** @brief Disk-related methods for utility operations. */
 namespace storage
@@ -17,6 +18,12 @@ namespace storage
      * @warning The nickname field must be set. The APRIL path is stored in the AprilConfig field of the dataset object.
      */
     DB_STATUS generateAPRILFilePath(Dataset &dataset);
+
+
+    /**
+    @brief Counts the number of lines in the file of the given filepath.
+     */
+    DB_STATUS countLinesInFile(std::string &filepath, size_t &lineCount);
 }
 
 

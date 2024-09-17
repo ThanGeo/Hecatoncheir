@@ -151,164 +151,64 @@ namespace partitioning
         return ret;
     }
 
-    DB_STATUS calculateCSVDatasetDataspaceBounds(Dataset &dataset) {
-        DB_STATUS ret = DBERR_OK;
-        // open file
-        std::ifstream fin(dataset.path);
-        if (!fin.is_open()) {
-            logger::log_error(DBERR_MISSING_FILE, "Failed to open dataset path:", dataset.path);
-            return DBERR_MISSING_FILE;
-        }
-        std::string line;
-        // read total objects (first line of file)
-        std::getline(fin, line);
-        fin.close();
-        size_t objectCount = (size_t) std::stoull(line);
-        // dataset global bounds
-        double global_xMin = std::numeric_limits<int>::max();
-        double global_yMin = std::numeric_limits<int>::max();
-        double global_xMax = -std::numeric_limits<int>::max();
-        double global_yMax = -std::numeric_limits<int>::max();
-        // spawn all available threads (processors)
-        #pragma omp parallel firstprivate(line, objectCount) reduction(min:global_xMin) reduction(min:global_yMin) reduction(max:global_xMax)  reduction(max:global_yMax)
-        {
-            size_t recID;
-            double x,y;
-            DB_STATUS local_ret = DBERR_OK;
-            int tid = omp_get_thread_num();
-            int totalThreads = omp_get_num_threads();
-            // calculate which lines this thread will handle
-            size_t linesPerThread = (objectCount / totalThreads);
-            size_t fromLine = 1 + (tid * linesPerThread);          // first line is object count
-            size_t toLine = 1 + ((tid + 1) * linesPerThread);    // exclusive
-            if (tid == totalThreads - 1) {
-                toLine = objectCount+1;
-            }
+    namespace csv
+    {
+        DB_STATUS calculateDatasetMetadata(Dataset* dataset) {
+            DB_STATUS ret = DBERR_OK;
             // open file
-            std::ifstream fin(dataset.path);
+            std::ifstream fin(dataset->path);
             if (!fin.is_open()) {
-                logger::log_error(DBERR_MISSING_FILE, "Failed to open dataset path:", dataset.path);
-                #pragma omp cancel parallel
-                ret = DBERR_MISSING_FILE;
+                logger::log_error(DBERR_MISSING_FILE, "Failed to open dataset path:", dataset->path);
+                return DBERR_MISSING_FILE;
             }
-            // jump to start line
-            for (size_t i=0; i<fromLine; i++) {
-                fin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
-            }
-            // loop
-            size_t currentLine = fromLine;
-            std::string token;
-            while (true) {
-                // next object
-                std::getline(fin, line);                
-                std::stringstream ss(line);
-                // recID
-                std::getline(ss, token, ',');
-                recID = (size_t) std::stoull(token);
-                // Read the coords x,y
-                while (std::getline(ss, token, ',')) {
-                    std::stringstream coordStream(token);
-                    // Split the x and y values
-                    std::getline(coordStream, token, ' ');
-                    x = std::stof(token);
-                    std::getline(coordStream, token, ' ');
-                    y = std::stof(token);
-                    // bounds
-                    global_xMin = std::min(global_xMin, x);
-                    global_yMin = std::min(global_yMin, y);
-                    global_xMax = std::max(global_xMax, x);
-                    global_yMax = std::max(global_yMax, y);
-                }
-                currentLine += 1;
-                if (currentLine >= toLine) {
-                    // the last line for this thread has been read
-                    break;
-                }
-            }
-            // close file
+            std::string line;
+            // read total objects (first line of file)
+            std::getline(fin, line);
             fin.close();
-        }
-        if (ret != DBERR_OK) {
-            return ret;
-        }
-        // set extent
-        dataset.dataspaceMetadata.set(global_xMin, global_yMin, global_xMax, global_yMax);
-        return ret;
-    }
-
-    static DB_STATUS loadCSVDatasetAndPartition(Dataset &dataset) {
-        DB_STATUS ret = DBERR_OK;
-        // initialize batches
-        std::unordered_map<int,Batch> batchMap;
-        ret = initializeBatchMap(batchMap, dataset.dataType);
-        if (ret != DBERR_OK) {
-            return ret;
-        }
-        // open file
-        std::ifstream fin(dataset.path);
-        if (!fin.is_open()) {
-            logger::log_error(DBERR_MISSING_FILE, "Failed to open dataset path:", dataset.path);
-            return DBERR_MISSING_FILE;
-        }
-        std::string line;
-        // read total objects (first line of file)
-        std::getline(fin, line);
-        fin.close();
-        size_t objectCount = (size_t) std::stoull(line);
-        // count how many batches have been sent in total
-        int batchesSent = 0;
-        #pragma omp parallel firstprivate(batchMap, line, objectCount) reduction(+:batchesSent)
-        {
-            int partitionID;
-            double x,y;
-            double xMin, yMin, xMax, yMax;
-            DB_STATUS local_ret = DBERR_OK;
-            int tid = omp_get_thread_num();
-            int totalThreads = omp_get_num_threads();
-            // calculate which lines this thread will handle
-            size_t linesPerThread = (objectCount / totalThreads);
-            size_t fromLine = 1 + (tid * linesPerThread);          // first line is object count
-            size_t toLine = 1 + ((tid + 1) * linesPerThread);    // exclusive
-            if (tid == totalThreads - 1) {
-                toLine = objectCount+1;
-            }
-            // logger::log_task("will handle lines", fromLine, "to", toLine);
-            // open file
-            std::ifstream fin(dataset.path);
-            if (!fin.is_open()) {
-                logger::log_error(DBERR_MISSING_FILE, "Failed to open dataset path:", dataset.path);
-                #pragma omp cancel parallel
-                ret = DBERR_MISSING_FILE;
-            }
-            // jump to start line
-            for (size_t i=0; i<fromLine; i++) {
-                fin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
-            }
-
-            // create empty object based on data type
-            Shape object;
-            local_ret = shape_factory::createEmpty(dataset.dataType, object);
-            if (local_ret != DBERR_OK) {
-                #pragma omp cancel parallel
-                ret = local_ret;
-            } else {
-                // shape created
+            size_t objectCount = (size_t) std::stoull(line);
+            // dataset global bounds
+            double global_xMin = std::numeric_limits<int>::max();
+            double global_yMin = std::numeric_limits<int>::max();
+            double global_xMax = -std::numeric_limits<int>::max();
+            double global_yMax = -std::numeric_limits<int>::max();
+            // spawn all available threads (processors)
+            #pragma omp parallel firstprivate(line, objectCount) reduction(min:global_xMin) reduction(min:global_yMin) reduction(max:global_xMax)  reduction(max:global_yMax)
+            {
+                size_t recID;
+                double x,y;
+                DB_STATUS local_ret = DBERR_OK;
+                int tid = omp_get_thread_num();
+                int totalThreads = omp_get_num_threads();
+                // calculate which lines this thread will handle
+                size_t linesPerThread = (objectCount / totalThreads);
+                size_t fromLine = 1 + (tid * linesPerThread);          // first line is object count
+                size_t toLine = 1 + ((tid + 1) * linesPerThread);    // exclusive
+                if (tid == totalThreads - 1) {
+                    toLine = objectCount+1;
+                }
+                // open file
+                std::ifstream fin(dataset->path);
+                if (!fin.is_open()) {
+                    logger::log_error(DBERR_MISSING_FILE, "Failed to open dataset path:", dataset->path);
+                    #pragma omp cancel parallel
+                    ret = DBERR_MISSING_FILE;
+                }
+                // jump to start line
+                for (size_t i=0; i<fromLine; i++) {
+                    fin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+                }
                 // loop
                 size_t currentLine = fromLine;
                 std::string token;
                 while (true) {
-                    // reset shape object
-                    object.reset();
                     // next object
                     std::getline(fin, line);                
                     std::stringstream ss(line);
-                    xMin = std::numeric_limits<int>::max();
-                    yMin = std::numeric_limits<int>::max();
-                    xMax = -std::numeric_limits<int>::max();
-                    yMax = -std::numeric_limits<int>::max();
                     // recID
                     std::getline(ss, token, ',');
-                    object.recID = (size_t) std::stoull(token);
+                    // recID = (size_t) std::stoull(token);
+                    recID = currentLine;
+                    // Read the coords x,y
                     while (std::getline(ss, token, ',')) {
                         std::stringstream coordStream(token);
                         // Split the x and y values
@@ -316,22 +216,11 @@ namespace partitioning
                         x = std::stof(token);
                         std::getline(coordStream, token, ' ');
                         y = std::stof(token);
-                        // add point
-                        object.addPoint(x, y);
-                        // MBR
-                        xMin = std::min(xMin, x);
-                        yMin = std::min(yMin, y);
-                        xMax = std::max(xMax, x);
-                        yMax = std::max(yMax, y);
-                    }
-                    object.correctGeometry();
-                    object.setMBR(xMin, yMin, xMax, yMax);
-                    // assign to appropriate batches
-                    local_ret = assignObjectToBatches(object, batchMap, batchesSent);
-                    if (ret != DBERR_OK) {
-                        #pragma omp cancel parallel
-                        ret = local_ret;
-                        break;
+                        // bounds
+                        global_xMin = std::min(global_xMin, x);
+                        global_yMin = std::min(global_yMin, y);
+                        global_xMax = std::max(global_xMax, x);
+                        global_yMax = std::max(global_yMax, y);
                     }
                     currentLine += 1;
                     if (currentLine >= toLine) {
@@ -339,77 +228,421 @@ namespace partitioning
                         break;
                     }
                 }
-                // send any remaining non-empty batches
-                for (int i=0; i<g_world_size; i++) {
-                    // fetch batch
-                    auto it = batchMap.find(i);
-                    if (it == batchMap.end()) {
-                        logger::log_error(DBERR_INVALID_PARAMETER, "Error fetching batch for node", i);
-                        #pragma omp cancel parallel
-                        ret = DBERR_INVALID_PARAMETER;
-                    }
-                    Batch *batch = &it->second;
-                    if (batch->objectCount > 0) {
-                        local_ret = comm::controller::serializeAndSendGeometryBatch(batch);
-                        if (local_ret != DBERR_OK) {
+                // close file
+                fin.close();
+            }
+            if (ret != DBERR_OK) {
+                return ret;
+            }
+            // set extent
+            dataset->dataspaceMetadata.set(global_xMin, global_yMin, global_xMax, global_yMax);
+            return ret;
+        }
+
+        static DB_STATUS loadDatasetAndPartition(Dataset* dataset) {
+            DB_STATUS ret = DBERR_OK;
+            // initialize batches
+            std::unordered_map<int,Batch> batchMap;
+            ret = initializeBatchMap(batchMap, dataset->dataType);
+            if (ret != DBERR_OK) {
+                return ret;
+            }
+            // open file
+            std::ifstream fin(dataset->path);
+            if (!fin.is_open()) {
+                logger::log_error(DBERR_MISSING_FILE, "Failed to open dataset path:", dataset->path);
+                return DBERR_MISSING_FILE;
+            }
+            std::string line;
+            // read total objects (first line of file)
+            std::getline(fin, line);
+            fin.close();
+            size_t objectCount = (size_t) std::stoull(line);
+            // count how many batches have been sent in total
+            int batchesSent = 0;
+            #pragma omp parallel firstprivate(batchMap, line, objectCount) reduction(+:batchesSent)
+            {
+                int partitionID;
+                double x,y;
+                double xMin, yMin, xMax, yMax;
+                DB_STATUS local_ret = DBERR_OK;
+                int tid = omp_get_thread_num();
+                int totalThreads = omp_get_num_threads();
+                // calculate which lines this thread will handle
+                size_t linesPerThread = (objectCount / totalThreads);
+                size_t fromLine = 1 + (tid * linesPerThread);          // first line is object count
+                size_t toLine = 1 + ((tid + 1) * linesPerThread);    // exclusive
+                if (tid == totalThreads - 1) {
+                    toLine = objectCount+1;
+                }
+                // logger::log_task("will handle lines", fromLine, "to", toLine);
+                // open file
+                std::ifstream fin(dataset->path);
+                if (!fin.is_open()) {
+                    logger::log_error(DBERR_MISSING_FILE, "Failed to open dataset path:", dataset->path);
+                    #pragma omp cancel parallel
+                    ret = DBERR_MISSING_FILE;
+                }
+                // jump to start line
+                for (size_t i=0; i<fromLine; i++) {
+                    fin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+                }
+
+                // create empty object based on data type
+                Shape object;
+                local_ret = shape_factory::createEmpty(dataset->dataType, object);
+                if (local_ret != DBERR_OK) {
+                    #pragma omp cancel parallel
+                    ret = local_ret;
+                } else {
+                    // shape created
+                    // loop
+                    size_t currentLine = fromLine;
+                    std::string token;
+                    while (true) {
+                        // reset shape object
+                        object.reset();
+                        // next object
+                        std::getline(fin, line);                
+                        std::stringstream ss(line);
+                        xMin = std::numeric_limits<int>::max();
+                        yMin = std::numeric_limits<int>::max();
+                        xMax = -std::numeric_limits<int>::max();
+                        yMax = -std::numeric_limits<int>::max();
+                        // recID
+                        std::getline(ss, token, ',');
+                        // object.recID = (size_t) std::stoull(token);
+                        object.recID = currentLine;
+                        while (std::getline(ss, token, ',')) {
+                            std::stringstream coordStream(token);
+                            // Split the x and y values
+                            std::getline(coordStream, token, ' ');
+                            x = std::stof(token);
+                            std::getline(coordStream, token, ' ');
+                            y = std::stof(token);
+                            // add point
+                            object.addPoint(x, y);
+                            // MBR
+                            xMin = std::min(xMin, x);
+                            yMin = std::min(yMin, y);
+                            xMax = std::max(xMax, x);
+                            yMax = std::max(yMax, y);
+                        }
+                        object.correctGeometry();
+                        object.setMBR(xMin, yMin, xMax, yMax);
+                        // assign to appropriate batches
+                        local_ret = assignObjectToBatches(object, batchMap, batchesSent);
+                        if (ret != DBERR_OK) {
                             #pragma omp cancel parallel
                             ret = local_ret;
                             break;
                         }
-                        // empty the batch
-                        batch->clear();
-                        // count the batch
-                        batchesSent += 1;
+                        currentLine += 1;
+                        if (currentLine >= toLine) {
+                            // the last line for this thread has been read
+                            break;
+                        }
+                    }
+                    // send any remaining non-empty batches
+                    for (int i=0; i<g_world_size; i++) {
+                        // fetch batch
+                        auto it = batchMap.find(i);
+                        if (it == batchMap.end()) {
+                            logger::log_error(DBERR_INVALID_PARAMETER, "Error fetching batch for node", i);
+                            #pragma omp cancel parallel
+                            ret = DBERR_INVALID_PARAMETER;
+                        }
+                        Batch *batch = &it->second;
+                        if (batch->objectCount > 0) {
+                            local_ret = comm::controller::serializeAndSendGeometryBatch(batch);
+                            if (local_ret != DBERR_OK) {
+                                #pragma omp cancel parallel
+                                ret = local_ret;
+                                break;
+                            }
+                            // empty the batch
+                            batch->clear();
+                            // count the batch
+                            batchesSent += 1;
+                        }
+                    }
+                    // close file
+                    fin.close();
+                } // end of loop
+            } // end of parallel region
+            // check if operation finished successfully
+            if (ret != DBERR_OK) {
+                return ret;
+            }
+            // send an empty pack to each worker to signal the end of the partitioning for this dataset
+            for (int i=0; i<g_world_size; i++) {
+                // fetch batch (it is guaranteed to be empty)
+                auto it = batchMap.find(i);
+                if (it == batchMap.end()) {
+                    logger::log_error(DBERR_INVALID_PARAMETER, "Error fetching batch for node", i);
+                    return DBERR_INVALID_PARAMETER;
+                }
+                Batch *batch = &it->second;
+                ret = comm::controller::serializeAndSendGeometryBatch(batch);
+                if (ret != DBERR_OK) {
+                    return ret;
+                }
+            }
+            // logger::log_success("Sent", batchesSent, "non-empty batches.");
+            return ret;
+        }
+
+    }
+
+    namespace wkt
+    {
+        DB_STATUS calculateDatasetMetadata(Dataset* dataset) {
+            DB_STATUS ret = DBERR_OK;
+            // open file
+            std::ifstream fin(dataset->path);
+            if (!fin.is_open()) {
+                logger::log_error(DBERR_MISSING_FILE, "Failed to open dataset path:", dataset->path);
+                return DBERR_MISSING_FILE;
+            }
+            std::string line;
+            // count total objects (lines)
+            size_t totalObjects = 0;
+            ret = storage::countLinesInFile(dataset->path, totalObjects);
+            if (ret != DBERR_OK) {
+                return ret;
+            }
+            // dataset global bounds
+            double global_xMin = std::numeric_limits<int>::max();
+            double global_yMin = std::numeric_limits<int>::max();
+            double global_xMax = -std::numeric_limits<int>::max();
+            double global_yMax = -std::numeric_limits<int>::max();
+            // spawn all available threads (processors)
+            #pragma omp parallel firstprivate(line, totalObjects) reduction(min:global_xMin) reduction(min:global_yMin) reduction(max:global_xMax)  reduction(max:global_yMax)
+            {
+                DB_STATUS local_ret = DBERR_OK;
+                int tid = omp_get_thread_num();
+                int totalThreads = omp_get_num_threads();
+                // calculate which lines this thread will handle
+                size_t linesPerThread = (totalObjects / totalThreads);
+                size_t fromLine = 1 + (tid * linesPerThread);          // first line is object count
+                size_t toLine = 1 + ((tid + 1) * linesPerThread);    // exclusive
+                if (tid == totalThreads - 1) {
+                    toLine = totalObjects+1;
+                }
+                // open file
+                std::ifstream fin(dataset->path);
+                if (!fin.is_open()) {
+                    logger::log_error(DBERR_MISSING_FILE, "Failed to open dataset path:", dataset->path);
+                    #pragma omp cancel parallel
+                    ret = DBERR_MISSING_FILE;
+                }
+                // jump to start line
+                for (size_t i=0; i<fromLine; i++) {
+                    fin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+                }
+                
+                // create empty object based on data type
+                Shape object;
+                local_ret = shape_factory::createEmpty(dataset->dataType, object);
+                if (local_ret != DBERR_OK) {
+                    // error creating shape
+                    #pragma omp cancel parallel
+                    ret = local_ret;
+                } else {
+                    // loop
+                    size_t currentLine = fromLine;
+                    std::string token;
+                    while (true) {
+                        object.reset();
+                        // next object
+                        std::getline(fin, line);   
+                        // parse line to get only the first column (wkt geometry)
+                        std::stringstream ss(line);
+                        std::getline(ss, token, '\t');
+                        // set object from the WKT
+                        local_ret = object.setFromWKT(token);
+                        if (local_ret == DBERR_INVALID_GEOMETRY) {
+                            // this line is not the appropriate geometry type, so just ignore
+                        } else if (local_ret != DBERR_OK) {
+                            // some other error occured, interrupt
+                            #pragma omp cancel parallel
+                            ret = local_ret;
+                        } else {
+                            // set the MBR
+                            object.setMBR();
+                            // get global bounds
+                            global_xMin = std::min(global_xMin, object.mbr.pMin.x);
+                            global_yMin = std::min(global_yMin, object.mbr.pMin.y);
+                            global_xMax = std::max(global_xMax, object.mbr.pMax.x);
+                            global_yMax = std::max(global_yMax, object.mbr.pMax.y);
+                        }
+                        // next line
+                        currentLine += 1;
+                        if (currentLine >= toLine) {
+                            // the last line for this thread has been read
+                            break;
+                        }
                     }
                 }
                 // close file
                 fin.close();
-            } // end of loop
-        } // end of parallel region
-        // check if operation finished successfully
-        if (ret != DBERR_OK) {
-            return ret;
-        }
-        // send an empty pack to each worker to signal the end of the partitioning for this dataset
-        for (int i=0; i<g_world_size; i++) {
-            // fetch batch (it is guaranteed to be empty)
-            auto it = batchMap.find(i);
-            if (it == batchMap.end()) {
-                logger::log_error(DBERR_INVALID_PARAMETER, "Error fetching batch for node", i);
-                return DBERR_INVALID_PARAMETER;
             }
-            Batch *batch = &it->second;
-            ret = comm::controller::serializeAndSendGeometryBatch(batch);
             if (ret != DBERR_OK) {
                 return ret;
             }
-        }
-        // logger::log_success("Sent", batchesSent, "non-empty batches.");
-        return ret;
-    }
-
-    static DB_STATUS performPartitioningCSV(Dataset &dataset) {
-        DB_STATUS ret = DBERR_OK;  
-
-        // first, issue the partitioning instruction
-        ret = comm::broadcast::broadcastInstructionMessage(MSG_INSTR_PARTITIONING_INIT);
-        if (ret != DBERR_OK) {
-            return ret;
-        }
-        
-        // broadcast the dataset metadata to the nodes
-        ret = comm::controller::host::broadcastDatasetMetadata(&dataset);
-        if (ret != DBERR_OK) {
-            return ret;
-        }
-       
-        // finally, load data and partition to workers
-        ret = loadCSVDatasetAndPartition(dataset);
-        if (ret != DBERR_OK) {
+            // set total objects (valid + invalid)
+            dataset->totalObjects = totalObjects;
+            // set extent
+            dataset->dataspaceMetadata.set(global_xMin, global_yMin, global_xMax, global_yMax);
             return ret;
         }
 
-        return ret;
+        static DB_STATUS loadDatasetAndPartition(Dataset* dataset) {
+            DB_STATUS ret = DBERR_OK;
+            // initialize batches
+            std::unordered_map<int,Batch> batchMap;
+            ret = initializeBatchMap(batchMap, dataset->dataType);
+            if (ret != DBERR_OK) {
+                return ret;
+            }
+            // open file
+            std::ifstream fin(dataset->path);
+            if (!fin.is_open()) {
+                logger::log_error(DBERR_MISSING_FILE, "Failed to open dataset path:", dataset->path);
+                return DBERR_MISSING_FILE;
+            }
+            std::string line;
+            // get total objects (lines)
+            size_t totalObjects = dataset->totalObjects;
+            size_t totalValidObjects = 0;
+            // count how many batches have been sent in total
+            int batchesSent = 0;
+            #pragma omp parallel firstprivate(batchMap, line, totalObjects) reduction(+:batchesSent) reduction(+:totalValidObjects)
+            {
+                int partitionID;
+                double x,y;
+                double xMin, yMin, xMax, yMax;
+                DB_STATUS local_ret = DBERR_OK;
+                int tid = omp_get_thread_num();
+                int totalThreads = omp_get_num_threads();
+                // calculate which lines this thread will handle
+                size_t linesPerThread = (totalObjects / totalThreads);
+                size_t fromLine = 1 + (tid * linesPerThread);          // first line is object count
+                size_t toLine = 1 + ((tid + 1) * linesPerThread);    // exclusive
+                if (tid == totalThreads - 1) {
+                    toLine = totalObjects+1;
+                }
+                // logger::log_task("will handle lines", fromLine, "to", toLine);
+                // open file
+                std::ifstream fin(dataset->path);
+                if (!fin.is_open()) {
+                    logger::log_error(DBERR_MISSING_FILE, "Failed to open dataset path:", dataset->path);
+                    #pragma omp cancel parallel
+                    ret = DBERR_MISSING_FILE;
+                }
+                // jump to start line
+                for (size_t i=0; i<fromLine; i++) {
+                    fin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+                }
+
+                // create empty object based on data type
+                Shape object;
+                local_ret = shape_factory::createEmpty(dataset->dataType, object);
+                if (local_ret != DBERR_OK) {
+                    // error creating shape
+                    #pragma omp cancel parallel
+                    ret = local_ret;
+                } else {
+                    // shape created
+                    // loop
+                    size_t currentLine = fromLine;
+                    std::string token;
+                    while (true) {
+                        // reset shape object
+                        object.reset();
+                        // next object
+                        std::getline(fin, line);
+                        // parse line to get only the first column (wkt geometry)
+                        std::stringstream ss(line);
+                        std::getline(ss, token, '\t');
+                        // set rec ID
+                        object.recID = currentLine;
+                        // set object from the WKT
+                        local_ret = object.setFromWKT(token);
+                        if (local_ret == DBERR_INVALID_GEOMETRY) {
+                            // this line is not the appropriate geometry type, so just ignore
+                        } else if (local_ret != DBERR_OK) {
+                            // some other error occured, interrupt
+                            #pragma omp cancel parallel
+                            ret = local_ret;
+                        } else {
+                            // valid object
+                            totalValidObjects += 1;
+                            // set the MBR
+                            object.setMBR();
+                            // assign to appropriate batches
+                            local_ret = assignObjectToBatches(object, batchMap, batchesSent);
+                            if (ret != DBERR_OK) {
+                                #pragma omp cancel parallel
+                                ret = local_ret;
+                                break;
+                            }
+                        }
+                        currentLine += 1;
+                        if (currentLine >= toLine) {
+                            // the last line for this thread has been read
+                            break;
+                        }
+                    }
+                    // send any remaining non-empty batches
+                    for (int i=0; i<g_world_size; i++) {
+                        // fetch batch
+                        auto it = batchMap.find(i);
+                        if (it == batchMap.end()) {
+                            logger::log_error(DBERR_INVALID_PARAMETER, "Error fetching batch for node", i);
+                            #pragma omp cancel parallel
+                            ret = DBERR_INVALID_PARAMETER;
+                        }
+                        Batch *batch = &it->second;
+                        if (batch->objectCount > 0) {
+                            local_ret = comm::controller::serializeAndSendGeometryBatch(batch);
+                            if (local_ret != DBERR_OK) {
+                                #pragma omp cancel parallel
+                                ret = local_ret;
+                                break;
+                            }
+                            // empty the batch
+                            batch->clear();
+                            // count the batch
+                            batchesSent += 1;
+                        }
+                    }
+                    // close file
+                    fin.close();
+                } // end of loop
+            } // end of parallel region
+            // check if operation finished successfully
+            if (ret != DBERR_OK) {
+                return ret;
+            }
+            logger::log_success("Partitioned", totalValidObjects, "valid objects");
+            // send an empty pack to each worker to signal the end of the partitioning for this dataset
+            for (int i=0; i<g_world_size; i++) {
+                // fetch batch (it is guaranteed to be empty)
+                auto it = batchMap.find(i);
+                if (it == batchMap.end()) {
+                    logger::log_error(DBERR_INVALID_PARAMETER, "Error fetching batch for node", i);
+                    return DBERR_INVALID_PARAMETER;
+                }
+                Batch *batch = &it->second;
+                ret = comm::controller::serializeAndSendGeometryBatch(batch);
+                if (ret != DBERR_OK) {
+                    return ret;
+                }
+            }
+            // logger::log_success("Sent", batchesSent, "non-empty batches.");
+            return ret;
+        }
     }
 
     DB_STATUS partitionDataset(Dataset *dataset) {
@@ -421,14 +654,21 @@ namespace partitioning
             // perform the partitioning
             case FT_CSV:
                 // csv dataset
-                ret = performPartitioningCSV(*dataset);
+                ret = csv::loadDatasetAndPartition(dataset);
+                if (ret != DBERR_OK) {
+                    logger::log_error(DBERR_PARTITIONING_FAILED, "Partitioning failed for dataset", dataset->nickname);
+                    return ret;
+                }
+                break;
+            case FT_WKT:
+                // wkt dataset
+                ret = wkt::loadDatasetAndPartition(dataset);
                 if (ret != DBERR_OK) {
                     logger::log_error(DBERR_PARTITIONING_FAILED, "Partitioning failed for dataset", dataset->nickname);
                     return ret;
                 }
                 break;
             case FT_BINARY:
-            case FT_WKT:
             default:
                 logger::log_error(DBERR_FEATURE_UNSUPPORTED, "Unsupported data file type:", dataset->fileType);
                 break;

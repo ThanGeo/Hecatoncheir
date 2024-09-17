@@ -139,11 +139,11 @@ namespace parser
             g_config.actions.emplace_back(action);
         }
         // load dataset actions
-        if (actionsStmt->loadDatasetR) {
+        if (actionsStmt->loadDatasetR && g_config.queryMetadata.type != Q_NONE) {
             Action action(ACTION_LOAD_DATASET_R);
             g_config.actions.emplace_back(action);
         }
-        if (actionsStmt->loadDatasetS) {
+        if (actionsStmt->loadDatasetS && g_config.queryMetadata.type != Q_NONE) {
             Action action(ACTION_LOAD_DATASET_S);
             g_config.actions.emplace_back(action);
         }
@@ -164,7 +164,7 @@ namespace parser
         }
         // load APRIL (after any creation and after the datasets have been loaded)
         // only of there is at least one dataset and the intermediate filter is enabled
-        if ((actionsStmt->loadDatasetR || actionsStmt->loadDatasetS) && g_config.queryMetadata.IntermediateFilter) {
+        if ((actionsStmt->loadDatasetR || actionsStmt->loadDatasetS) && g_config.queryMetadata.IntermediateFilter && g_config.queryMetadata.type != Q_NONE) {
             Action action(ACTION_LOAD_APRIL);
             g_config.actions.emplace_back(action);
         }

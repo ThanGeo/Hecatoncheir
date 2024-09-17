@@ -79,9 +79,6 @@ Functions</h2></td></tr>
 void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacepartitioning.html#afc40bad3d1c1b78245803906af58edf9">printPartitionAssignment</a> ()</td></tr>
 <tr class="memdesc:afc40bad3d1c1b78245803906af58edf9"><td class="mdescLeft">&#160;</td><td class="mdescRight">Prints all partitions and their assigned node ranks. <br /></td></tr>
 <tr class="separator:afc40bad3d1c1b78245803906af58edf9"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a873e77ab57aa73ee78177a287a686300"><td class="memItemLeft" align="right" valign="top">DB_STATUS&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacepartitioning.html#a873e77ab57aa73ee78177a287a686300">calculateCSVDatasetDataspaceBounds</a> (<a class="el" href="structDataset.html">Dataset</a> &amp;dataset)</td></tr>
-<tr class="memdesc:a873e77ab57aa73ee78177a287a686300"><td class="mdescLeft">&#160;</td><td class="mdescRight">Calculates the given dataset's metadata about its dataspace.  <a href="namespacepartitioning.html#a873e77ab57aa73ee78177a287a686300">More...</a><br /></td></tr>
-<tr class="separator:a873e77ab57aa73ee78177a287a686300"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a5f7aef01c8b2d7c6a89ee75018c45591"><td class="memItemLeft" align="right" valign="top">DB_STATUS&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacepartitioning.html#a5f7aef01c8b2d7c6a89ee75018c45591">partitionDataset</a> (<a class="el" href="structDataset.html">Dataset</a> *dataset)</td></tr>
 <tr class="memdesc:a5f7aef01c8b2d7c6a89ee75018c45591"><td class="mdescLeft">&#160;</td><td class="mdescRight">Initializes the partitioning for the input dataset.  <a href="namespacepartitioning.html#a5f7aef01c8b2d7c6a89ee75018c45591">More...</a><br /></td></tr>
 <tr class="separator:a5f7aef01c8b2d7c6a89ee75018c45591"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -93,128 +90,6 @@ DB_STATUS&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href=
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock"><p>Data distribution/partitioning methods. </p>
 </div><h2 class="groupheader">Function Documentation</h2>
-<a id="a873e77ab57aa73ee78177a287a686300"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a873e77ab57aa73ee78177a287a686300">&#9670;&nbsp;</a></span>calculateCSVDatasetDataspaceBounds()</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">DB_STATUS partitioning::calculateCSVDatasetDataspaceBounds </td>
-          <td>(</td>
-          <td class="paramtype"><a class="el" href="structDataset.html">Dataset</a> &amp;&#160;</td>
-          <td class="paramname"><em>dataset</em></td><td>)</td>
-          <td></td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p>Calculates the given dataset's metadata about its dataspace. </p>
-<dl class="params"><dt>Parameters</dt><dd>
-  <table class="params">
-    <tr><td class="paramdir">[in]</td><td class="paramname">dataset</td><td>dataset Contains the dataset's information but not the contents. </td></tr>
-  </table>
-  </dd>
-</dl>
-
-<p class="definition">Definition at line <a class="el" href="partitioning_8cpp_source.html#l00154">154</a> of file <a class="el" href="partitioning_8cpp_source.html">partitioning.cpp</a>.</p>
-<div class="fragment"><div class="line"><a name="l00154"></a><span class="lineno">  154</span>&#160;                                                                   {</div>
-<div class="line"><a name="l00155"></a><span class="lineno">  155</span>&#160;        DB_STATUS ret = DBERR_OK;</div>
-<div class="line"><a name="l00156"></a><span class="lineno">  156</span>&#160;        <span class="comment">// open file</span></div>
-<div class="line"><a name="l00157"></a><span class="lineno">  157</span>&#160;        std::ifstream fin(dataset.path);</div>
-<div class="line"><a name="l00158"></a><span class="lineno">  158</span>&#160;        <span class="keywordflow">if</span> (!fin.is_open()) {</div>
-<div class="line"><a name="l00159"></a><span class="lineno">  159</span>&#160;            <a class="code" href="namespacelogger.html#a53f34feeb22a94db295af05b8b2aab5c">logger::log_error</a>(DBERR_MISSING_FILE, <span class="stringliteral">&quot;Failed to open dataset path:&quot;</span>, dataset.path);</div>
-<div class="line"><a name="l00160"></a><span class="lineno">  160</span>&#160;            <span class="keywordflow">return</span> DBERR_MISSING_FILE;</div>
-<div class="line"><a name="l00161"></a><span class="lineno">  161</span>&#160;        }</div>
-<div class="line"><a name="l00162"></a><span class="lineno">  162</span>&#160;        std::string line;</div>
-<div class="line"><a name="l00163"></a><span class="lineno">  163</span>&#160;        <span class="comment">// read total objects (first line of file)</span></div>
-<div class="line"><a name="l00164"></a><span class="lineno">  164</span>&#160;        std::getline(fin, line);</div>
-<div class="line"><a name="l00165"></a><span class="lineno">  165</span>&#160;        fin.close();</div>
-<div class="line"><a name="l00166"></a><span class="lineno">  166</span>&#160;        <span class="keywordtype">size_t</span> objectCount = (size_t) std::stoull(line);</div>
-<div class="line"><a name="l00167"></a><span class="lineno">  167</span>&#160;        <span class="comment">// dataset global bounds</span></div>
-<div class="line"><a name="l00168"></a><span class="lineno">  168</span>&#160;        <span class="keywordtype">double</span> global_xMin = std::numeric_limits&lt;int&gt;::max();</div>
-<div class="line"><a name="l00169"></a><span class="lineno">  169</span>&#160;        <span class="keywordtype">double</span> global_yMin = std::numeric_limits&lt;int&gt;::max();</div>
-<div class="line"><a name="l00170"></a><span class="lineno">  170</span>&#160;        <span class="keywordtype">double</span> global_xMax = -std::numeric_limits&lt;int&gt;::max();</div>
-<div class="line"><a name="l00171"></a><span class="lineno">  171</span>&#160;        <span class="keywordtype">double</span> global_yMax = -std::numeric_limits&lt;int&gt;::max();</div>
-<div class="line"><a name="l00172"></a><span class="lineno">  172</span>&#160;        <span class="comment">// spawn all available threads (processors)</span></div>
-<div class="line"><a name="l00173"></a><span class="lineno">  173</span>&#160;<span class="preprocessor">        #pragma omp parallel firstprivate(line, objectCount) reduction(min:global_xMin) reduction(min:global_yMin) reduction(max:global_xMax)  reduction(max:global_yMax)</span></div>
-<div class="line"><a name="l00174"></a><span class="lineno">  174</span>&#160;        {</div>
-<div class="line"><a name="l00175"></a><span class="lineno">  175</span>&#160;            <span class="keywordtype">size_t</span> recID;</div>
-<div class="line"><a name="l00176"></a><span class="lineno">  176</span>&#160;            <span class="keywordtype">double</span> x,y;</div>
-<div class="line"><a name="l00177"></a><span class="lineno">  177</span>&#160;            DB_STATUS local_ret = DBERR_OK;</div>
-<div class="line"><a name="l00178"></a><span class="lineno">  178</span>&#160;            <span class="keywordtype">int</span> tid = omp_get_thread_num();</div>
-<div class="line"><a name="l00179"></a><span class="lineno">  179</span>&#160;            <span class="keywordtype">int</span> totalThreads = omp_get_num_threads();</div>
-<div class="line"><a name="l00180"></a><span class="lineno">  180</span>&#160;            <span class="comment">// calculate which lines this thread will handle</span></div>
-<div class="line"><a name="l00181"></a><span class="lineno">  181</span>&#160;            <span class="keywordtype">size_t</span> linesPerThread = (objectCount / totalThreads);</div>
-<div class="line"><a name="l00182"></a><span class="lineno">  182</span>&#160;            <span class="keywordtype">size_t</span> fromLine = 1 + (tid * linesPerThread);          <span class="comment">// first line is object count</span></div>
-<div class="line"><a name="l00183"></a><span class="lineno">  183</span>&#160;            <span class="keywordtype">size_t</span> toLine = 1 + ((tid + 1) * linesPerThread);    <span class="comment">// exclusive</span></div>
-<div class="line"><a name="l00184"></a><span class="lineno">  184</span>&#160;            <span class="keywordflow">if</span> (tid == totalThreads - 1) {</div>
-<div class="line"><a name="l00185"></a><span class="lineno">  185</span>&#160;                toLine = objectCount+1;</div>
-<div class="line"><a name="l00186"></a><span class="lineno">  186</span>&#160;            }</div>
-<div class="line"><a name="l00187"></a><span class="lineno">  187</span>&#160;            <span class="comment">// open file</span></div>
-<div class="line"><a name="l00188"></a><span class="lineno">  188</span>&#160;            std::ifstream fin(dataset.path);</div>
-<div class="line"><a name="l00189"></a><span class="lineno">  189</span>&#160;            <span class="keywordflow">if</span> (!fin.is_open()) {</div>
-<div class="line"><a name="l00190"></a><span class="lineno">  190</span>&#160;                <a class="code" href="namespacelogger.html#a53f34feeb22a94db295af05b8b2aab5c">logger::log_error</a>(DBERR_MISSING_FILE, <span class="stringliteral">&quot;Failed to open dataset path:&quot;</span>, dataset.path);</div>
-<div class="line"><a name="l00191"></a><span class="lineno">  191</span>&#160;<span class="preprocessor">                #pragma omp cancel parallel</span></div>
-<div class="line"><a name="l00192"></a><span class="lineno">  192</span>&#160;                ret = DBERR_MISSING_FILE;</div>
-<div class="line"><a name="l00193"></a><span class="lineno">  193</span>&#160;            }</div>
-<div class="line"><a name="l00194"></a><span class="lineno">  194</span>&#160;            <span class="comment">// jump to start line</span></div>
-<div class="line"><a name="l00195"></a><span class="lineno">  195</span>&#160;            <span class="keywordflow">for</span> (<span class="keywordtype">size_t</span> i=0; i&lt;fromLine; i++) {</div>
-<div class="line"><a name="l00196"></a><span class="lineno">  196</span>&#160;                fin.ignore(std::numeric_limits&lt;std::streamsize&gt;::max(), <span class="charliteral">&#39;\n&#39;</span>);</div>
-<div class="line"><a name="l00197"></a><span class="lineno">  197</span>&#160;            }</div>
-<div class="line"><a name="l00198"></a><span class="lineno">  198</span>&#160;            <span class="comment">// loop</span></div>
-<div class="line"><a name="l00199"></a><span class="lineno">  199</span>&#160;            <span class="keywordtype">size_t</span> currentLine = fromLine;</div>
-<div class="line"><a name="l00200"></a><span class="lineno">  200</span>&#160;            std::string token;</div>
-<div class="line"><a name="l00201"></a><span class="lineno">  201</span>&#160;            <span class="keywordflow">while</span> (<span class="keyword">true</span>) {</div>
-<div class="line"><a name="l00202"></a><span class="lineno">  202</span>&#160;                <span class="comment">// next object</span></div>
-<div class="line"><a name="l00203"></a><span class="lineno">  203</span>&#160;                std::getline(fin, line);                </div>
-<div class="line"><a name="l00204"></a><span class="lineno">  204</span>&#160;                std::stringstream ss(line);</div>
-<div class="line"><a name="l00205"></a><span class="lineno">  205</span>&#160;                <span class="comment">// recID</span></div>
-<div class="line"><a name="l00206"></a><span class="lineno">  206</span>&#160;                std::getline(ss, token, <span class="charliteral">&#39;,&#39;</span>);</div>
-<div class="line"><a name="l00207"></a><span class="lineno">  207</span>&#160;                recID = (size_t) std::stoull(token);</div>
-<div class="line"><a name="l00208"></a><span class="lineno">  208</span>&#160;                <span class="comment">// Read the coords x,y</span></div>
-<div class="line"><a name="l00209"></a><span class="lineno">  209</span>&#160;                <span class="keywordflow">while</span> (std::getline(ss, token, <span class="charliteral">&#39;,&#39;</span>)) {</div>
-<div class="line"><a name="l00210"></a><span class="lineno">  210</span>&#160;                    std::stringstream coordStream(token);</div>
-<div class="line"><a name="l00211"></a><span class="lineno">  211</span>&#160;                    <span class="comment">// Split the x and y values</span></div>
-<div class="line"><a name="l00212"></a><span class="lineno">  212</span>&#160;                    std::getline(coordStream, token, <span class="charliteral">&#39; &#39;</span>);</div>
-<div class="line"><a name="l00213"></a><span class="lineno">  213</span>&#160;                    x = std::stof(token);</div>
-<div class="line"><a name="l00214"></a><span class="lineno">  214</span>&#160;                    std::getline(coordStream, token, <span class="charliteral">&#39; &#39;</span>);</div>
-<div class="line"><a name="l00215"></a><span class="lineno">  215</span>&#160;                    y = std::stof(token);</div>
-<div class="line"><a name="l00216"></a><span class="lineno">  216</span>&#160;                    <span class="comment">// bounds</span></div>
-<div class="line"><a name="l00217"></a><span class="lineno">  217</span>&#160;                    global_xMin = std::min(global_xMin, x);</div>
-<div class="line"><a name="l00218"></a><span class="lineno">  218</span>&#160;                    global_yMin = std::min(global_yMin, y);</div>
-<div class="line"><a name="l00219"></a><span class="lineno">  219</span>&#160;                    global_xMax = std::max(global_xMax, x);</div>
-<div class="line"><a name="l00220"></a><span class="lineno">  220</span>&#160;                    global_yMax = std::max(global_yMax, y);</div>
-<div class="line"><a name="l00221"></a><span class="lineno">  221</span>&#160;                }</div>
-<div class="line"><a name="l00222"></a><span class="lineno">  222</span>&#160;                currentLine += 1;</div>
-<div class="line"><a name="l00223"></a><span class="lineno">  223</span>&#160;                <span class="keywordflow">if</span> (currentLine &gt;= toLine) {</div>
-<div class="line"><a name="l00224"></a><span class="lineno">  224</span>&#160;                    <span class="comment">// the last line for this thread has been read</span></div>
-<div class="line"><a name="l00225"></a><span class="lineno">  225</span>&#160;                    <span class="keywordflow">break</span>;</div>
-<div class="line"><a name="l00226"></a><span class="lineno">  226</span>&#160;                }</div>
-<div class="line"><a name="l00227"></a><span class="lineno">  227</span>&#160;            }</div>
-<div class="line"><a name="l00228"></a><span class="lineno">  228</span>&#160;            <span class="comment">// close file</span></div>
-<div class="line"><a name="l00229"></a><span class="lineno">  229</span>&#160;            fin.close();</div>
-<div class="line"><a name="l00230"></a><span class="lineno">  230</span>&#160;        }</div>
-<div class="line"><a name="l00231"></a><span class="lineno">  231</span>&#160;        <span class="keywordflow">if</span> (ret != DBERR_OK) {</div>
-<div class="line"><a name="l00232"></a><span class="lineno">  232</span>&#160;            <span class="keywordflow">return</span> ret;</div>
-<div class="line"><a name="l00233"></a><span class="lineno">  233</span>&#160;        }</div>
-<div class="line"><a name="l00234"></a><span class="lineno">  234</span>&#160;        <span class="comment">// set extent</span></div>
-<div class="line"><a name="l00235"></a><span class="lineno">  235</span>&#160;        dataset.dataspaceMetadata.set(global_xMin, global_yMin, global_xMax, global_yMax);</div>
-<div class="line"><a name="l00236"></a><span class="lineno">  236</span>&#160;        <span class="keywordflow">return</span> ret;</div>
-<div class="line"><a name="l00237"></a><span class="lineno">  237</span>&#160;    }</div>
-<div class="ttc" id="anamespacelogger_html_a53f34feeb22a94db295af05b8b2aab5c"><div class="ttname"><a href="namespacelogger.html#a53f34feeb22a94db295af05b8b2aab5c">logger::log_error</a></div><div class="ttdeci">void log_error(int errorCode, T first, Args... rest)</div><div class="ttdoc">Error logging function with template arguments. Separates input parameters with spaces....</div><div class="ttdef"><b>Definition:</b> <a href="utils_8h_source.html#l00096">utils.h:96</a></div></div>
-</div><!-- fragment --><div class="dynheader">
-Here is the call graph for this function:</div>
-<div class="dyncontent">
-<div class="center"><img src="namespacepartitioning_a873e77ab57aa73ee78177a287a686300_cgraph.png" border="0" usemap="#anamespacepartitioning_a873e77ab57aa73ee78177a287a686300_cgraph" alt=""/></div>
-<map name="anamespacepartitioning_a873e77ab57aa73ee78177a287a686300_cgraph" id="anamespacepartitioning_a873e77ab57aa73ee78177a287a686300_cgraph">
-<area shape="rect" title="Calculates the given dataset&#39;s metadata about its dataspace." alt="" coords="5,5,224,47"/>
-<area shape="rect" href="namespacelogger.html#a53f34feeb22a94db295af05b8b2aab5c" title="Error logging function with template arguments. Separates input parameters with spaces...." alt="" coords="272,13,387,39"/>
-</map>
-</div>
-
-</div>
-</div>
 <a id="a5f7aef01c8b2d7c6a89ee75018c45591"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a5f7aef01c8b2d7c6a89ee75018c45591">&#9670;&nbsp;</a></span>partitionDataset()</h2>
 
@@ -239,39 +114,47 @@ Here is the call graph for this function:</div>
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="partitioning_8cpp_source.html#l00415">415</a> of file <a class="el" href="partitioning_8cpp_source.html">partitioning.cpp</a>.</p>
-<div class="fragment"><div class="line"><a name="l00415"></a><span class="lineno">  415</span>&#160;                                                 {</div>
-<div class="line"><a name="l00416"></a><span class="lineno">  416</span>&#160;        <span class="keywordtype">double</span> startTime;</div>
-<div class="line"><a name="l00417"></a><span class="lineno">  417</span>&#160;        DB_STATUS ret;</div>
-<div class="line"><a name="l00418"></a><span class="lineno">  418</span>&#160;        <span class="comment">// time</span></div>
-<div class="line"><a name="l00419"></a><span class="lineno">  419</span>&#160;        startTime = <a class="code" href="namespacempi__timer.html#ab01f3cdc560e4858245746a406e9b951">mpi_timer::markTime</a>();</div>
-<div class="line"><a name="l00420"></a><span class="lineno">  420</span>&#160;        <span class="keywordflow">switch</span> (dataset-&gt;fileType) {</div>
-<div class="line"><a name="l00421"></a><span class="lineno">  421</span>&#160;            <span class="comment">// perform the partitioning</span></div>
-<div class="line"><a name="l00422"></a><span class="lineno">  422</span>&#160;            <span class="keywordflow">case</span> FT_CSV:</div>
-<div class="line"><a name="l00423"></a><span class="lineno">  423</span>&#160;                <span class="comment">// csv dataset</span></div>
-<div class="line"><a name="l00424"></a><span class="lineno">  424</span>&#160;                ret = performPartitioningCSV(*dataset);</div>
-<div class="line"><a name="l00425"></a><span class="lineno">  425</span>&#160;                <span class="keywordflow">if</span> (ret != DBERR_OK) {</div>
-<div class="line"><a name="l00426"></a><span class="lineno">  426</span>&#160;                    <a class="code" href="namespacelogger.html#a53f34feeb22a94db295af05b8b2aab5c">logger::log_error</a>(DBERR_PARTITIONING_FAILED, <span class="stringliteral">&quot;Partitioning failed for dataset&quot;</span>, dataset-&gt;nickname);</div>
-<div class="line"><a name="l00427"></a><span class="lineno">  427</span>&#160;                    <span class="keywordflow">return</span> ret;</div>
-<div class="line"><a name="l00428"></a><span class="lineno">  428</span>&#160;                }</div>
-<div class="line"><a name="l00429"></a><span class="lineno">  429</span>&#160;                <span class="keywordflow">break</span>;</div>
-<div class="line"><a name="l00430"></a><span class="lineno">  430</span>&#160;            <span class="keywordflow">case</span> FT_BINARY:</div>
-<div class="line"><a name="l00431"></a><span class="lineno">  431</span>&#160;            <span class="keywordflow">case</span> FT_WKT:</div>
-<div class="line"><a name="l00432"></a><span class="lineno">  432</span>&#160;            <span class="keywordflow">default</span>:</div>
-<div class="line"><a name="l00433"></a><span class="lineno">  433</span>&#160;                <a class="code" href="namespacelogger.html#a53f34feeb22a94db295af05b8b2aab5c">logger::log_error</a>(DBERR_FEATURE_UNSUPPORTED, <span class="stringliteral">&quot;Unsupported data file type:&quot;</span>, dataset-&gt;fileType);</div>
-<div class="line"><a name="l00434"></a><span class="lineno">  434</span>&#160;                <span class="keywordflow">break</span>;</div>
-<div class="line"><a name="l00435"></a><span class="lineno">  435</span>&#160;        }</div>
-<div class="line"><a name="l00436"></a><span class="lineno">  436</span>&#160; </div>
-<div class="line"><a name="l00437"></a><span class="lineno">  437</span>&#160;        <span class="comment">// wait for response by workers+agent that all is ok</span></div>
-<div class="line"><a name="l00438"></a><span class="lineno">  438</span>&#160;        ret = <a class="code" href="namespacecomm_1_1controller_1_1host.html#a7acd9cbfb1666431ed71aedf9242836b">comm::controller::host::gatherResponses</a>();</div>
-<div class="line"><a name="l00439"></a><span class="lineno">  439</span>&#160;        <span class="keywordflow">if</span> (ret != DBERR_OK) {</div>
-<div class="line"><a name="l00440"></a><span class="lineno">  440</span>&#160;            <span class="keywordflow">return</span> ret;</div>
-<div class="line"><a name="l00441"></a><span class="lineno">  441</span>&#160;        }</div>
-<div class="line"><a name="l00442"></a><span class="lineno">  442</span>&#160;        <a class="code" href="namespacelogger.html#a6232124565e7aac3c22650f1717cfa29">logger::log_success</a>(<span class="stringliteral">&quot;Partitioning for dataset&quot;</span>, dataset-&gt;nickname, <span class="stringliteral">&quot;finished in&quot;</span>, <a class="code" href="namespacempi__timer.html#a74c246372eadbc66ab89e4c971099ce0">mpi_timer::getElapsedTime</a>(startTime), <span class="stringliteral">&quot;seconds.&quot;</span>);</div>
-<div class="line"><a name="l00443"></a><span class="lineno">  443</span>&#160;                </div>
-<div class="line"><a name="l00444"></a><span class="lineno">  444</span>&#160;        <span class="keywordflow">return</span> DBERR_OK;</div>
-<div class="line"><a name="l00445"></a><span class="lineno">  445</span>&#160;    }</div>
+<p class="definition">Definition at line <a class="el" href="partitioning_8cpp_source.html#l00648">648</a> of file <a class="el" href="partitioning_8cpp_source.html">partitioning.cpp</a>.</p>
+<div class="fragment"><div class="line"><a name="l00648"></a><span class="lineno">  648</span>&#160;                                                 {</div>
+<div class="line"><a name="l00649"></a><span class="lineno">  649</span>&#160;        <span class="keywordtype">double</span> startTime;</div>
+<div class="line"><a name="l00650"></a><span class="lineno">  650</span>&#160;        DB_STATUS ret;</div>
+<div class="line"><a name="l00651"></a><span class="lineno">  651</span>&#160;        <span class="comment">// time</span></div>
+<div class="line"><a name="l00652"></a><span class="lineno">  652</span>&#160;        startTime = <a class="code" href="namespacempi__timer.html#ab01f3cdc560e4858245746a406e9b951">mpi_timer::markTime</a>();</div>
+<div class="line"><a name="l00653"></a><span class="lineno">  653</span>&#160;        <span class="keywordflow">switch</span> (dataset-&gt;fileType) {</div>
+<div class="line"><a name="l00654"></a><span class="lineno">  654</span>&#160;            <span class="comment">// perform the partitioning</span></div>
+<div class="line"><a name="l00655"></a><span class="lineno">  655</span>&#160;            <span class="keywordflow">case</span> FT_CSV:</div>
+<div class="line"><a name="l00656"></a><span class="lineno">  656</span>&#160;                <span class="comment">// csv dataset</span></div>
+<div class="line"><a name="l00657"></a><span class="lineno">  657</span>&#160;                ret = csv::loadDatasetAndPartition(dataset);</div>
+<div class="line"><a name="l00658"></a><span class="lineno">  658</span>&#160;                <span class="keywordflow">if</span> (ret != DBERR_OK) {</div>
+<div class="line"><a name="l00659"></a><span class="lineno">  659</span>&#160;                    <a class="code" href="namespacelogger.html#a53f34feeb22a94db295af05b8b2aab5c">logger::log_error</a>(DBERR_PARTITIONING_FAILED, <span class="stringliteral">&quot;Partitioning failed for dataset&quot;</span>, dataset-&gt;nickname);</div>
+<div class="line"><a name="l00660"></a><span class="lineno">  660</span>&#160;                    <span class="keywordflow">return</span> ret;</div>
+<div class="line"><a name="l00661"></a><span class="lineno">  661</span>&#160;                }</div>
+<div class="line"><a name="l00662"></a><span class="lineno">  662</span>&#160;                <span class="keywordflow">break</span>;</div>
+<div class="line"><a name="l00663"></a><span class="lineno">  663</span>&#160;            <span class="keywordflow">case</span> FT_WKT:</div>
+<div class="line"><a name="l00664"></a><span class="lineno">  664</span>&#160;                <span class="comment">// wkt dataset</span></div>
+<div class="line"><a name="l00665"></a><span class="lineno">  665</span>&#160;                ret = wkt::loadDatasetAndPartition(dataset);</div>
+<div class="line"><a name="l00666"></a><span class="lineno">  666</span>&#160;                <span class="keywordflow">if</span> (ret != DBERR_OK) {</div>
+<div class="line"><a name="l00667"></a><span class="lineno">  667</span>&#160;                    <a class="code" href="namespacelogger.html#a53f34feeb22a94db295af05b8b2aab5c">logger::log_error</a>(DBERR_PARTITIONING_FAILED, <span class="stringliteral">&quot;Partitioning failed for dataset&quot;</span>, dataset-&gt;nickname);</div>
+<div class="line"><a name="l00668"></a><span class="lineno">  668</span>&#160;                    <span class="keywordflow">return</span> ret;</div>
+<div class="line"><a name="l00669"></a><span class="lineno">  669</span>&#160;                }</div>
+<div class="line"><a name="l00670"></a><span class="lineno">  670</span>&#160;                <span class="keywordflow">break</span>;</div>
+<div class="line"><a name="l00671"></a><span class="lineno">  671</span>&#160;            <span class="keywordflow">case</span> FT_BINARY:</div>
+<div class="line"><a name="l00672"></a><span class="lineno">  672</span>&#160;            <span class="keywordflow">default</span>:</div>
+<div class="line"><a name="l00673"></a><span class="lineno">  673</span>&#160;                <a class="code" href="namespacelogger.html#a53f34feeb22a94db295af05b8b2aab5c">logger::log_error</a>(DBERR_FEATURE_UNSUPPORTED, <span class="stringliteral">&quot;Unsupported data file type:&quot;</span>, dataset-&gt;fileType);</div>
+<div class="line"><a name="l00674"></a><span class="lineno">  674</span>&#160;                <span class="keywordflow">break</span>;</div>
+<div class="line"><a name="l00675"></a><span class="lineno">  675</span>&#160;        }</div>
+<div class="line"><a name="l00676"></a><span class="lineno">  676</span>&#160; </div>
+<div class="line"><a name="l00677"></a><span class="lineno">  677</span>&#160;        <span class="comment">// wait for response by workers+agent that all is ok</span></div>
+<div class="line"><a name="l00678"></a><span class="lineno">  678</span>&#160;        ret = <a class="code" href="namespacecomm_1_1controller_1_1host.html#a7acd9cbfb1666431ed71aedf9242836b">comm::controller::host::gatherResponses</a>();</div>
+<div class="line"><a name="l00679"></a><span class="lineno">  679</span>&#160;        <span class="keywordflow">if</span> (ret != DBERR_OK) {</div>
+<div class="line"><a name="l00680"></a><span class="lineno">  680</span>&#160;            <span class="keywordflow">return</span> ret;</div>
+<div class="line"><a name="l00681"></a><span class="lineno">  681</span>&#160;        }</div>
+<div class="line"><a name="l00682"></a><span class="lineno">  682</span>&#160;        <a class="code" href="namespacelogger.html#a6232124565e7aac3c22650f1717cfa29">logger::log_success</a>(<span class="stringliteral">&quot;Partitioning for dataset&quot;</span>, dataset-&gt;nickname, <span class="stringliteral">&quot;finished in&quot;</span>, <a class="code" href="namespacempi__timer.html#a74c246372eadbc66ab89e4c971099ce0">mpi_timer::getElapsedTime</a>(startTime), <span class="stringliteral">&quot;seconds.&quot;</span>);</div>
+<div class="line"><a name="l00683"></a><span class="lineno">  683</span>&#160;                </div>
+<div class="line"><a name="l00684"></a><span class="lineno">  684</span>&#160;        <span class="keywordflow">return</span> DBERR_OK;</div>
+<div class="line"><a name="l00685"></a><span class="lineno">  685</span>&#160;    }</div>
 <div class="ttc" id="anamespacecomm_1_1controller_1_1host_html_a7acd9cbfb1666431ed71aedf9242836b"><div class="ttname"><a href="namespacecomm_1_1controller_1_1host.html#a7acd9cbfb1666431ed71aedf9242836b">comm::controller::host::gatherResponses</a></div><div class="ttdeci">DB_STATUS gatherResponses()</div><div class="ttdoc">Gathers responses (ACK/NACK) from workers or the local agent about the last instructed action/job.</div><div class="ttdef"><b>Definition:</b> <a href="comm_8cpp_source.html#l01099">comm.cpp:1099</a></div></div>
+<div class="ttc" id="anamespacelogger_html_a53f34feeb22a94db295af05b8b2aab5c"><div class="ttname"><a href="namespacelogger.html#a53f34feeb22a94db295af05b8b2aab5c">logger::log_error</a></div><div class="ttdeci">void log_error(int errorCode, T first, Args... rest)</div><div class="ttdoc">Error logging function with template arguments. Separates input parameters with spaces....</div><div class="ttdef"><b>Definition:</b> <a href="utils_8h_source.html#l00096">utils.h:96</a></div></div>
 <div class="ttc" id="anamespacelogger_html_a6232124565e7aac3c22650f1717cfa29"><div class="ttname"><a href="namespacelogger.html#a6232124565e7aac3c22650f1717cfa29">logger::log_success</a></div><div class="ttdeci">void log_success(T first, Args... rest)</div><div class="ttdoc">Success logging function with template arguments. Separates input parameters with spaces....</div><div class="ttdef"><b>Definition:</b> <a href="utils_8h_source.html#l00138">utils.h:138</a></div></div>
 <div class="ttc" id="anamespacempi__timer_html_a74c246372eadbc66ab89e4c971099ce0"><div class="ttname"><a href="namespacempi__timer.html#a74c246372eadbc66ab89e4c971099ce0">mpi_timer::getElapsedTime</a></div><div class="ttdeci">double getElapsedTime(double startTime)</div><div class="ttdoc">Get the elapsed time in seconds, from the given start timestamp.</div><div class="ttdef"><b>Definition:</b> <a href="utils_8cpp_source.html#l00144">utils.cpp:144</a></div></div>
 <div class="ttc" id="anamespacempi__timer_html_ab01f3cdc560e4858245746a406e9b951"><div class="ttname"><a href="namespacempi__timer.html#ab01f3cdc560e4858245746a406e9b951">mpi_timer::markTime</a></div><div class="ttdeci">double markTime()</div><div class="ttdoc">get the timestamp of the current time</div><div class="ttdef"><b>Definition:</b> <a href="utils_8cpp_source.html#l00140">utils.cpp:140</a></div></div>

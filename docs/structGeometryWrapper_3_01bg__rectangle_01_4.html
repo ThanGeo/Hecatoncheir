@@ -80,6 +80,12 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:aefdac57183b1797458a0ee1fc23a90f2"><td class="memItemLeft" align="right" valign="top"><a id="aefdac57183b1797458a0ee1fc23a90f2"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>addPoint</b> (const double x, const double y)</td></tr>
 <tr class="separator:aefdac57183b1797458a0ee1fc23a90f2"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a44226fa9641c936263e0983eacd1ad22"><td class="memItemLeft" align="right" valign="top"><a id="a44226fa9641c936263e0983eacd1ad22"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>getBoostEnvelope</b> (bg_rectangle &amp;envelope)</td></tr>
+<tr class="separator:a44226fa9641c936263e0983eacd1ad22"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a387b18617eca3ee9133b75104f710834"><td class="memItemLeft" align="right" valign="top"><a id="a387b18617eca3ee9133b75104f710834"></a>
+DB_STATUS&#160;</td><td class="memItemRight" valign="bottom"><b>setFromWKT</b> (std::string &amp;wktText)</td></tr>
+<tr class="separator:a387b18617eca3ee9133b75104f710834"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:accc360b8f0227791c6ef3ff36335e3c9"><td class="memItemLeft" align="right" valign="top"><a id="accc360b8f0227791c6ef3ff36335e3c9"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>correctGeometry</b> ()</td></tr>
 <tr class="separator:accc360b8f0227791c6ef3ff36335e3c9"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -173,7 +179,7 @@ std::vector&lt; bg_point_xy &gt;&#160;</td><td class="memItemRight" valign="bott
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock">
-<p class="definition">Definition at line <a class="el" href="containers_8h_source.html#l00329">329</a> of file <a class="el" href="containers_8h_source.html">containers.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="containers_8h_source.html#l00374">374</a> of file <a class="el" href="containers_8h_source.html">containers.h</a>.</p>
 </div><h2 class="groupheader">Member Function Documentation</h2>
 <a id="abbe4060e219f17900fc2af7902d9131b"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#abbe4060e219f17900fc2af7902d9131b">&#9670;&nbsp;</a></span>createMaskCode()</h2>
@@ -202,11 +208,11 @@ template&lt;typename OtherGeometryType &gt; </div>
 </div><div class="memdoc">
 <p>queries </p>
 
-<p class="definition">Definition at line <a class="el" href="containers_8h_source.html#l00395">395</a> of file <a class="el" href="containers_8h_source.html">containers.h</a>.</p>
-<div class="fragment"><div class="line"><a name="l00395"></a><span class="lineno">  395</span>&#160;                                                                                    {</div>
-<div class="line"><a name="l00396"></a><span class="lineno">  396</span>&#160;        <a class="code" href="namespacelogger.html#a53f34feeb22a94db295af05b8b2aab5c">logger::log_error</a>(DBERR_INVALID_OPERATION, <span class="stringliteral">&quot;createMaskCode unsupported for the invoked shapes.&quot;</span>);</div>
-<div class="line"><a name="l00397"></a><span class="lineno">  397</span>&#160;        <span class="keywordflow">return</span> <span class="stringliteral">&quot;&quot;</span>;</div>
-<div class="line"><a name="l00398"></a><span class="lineno">  398</span>&#160;    }</div>
+<p class="definition">Definition at line <a class="el" href="containers_8h_source.html#l00466">466</a> of file <a class="el" href="containers_8h_source.html">containers.h</a>.</p>
+<div class="fragment"><div class="line"><a name="l00466"></a><span class="lineno">  466</span>&#160;                                                                                    {</div>
+<div class="line"><a name="l00467"></a><span class="lineno">  467</span>&#160;        <a class="code" href="namespacelogger.html#a53f34feeb22a94db295af05b8b2aab5c">logger::log_error</a>(DBERR_INVALID_OPERATION, <span class="stringliteral">&quot;createMaskCode unsupported for the invoked shapes.&quot;</span>);</div>
+<div class="line"><a name="l00468"></a><span class="lineno">  468</span>&#160;        <span class="keywordflow">return</span> <span class="stringliteral">&quot;&quot;</span>;</div>
+<div class="line"><a name="l00469"></a><span class="lineno">  469</span>&#160;    }</div>
 <div class="ttc" id="anamespacelogger_html_a53f34feeb22a94db295af05b8b2aab5c"><div class="ttname"><a href="namespacelogger.html#a53f34feeb22a94db295af05b8b2aab5c">logger::log_error</a></div><div class="ttdeci">void log_error(int errorCode, T first, Args... rest)</div><div class="ttdoc">Error logging function with template arguments. Separates input parameters with spaces....</div><div class="ttdef"><b>Definition:</b> <a href="utils_8h_source.html#l00096">utils.h:96</a></div></div>
 </div><!-- fragment --><div class="dynheader">
 Here is the call graph for this function:</div>

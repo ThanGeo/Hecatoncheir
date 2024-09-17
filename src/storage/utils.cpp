@@ -44,4 +44,19 @@ namespace storage
         }
         return DBERR_OK;
     }
+
+    DB_STATUS countLinesInFile(std::string &filepath, size_t &lineCount) {
+        if (!verifyFilepath(filepath)) {
+            logger::log_error(DBERR_MISSING_FILE, "Count lines for file '", filepath, " ' failed. File is missing.");
+            return DBERR_MISSING_FILE;
+        }
+        lineCount = 0;
+        std::string line;
+        std::ifstream fin(filepath);
+        while (getline(fin, line)) {
+            lineCount += 1;
+        }
+        fin.close();
+        return DBERR_OK;
+    }
 }

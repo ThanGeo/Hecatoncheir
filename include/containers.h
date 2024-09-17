@@ -140,6 +140,17 @@ public:
         geometry = geom;
     }
 
+    bg_rectangle getBoostEnvelope(bg_rectangle &envelope) {
+        logger::log_error(DBERR_INVALID_OPERATION, "Geometry wrapper can be accessed directly for operation: getBoostEnvelope");
+        bg_rectangle empty;
+        return empty;
+    }
+
+    DB_STATUS setFromWKT(std::string &wktText) {
+        logger::log_error(DBERR_INVALID_OPERATION, "Geometry wrapper can be accessed directly for operation: setFromWKT");
+        return DBERR_INVALID_OPERATION;
+    }
+
     void reset() {
         logger::log_error(DBERR_INVALID_OPERATION, "Geometry wrapper can be accessed directly for operation: reset");
     }
@@ -244,6 +255,10 @@ public:
         geometry = bg_point_xy(x, y);
     }
 
+    void getBoostEnvelope(bg_rectangle &envelope) {
+        boost::geometry::envelope(geometry, envelope);
+    }
+
     void correctGeometry() {
         boost::geometry::correct(geometry);
     }
@@ -251,6 +266,36 @@ public:
     void reset() {
         boost::geometry::clear(geometry);
     }
+
+    DB_STATUS setFromWKT(std::string &wktText) {
+        // check if it is correct
+        if (wktText.find("POINT") == std::string::npos) {
+            // it is not a polygon WKT, ignore
+            // logger::log_warning("WKT text passed into set from WKT is not a point:", wktText);
+            return DBERR_INVALID_GEOMETRY;
+        }
+        // special case, it might be multi
+        if (wktText.find("MULTIPOINT") != std::string::npos) {
+            // it is a multipoint wkt, ignore
+            // logger::log_warning("WKT text passed into set from WKT is a multipoint:", wktText);
+            return DBERR_INVALID_GEOMETRY;
+        }
+        // load
+        boost::geometry::read_wkt(wktText, geometry);
+        // correct
+        correctGeometry();
+        // check if valid
+        std::string reason;
+        if (!boost::geometry::is_valid(geometry,reason)) {
+            // invalid geometry, reset and return error
+            reset();
+            // logger::log_warning("Point geometry is invalid:", wktText, "Reason:", reason);
+            return DBERR_INVALID_GEOMETRY;
+        }
+        return DBERR_OK;
+    }
+
+    
 
     bool pipTest(const bg_point_xy &point) const {
         return false;
@@ -346,6 +391,32 @@ public:
             logger::log_error(DBERR_INVALID_OPERATION, "Cannot add more than two points to a rectangle");
         }
         vertices.emplace_back(point);
+    }
+
+    void getBoostEnvelope(bg_rectangle &envelope) {
+        envelope = geometry;
+    }
+
+    DB_STATUS setFromWKT(std::string &wktText) {
+        // check if it is correct
+        if (wktText.find("BOX") == std::string::npos) {
+            // it is not a rectangle WKT, ignore
+            // logger::log_warning("WKT text passed into set from WKT is not a rectangle (box):", wktText);
+            return DBERR_INVALID_GEOMETRY;
+        }
+        // load
+        boost::geometry::read_wkt(wktText, geometry);
+        // correct
+        correctGeometry();
+        // check if valid
+        std::string reason;
+        if (!boost::geometry::is_valid(geometry,reason)) {
+            // invalid geometry, reset and return error
+            reset();
+            // logger::log_warning("Rectangle geometry is invalid:", wktText, "Reason:", reason);
+            return DBERR_INVALID_GEOMETRY;
+        }
+        return DBERR_OK;
     }
 
     void correctGeometry() {
@@ -449,12 +520,44 @@ public:
         geometry.push_back(point);
     }
 
+    void getBoostEnvelope(bg_rectangle &envelope) {
+        boost::geometry::envelope(geometry, envelope);
+    }
+
     void correctGeometry() {
         boost::geometry::correct(geometry);
     }
 
     bool pipTest(const bg_point_xy &point) const {
         return false;
+    }
+
+    DB_STATUS setFromWKT(std::string &wktText) {
+        // check if it is correct
+        if (wktText.find("LINESTRING") == std::string::npos) {
+            // it is not a polygon WKT, ignore
+            // logger::log_warning("WKT text passed into set from WKT is not a linestring:", wktText);
+            return DBERR_INVALID_GEOMETRY;
+        }
+        // special case, it might be multi
+        if (wktText.find("MULTILINESTRING") != std::string::npos) {
+            // it is a multilinestring wkt, ignore
+            // logger::log_warning("WKT text passed into set from WKT is a multilinestring:", wktText);
+            return DBERR_INVALID_GEOMETRY;
+        }
+        // load
+        boost::geometry::read_wkt(wktText, geometry);
+        // correct
+        correctGeometry();
+        // check if valid
+        std::string reason;
+        if (!boost::geometry::is_valid(geometry,reason)) {
+            // invalid geometry, reset and return error
+            reset();
+            // logger::log_warning("Linestring geometry is invalid:", wktText, "Reason:", reason);
+            return DBERR_INVALID_GEOMETRY;
+        }
+        return DBERR_OK;
     }
 
     void printGeometry() {
@@ -556,6 +659,38 @@ public:
             printf("(%f,%f),", it.x(), it.y());
         }
         printf("\n");
+    }
+
+    void getBoostEnvelope(bg_rectangle &envelope) {
+        boost::geometry::envelope(geometry, envelope);
+    }
+
+    DB_STATUS setFromWKT(std::string &wktText) {
+        // check if it is correct
+        if (wktText.find("POLYGON") == std::string::npos) {
+            // it is not a polygon WKT, ignore
+            // logger::log_warning("WKT text passed into set point from WKT is not a polygon:", wktText);
+            return DBERR_INVALID_GEOMETRY;
+        }
+        // special case, it might be multipolygon
+        if (wktText.find("MULTIPOLYGON") != std::string::npos) {
+            // it is a multipolygon wkt, ignore
+            // logger::log_warning("WKT text passed into set polygon from WKT is a multipolygon:", wktText);
+            return DBERR_INVALID_GEOMETRY;
+        }
+        // load
+        boost::geometry::read_wkt(wktText, geometry);
+        // correct
+        correctGeometry();
+        // check if valid
+        std::string reason;
+        if (!boost::geometry::is_valid(geometry,reason)) {
+            // invalid geometry, reset and return error
+            reset();
+            // logger::log_warning("Polygon geometry is invalid:", wktText, "Reason:", reason);
+            return DBERR_INVALID_GEOMETRY;
+        }
+        return DBERR_OK;
     }
 
     void reset() {
@@ -817,6 +952,20 @@ public:
         mbr.pMax.y = std::max(yMin, yMax);
     }
 
+    /** @brief Sets the MBR from the object's boost geometry envelope. */
+    inline void setMBR() {
+        bg_rectangle envelope;
+        // get envelope from boost
+        std::visit([&](auto&& arg) {
+            arg.getBoostEnvelope(envelope);
+        }, shape);
+        // set mbr
+        mbr.pMin.x = envelope.min_corner().x();
+        mbr.pMin.y = envelope.min_corner().y();
+        mbr.pMax.x = envelope.max_corner().x();
+        mbr.pMax.y = envelope.max_corner().y();
+    }
+
     inline void resetMBR() {
         mbr.pMin.x = std::numeric_limits<int>::max();
         mbr.pMin.y = std::numeric_limits<int>::max();
@@ -866,6 +1015,12 @@ public:
             mbr.pMax.y = std::max(mbr.pMax.y, coords[i+1]);
         }
         correctGeometry();
+    }
+
+    DB_STATUS setFromWKT(std::string &wktText) {
+        return std::visit([&wktText](auto&& arg) {
+            return arg.setFromWKT(wktText);
+        }, shape);
     }
 
     /** @brief Modifies the point specified by 'index' with the new values x,y. (see derived method definitions) 
