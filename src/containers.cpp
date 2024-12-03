@@ -4,31 +4,32 @@ Config g_config;
 
 QueryOutput g_queryOutput;
 
-void queryResultReductionFunc(QueryOutput &in, QueryOutput &out) {
+DB_STATUS queryResultReductionFunc(QueryOutput &in, QueryOutput &out) {
+    DB_STATUS ret = DBERR_OK;
     out.queryResults += in.queryResults;
     out.postMBRFilterCandidates += in.postMBRFilterCandidates;
     out.refinementCandidates += in.refinementCandidates;
     switch (g_config.queryMetadata.type) {
-        case Q_RANGE:
-        case Q_DISJOINT:
+        case Q_RANGE: 
+        case Q_DISJOINT: 
         case Q_INTERSECT:
-        case Q_INSIDE:
-        case Q_CONTAINS:
-        case Q_COVERS:
-        case Q_COVERED_BY:
-        case Q_MEET:
-        case Q_EQUAL:
+        case Q_INSIDE: 
+        case Q_CONTAINS: 
+        case Q_COVERS: 
+        case Q_COVERED_BY: 
+        case Q_MEET: 
+        case Q_EQUAL: 
             out.trueHits += in.trueHits;
             out.trueNegatives += in.trueNegatives;
-            break;
+            return ret;
         case Q_FIND_RELATION:
             for (auto &it : in.topologyRelationsResultMap) {
                 out.topologyRelationsResultMap[it.first] += it.second;
             }
-            break;
+            return ret;
         default:
             logger::log_error(DBERR_QUERY_INVALID_TYPE, "Unsupported query type:", g_config.queryMetadata.type);
-            break;
+            return DBERR_QUERY_INVALID_TYPE;            
     }
 }
 
@@ -221,16 +222,16 @@ int Dataset::calculateBufferSize() {
 /**
  * serialize dataset metadata (only specific stuff)
  */
-int Dataset::serialize(char **buffer) {
+DB_STATUS Dataset::serialize(char **buffer, int &bufferSize) {
     int position = 0;
     // calculate size
-    int bufferSize = calculateBufferSize();
+    int bufferSizeRet = calculateBufferSize();
     // allocate space
-    char* localBuffer = (char*) malloc(bufferSize * sizeof(char));
+    char* localBuffer = (char*) malloc(bufferSizeRet * sizeof(char));
 
     if (localBuffer == NULL) {
         // malloc failed
-        return -1;
+        return DBERR_MALLOC_FAILED;
     }
 
     // add datatype
@@ -253,10 +254,11 @@ int Dataset::serialize(char **buffer) {
     position += sizeof(double);
     // set and return
     (*buffer) = localBuffer;
-    return bufferSize;
+    bufferSize = bufferSizeRet;
+    return DBERR_OK;
 }
 
-void Dataset::deserialize(const char *buffer, int bufferSize) {
+DB_STATUS Dataset::deserialize(const char *buffer, int bufferSize) {
     int nicknameLength;
     int position = 0;
     double xMin, yMin, xMax, yMax;
@@ -283,6 +285,10 @@ void Dataset::deserialize(const char *buffer, int bufferSize) {
 
     if (position == bufferSize) {
         // all is well
+        return DBERR_OK;
+    }
+    else{
+        return DBERR_DESERIALIZE;
     }
 }
 
@@ -316,18 +322,18 @@ void Dataset::addObjectToSectionMap(const uint sectionID, const size_t recID) {
     }
 }
 
-void Dataset::addIntervalsToAprilData(const uint sectionID, const size_t recID, const int numIntervals, const std::vector<uint32_t> &intervals, const bool ALL) {
+DB_STATUS Dataset::addIntervalsToAprilData(const uint sectionID, const size_t recID, const int numIntervals, const std::vector<uint32_t> &intervals, const bool ALL) {
     // retrieve section
     auto secIT = this->sectionMap.find(sectionID);
     if (secIT == this->sectionMap.end()) {
         logger::log_error(DBERR_INVALID_PARAMETER, "could not find section ID", sectionID, "in section map of dataset", this->nickname);
-        return;
+        return DBERR_INVALID_PARAMETER;
     }
     // retrieve object
     auto it = secIT->second.aprilData.find(recID);
     if (it == secIT->second.aprilData.end()) {
         logger::log_error(DBERR_INVALID_PARAMETER, "could not find recID", recID, "in section map of dataset", this->nickname);
-        return;
+        return DBERR_INVALID_PARAMETER;
     }
     // replace intervals in april data
     if (ALL) {
@@ -337,6 +343,7 @@ void Dataset::addIntervalsToAprilData(const uint sectionID, const size_t recID, 
         it->second.numIntervalsFULL = numIntervals;
         it->second.intervalsFULL = intervals;
     }
+    return DBERR_OK;
 }
 
 void Dataset::addAprilData(const uint sectionID, const size_t recID, const AprilData &aprilData) {
@@ -539,15 +546,21 @@ Dataset* DatasetMetadata::getDatasetS() {
     return S;
 }
 
-Dataset* DatasetMetadata::getDatasetByIdx(DatasetIndexE datasetIndex) {
+DB_STATUS DatasetMetadata::getDatasetByIdx(DatasetIndexE datasetIndex, Dataset **datasetRef) {
     switch (datasetIndex) {
         case DATASET_R:
-            return R;
+            (*datasetRef) = R;
+            break;
         case DATASET_S:
-            return S;
+            (*datasetRef) = S;
+            break;
+        default:
+            logger::log_error(DBERR_INVALID_PARAMETER, "Invalid dataset index:", datasetIndex);
+            (*datasetRef) = nullptr;
+            return DBERR_INVALID_PARAMETER;
     }
-    logger::log_error(DBERR_INVALID_PARAMETER, "Invalid dataset index:", datasetIndex);
-    return nullptr;
+    return DBERR_OK;
+    
 }
 /**
 @brief adds a Dataset to the configuration's dataset metadata
@@ -567,7 +580,7 @@ DB_STATUS DatasetMetadata::addDataset(DatasetIndexE datasetIdx, Dataset &dataset
             break;
         default:
             logger::log_error(DBERR_INVALID_PARAMETER, "Invalid dataset index. Use only DATASET_R or DATASET_S.");
-            break;
+            return DBERR_INVALID_PARAMETER;
     }
     numberOfDatasets++;
     return DBERR_OK;
@@ -626,14 +639,14 @@ void Batch::clear() {
     objects.clear();
 }
 
-int Batch::serialize(char **buffer) {
+DB_STATUS Batch::serialize(char **buffer, int &bufferSize) {
     // calculate size
-    int bufferSize = calculateBufferSize();
+    int bufferSizeRet = calculateBufferSize();
     // allocate space
-    (*buffer) = (char*) malloc(bufferSize * sizeof(char));
+    (*buffer) = (char*) malloc(bufferSizeRet * sizeof(char));
     if (*buffer == NULL) {
         // malloc failed
-        return -1;
+        return DBERR_MALLOC_FAILED;
     }
     char* localBuffer = *buffer;
 
@@ -677,8 +690,8 @@ int Batch::serialize(char **buffer) {
         // printf("\n");
         // it.printGeometry();
     }
-
-    return bufferSize;
+    bufferSize = bufferSizeRet;
+    return DBERR_OK;
 }
 
 /**
