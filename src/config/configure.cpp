@@ -38,7 +38,8 @@ namespace configurer
 
     DB_STATUS verifySystemDirectories() {
         int ret;
-        if (!verifyDirectory(g_config.dirPaths.dataPath) ) {
+        DB_STATUS dir_ret = verifyDirectory(g_config.dirPaths.dataPath);
+        if (dir_ret != DBERR_OK) {
             // if dataset config directory doesn't exist, create
             ret = mkdir(g_config.dirPaths.dataPath.c_str(), 0777);
             if (ret) {
@@ -47,7 +48,8 @@ namespace configurer
             }
         }
 
-        if (!verifyDirectory(g_config.dirPaths.partitionsPath) ) {
+        dir_ret = verifyDirectory(g_config.dirPaths.partitionsPath);
+        if (dir_ret != DBERR_OK) {
             // if dataset config directory doesn't exist, create
             ret = mkdir(g_config.dirPaths.partitionsPath.c_str(), 0777);
             if (ret) {
@@ -55,7 +57,8 @@ namespace configurer
                 return DBERR_CREATE_DIR;
             }
         }
-        if (!verifyDirectory(g_config.dirPaths.approximationPath) ) {
+        dir_ret = verifyDirectory(g_config.dirPaths.approximationPath);
+        if (dir_ret != DBERR_OK) {
             // if dataset config directory doesn't exist, create
             ret = mkdir(g_config.dirPaths.approximationPath.c_str(), 0777);
             if (ret) {

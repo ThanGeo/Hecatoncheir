@@ -280,9 +280,10 @@ namespace parser
             }
 
             // verify dataset R path
-            if (!verifyFilepath(datasetStmt->datasetPathR)) {
-                logger::log_error(DBERR_MISSING_FILE, "Dataset R invalid path:", datasetStmt->datasetPathR);
-                return DBERR_MISSING_FILE;
+            DB_STATUS ret = verifyFilepath(datasetStmt->datasetPathR);
+            if (ret != DBERR_OK) {
+                logger::log_error(ret, "Dataset R invalid path:", datasetStmt->datasetPathR);
+                return ret;
             }
 
             if (datasetStmt->datasetCount > 1) {
@@ -298,9 +299,10 @@ namespace parser
                     return DBERR_INVALID_FILETYPE;
                 }
                 // verify dataset S path
-                if (!verifyFilepath(datasetStmt->datasetPathS)) {
-                    logger::log_error(DBERR_MISSING_FILE, "Dataset S invalid path:", datasetStmt->datasetPathS);
-                    return DBERR_MISSING_FILE;
+                ret = verifyFilepath(datasetStmt->datasetPathR);
+                if (ret != DBERR_OK) {
+                    logger::log_error(ret, "Dataset S invalid path:", datasetStmt->datasetPathS);
+                    return ret;
                 }
             }
         }
@@ -311,9 +313,10 @@ namespace parser
 
     static DB_STATUS parseDatasetOptions(DatasetStatement *datasetStmt) {
         // check if datasets.ini file exists
-        if (!verifyFilepath(g_config.dirPaths.datasetsConfigPath)) {
-            logger::log_error(DBERR_MISSING_FILE, "Dataset configuration file 'dataset.ini' missing from Database directory.");
-            return DBERR_MISSING_FILE;
+        DB_STATUS ret = verifyFilepath(g_config.dirPaths.datasetsConfigPath);
+        if (ret != DBERR_OK) {
+            logger::log_error(ret, "Dataset configuration file 'dataset.ini' missing from Database directory.");
+            return ret;
         }
         // load config
         if (datasetStmt->datasetCount > 0) {
@@ -365,7 +368,7 @@ namespace parser
         }
 
         // verify 
-        DB_STATUS ret = verifyDatasetOptions(datasetStmt);
+        ret = verifyDatasetOptions(datasetStmt);
         if (ret != DBERR_OK) {
             return ret;
         }
@@ -496,16 +499,18 @@ namespace parser
         }
 
         // check If config files exist
-        if (!verifyFilepath(settingsStmt.configFilePath)) {
-            logger::log_error(DBERR_MISSING_FILE, "Configuration file missing from Database directory. Path:", settingsStmt.configFilePath);
-            return DBERR_MISSING_FILE;
+        ret = verifyFilepath(settingsStmt.configFilePath);
+        if (ret != DBERR_OK) {
+            logger::log_error(ret, "Configuration file missing from Database directory. Path:", settingsStmt.configFilePath);
+            return ret;
         } else {
             // set config file
             g_config.dirPaths.configFilePath = settingsStmt.configFilePath;
         }
-        if (!verifyFilepath(g_config.dirPaths.datasetsConfigPath)) {
-            logger::log_error(DBERR_MISSING_FILE, "Configuration file 'datasets.ini' missing from Database directory.");
-            return DBERR_MISSING_FILE;
+        ret = verifyFilepath(g_config.dirPaths.datasetsConfigPath); 
+        if (ret != DBERR_OK) {
+            logger::log_error(ret, "Configuration file 'datasets.ini' missing from Database directory.");
+            return ret;
         }
 
         // parse configuration files
