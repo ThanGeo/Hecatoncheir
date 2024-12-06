@@ -19,10 +19,13 @@ namespace comm
      * returns true/false if a message that fits the parameters exists.
      * Does not receive the message, must call MPI_Recv for that.
      */
-    static int probeNonBlocking(int sourceRank, int tag, MPI_Comm &comm, MPI_Status &status) {
-        int messageExists = false;        
-        MPI_Iprobe(sourceRank, tag, comm, &messageExists, &status);
-        return messageExists;
+    static DB_STATUS probeNonBlocking(int sourceRank, int tag, MPI_Comm &comm, MPI_Status &status, int &messageExists) {
+        int mpi_ret = MPI_Iprobe(sourceRank, tag, comm, &messageExists, &status);
+        if(mpi_ret != MPI_SUCCESS) {
+            logger::log_error(DBERR_COMM_PROBE_FAILED, "Non Blocking probe failed");
+            return DBERR_COMM_PROBE_FAILED;
+        }
+        return DBERR_OK;
     }
 
     /**
@@ -1047,13 +1050,19 @@ STOP_LISTENING:
                 /* controller probes non-blockingly for messages either by the agent or by other controllers */
 
                 // check whether the agent has sent a message
-                messageFound = probeNonBlocking(AGENT_RANK, MPI_ANY_TAG, g_local_comm, status);
+                ret = probeNonBlocking(AGENT_RANK, MPI_ANY_TAG, g_local_comm, status, messageFound);
+                if (ret != DBERR_OK){
+                    return ret;
+                }
                 if (messageFound) {
                     
                 }
 
                 // check whether the host controller has sent a message
-                messageFound = probeNonBlocking(g_host_rank, MPI_ANY_TAG, g_global_comm, status);
+                ret = probeNonBlocking(g_host_rank, MPI_ANY_TAG, g_global_comm, status, messageFound);
+                if (ret != DBERR_OK){
+                    return ret;
+                }
                 if (messageFound) {
                     // pull the message and perform its request
                     ret = controller::pullIncoming(status);

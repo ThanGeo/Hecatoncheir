@@ -61,13 +61,15 @@ namespace parser
     };
 
 
-    static int systemSetupTypeStrToInt(std::string &str) {
+    static DB_STATUS systemSetupTypeStrToInt(std::string &str, int &setupType) {
         if (str == "LOCAL") {
-            return SYS_LOCAL_MACHINE;
+            setupType = SYS_LOCAL_MACHINE;
+            return DBERR_OK;
         } else if (str == "CLUSTER") {
-            return SYS_CLUSTER;
+            setupType = SYS_CLUSTER;
+            return DBERR_OK;
         }
-        return -1;
+        return DBERR_INVALID_PARAMETER;
     }
 
     static DB_STATUS verifyDatatypeCombinationForQueryType(QueryTypeE queryType) {
@@ -440,8 +442,9 @@ namespace parser
         g_config.options.nodefilePath = sysOpsStmt.nodefilePath;
         if (sysOpsStmt.setupType != "") {
             // user specified system type, overwrite the loaded type from config.ini
-            int setupType = systemSetupTypeStrToInt(sysOpsStmt.setupType);
-            if (setupType == -1) {
+            int setupType;
+            DB_STATUS ret = systemSetupTypeStrToInt(sysOpsStmt.setupType, setupType);
+            if (ret != DBERR_OK) {
                 logger::log_error(DBERR_INVALID_PARAMETER, "Unknown system setup type:", sysOpsStmt.setupType);
                 return DBERR_INVALID_PARAMETER;
             }
