@@ -46,9 +46,10 @@ namespace storage
     }
 
     DB_STATUS countLinesInFile(std::string &filepath, size_t &lineCount) {
-        if (!verifyFilepath(filepath)) {
-            logger::log_error(DBERR_MISSING_FILE, "Count lines for file '", filepath, " ' failed. File is missing.");
-            return DBERR_MISSING_FILE;
+        DB_STATUS ret = verifyFilepath(filepath); 
+        if (ret != DBERR_OK) {
+            logger::log_error(ret, "Count lines for file '", filepath, " ' failed. File is missing.");
+            return ret;
         }
         lineCount = 0;
         std::string line;

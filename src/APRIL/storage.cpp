@@ -107,7 +107,11 @@ namespace APRIL
                     dataset.addObjectToSectionMap(sectionID, recID);
                 }
                 // add intervals
-                dataset.addIntervalsToAprilData(sectionID, recID, numIntervals, intervals, ALL);
+                ret = dataset.addIntervalsToAprilData(sectionID, recID, numIntervals, intervals, ALL);
+                if(ret != DBERR_OK){
+                    goto CLOSE_AND_EXIT;
+                }
+
             }
 
 CLOSE_AND_EXIT:

@@ -1353,9 +1353,9 @@ struct Dataset{
     /** @brief Calculate the size needed for the dataset serialization. */
     int calculateBufferSize();
     /** @brief Serializes the dataset object (only the important stuff). */
-    int serialize(char **buffer);
+    DB_STATUS serialize(char **buffer, int &bufferSize);
     /** @brief Deserializes the given serialized buffer of the specified size into this Dataset object. @warning Caller is responsible for the validity of the input buffer. */
-    void deserialize(const char *buffer, int bufferSize);
+    DB_STATUS deserialize(const char *buffer, int bufferSize);
     /** @warning UNSUPPORTED */
     void addAprilDataToApproximationDataMap(const uint sectionID, const size_t recID, const AprilData &aprilData);
     /** @brief Adds the given object ID to the specified section ID. @warning UNSUPPORTED for sections IDs different than 0 (1 partition) */
@@ -1363,7 +1363,7 @@ struct Dataset{
     /** @brief Adds the given intervals into the given object with recID in the given section with section ID.
      * @param ALL Specfies whether the input intervals represent the A-list or not (F-list otherwise).
      */
-    void addIntervalsToAprilData(const uint sectionID, const size_t recID, const int numIntervals, const std::vector<uint32_t> &intervals, const bool ALL);
+    DB_STATUS addIntervalsToAprilData(const uint sectionID, const size_t recID, const int numIntervals, const std::vector<uint32_t> &intervals, const bool ALL);
     void addAprilData(const uint sectionID, const size_t recID, const AprilData &aprilData);
     /** @brief Returns a reference to the April Data of the given object's ID in section ID */
     AprilData* getAprilDataBySectionAndObjectID(uint sectionID, size_t recID);
@@ -1620,7 +1620,7 @@ public:
 
     Dataset* getDatasetS();
 
-    Dataset* getDatasetByIdx(DatasetIndexE datasetIndex);
+    DB_STATUS getDatasetByIdx(DatasetIndexE datasetIndex, Dataset **datasetRef);
 
     /**
     @brief adds a Dataset to the configuration's dataset metadata
@@ -1703,7 +1703,7 @@ struct Batch {
     @brief serializes the geometry batch into the buffer. This method also allocates the buffer's memory.
      * Caller is responsible to free.
      */
-    int serialize(char **buffer);
+    DB_STATUS serialize(char **buffer, int &bufferSize);
 
     /**
     @brief fills the struct with data from the input serialized buffer
@@ -1722,7 +1722,7 @@ extern Config g_config;
 @brief Based on query type in config, it thread-safely appends new results to the query output in parallel.
  * Used only in parallel sections for OpenMP.
  */
-void queryResultReductionFunc(QueryOutput &in, QueryOutput &out);
+DB_STATUS queryResultReductionFunc(QueryOutput &in, QueryOutput &out);
 
 // Declare the parallel reduction function
 #pragma omp declare reduction (query_output_reduction: QueryOutput: queryResultReductionFunc(omp_in, omp_out)) initializer(omp_priv = QueryOutput())
