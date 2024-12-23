@@ -352,7 +352,7 @@ namespace comm
         }
 
 
-        static DB_STATUS cleanupListening(FILE* outFile, DB_STATUS ret) {
+        static DB_STATUS stopListening(FILE* outFile, DB_STATUS ret) {
             // close partition file
             if (outFile == NULL) {
                 fclose(outFile);
@@ -399,13 +399,13 @@ namespace comm
             ret = recv::receiveMessage(status, datasetMetadataMsg.type, g_local_comm, datasetMetadataMsg);
             if (ret != DBERR_OK) {
                 logger::log_error(ret, "Failed pulling the dataset metadata message");
-                return cleanupListening(outFile, ret);
+                return stopListening(outFile, ret);
             }
             // create dataset from the received message
             ret = generateDatasetFromMessage(datasetMetadataMsg, dataset);
             if (ret != DBERR_OK) {
                 logger::log_error(ret, "Failed creating the dataset from the dataset metadata message");
-                return cleanupListening(outFile, ret);
+                return stopListening(outFile, ret);
             }
             // update the grids' dataspace metadata in the partitioning object 
             g_config.partitioningMethod->setDistGridDataspace(dataset.dataspaceMetadata);
@@ -429,7 +429,7 @@ namespace comm
             ret = storage::writer::partitionFile::appendDatasetMetadataToPartitionFile(outFile, &dataset);
             if (ret != DBERR_OK) {
                 logger::log_error(ret, "Failed while writing the dataset metadata to the partition file");
-                return cleanupListening(outFile, ret);
+                return stopListening(outFile, ret);
             }
 
             // listen for dataset batches until an empty batch arrives
@@ -437,7 +437,7 @@ namespace comm
                 // proble blockingly for batch
                 ret = probeBlocking(PARENT_RANK, MPI_ANY_TAG, g_local_comm, status);
                 if (ret != DBERR_OK) {
-                    return cleanupListening(outFile, ret);
+                    return stopListening(outFile, ret);
                 }
                 // pull
                 switch (status.MPI_TAG) {
@@ -448,23 +448,23 @@ namespace comm
                             // break the listening loop
                             return DB_FIN;
                         }
-                        return cleanupListening(outFile, ret);
+                        return stopListening(outFile, ret);
                     case MSG_BATCH_POINT:
                     case MSG_BATCH_LINESTRING:
                     case MSG_BATCH_POLYGON:
                         /* batch geometry message */
                         ret = pullSerializedMessageAndHandle(status, outFile, &dataset, listen);
                         if (ret != DBERR_OK) {
-                            return cleanupListening(outFile, ret);
+                            return stopListening(outFile, ret);
                         }  
                         break;
                     default:
                         logger::log_error(DBERR_COMM_WRONG_MESSAGE_ORDER, "After the dataset metadata pack, only geometry packs are expected. Received message with tag", status.MPI_TAG);
                         ret = DBERR_COMM_WRONG_MESSAGE_ORDER;
-                        return cleanupListening(outFile, ret);
+                        return stopListening(outFile, ret);
                 }
             }
-            return cleanupListening(outFile, DBERR_OK);
+            return stopListening(outFile, DBERR_OK);
         }
 
         
