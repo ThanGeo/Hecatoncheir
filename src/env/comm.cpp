@@ -351,94 +351,8 @@ namespace comm
             return DBERR_OK;
         }
 
-        static DB_STATUS listenForDatasetPartitioning(MPI_Status status) {
-            Dataset dataset;
-            FILE* outFile;
-            SerializedMsg<char> datasetMetadataMsg(MPI_CHAR);
-            int listen = 1;
-            size_t dummy = 0;
 
-            // proble blockingly for the dataset metadata
-            DB_STATUS ret = probeBlocking(PARENT_RANK, MPI_ANY_TAG, g_local_comm, status);
-            if (ret != DBERR_OK) {
-                return ret;
-            }
-            // verify that it is the proper message
-            if (status.MPI_TAG != MSG_DATASET_METADATA) {
-                logger::log_error(DBERR_COMM_WRONG_MESSAGE_ORDER, "Partitioning: Expected dataset metadata message but received message with tag", status.MPI_TAG);
-                return DBERR_COMM_WRONG_MESSAGE_ORDER;
-            }
-            // retrieve dataset metadata pack
-            ret = recv::receiveMessage(status, datasetMetadataMsg.type, g_local_comm, datasetMetadataMsg);
-            if (ret != DBERR_OK) {
-                logger::log_error(ret, "Failed pulling the dataset metadata message");
-                goto STOP_LISTENING;
-            }
-            // create dataset from the received message
-            ret = generateDatasetFromMessage(datasetMetadataMsg, dataset);
-            if (ret != DBERR_OK) {
-                logger::log_error(ret, "Failed creating the dataset from the dataset metadata message");
-                goto STOP_LISTENING;
-            }
-            // update the grids' dataspace metadata in the partitioning object 
-            g_config.partitioningMethod->setDistGridDataspace(dataset.dataspaceMetadata);
-            g_config.partitioningMethod->setPartGridDataspace(dataset.dataspaceMetadata);
-
-            // free memory
-            free(datasetMetadataMsg.data);
-            
-            // open the partition data file
-            outFile = fopen(dataset.path.c_str(), "wb+");
-            if (outFile == NULL) {
-                logger::log_error(DBERR_MISSING_FILE, "Couldnt open dataset file:", dataset.path);
-                return DBERR_MISSING_FILE;
-            }
-
-            // write a dummy value for the total object count in the very begining of the file
-            // it will be corrected when the batches are finished
-            fwrite(&dummy, sizeof(size_t), 1, outFile);
-
-            // write the dataset metadata to the partition file
-            ret = storage::writer::partitionFile::appendDatasetMetadataToPartitionFile(outFile, &dataset);
-            if (ret != DBERR_OK) {
-                logger::log_error(ret, "Failed while writing the dataset metadata to the partition file");
-                goto STOP_LISTENING;
-            }
-
-            // listen for dataset batches until an empty batch arrives
-            while(listen) {
-                // proble blockingly for batch
-                ret = probeBlocking(PARENT_RANK, MPI_ANY_TAG, g_local_comm, status);
-                if (ret != DBERR_OK) {
-                    goto STOP_LISTENING;
-                }
-                // pull
-                switch (status.MPI_TAG) {
-                    case MSG_INSTR_FIN: // todo: maybe this is not needed
-                        /* stop listening for instructions */
-                        ret = recv::receiveInstructionMessage(PARENT_RANK, status.MPI_TAG, g_local_comm, status);
-                        if (ret == DBERR_OK) {
-                            // break the listening loop
-                            return DB_FIN;
-                        }
-                        goto STOP_LISTENING;
-                    case MSG_BATCH_POINT:
-                    case MSG_BATCH_LINESTRING:
-                    case MSG_BATCH_POLYGON:
-                        /* batch geometry message */
-                        ret = pullSerializedMessageAndHandle(status, outFile, &dataset, listen);
-                        if (ret != DBERR_OK) {
-                            goto STOP_LISTENING;
-                        }  
-                        break;
-                    default:
-                        logger::log_error(DBERR_COMM_WRONG_MESSAGE_ORDER, "After the dataset metadata pack, only geometry packs are expected. Received message with tag", status.MPI_TAG);
-                        ret = DBERR_COMM_WRONG_MESSAGE_ORDER;
-                        goto STOP_LISTENING;
-                }
-            }
-            
-STOP_LISTENING:
+        static DB_STATUS cleanupListening(FILE* outFile, DB_STATUS ret) {
             // close partition file
             if (outFile == NULL) {
                 fclose(outFile);
@@ -463,6 +377,97 @@ STOP_LISTENING:
             return ret;
         }
 
+
+        static DB_STATUS listenForDatasetPartitioning(MPI_Status status) {
+            Dataset dataset;
+            FILE* outFile;
+            SerializedMsg<char> datasetMetadataMsg(MPI_CHAR);
+            int listen = 1;
+            size_t dummy = 0;
+
+            // proble blockingly for the dataset metadata
+            DB_STATUS ret = probeBlocking(PARENT_RANK, MPI_ANY_TAG, g_local_comm, status);
+            if (ret != DBERR_OK) {
+                return ret;
+            }
+            // verify that it is the proper message
+            if (status.MPI_TAG != MSG_DATASET_METADATA) {
+                logger::log_error(DBERR_COMM_WRONG_MESSAGE_ORDER, "Partitioning: Expected dataset metadata message but received message with tag", status.MPI_TAG);
+                return DBERR_COMM_WRONG_MESSAGE_ORDER;
+            }
+            // retrieve dataset metadata pack
+            ret = recv::receiveMessage(status, datasetMetadataMsg.type, g_local_comm, datasetMetadataMsg);
+            if (ret != DBERR_OK) {
+                logger::log_error(ret, "Failed pulling the dataset metadata message");
+                return cleanupListening(outFile, ret);
+            }
+            // create dataset from the received message
+            ret = generateDatasetFromMessage(datasetMetadataMsg, dataset);
+            if (ret != DBERR_OK) {
+                logger::log_error(ret, "Failed creating the dataset from the dataset metadata message");
+                return cleanupListening(outFile, ret);
+            }
+            // update the grids' dataspace metadata in the partitioning object 
+            g_config.partitioningMethod->setDistGridDataspace(dataset.dataspaceMetadata);
+            g_config.partitioningMethod->setPartGridDataspace(dataset.dataspaceMetadata);
+
+            // free memory
+            free(datasetMetadataMsg.data);
+            
+            // open the partition data file
+            outFile = fopen(dataset.path.c_str(), "wb+");
+            if (outFile == NULL) {
+                logger::log_error(DBERR_MISSING_FILE, "Couldnt open dataset file:", dataset.path);
+                return DBERR_MISSING_FILE;
+            }
+
+            // write a dummy value for the total object count in the very begining of the file
+            // it will be corrected when the batches are finished
+            fwrite(&dummy, sizeof(size_t), 1, outFile);
+
+            // write the dataset metadata to the partition file
+            ret = storage::writer::partitionFile::appendDatasetMetadataToPartitionFile(outFile, &dataset);
+            if (ret != DBERR_OK) {
+                logger::log_error(ret, "Failed while writing the dataset metadata to the partition file");
+                return cleanupListening(outFile, ret);
+            }
+
+            // listen for dataset batches until an empty batch arrives
+            while(listen) {
+                // proble blockingly for batch
+                ret = probeBlocking(PARENT_RANK, MPI_ANY_TAG, g_local_comm, status);
+                if (ret != DBERR_OK) {
+                    return cleanupListening(outFile, ret);
+                }
+                // pull
+                switch (status.MPI_TAG) {
+                    case MSG_INSTR_FIN: // todo: maybe this is not needed
+                        /* stop listening for instructions */
+                        ret = recv::receiveInstructionMessage(PARENT_RANK, status.MPI_TAG, g_local_comm, status);
+                        if (ret == DBERR_OK) {
+                            // break the listening loop
+                            return DB_FIN;
+                        }
+                        return cleanupListening(outFile, ret);
+                    case MSG_BATCH_POINT:
+                    case MSG_BATCH_LINESTRING:
+                    case MSG_BATCH_POLYGON:
+                        /* batch geometry message */
+                        ret = pullSerializedMessageAndHandle(status, outFile, &dataset, listen);
+                        if (ret != DBERR_OK) {
+                            return cleanupListening(outFile, ret);
+                        }  
+                        break;
+                    default:
+                        logger::log_error(DBERR_COMM_WRONG_MESSAGE_ORDER, "After the dataset metadata pack, only geometry packs are expected. Received message with tag", status.MPI_TAG);
+                        ret = DBERR_COMM_WRONG_MESSAGE_ORDER;
+                        return cleanupListening(outFile, ret);
+                }
+            }
+            return cleanupListening(outFile, DBERR_OK);
+        }
+
+        
         /**
         @brief pulls the probed instruction message and based on its tag, performs the requested instruction
          * 
@@ -625,13 +630,35 @@ STOP_LISTENING:
             return ret;
         }
 
+        static DB_STATUS exitSafely(DB_STATUS ret) {
+            // respond
+            if (ret == DBERR_OK) {
+            // send ACK back that all data for this dataset has been received and processed successfully
+                ret = send::sendResponse(PARENT_RANK, MSG_ACK, g_local_comm);
+                if (ret != DBERR_OK) {
+                    logger::log_error(ret, "Send ACK failed.");
+                }
+            } else {
+                    // there was an error, send NACK and propagate error code locally
+                DB_STATUS errorCode = ret;
+                ret = send::sendResponse(PARENT_RANK, MSG_NACK, g_local_comm);
+                if (ret != DBERR_OK) {
+                    logger::log_error(ret, "Send NACK failed.");
+                    return ret;
+                }
+                return errorCode;
+            }
+
+            return ret;
+        }
+
         static DB_STATUS handleLoadDatasetsMessage(MPI_Status status) {
             SerializedMsg<char> msg(MPI_CHAR);
             std::vector<std::string> nicknames;
             // receive the message
             DB_STATUS ret = recv::receiveMessage(status, msg.type, g_local_comm, msg);
             if (ret != DBERR_OK) {
-                goto EXIT_SAFELY;
+                return exitSafely(ret);
             }
             {
                 // message received
@@ -641,20 +668,20 @@ STOP_LISTENING:
                 // unpack metadata and store
                 ret = unpack::unpackDatasetLoadMsg(msg, dataset, datasetIndex);
                 if (ret != DBERR_OK) {
-                    goto EXIT_SAFELY;
+                    return exitSafely(ret);
                 }
                 // free memory
                 free(msg.data);
                 // generate partition file path from dataset nickname
                 ret = storage::generatePartitionFilePath(dataset);
                 if (ret != DBERR_OK) {
-                    goto EXIT_SAFELY;
+                    return exitSafely(ret);
                 }
                 // add the EMPTY dataset to the configuration
                 ret = g_config.datasetMetadata.addDataset(datasetIndex, dataset);
                 if (ret != DBERR_OK) {
                     logger::log_error(ret, "Failed to add dataset to configuration. Dataset nickname:", dataset.nickname, "dataset index:", datasetIndex);
-                    goto EXIT_SAFELY;
+                    return exitSafely(ret);
                 }
                 // get the dataset's reference
                 Dataset *datasetRef = g_config.datasetMetadata.getDatasetByIdx(datasetIndex);
@@ -665,7 +692,7 @@ STOP_LISTENING:
                 ret = storage::reader::partitionFile::loadDatasetComplete(datasetRef);
                 if (ret != DBERR_OK) {
                     logger::log_error(DBERR_DISK_READ_FAILED, "Failed loading partition file MBRs");
-                    goto EXIT_SAFELY;
+                    return exitSafely(ret);
                 }  
                 // // dont forget to update the dataspace metadata of the configuration
                 // g_config.datasetMetadata.updateDataspace();
@@ -681,25 +708,7 @@ STOP_LISTENING:
                 //     // g_config.datasetMetadata.getDatasetS()->printObjectsPartitions();
                 // }
             }
-EXIT_SAFELY:
-            // respond
-            if (ret == DBERR_OK) {
-                // send ACK back that all data for this dataset has been received and processed successfully
-                ret = send::sendResponse(PARENT_RANK, MSG_ACK, g_local_comm);
-                if (ret != DBERR_OK) {
-                    logger::log_error(ret, "Send ACK failed.");
-                }
-            } else {
-                // there was an error, send NACK and propagate error code locally
-                DB_STATUS errorCode = ret;
-                ret = send::sendResponse(PARENT_RANK, MSG_NACK, g_local_comm);
-                if (ret != DBERR_OK) {
-                    logger::log_error(ret, "Send NACK failed.");
-                    return ret;
-                }
-                return errorCode;
-            }
-            return ret;
+            return exitSafely(ret);
         }
 
         static DB_STATUS handleLoadAPRILMessage(MPI_Status status) {
@@ -707,12 +716,12 @@ EXIT_SAFELY:
             // receive the message
             DB_STATUS ret = recv::receiveMessage(status, msg.type, g_local_comm, msg);
             if (ret != DBERR_OK) {
-                goto EXIT_SAFELY;
+                return exitSafely(ret);
             }
             // unpack metadata and store
             ret = unpack::unpackAPRILMetadata(msg);
             if (ret != DBERR_OK) {
-                goto EXIT_SAFELY;
+                return exitSafely(ret);
             }
             // free memory
             free(msg.data);
@@ -725,35 +734,16 @@ EXIT_SAFELY:
                 // generate APRIL filepaths
                 ret = storage::generateAPRILFilePath(it.second);
                 if (ret != DBERR_OK) {
-                    goto EXIT_SAFELY;
+                    return exitSafely(ret);
                 }
                 // load
                 ret = APRIL::reader::loadAPRIL(it.second);
                 if (ret != DBERR_OK) {
                     logger::log_error(DBERR_DISK_READ_FAILED, "Failed loading APRIL");
-                    goto EXIT_SAFELY;
+                    return exitSafely(ret);
                 }
             }
-EXIT_SAFELY:
-            // respond
-            if (ret == DBERR_OK) {
-                // send ACK back that all data for this dataset has been received and processed successfully
-                ret = send::sendResponse(PARENT_RANK, MSG_ACK, g_local_comm);
-                if (ret != DBERR_OK) {
-                    logger::log_error(ret, "Send ACK failed.");
-                }
-            } else {
-                // there was an error, send NACK and propagate error code locally
-                DB_STATUS errorCode = ret;
-                ret = send::sendResponse(PARENT_RANK, MSG_NACK, g_local_comm);
-                if (ret != DBERR_OK) {
-                    logger::log_error(ret, "Send NACK failed.");
-                    return ret;
-                }
-                return errorCode;
-            }
-
-            return ret;
+            return exitSafely(ret);
         }
 
         /**
@@ -824,13 +814,11 @@ EXIT_SAFELY:
                 // pull the probed message
                 ret = pullIncoming(status);
                 if (ret == DB_FIN) {
-                    goto STOP_LISTENING;
+                    return DBERR_OK;
                 } else if(ret != DBERR_OK){
                     return ret;
                 }
             }
-STOP_LISTENING:
-            return DBERR_OK;
         }
     
     }
@@ -1058,7 +1046,7 @@ STOP_LISTENING:
                     ret = controller::pullIncoming(status);
                     // true only if the termination instruction has been received
                     if (ret == DB_FIN) {
-                        goto STOP_LISTENING;
+                        return DBERR_OK;
                     } else if (ret != DBERR_OK) {
                         return ret;
                     }
@@ -1067,8 +1055,6 @@ STOP_LISTENING:
                 // do periodic waiting before probing again
                 // sleep(LISTENING_INTERVAL);
             }
-STOP_LISTENING:
-            return DBERR_OK;
         }
 
 
