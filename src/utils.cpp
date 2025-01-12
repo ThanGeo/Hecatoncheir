@@ -44,27 +44,27 @@ namespace hilbert
     }
 }
 
-bool verifyFilepath(std::string filePath) {
+DB_STATUS verifyFilepath(std::string filePath) {
     if (FILE *file = fopen(filePath.c_str(), "r")) {
         fclose(file);
-        return true;
+        return DBERR_OK;
     }
-    return false;
+    return DBERR_INVALID_FILE_PATH;
 }
 
-bool verifyDirectory(std::string directoryPath) {
+DB_STATUS verifyDirectory(std::string directoryPath) {
     //check if APRIL dirs exists
     DIR* dir = opendir(directoryPath.c_str());
     if(dir) {
         /* Directory exists. */
         closedir(dir);
-        return true;
+        return DBERR_OK;
     }else if(ENOENT == errno) {
         /* Directory does not exist. */
-        return false;
+        return DBERR_DIR_NOT_EXIST;
     }else{
         /* opendir() failed for some other reason. */
-        return false;
+        return DBERR_OPEN_DIR_FAILED;
     }
 }
 

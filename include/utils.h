@@ -16,13 +16,13 @@
  * 
  * Will return false if the file does not exists or cannot be opened (e.g. no access rights)
  */
-bool verifyFilepath(std::string filePath);
+DB_STATUS verifyFilepath(std::string filePath);
 /** @brief Verifies that the directory at the specified path exists on disk.
  * @param Can be relative or absolute path. Must point to a directory on disk.
  * 
  * Will return false if the directory does not exists or cannot be opened (e.g. no access rights)
  */
-bool verifyDirectory(std::string directoryPath);
+DB_STATUS verifyDirectory(std::string directoryPath);
 /** @brief Strips a file path to get the file's name (no file extension) 
  * 
 */
