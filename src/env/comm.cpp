@@ -19,10 +19,13 @@ namespace comm
      * returns true/false if a message that fits the parameters exists.
      * Does not receive the message, must call MPI_Recv for that.
      */
-    static int probeNonBlocking(int sourceRank, int tag, MPI_Comm &comm, MPI_Status &status) {
-        int messageExists = false;        
-        MPI_Iprobe(sourceRank, tag, comm, &messageExists, &status);
-        return messageExists;
+    static DB_STATUS probeNonBlocking(int sourceRank, int tag, MPI_Comm &comm, MPI_Status &status, int &messageExists) {
+        int mpi_ret = MPI_Iprobe(sourceRank, tag, comm, &messageExists, &status);
+        if(mpi_ret != MPI_SUCCESS) {
+            logger::log_error(DBERR_COMM_PROBE_FAILED, "Non Blocking probe failed");
+            return DBERR_COMM_PROBE_FAILED;
+        }
+        return DBERR_OK;
     }
 
     /**
@@ -657,7 +660,8 @@ STOP_LISTENING:
                     goto EXIT_SAFELY;
                 }
                 // get the dataset's reference
-                Dataset *datasetRef = g_config.datasetMetadata.getDatasetByIdx(datasetIndex);
+                Dataset *datasetRef;
+                ret = g_config.datasetMetadata.getDatasetByIdx(datasetIndex, &datasetRef);
                 if (datasetRef == nullptr) {
                     return DBERR_NULL_PTR_EXCEPTION;
                 }
@@ -848,8 +852,8 @@ STOP_LISTENING:
             }
             // logger::log_success("Sending batch of size", batch->objectCount);
             // serialize (todo: add try/catch for segfauls, mem access etc...)   
-            msg.count = batch->serialize(&msg.data);
-            if (msg.count == -1) {
+            ret = batch->serialize(&msg.data, msg.count);
+            if (ret != DBERR_OK) {
                 logger::log_error(DBERR_BATCH_FAILED, "Batch serialization failed");
                 return DBERR_BATCH_FAILED;
             }
@@ -1046,13 +1050,19 @@ STOP_LISTENING:
                 /* controller probes non-blockingly for messages either by the agent or by other controllers */
 
                 // check whether the agent has sent a message
-                messageFound = probeNonBlocking(AGENT_RANK, MPI_ANY_TAG, g_local_comm, status);
+                ret = probeNonBlocking(AGENT_RANK, MPI_ANY_TAG, g_local_comm, status, messageFound);
+                if (ret != DBERR_OK){
+                    return ret;
+                }
                 if (messageFound) {
                     
                 }
 
                 // check whether the host controller has sent a message
-                messageFound = probeNonBlocking(g_host_rank, MPI_ANY_TAG, g_global_comm, status);
+                ret = probeNonBlocking(g_host_rank, MPI_ANY_TAG, g_global_comm, status, messageFound);
+                if (ret != DBERR_OK){
+                    return ret;
+                }
                 if (messageFound) {
                     // pull the message and perform its request
                     ret = controller::pullIncoming(status);
@@ -1080,13 +1090,13 @@ STOP_LISTENING:
             DB_STATUS broadcastDatasetMetadata(Dataset* dataset) {
                 SerializedMsg<char> msgPack(MPI_CHAR);
                 // serialize
-                msgPack.count = dataset->serialize(&msgPack.data);
-                if (msgPack.count == -1) {
+                DB_STATUS ret = dataset->serialize(&msgPack.data, msgPack.count);
+                if (ret == DBERR_MALLOC_FAILED) {
                     logger::log_error(DBERR_MALLOC_FAILED, "Dataset serialization failed");
                     return DBERR_MALLOC_FAILED;
                 }
                 // broadcast the pack
-                DB_STATUS ret = broadcast::broadcastMessage(msgPack, MSG_DATASET_METADATA);
+                ret = broadcast::broadcastMessage(msgPack, MSG_DATASET_METADATA);
                 if (ret != DBERR_OK) {
                     logger::log_error(ret, "Failed to broadcast dataset metadata");
                     return ret;
