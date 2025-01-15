@@ -24,7 +24,8 @@ enum PROCESS_TYPE {
     AGENT,
 };
 
-#define HOST_RANK 1
+#define DRIVER_RANK 0
+#define HOST_RANK 0
 #define AGENT_RANK 0
 #define PARENT_RANK 0
 
@@ -39,6 +40,7 @@ extern std::string CONTROLLER_EXECUTABLE_PATH;
 #define BLUE "\e[0;34m"
 #define PURPLE "\e[0;35m"
 #define ORANGE "\e[38;5;208m"
+#define NAVY "\e[38;5;17m"
 #define NC "\e[0m"
 
 #define EPS 1e-08
@@ -46,11 +48,13 @@ extern std::string CONTROLLER_EXECUTABLE_PATH;
 
 extern int g_world_size;
 extern int g_node_rank;
+extern int g_global_rank;
 extern int g_parent_original_rank;
 
 extern PROCESS_TYPE g_proc_type;
 
-extern MPI_Comm g_global_comm;
+extern MPI_Comm g_global_inter_comm;
+extern MPI_Comm g_global_intra_comm;
 extern MPI_Comm g_controller_comm;
 extern MPI_Comm g_agent_comm;
 

@@ -97,7 +97,7 @@ namespace logger
         if (g_proc_type == AGENT) {
             // agents
             std::cout << YELLOW "[" + std::to_string(g_parent_original_rank) + "]" NC BLUE "[A]" NC RED "[ERROR: " + std::to_string(errorCode) + "]" NC ": ";
-        } else {
+        } else if (g_proc_type == CONTROLLER) {
             // controllers
             if (g_node_rank == HOST_RANK) {
                 // host controller
@@ -106,6 +106,9 @@ namespace logger
                 // worker controller
                 std::cout << YELLOW "[" + std::to_string(g_node_rank) + "]" NC PURPLE "[C]" NC RED "[ERROR: " + std::to_string(errorCode) + "]" NC ": ";
             }
+        } else {
+            std::cout << NAVY "[DRIVER]" NC RED "[ERROR: " + std::to_string(errorCode) + "]" NC ": ";
+
         }
         std::cout.flush();
         print_args(first, rest...);
@@ -118,7 +121,7 @@ namespace logger
         if (g_proc_type == AGENT) {
             // agents
             std::cout << YELLOW "[" + std::to_string(g_parent_original_rank) + "]" NC BLUE "[A]" NC ORANGE "[WARNING]" NC ": ";
-        } else {
+        } else if (g_proc_type == CONTROLLER) {
             // controllers
             if (g_node_rank == HOST_RANK) {
                 // host controller
@@ -127,6 +130,8 @@ namespace logger
                 // worker controller
                 std::cout << YELLOW "[" + std::to_string(g_node_rank) + "]" NC PURPLE "[C]" NC ORANGE "[WARNING]" NC ": ";
             }
+        } else {
+            std::cout << NAVY "[DRIVER]" NC ORANGE "[WARNING]" NC ": ";
         }
         std::cout.flush();
         print_args(first, rest...);
@@ -139,7 +144,7 @@ namespace logger
         if (g_proc_type == AGENT) {
             // agents
             std::cout << YELLOW "[" + std::to_string(g_parent_original_rank) + "]" NC BLUE "[A]" NC GREEN "[SUCCESS]" NC ": ";
-        } else {
+        } else if (g_proc_type == CONTROLLER) {
             // controllers
             if (g_node_rank == HOST_RANK) {
                 // host controller
@@ -148,6 +153,8 @@ namespace logger
                 // worker controller
                 std::cout << YELLOW "[" + std::to_string(g_node_rank) + "]" NC PURPLE "[C]" NC GREEN "[SUCCESS]" NC ": ";
             }
+        } else {
+            std::cout << NAVY "[DRIVER]" NC GREEN "[SUCCESS]" NC ": ";
         }
         std::cout.flush();
         print_args(first, rest...);
@@ -160,7 +167,7 @@ namespace logger
         if (g_proc_type == AGENT) {
             // agents
             std::cout << YELLOW "[" + std::to_string(g_parent_original_rank) + "]" NC BLUE "[A]" NC ": ";
-        } else {
+        } else if (g_proc_type == CONTROLLER) {
             // controllers
             if (g_node_rank == HOST_RANK) {
                 // host controller
@@ -169,6 +176,8 @@ namespace logger
                 // worker controller
                 std::cout << YELLOW "[" + std::to_string(g_node_rank) + "]" NC PURPLE "[C]" NC ": ";
             }
+        } else {
+            std::cout << NAVY "[DRIVER]" NC ": ";
         }
         std::cout.flush();
         print_args(first, rest...);

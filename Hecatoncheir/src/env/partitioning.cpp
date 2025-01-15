@@ -46,7 +46,7 @@ namespace partitioning
 
     static DB_STATUS initializeBatchMap(std::unordered_map<int,Batch> &batchMap, DataTypeE dataType) {
         // initialize batches
-        for (int i=1; i<g_world_size; i++) {
+        for (int i=0; i<g_world_size; i++) {
             Batch batch;
             batch.dataType = dataType;
             switch (dataType) {
@@ -344,7 +344,7 @@ namespace partitioning
                         }
                     }
                     // send any remaining non-empty batches
-                    for (int i=1; i<g_world_size; i++) {
+                    for (int i=0; i<g_world_size; i++) {
                         // fetch batch
                         auto it = batchMap.find(i);
                         if (it == batchMap.end()) {
@@ -375,7 +375,7 @@ namespace partitioning
                 return ret;
             }
             // send an empty pack to each worker to signal the end of the partitioning for this dataset
-            for (int i=1; i<g_world_size; i++) {
+            for (int i=0; i<g_world_size; i++) {
                 // fetch batch (it is guaranteed to be empty)
                 auto it = batchMap.find(i);
                 if (it == batchMap.end()) {
@@ -595,7 +595,7 @@ namespace partitioning
                         }
                     }
                     // send any remaining non-empty batches
-                    for (int i=1; i<g_world_size; i++) {
+                    for (int i=0; i<g_world_size; i++) {
                         // fetch batch
                         auto it = batchMap.find(i);
                         if (it == batchMap.end()) {
@@ -627,7 +627,7 @@ namespace partitioning
             }
             logger::log_success("Partitioned", totalValidObjects, "valid objects");
             // send an empty pack to each worker to signal the end of the partitioning for this dataset
-            for (int i=1; i<g_world_size; i++) {
+            for (int i=0; i<g_world_size; i++) {
                 // fetch batch (it is guaranteed to be empty)
                 auto it = batchMap.find(i);
                 if (it == batchMap.end()) {

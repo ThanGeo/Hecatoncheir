@@ -2,10 +2,12 @@
 
 int g_world_size;
 int g_node_rank;
+int g_global_rank;
 int g_parent_original_rank;
 PROCESS_TYPE g_proc_type;
 
-MPI_Comm g_global_comm;
+MPI_Comm g_global_inter_comm;
+MPI_Comm g_global_intra_comm;
 MPI_Comm g_controller_comm;
 MPI_Comm g_agent_comm;
 

@@ -16,19 +16,35 @@ namespace configurer
 
         // get global comm
         g_parent_original_rank = PARENT_RANK;
-        MPI_Comm_get_parent(&g_global_comm);
-        if (g_global_comm == MPI_COMM_NULL) {
+        MPI_Comm_get_parent(&g_global_inter_comm);
+        if (g_global_inter_comm == MPI_COMM_NULL) {
             logger::log_error(DBERR_MPI_INIT_FAILED, "No parent process (driver) found.");
             return DBERR_MPI_INIT_FAILED;
         }
 
-        // wait for parent
-        MPI_Barrier(g_global_comm);
+        // merge inter-comm to intra-comm
+        MPI_Intercomm_merge(g_global_inter_comm, 1, &g_global_intra_comm);
 
-        // merge intercomm to intracomm
-        MPI_Intercomm_merge(g_global_comm, 1, &g_controller_comm);
+        // get rank in global group
+        mpi_ret = MPI_Comm_rank(g_global_intra_comm, &rank);
+        if (mpi_ret != MPI_SUCCESS) {
+            logger::log_error(DBERR_MPI_INIT_FAILED, "Init comm rank failed.");
+            return DBERR_MPI_INIT_FAILED;
+        }
+        g_global_rank = rank;
 
-        // process rank in group of controllers
+        // split intra-comm to form the group
+        mpi_ret = MPI_Comm_split(g_global_intra_comm, 1, g_global_rank-1, &g_controller_comm);
+        if (mpi_ret != MPI_SUCCESS) {
+            logger::log_error(DBERR_MPI_INIT_FAILED, "Comm split failed. MPI ret code:", mpi_ret);
+            return DBERR_MPI_INIT_FAILED;
+        }
+
+        if (g_controller_comm == MPI_COMM_NULL) {
+            logger::log_error(DBERR_MPI_INIT_FAILED, "WTF, controller comm is NULL?");
+        }
+
+        // get rank in group of controllers
         mpi_ret = MPI_Comm_rank(g_controller_comm, &rank);
         if (mpi_ret != MPI_SUCCESS) {
             logger::log_error(DBERR_MPI_INIT_FAILED, "Init comm rank failed.");
@@ -43,6 +59,9 @@ namespace configurer
             return DBERR_MPI_INIT_FAILED;
         }
         g_world_size = wsize;
+
+        // release inter-comm
+        MPI_Comm_free(&g_global_inter_comm);
 
         return DBERR_OK;
     }
@@ -141,7 +160,6 @@ namespace configurer
         if (ret != DBERR_OK) {
             return ret;
         }
-        logger::log_success("All is well!");
 
         return DBERR_OK;
     }
