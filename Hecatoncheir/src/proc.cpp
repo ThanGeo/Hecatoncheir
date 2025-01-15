@@ -36,7 +36,7 @@ namespace proc
         free(error_codes);
 
         // sanity check (obsolete)
-        // if (HOST_RANK != AGENT_RANK) {
+        // if (HOST_LOCAL_RANK != AGENT_RANK) {
         //     // this will never happen unless somebody did a malakia
         //     logger::log_error(DBERR_INVALID_PARAMETER, "Host node rank and every agent's rank must match");
         //     return DBERR_INVALID_PARAMETER;

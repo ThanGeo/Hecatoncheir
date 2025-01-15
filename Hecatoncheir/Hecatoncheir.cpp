@@ -1,5 +1,49 @@
 #include "Hecatoncheir.h"
 
+static DB_STATUS probeBlocking(int sourceRank, int tag, MPI_Comm &comm, MPI_Status &status) {
+    int mpi_ret = MPI_Probe(sourceRank, tag, comm, &status);
+    if(mpi_ret != MPI_SUCCESS) {
+        logger::log_error(DBERR_COMM_PROBE_FAILED, "Blocking probe failed");
+        return DBERR_COMM_PROBE_FAILED;
+    }
+    return DBERR_OK;
+}
+
+DB_STATUS receiveResponse(int sourceRank, int sourceTag, MPI_Comm &comm, MPI_Status &status) {
+    // check tag validity
+    if (sourceTag != MSG_ACK && sourceTag != MSG_NACK) {
+        logger::log_error(DBERR_INVALID_PARAMETER, "Response tag must by either ACK or NACK. Tag:", sourceTag);
+        return DBERR_INVALID_PARAMETER;
+    }
+    // receive response
+    int mpi_ret = MPI_Recv(NULL, 0, MPI_CHAR, sourceRank, sourceTag, comm, &status);
+    if (mpi_ret != MPI_SUCCESS) {
+        logger::log_error(DBERR_COMM_RECV, "Failed to receive response with tag ", sourceTag);
+        return DBERR_COMM_RECV;
+    }
+    return DBERR_OK;
+}
+
+static DB_STATUS waitForResponse() {
+    MPI_Status status;
+    // wait for response by the host controller
+    DB_STATUS ret = probeBlocking(HOST_GLOBAL_RANK, MPI_ANY_TAG, g_global_intra_comm, status);
+    if (ret != DBERR_OK) {
+        return ret;
+    }
+    // receive response
+    ret = receiveResponse(HOST_GLOBAL_RANK, status.MPI_TAG, g_global_intra_comm, status);
+    if (ret != DBERR_OK) {
+        return ret;
+    }
+    // check response, if its NACK then terminate
+    if (status.MPI_TAG == MSG_NACK) {
+        logger::log_error(DBERR_COMM_RECEIVED_NACK, "Received NACK by agent");
+        return DBERR_COMM_RECEIVED_NACK;
+    }
+    return ret;
+}    
+
 static DB_STATUS spawnControllers(int num_procs, const std::vector<std::string> &hosts) {
     DB_STATUS ret = DBERR_OK;
     int rank;
@@ -40,13 +84,17 @@ static DB_STATUS spawnControllers(int num_procs, const std::vector<std::string> 
 
         // release inter-comm
         MPI_Comm_free(&g_global_inter_comm);
-        
-        // sync controllers
-        logger::log_task("Waiting for controllers...");
-        MPI_Barrier(g_global_intra_comm);
+
+        // wait for ACK
+        MPI_Status status;
+        ret = waitForResponse();
+        if (ret != DBERR_OK) {
+            logger::log_error(ret, "System initialization failed.");
+            return ret;
+        }
     }
 
-    printf("Driver: Controllers spawned and synchronized.\n");
+    logger::log_success("System init complete.");
     return ret;
 }
 

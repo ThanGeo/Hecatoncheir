@@ -27,7 +27,7 @@ namespace controller
 
         // Finalize the MPI environment.
         MPI_Finalize();
-        // if (g_node_rank == HOST_RANK) {
+        // if (g_node_rank == HOST_LOCAL_RANK) {
         //     logger::log_success("System finalized successfully");
         // }
     }
@@ -302,7 +302,7 @@ static DB_STATUS performActions() {
 //         return ret;
 //     }
 
-//     if (g_node_rank == HOST_RANK) {
+//     if (g_node_rank == HOST_LOCAL_RANK) {
 //         // host controller has to handle setup/user input etc.
 //         ret = setup::setupSystem(argc, argv);
 //         if (ret != DBERR_OK) {
@@ -337,6 +337,7 @@ int main(int argc, char* argv[]) {
     // initialize MPI environment parameters
     DB_STATUS ret = configurer::initMPIController(argc, argv);
     if (ret != DBERR_OK) {
+        int send_ret = comm::send::sendResponse(DRIVER_RANK, MSG_NACK, g_global_intra_comm);
         return ret;
     }
 
@@ -345,17 +346,26 @@ int main(int argc, char* argv[]) {
     if (ret != DBERR_OK) {
         logger::log_error(ret, "Setup host process environment failed");
         controller::hostTerminate();
+        int send_ret = comm::send::sendResponse(DRIVER_RANK, MSG_NACK, g_global_intra_comm);
         return ret;
     }
 
     // logger::log_task("C. Hello! My rank is", g_node_rank, "and my known world has size", g_world_size);
     
     
-    if (g_node_rank == HOST_RANK) {
+    if (g_node_rank == HOST_LOCAL_RANK) {
         // host controller has to handle setup/user input etc.
         ret = setup::setupSystem(argc, argv);
         if (ret != DBERR_OK) {
             logger::log_error(ret, "System setup failed");
+            controller::hostTerminate();
+            int send_ret = comm::send::sendResponse(DRIVER_RANK, MSG_NACK, g_global_intra_comm);
+            return ret;
+        }
+        // notify driver that all is well
+        ret = comm::send::sendResponse(DRIVER_RANK, MSG_ACK, g_global_intra_comm);
+        if (ret != DBERR_OK) {
+            logger::log_error(ret, "Responding to driver failed");
             controller::hostTerminate();
             return ret;
         }
@@ -367,11 +377,14 @@ int main(int argc, char* argv[]) {
     ret = comm::controller::listen();
     if (ret != DBERR_OK) {
         logger::log_error(ret, "Interrupted");
+        controller::hostTerminate();
+        int send_ret = comm::send::sendResponse(DRIVER_RANK, MSG_NACK, g_global_intra_comm);
         return ret;
     }
     
     // synchronize before returning
     logger::log_success("C. Terminating...");
+    controller::hostTerminate();
     // return success
     return 0;
 }

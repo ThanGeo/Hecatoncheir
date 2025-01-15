@@ -99,7 +99,7 @@ namespace logger
             std::cout << YELLOW "[" + std::to_string(g_parent_original_rank) + "]" NC BLUE "[A]" NC RED "[ERROR: " + std::to_string(errorCode) + "]" NC ": ";
         } else if (g_proc_type == CONTROLLER) {
             // controllers
-            if (g_node_rank == HOST_RANK) {
+            if (g_node_rank == HOST_LOCAL_RANK) {
                 // host controller
                 std::cout << PURPLE "[" + std::to_string(g_node_rank) + "]" "[C]" NC RED "[ERROR: " + std::to_string(errorCode) + "]" NC ": ";
             } else {
@@ -123,7 +123,7 @@ namespace logger
             std::cout << YELLOW "[" + std::to_string(g_parent_original_rank) + "]" NC BLUE "[A]" NC ORANGE "[WARNING]" NC ": ";
         } else if (g_proc_type == CONTROLLER) {
             // controllers
-            if (g_node_rank == HOST_RANK) {
+            if (g_node_rank == HOST_LOCAL_RANK) {
                 // host controller
                 std::cout << PURPLE "[" + std::to_string(g_node_rank) + "]" "[C]" NC ORANGE "[WARNING]" NC ": ";
             } else {
@@ -146,7 +146,7 @@ namespace logger
             std::cout << YELLOW "[" + std::to_string(g_parent_original_rank) + "]" NC BLUE "[A]" NC GREEN "[SUCCESS]" NC ": ";
         } else if (g_proc_type == CONTROLLER) {
             // controllers
-            if (g_node_rank == HOST_RANK) {
+            if (g_node_rank == HOST_LOCAL_RANK) {
                 // host controller
                 std::cout << PURPLE "[" + std::to_string(g_node_rank) + "]" "[C]" NC GREEN "[SUCCESS]" NC ": ";
             } else {
@@ -169,7 +169,7 @@ namespace logger
             std::cout << YELLOW "[" + std::to_string(g_parent_original_rank) + "]" NC BLUE "[A]" NC ": ";
         } else if (g_proc_type == CONTROLLER) {
             // controllers
-            if (g_node_rank == HOST_RANK) {
+            if (g_node_rank == HOST_LOCAL_RANK) {
                 // host controller
                 std::cout << PURPLE "[" + std::to_string(g_node_rank) + "]" "[C]" NC ": ";
             } else {
@@ -196,7 +196,7 @@ namespace logger
                 std::cout << YELLOW "[" + std::to_string(g_parent_original_rank) + "]" NC BLUE "[A]" NC ": ";
             } else {
                 // controllers
-                if (g_node_rank == HOST_RANK) { 
+                if (g_node_rank == HOST_LOCAL_RANK) { 
                     // host controller
                     std::cout << PURPLE "[" + std::to_string(g_node_rank) + "]" "[C]" NC ": ";
                 } else {

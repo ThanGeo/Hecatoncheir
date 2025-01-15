@@ -72,7 +72,7 @@ namespace comm
                 DB_STATUS local_ret = DBERR_OK;
                 #pragma omp for
                 for(int i=0; i<g_world_size; i++) {
-                    if (i != HOST_RANK) {
+                    if (i != HOST_LOCAL_RANK) {
                         // send to workers
                         local_ret = send::sendInstructionMessage(i, tag,g_controller_comm);
                         if (local_ret != DBERR_OK) {

@@ -25,7 +25,8 @@ enum PROCESS_TYPE {
 };
 
 #define DRIVER_RANK 0
-#define HOST_RANK 0
+#define HOST_GLOBAL_RANK 1
+#define HOST_LOCAL_RANK 0
 #define AGENT_RANK 0
 #define PARENT_RANK 0
 

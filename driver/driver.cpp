@@ -24,19 +24,15 @@ static std::vector<std::string> read_hostfile(const std::string& hostfile) {
 int main(int argc, char* argv[]) {
 
     // Initialize Hecatoncheir. Must use this method before any other calls to the framework.
-    printf("Driver calling init...\n");
     std::vector<std::string> hosts = {"node1:1", "node2:1"};
     hecatoncheir::init(2, hosts);
-    printf("Driver finished init.\n");
 
     // load data
 
     // run query
 
     // finalize
-    printf("Driver calling fin...\n");
     hecatoncheir::finalize();
-    printf("Driver finished fin.\n");
 
 
     return 0;

@@ -59,7 +59,7 @@ namespace comm
             return ret;
         }
         // forward response to host controller
-        ret = send::sendResponse(HOST_RANK, status.MPI_TAG,g_controller_comm);
+        ret = send::sendResponse(HOST_LOCAL_RANK, status.MPI_TAG,g_controller_comm);
         if (ret != DBERR_OK) {
             logger::log_error(ret, "Forwarding response to host controller failed");
             return ret;
@@ -213,7 +213,7 @@ namespace comm
                 return ret;
             }
             if (status.MPI_TAG == MSG_QUERY_RESULT) {
-                ret = forwardQueryResultsMessage(g_agent_comm, HOST_RANK,g_controller_comm, status);
+                ret = forwardQueryResultsMessage(g_agent_comm, HOST_LOCAL_RANK,g_controller_comm, status);
                 if (ret != DBERR_OK) {
                     logger::log_error(ret, "Forwarding result to host controller failed");
                     return ret;
@@ -226,7 +226,7 @@ namespace comm
                     return ret;
                 }
                 // forward response to host controller
-                ret = send::sendResponse(HOST_RANK, status.MPI_TAG,g_controller_comm);
+                ret = send::sendResponse(HOST_LOCAL_RANK, status.MPI_TAG,g_controller_comm);
                 if (ret != DBERR_OK) {
                     logger::log_error(ret, "Forwarding response to host controller failed");
                     return ret;
@@ -238,7 +238,7 @@ namespace comm
                 }
             } else {
                 // error, unexpected message, send a NACK to the host 
-                ret = send::sendResponse(HOST_RANK, MSG_NACK,g_controller_comm);
+                ret = send::sendResponse(HOST_LOCAL_RANK, MSG_NACK,g_controller_comm);
                 if (ret != DBERR_OK) {
                     logger::log_error(ret, "Sending NACK to host controller failed");
                     return ret;
@@ -915,7 +915,7 @@ STOP_LISTENING:
 
         static DB_STATUS listenForDatasetPartitioning(MPI_Status status) {
             // proble blockingly for the dataset metadata
-            DB_STATUS ret = probeBlocking(HOST_RANK, MPI_ANY_TAG,g_controller_comm, status);
+            DB_STATUS ret = probeBlocking(HOST_LOCAL_RANK, MPI_ANY_TAG,g_controller_comm, status);
             if (ret != DBERR_OK) {
                 return ret;
             }
@@ -933,7 +933,7 @@ STOP_LISTENING:
             // next, listen for the metadataPacks and coordPacks explicitly
             while(listen) {
                 // proble blockingly
-                ret = probeBlocking(HOST_RANK, MPI_ANY_TAG,g_controller_comm, status);
+                ret = probeBlocking(HOST_LOCAL_RANK, MPI_ANY_TAG,g_controller_comm, status);
                 if (ret != DBERR_OK) {
                     return ret;
                 }
@@ -986,14 +986,14 @@ STOP_LISTENING:
             switch (status.MPI_TAG) {
                 case MSG_INSTR_FIN:
                     /* terminate */
-                    ret = forward::forwardInstructionMessage(HOST_RANK, status.MPI_TAG,g_controller_comm, AGENT_RANK, g_agent_comm);
+                    ret = forward::forwardInstructionMessage(HOST_LOCAL_RANK, status.MPI_TAG,g_controller_comm, AGENT_RANK, g_agent_comm);
                     if (ret != DBERR_OK) {
                         return ret;
                     }
                     return DB_FIN;
                 case MSG_INSTR_PARTITIONING_INIT:
                     /* init partitioning */
-                    ret = forward::forwardInstructionMessage(HOST_RANK, status.MPI_TAG,g_controller_comm, AGENT_RANK, g_agent_comm);
+                    ret = forward::forwardInstructionMessage(HOST_LOCAL_RANK, status.MPI_TAG,g_controller_comm, AGENT_RANK, g_agent_comm);
                     if (ret != DBERR_OK) {
                         return ret;
                     }
@@ -1059,7 +1059,7 @@ STOP_LISTENING:
                 }
 
                 // check whether the host controller has sent a message
-                ret = probeNonBlocking(HOST_RANK, MPI_ANY_TAG, g_controller_comm, status, messageFound);
+                ret = probeNonBlocking(HOST_LOCAL_RANK, MPI_ANY_TAG, g_controller_comm, status, messageFound);
                 if (ret != DBERR_OK){
                     return ret;
                 }

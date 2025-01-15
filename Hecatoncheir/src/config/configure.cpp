@@ -61,8 +61,11 @@ namespace configurer
         g_world_size = wsize;
 
         // release inter-comm
-        MPI_Comm_free(&g_global_inter_comm);
-
+        mpi_ret = MPI_Comm_free(&g_global_inter_comm);
+        if (mpi_ret != MPI_SUCCESS) {
+            logger::log_error(DBERR_MPI_INIT_FAILED, "Freeing obsolete inter-comm failed.");
+            return DBERR_MPI_INIT_FAILED;
+        }
         return DBERR_OK;
     }
 
@@ -155,7 +158,6 @@ namespace configurer
         }
 
         // wait for response by workers+agent that all is ok
-        logger::log_task("Gathering responses...");
         ret = comm::controller::host::gatherResponses();
         if (ret != DBERR_OK) {
             return ret;
