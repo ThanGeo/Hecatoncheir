@@ -1,6 +1,0 @@
-<map id="Dataset" name="Dataset">
-<area shape="rect" id="node1" title="All dataset related information." alt="" coords="176,95,244,121"/>
-<area shape="rect" id="node2" href="$structTwoLayerIndex.html" title="Holds all two&#45;layer related index information." alt="" coords="5,5,116,32"/>
-<area shape="rect" id="node3" href="$structDataspaceMetadata.html" title="All dataspace related metadata, filled in after loading the dataset(s)." alt="" coords="141,5,279,32"/>
-<area shape="rect" id="node4" href="$structAprilConfig.html" title="Contains all relevant APRIL configuration parameters." alt="" coords="316,5,403,32"/>
-</map>

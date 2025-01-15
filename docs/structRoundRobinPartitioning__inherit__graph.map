@@ -1,4 +1,0 @@
-<map id="RoundRobinPartitioning" name="RoundRobinPartitioning">
-<area shape="rect" id="node1" title="Simple round&#45;robin partitioning method. Uses a single grid for the distribution and the partitioning." alt="" coords="5,80,164,107"/>
-<area shape="rect" id="node2" href="$structPartitioningMethod.html" title="Base class for the partitioning methods (abstract class)." alt="" coords="19,5,150,32"/>
-</map>

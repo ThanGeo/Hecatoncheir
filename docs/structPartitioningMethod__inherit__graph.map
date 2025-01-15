@@ -1,5 +1,0 @@
-<map id="PartitioningMethod" name="PartitioningMethod">
-<area shape="rect" id="node1" title="Base class for the partitioning methods (abstract class)." alt="" coords="105,5,235,32"/>
-<area shape="rect" id="node2" href="$structRoundRobinPartitioning.html" title="Simple round&#45;robin partitioning method. Uses a single grid for the distribution and the partitioning." alt="" coords="5,80,164,107"/>
-<area shape="rect" id="node3" href="$structTwoGridPartitioning.html" title="Two Grid partitioning method. Uses a distribution grid for data distribution and a partitioning grid ..." alt="" coords="188,80,323,107"/>
-</map>

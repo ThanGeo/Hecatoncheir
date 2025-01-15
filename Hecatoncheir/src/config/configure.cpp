@@ -1,0 +1,203 @@
+#include "config/configure.h"
+
+namespace configurer
+{
+    DB_STATUS initMPIController(int argc, char* argv[]) {
+        int rank, wsize;
+        int provided;
+        // type
+        g_proc_type = CONTROLLER;
+        // init MPI
+        int mpi_ret = MPI_Init_thread(nullptr, nullptr, MPI_THREAD_MULTIPLE, &provided);
+        if (mpi_ret != MPI_SUCCESS) {
+            logger::log_error(DBERR_MPI_INIT_FAILED, "Init MPI failed.");
+            return DBERR_MPI_INIT_FAILED;
+        }
+
+        // get global comm
+        g_parent_original_rank = PARENT_RANK;
+        MPI_Comm_get_parent(&g_global_comm);
+        if (g_global_comm == MPI_COMM_NULL) {
+            logger::log_error(DBERR_MPI_INIT_FAILED, "No parent process (driver) found.");
+            return DBERR_MPI_INIT_FAILED;
+        }
+
+        // wait for parent
+        MPI_Barrier(g_global_comm);
+
+        // merge intercomm to intracomm
+        MPI_Intercomm_merge(g_global_comm, 1, &g_controller_comm);
+
+        // process rank in group of controllers
+        mpi_ret = MPI_Comm_rank(g_controller_comm, &rank);
+        if (mpi_ret != MPI_SUCCESS) {
+            logger::log_error(DBERR_MPI_INIT_FAILED, "Init comm rank failed.");
+            return DBERR_MPI_INIT_FAILED;
+        }
+        g_node_rank = rank;
+
+        // world size
+        mpi_ret = MPI_Comm_size(g_controller_comm, &wsize);
+        if (mpi_ret != MPI_SUCCESS) {
+            logger::log_error(DBERR_MPI_INIT_FAILED, "Init comm size failed.");
+            return DBERR_MPI_INIT_FAILED;
+        }
+        g_world_size = wsize;
+
+        return DBERR_OK;
+    }
+
+    DB_STATUS initMPIAgent(int argc, char* argv[]) {
+        int rank, wsize;
+        int provided;
+        // init MPI
+        int mpi_ret = MPI_Init_thread(nullptr, nullptr, MPI_THREAD_MULTIPLE, &provided);
+        if (mpi_ret != MPI_SUCCESS) {
+            logger::log_error(DBERR_MPI_INIT_FAILED, "Init MPI failed.");
+            return DBERR_MPI_INIT_FAILED;
+        }
+        // type
+        g_proc_type = AGENT;
+
+        // get parent process intercomm
+        MPI_Comm_get_parent(&g_agent_comm);
+        if (g_agent_comm == MPI_COMM_NULL) {
+            logger::log_error(DBERR_PROC_INIT_FAILED, "The agent can't be parentless");
+            return DBERR_PROC_INIT_FAILED;
+        }
+
+        // process rank
+        mpi_ret = MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+        if (mpi_ret != MPI_SUCCESS) {
+            logger::log_error(DBERR_MPI_INIT_FAILED, "Init comm rank failed.");
+            return DBERR_MPI_INIT_FAILED;
+        }
+        g_node_rank = rank;
+        
+        // world size
+        mpi_ret = MPI_Comm_size(g_agent_comm, &wsize);
+        if (mpi_ret != MPI_SUCCESS) {
+            logger::log_error(DBERR_MPI_INIT_FAILED, "Init comm size failed.");
+            return DBERR_MPI_INIT_FAILED;
+        }
+        g_world_size = wsize;
+
+        // receive parent's original rank from the parent
+        // mpi_ret = MPI_Bcast(&g_parent_original_rank, 1, MPI_INT, PARENT_RANK, g_agent_comm);
+        MPI_Status status;
+        mpi_ret = MPI_Recv(&g_parent_original_rank, 1, MPI_INT, PARENT_RANK, 0, g_agent_comm, &status);
+        if (mpi_ret) {
+            logger::log_error(DBERR_COMM_BCAST, "Receiving parent rank failed", DBERR_COMM_BCAST);
+            return DBERR_COMM_BCAST;
+        }
+        // print cpu
+        return DBERR_OK;
+    }
+
+    DB_STATUS verifySystemDirectories() {
+        int ret;
+        DB_STATUS dir_ret = verifyDirectory(g_config.dirPaths.dataPath);
+        if (dir_ret != DBERR_OK) {
+            // if dataset config directory doesn't exist, create
+            ret = mkdir(g_config.dirPaths.dataPath.c_str(), 0777);
+            if (ret) {
+                logger::log_error(DBERR_CREATE_DIR, "Error creating node data directory. Path:", g_config.dirPaths.dataPath);
+                return DBERR_CREATE_DIR;
+            }
+        }
+
+        dir_ret = verifyDirectory(g_config.dirPaths.partitionsPath);
+        if (dir_ret != DBERR_OK) {
+            // if dataset config directory doesn't exist, create
+            ret = mkdir(g_config.dirPaths.partitionsPath.c_str(), 0777);
+            if (ret) {
+                logger::log_error(DBERR_CREATE_DIR, "Error creating partitioned data directory");
+                return DBERR_CREATE_DIR;
+            }
+        }
+        dir_ret = verifyDirectory(g_config.dirPaths.approximationPath);
+        if (dir_ret != DBERR_OK) {
+            // if dataset config directory doesn't exist, create
+            ret = mkdir(g_config.dirPaths.approximationPath.c_str(), 0777);
+            if (ret) {
+                logger::log_error(DBERR_CREATE_DIR, "Error creating approximations data directory");
+                return DBERR_CREATE_DIR;
+            }
+        }
+        return DBERR_OK;
+    }
+
+    DB_STATUS createConfiguration() {
+        DB_STATUS ret = DBERR_OK;
+        // broadcast system metadata
+        ret = comm::controller::broadcastSysMetadata();
+        if (ret != DBERR_OK) {
+            return ret;
+        }
+
+        // wait for response by workers+agent that all is ok
+        logger::log_task("Gathering responses...");
+        ret = comm::controller::host::gatherResponses();
+        if (ret != DBERR_OK) {
+            return ret;
+        }
+        logger::log_success("All is well!");
+
+        return DBERR_OK;
+    }
+
+
+    DB_STATUS setDatasetMetadata(DatasetStatement* datasetStmt) {
+        if (datasetStmt->datasetCount == 0) {
+            // no datasets
+            g_config.datasetMetadata.clear();
+            return DBERR_OK;
+        } else {
+            // at least one dataset
+            Dataset R;
+            // set dataspace metadata
+            if (datasetStmt->boundsSet) {
+                g_config.datasetMetadata.dataspaceMetadata.xMinGlobal = datasetStmt->xMinGlobal;
+                g_config.datasetMetadata.dataspaceMetadata.yMinGlobal = datasetStmt->yMinGlobal;
+                g_config.datasetMetadata.dataspaceMetadata.xMaxGlobal = datasetStmt->xMaxGlobal;
+                g_config.datasetMetadata.dataspaceMetadata.yMaxGlobal = datasetStmt->yMaxGlobal;
+                g_config.datasetMetadata.dataspaceMetadata.xExtent = g_config.datasetMetadata.dataspaceMetadata.xMaxGlobal - g_config.datasetMetadata.dataspaceMetadata.xMinGlobal;
+                g_config.datasetMetadata.dataspaceMetadata.yExtent = g_config.datasetMetadata.dataspaceMetadata.yMaxGlobal - g_config.datasetMetadata.dataspaceMetadata.yMinGlobal;
+                g_config.datasetMetadata.dataspaceMetadata.boundsSet = true;
+            }
+            
+            // fill dataset R fields
+            R.dataspaceMetadata = g_config.datasetMetadata.dataspaceMetadata;
+            R.dataType = datasetStmt->datatypeR;
+            R.path = datasetStmt->datasetPathR;
+            R.nickname = datasetStmt->datasetNicknameR;
+            R.datasetName = getFileNameFromPath(R.path);
+            R.fileType = (FileTypeE) mapping::fileTypeTextToInt(datasetStmt->filetypeR);
+            
+            // add to config
+            DB_STATUS ret = g_config.datasetMetadata.addDataset(DATASET_R, R);
+            if (ret != DBERR_OK) {
+                logger::log_error(ret, "Failed to add dataset R in configuration. Dataset nickname:", datasetStmt->datasetNicknameR, "Dataset idx: DATASET_R");
+                return ret;
+            }
+            
+            if (datasetStmt->datasetCount == 2) {
+                Dataset S;
+                // build dataset S objects (inherit the same dataspace metadata)
+                S.dataspaceMetadata = g_config.datasetMetadata.dataspaceMetadata;
+                S.dataType = datasetStmt->datatypeS;
+                S.path = datasetStmt->datasetPathS;
+                S.nickname = datasetStmt->datasetNicknameS;
+                S.datasetName = getFileNameFromPath(S.path);
+                S.fileType = (FileTypeE) mapping::fileTypeTextToInt(datasetStmt->filetypeS);
+                // add to config
+                DB_STATUS ret = g_config.datasetMetadata.addDataset(DATASET_S, S);
+                if (ret != DBERR_OK) {
+                    logger::log_error(ret, "Failed to add dataset S in configuration. Dataset nickname:", datasetStmt->datasetNicknameS, "Dataset idx: DATASET_S");
+                    return ret;
+                }
+            }
+        }
+        return DBERR_OK;
+    }
+}

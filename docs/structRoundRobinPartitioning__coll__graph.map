@@ -1,5 +1,0 @@
-<map id="RoundRobinPartitioning" name="RoundRobinPartitioning">
-<area shape="rect" id="node1" title="Simple round&#45;robin partitioning method. Uses a single grid for the distribution and the partitioning." alt="" coords="5,171,164,197"/>
-<area shape="rect" id="node2" href="$structPartitioningMethod.html" title="Base class for the partitioning methods (abstract class)." alt="" coords="19,95,150,121"/>
-<area shape="rect" id="node3" href="$structDataspaceMetadata.html" title="All dataspace related metadata, filled in after loading the dataset(s)." alt="" coords="15,5,154,32"/>
-</map>

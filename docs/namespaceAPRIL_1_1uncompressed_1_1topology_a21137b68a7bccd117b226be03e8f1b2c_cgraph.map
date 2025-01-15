@@ -1,5 +1,0 @@
-<map id="APRIL::uncompressed::topology::MBRIntersectionJoinAPRIL" name="APRIL::uncompressed::topology::MBRIntersectionJoinAPRIL">
-<area shape="rect" id="node1" title="Joins APRIL approximations for topological relations whose MBRs intersect generally." alt="" coords="5,39,191,95"/>
-<area shape="rect" id="node2" href="$namespaceAPRIL_1_1uncompressed_1_1standard.html#ae912b0cdec7892ff809cd11bb8d3d874" title="Joins APRIL approximations for intersection." alt="" coords="239,5,417,61"/>
-<area shape="rect" id="node3" href="$namespacelogger.html#a53f34feeb22a94db295af05b8b2aab5c" title="Error logging function with template arguments. Separates input parameters with spaces...." alt="" coords="271,85,385,112"/>
-</map>

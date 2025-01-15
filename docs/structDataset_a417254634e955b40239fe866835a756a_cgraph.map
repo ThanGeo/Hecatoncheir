@@ -1,7 +1,0 @@
-<map id="Dataset::addObject" name="Dataset::addObject">
-<area shape="rect" id="node1" title="Adds a Shape object into the two layer index and the reference map." alt="" coords="5,81,140,108"/>
-<area shape="rect" id="node2" href="$structTwoLayerIndex.html#ae929e428c40274230f4b2d0b7129b983" title="Adds an object to a partition with partitionID, with the specified classType and returns a pointer to..." alt="" coords="209,5,386,32"/>
-<area shape="rect" id="node3" href="$structDataset.html#aad72c5baa46b4858c89e315061632f0f" title="Adds the given object ID to the specified section ID." alt="" coords="188,56,407,83"/>
-<area shape="rect" id="node4" href="$structDataset.html#a2407297a4ceb58310cfd562510762c93" title="Returns a reference to the object with the given ID." alt="" coords="231,107,363,133"/>
-<area shape="rect" id="node5" href="$namespacelogger.html#a53f34feeb22a94db295af05b8b2aab5c" title="Error logging function with template arguments. Separates input parameters with spaces...." alt="" coords="240,157,355,184"/>
-</map>

@@ -1,4 +1,0 @@
-<map id="comm::recv::receiveMessage" name="comm::recv::receiveMessage">
-<area shape="rect" id="node1" title="Receives an already probed message. the msgPack MPI datatype parameter must already be set (construct..." alt="" coords="5,5,200,32"/>
-<area shape="rect" id="node2" href="$namespacelogger.html#a53f34feeb22a94db295af05b8b2aab5c" title="Error logging function with template arguments. Separates input parameters with spaces...." alt="" coords="248,5,363,32"/>
-</map>

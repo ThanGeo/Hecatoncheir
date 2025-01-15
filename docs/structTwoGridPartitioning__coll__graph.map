@@ -1,5 +1,0 @@
-<map id="TwoGridPartitioning" name="TwoGridPartitioning">
-<area shape="rect" id="node1" title="Two Grid partitioning method. Uses a distribution grid for data distribution and a partitioning grid ..." alt="" coords="58,171,193,197"/>
-<area shape="rect" id="node2" href="$structPartitioningMethod.html" title="Base class for the partitioning methods (abstract class)." alt="" coords="245,95,376,121"/>
-<area shape="rect" id="node3" href="$structDataspaceMetadata.html" title="All dataspace related metadata, filled in after loading the dataset(s)." alt="" coords="5,5,144,32"/>
-</map>

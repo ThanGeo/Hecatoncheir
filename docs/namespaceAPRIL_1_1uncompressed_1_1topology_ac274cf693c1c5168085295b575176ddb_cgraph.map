@@ -1,5 +1,0 @@
-<map id="APRIL::uncompressed::topology::MBREqualJoinAPRIL" name="APRIL::uncompressed::topology::MBREqualJoinAPRIL">
-<area shape="rect" id="node1" title="Joins APRIL approximations for topological relations when two MBRs are equal." alt="" coords="5,5,219,47"/>
-<area shape="rect" id="node2" href="$namespacerefinement_1_1relate.html#aa8da2292354b906ad94b60cdbb091088" title="Returns true of the two objects meet (touch)." alt="" coords="267,5,389,47"/>
-<area shape="rect" id="node3" href="$structShape.html#a30ef5ee8dc975e9aa9e73723cc052b26" title="Returns true whether the geometry meets (touches) the input geometry (their insides do not have commo..." alt="" coords="437,13,540,39"/>
-</map>

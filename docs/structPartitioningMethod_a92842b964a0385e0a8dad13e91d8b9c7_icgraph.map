@@ -1,4 +1,0 @@
-<map id="PartitioningMethod::getNodeRankForPartitionID" name="PartitioningMethod::getNodeRankForPartitionID">
-<area shape="rect" id="node1" title="Returns the node&#39;s rank that&#39;s responsible for this partition." alt="" coords="220,5,411,47"/>
-<area shape="rect" id="node2" href="$namespacepartitioning.html#afc40bad3d1c1b78245803906af58edf9" title="Prints all partitions and their assigned node ranks." alt="" coords="5,5,172,47"/>
-</map>

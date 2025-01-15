@@ -1,4 +1,0 @@
-<map id="TwoLayerIndex::addObject" name="TwoLayerIndex::addObject">
-<area shape="rect" id="node1" title="Adds an object to a partition with partitionID, with the specified classType and returns a pointer to..." alt="" coords="188,5,365,32"/>
-<area shape="rect" id="node2" href="$structDataset.html#a417254634e955b40239fe866835a756a" title="Adds a Shape object into the two layer index and the reference map." alt="" coords="5,5,140,32"/>
-</map>

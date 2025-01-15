@@ -1,4 +1,0 @@
-<map id="refinement::relate::refineIntersectionJoin" name="refinement::relate::refineIntersectionJoin">
-<area shape="rect" id="node1" title="Geometrically refines two objects for intersection." alt="" coords="5,5,160,47"/>
-<area shape="rect" id="node2" href="$structShape.html#a540f907bd548182b8b0ec4fcdd5e7b50" title="Returns true whether the input geometry intersects (border or area) with this geometry...." alt="" coords="208,13,332,39"/>
-</map>

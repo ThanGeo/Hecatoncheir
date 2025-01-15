@@ -1,4 +1,0 @@
-<map id="refinement::topology::refineEqualCoversCoveredByTrueHitIntersect" name="refinement::topology::refineEqualCoversCoveredByTrueHitIntersect">
-<area shape="rect" id="node1" title="Refines for the equals, covers and covered by relation predicates, with the intersection being guaran..." alt="" coords="5,5,208,61"/>
-<area shape="rect" id="node2" href="$structShape.html#a8d5735d6c5c38337ce7ed591e1134109" title="Generates and returns the DE&#45;9IM mask of this geometry (as R) with the input geometry (as S)" alt="" coords="256,20,423,47"/>
-</map>

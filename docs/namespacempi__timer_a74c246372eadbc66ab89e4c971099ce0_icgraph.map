@@ -1,4 +1,0 @@
-<map id="mpi_timer::getElapsedTime" name="mpi_timer::getElapsedTime">
-<area shape="rect" id="node1" title="Get the elapsed time in seconds, from the given start timestamp." alt="" coords="239,5,420,32"/>
-<area shape="rect" id="node2" href="$namespacepartitioning.html#a5f7aef01c8b2d7c6a89ee75018c45591" title="Initializes the partitioning for the input dataset." alt="" coords="5,5,191,32"/>
-</map>

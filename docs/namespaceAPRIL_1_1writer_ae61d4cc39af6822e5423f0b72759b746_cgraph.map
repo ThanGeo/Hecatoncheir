@@ -1,5 +1,0 @@
-<map id="APRIL::writer::saveAPRIL" name="APRIL::writer::saveAPRIL">
-<area shape="rect" id="node1" title="Saves the APRIL data of all objects in a dataset on disk, using the given file pointer." alt="" coords="5,5,181,32"/>
-<area shape="rect" id="node2" href="$namespacelogger.html#a53f34feeb22a94db295af05b8b2aab5c" title="Error logging function with template arguments. Separates input parameters with spaces...." alt="" coords="453,5,568,32"/>
-<area shape="rect" id="node3" href="$namespaceAPRIL_1_1writer.html#a64719c04c426ca575293f479dde57317" title="Saves the APRIL data of an object on disk, using the given file pointer." alt="" coords="229,31,405,57"/>
-</map>

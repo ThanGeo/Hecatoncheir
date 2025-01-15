@@ -1,5 +1,0 @@
-<map id="Shape" name="Shape">
-<area shape="rect" id="node1" title="A spatial object. Could be point, linestring, rectangle or polygon, as specified by its &#39;dataType&#39; fi..." alt="" coords="5,199,64,225"/>
-<area shape="rect" id="node2" href="$structMBR.html" title="Struct for Minimum Bounding Rectangles (MBR)." alt="" coords="9,109,61,136"/>
-<area shape="rect" id="node3" href="$structPoint.html" title="Struct for 2&#45;dimension points with double coordinates x and y (lon, lat)." alt="" coords="9,5,61,32"/>
-</map>

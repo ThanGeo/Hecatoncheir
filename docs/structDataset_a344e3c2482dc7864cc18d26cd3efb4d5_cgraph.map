@@ -1,4 +1,0 @@
-<map id="Dataset::serialize" name="Dataset::serialize">
-<area shape="rect" id="node1" title="Serializes the dataset object (only the important stuff)." alt="" coords="5,5,129,32"/>
-<area shape="rect" id="node2" href="$structDataset.html#af83cba15f19a6dad7259c0db5d71a172" title="Calculate the size needed for the dataset serialization." alt="" coords="177,5,367,32"/>
-</map>

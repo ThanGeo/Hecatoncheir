@@ -1,8 +1,0 @@
-<map id="Shape::meets" name="Shape::meets">
-<area shape="rect" id="node1" title="Returns true whether the geometry meets (touches) the input geometry (their insides do not have commo..." alt="" coords="437,46,540,73"/>
-<area shape="rect" id="node2" href="$namespacerefinement_1_1relate.html#aa8da2292354b906ad94b60cdbb091088" title="Returns true of the two objects meet (touch)." alt="" coords="267,5,389,47"/>
-<area shape="rect" id="node4" href="$namespacerefinement_1_1relate.html#a8888ecdbd804e490a35234efcd98d5c7" title="Geometrically refines two objects for whether R and S meet (touch)." alt="" coords="267,71,389,112"/>
-<area shape="rect" id="node3" href="$namespaceAPRIL_1_1uncompressed_1_1topology.html#ac274cf693c1c5168085295b575176ddb" title="Joins APRIL approximations for topological relations when two MBRs are equal." alt="" coords="5,5,219,47"/>
-<area shape="rect" id="node5" href="$namespaceAPRIL_1_1standard.html#ad2a3e148599958aca40c3f3848ca75cc" title="Standard APRIL intermediate filter that filters two input objects. The join predicate is set in the g..." alt="" coords="13,71,211,112"/>
-<area shape="rect" id="node6" href="$namespacerefinement_1_1relate.html#a8648ae83cd8bee000ca1b5bd0ae0eddf" title="Entrypoint function for when there is NO intermediate filter." alt="" coords="37,136,187,177"/>
-</map>

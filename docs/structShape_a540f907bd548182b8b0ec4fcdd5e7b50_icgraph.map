@@ -1,6 +1,0 @@
-<map id="Shape::intersects" name="Shape::intersects">
-<area shape="rect" id="node1" title="Returns true whether the input geometry intersects (border or area) with this geometry...." alt="" coords="455,46,579,73"/>
-<area shape="rect" id="node2" href="$namespacerefinement_1_1relate.html#a45401e61973c8226ee2b1fe1f375055c" title="Geometrically refines two objects for intersection." alt="" coords="252,39,407,80"/>
-<area shape="rect" id="node3" href="$namespaceAPRIL_1_1standard.html#ad2a3e148599958aca40c3f3848ca75cc" title="Standard APRIL intermediate filter that filters two input objects. The join predicate is set in the g..." alt="" coords="5,5,204,47"/>
-<area shape="rect" id="node4" href="$namespacerefinement_1_1relate.html#a8648ae83cd8bee000ca1b5bd0ae0eddf" title="Entrypoint function for when there is NO intermediate filter." alt="" coords="29,71,180,112"/>
-</map>

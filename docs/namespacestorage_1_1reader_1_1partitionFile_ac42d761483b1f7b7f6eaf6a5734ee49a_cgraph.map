@@ -1,4 +1,0 @@
-<map id="storage::reader::partitionFile::loadNextObjectComplete" name="storage::reader::partitionFile::loadNextObjectComplete">
-<area shape="rect" id="node1" title="Loads the next object in its entirety from an already opened file." alt="" coords="5,5,203,47"/>
-<area shape="rect" id="node2" href="$namespacelogger.html#a53f34feeb22a94db295af05b8b2aab5c" title="Error logging function with template arguments. Separates input parameters with spaces...." alt="" coords="251,13,365,39"/>
-</map>

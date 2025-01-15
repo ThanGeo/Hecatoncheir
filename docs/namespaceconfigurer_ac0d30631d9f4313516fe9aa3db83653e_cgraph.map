@@ -1,5 +1,0 @@
-<map id="configurer::setDatasetMetadata" name="configurer::setDatasetMetadata">
-<area shape="rect" id="node1" title="Configures the specified dataset metadata from the input dataset statement." alt="" coords="5,31,211,57"/>
-<area shape="rect" id="node2" href="$structDatasetMetadata.html#ad6148bf77a505c8e29bf8af3d1c281f9" title="adds a Dataset to the configuration&#39;s dataset metadata" alt="" coords="259,5,456,32"/>
-<area shape="rect" id="node3" href="$namespacelogger.html#a53f34feeb22a94db295af05b8b2aab5c" title="Error logging function with template arguments. Separates input parameters with spaces...." alt="" coords="504,31,619,57"/>
-</map>

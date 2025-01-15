@@ -1,7 +1,0 @@
-<map id="Query" name="Query">
-<area shape="rect" id="node1" title="Holds all query&#45;related information." alt="" coords="45,199,102,225"/>
-<area shape="rect" id="node2" href="$structDataspaceMetadata.html" title="All dataspace related metadata, filled in after loading the dataset(s)." alt="" coords="5,5,144,32"/>
-<area shape="rect" id="node3" href="$structDataset.html" title="All dataset related information." alt="" coords="203,95,271,121"/>
-<area shape="rect" id="node4" href="$structTwoLayerIndex.html" title="Holds all two&#45;layer related index information." alt="" coords="190,5,301,32"/>
-<area shape="rect" id="node5" href="$structAprilConfig.html" title="Contains all relevant APRIL configuration parameters." alt="" coords="325,5,411,32"/>
-</map>
