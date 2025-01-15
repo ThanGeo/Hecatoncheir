@@ -1045,7 +1045,7 @@ STOP_LISTENING:
         DB_STATUS listen() {
             MPI_Status status;
             DB_STATUS ret = DBERR_OK;
-            int messageFound;
+            int messageFound = 0;
             while(true){
                 /* controller probes non-blockingly for messages either by the agent or by other controllers */
 
@@ -1054,11 +1054,11 @@ STOP_LISTENING:
                 if (ret != DBERR_OK){
                     return ret;
                 }
-                if (messageFound) {
+                // if (messageFound) {
                     
-                }
+                // }
 
-                // check whether the host controller has sent a message
+                // check for HOST CONTROLLER has sent a message
                 ret = probeNonBlocking(HOST_LOCAL_RANK, MPI_ANY_TAG, g_controller_comm, status, messageFound);
                 if (ret != DBERR_OK){
                     return ret;
@@ -1073,9 +1073,6 @@ STOP_LISTENING:
                         return ret;
                     }
                 }
-
-                // do periodic waiting before probing again
-                // sleep(LISTENING_INTERVAL);
             }
 STOP_LISTENING:
             return DBERR_OK;
@@ -1113,7 +1110,7 @@ STOP_LISTENING:
                 #pragma omp parallel num_threads(g_world_size)
                 {
                     DB_STATUS local_ret = DBERR_OK;
-                    int messageFound;
+                    int messageFound = 0;
                     MPI_Status status;
                     int tid = omp_get_thread_num();
 
@@ -1183,7 +1180,7 @@ STOP_LISTENING:
                 #pragma omp parallel num_threads(g_world_size) reduction(query_output_reduction:queryOutput)
                 {
                     DB_STATUS local_ret = DBERR_OK;
-                    int messageFound;
+                    int messageFound = 0;
                     MPI_Status status;
                     int tid = omp_get_thread_num();
                     QueryOutput localQueryOutput;
@@ -1259,6 +1256,72 @@ STOP_LISTENING:
                 // store to the global output and return
                 g_queryOutput.shallowCopy(queryOutput);
                 return ret;
+            }
+
+            static DB_STATUS pullIncoming(MPI_Status status) {
+                DB_STATUS ret = DBERR_OK;
+                // check message tag
+                switch (status.MPI_TAG) {
+                    case MSG_INSTR_FIN:
+                        /* terminate */
+                        // receive the msg
+                        ret = recv::receiveInstructionMessage(DRIVER_GLOBAL_RANK, status.MPI_TAG, g_global_intra_comm, status);
+                        if (ret != DBERR_OK) {
+                            logger::log_error(DBERR_COMM_RECV, "Failed receiving instruction from driver");
+                            return DBERR_COMM_RECV;
+                        }
+                        // send to agent
+                        ret = send::sendInstructionMessage(AGENT_RANK, status.MPI_TAG, g_agent_comm);
+                        if (ret != DBERR_OK) {
+                            logger::log_error(DBERR_COMM_SEND, "Failed forwarding instruction");
+                            return DBERR_COMM_SEND;
+                        }
+                        // send to controllers
+                        for (int i=0; i<g_world_size; i++) {
+                            if (i != HOST_LOCAL_RANK) {
+                                // send to controllers
+                                ret = send::sendInstructionMessage(i, status.MPI_TAG, g_controller_comm);
+                                if (ret != DBERR_OK) {
+                                    return ret;
+                                }
+                            }
+                        }
+                        return DB_FIN;
+                    default:
+                        // unkown instruction
+                        logger::log_error(DBERR_COMM_WRONG_MESSAGE_ORDER, "Didn't expect message with tag", status.MPI_TAG);
+                        return DBERR_COMM_UNKNOWN_INSTR;
+                }
+
+                return ret;
+            }
+
+            DB_STATUS listen() {
+                MPI_Status status;
+                DB_STATUS ret = DBERR_OK;
+                int messageFound = 0;
+                while(true){
+                    // check for DRIVER messages
+                    // logger::log_success("Probing for source", DRIVER_GLOBAL_RANK, "tag:", MPI_ANY_TAG);
+                    
+                    ret = probeNonBlocking(DRIVER_GLOBAL_RANK, MPI_ANY_TAG, g_global_intra_comm, status, messageFound);
+                    if (ret != DBERR_OK){
+                        return ret;
+                    }
+                    
+                    if (messageFound) {
+                        // driver has sent a message, propagate to everyone
+                        ret = host::pullIncoming(status);
+                        // true only if the termination instruction has been received
+                        if (ret == DB_FIN) {
+                            goto STOP_LISTENING;
+                        } else if (ret != DBERR_OK) {
+                            return ret;
+                        }
+                    }
+                }
+STOP_LISTENING:
+                return DBERR_OK;
             }
         }
 

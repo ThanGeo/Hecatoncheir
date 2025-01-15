@@ -23,7 +23,7 @@ int main(int argc, char* argv[]) {
     }
     
     // logger::log_task("Runs on cpu", sched_getcpu());
-    // logger::log_task("C. Hello! My rank is", g_node_rank, "and my known world has size", g_world_size, "and my parent is", g_parent_original_rank);
+    // logger::log_task("My controller's local rank is", g_parent_original_rank, "and my local rank is", g_node_rank);
     
     // printf("Agent with parent %d and rank %d runs on cpu %d\n", g_parent_original_rank, g_node_rank, sched_getcpu());
     ret = comm::agent::listen();
@@ -35,7 +35,6 @@ int main(int argc, char* argv[]) {
 
     // return
     terminateAgent();
-    logger::log_success("A. Terminated.");
     return 0;
 }
 

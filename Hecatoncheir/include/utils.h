@@ -107,7 +107,7 @@ namespace logger
                 std::cout << YELLOW "[" + std::to_string(g_node_rank) + "]" NC PURPLE "[C]" NC RED "[ERROR: " + std::to_string(errorCode) + "]" NC ": ";
             }
         } else {
-            std::cout << NAVY "[DRIVER]" NC RED "[ERROR: " + std::to_string(errorCode) + "]" NC ": ";
+            std::cout << NAVY "[D]" NC RED "[ERROR: " + std::to_string(errorCode) + "]" NC ": ";
 
         }
         std::cout.flush();
@@ -131,7 +131,7 @@ namespace logger
                 std::cout << YELLOW "[" + std::to_string(g_node_rank) + "]" NC PURPLE "[C]" NC ORANGE "[WARNING]" NC ": ";
             }
         } else {
-            std::cout << NAVY "[DRIVER]" NC ORANGE "[WARNING]" NC ": ";
+            std::cout << NAVY "[D]" NC ORANGE "[WARNING]" NC ": ";
         }
         std::cout.flush();
         print_args(first, rest...);
@@ -154,7 +154,7 @@ namespace logger
                 std::cout << YELLOW "[" + std::to_string(g_node_rank) + "]" NC PURPLE "[C]" NC GREEN "[SUCCESS]" NC ": ";
             }
         } else {
-            std::cout << NAVY "[DRIVER]" NC GREEN "[SUCCESS]" NC ": ";
+            std::cout << NAVY "[D]" NC GREEN "[SUCCESS]" NC ": ";
         }
         std::cout.flush();
         print_args(first, rest...);
@@ -177,7 +177,7 @@ namespace logger
                 std::cout << YELLOW "[" + std::to_string(g_node_rank) + "]" NC PURPLE "[C]" NC ": ";
             }
         } else {
-            std::cout << NAVY "[DRIVER]" NC ": ";
+            std::cout << NAVY "[D]" NC ": ";
         }
         std::cout.flush();
         print_args(first, rest...);

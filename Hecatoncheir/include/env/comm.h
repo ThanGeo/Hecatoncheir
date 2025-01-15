@@ -51,8 +51,13 @@ namespace comm
 
             /** @brief Gathers query results by the workers and the local agent. */
             DB_STATUS gatherResults();
+
+            /** @brief The host controller listens (probes) for inbound messages from the driver.*/
+            DB_STATUS listen();
         }
     }
+
+
 }
 
 

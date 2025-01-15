@@ -1,4 +1,8 @@
-#include "controller.h"
+#include "containers.h"
+#include "proc.h"
+#include "config/setup.h"
+#include "env/comm.h"
+#include "env/pack.h"
 
 static DB_STATUS terminateAllWorkers() {
     // broadcast finalization instruction
@@ -12,12 +16,15 @@ static DB_STATUS terminateAllWorkers() {
 }
 namespace controller 
 {
-    void hostTerminate() {
+    void terminate() {
         // broadcast finalization instruction
-        DB_STATUS ret = terminateAllWorkers();
-        // if (ret != DBERR_OK) {
-        //     logger::log_error(ret, "Worker termination broadcast failed");
-        // }
+        if (g_node_rank == HOST_LOCAL_RANK) {
+            DB_STATUS ret = terminateAllWorkers();
+            // if (ret != DBERR_OK) {
+            //     logger::log_error(ret, "Worker termination broadcast failed");
+            // }
+            int send_ret = comm::send::sendResponse(DRIVER_GLOBAL_RANK, MSG_NACK, g_global_intra_comm);
+        }
 
         // Wait for the children processes to finish
         MPI_Barrier(g_agent_comm);
@@ -284,60 +291,11 @@ static DB_STATUS performActions() {
     return DBERR_OK;
 }
 
-// int main(int argc, char* argv[]) {
-//     // initialize MPI environment
-//     DB_STATUS ret = configurer::initMPI(argc, argv);
-//     if (ret != DBERR_OK) {
-//         return ret;
-//     }
-    
-//     // print cpu
-//     // logger::log_task("Runs on cpu", sched_getcpu());
-
-//     // all nodes create their agent process
-//     ret = proc::setupProcesses();
-//     if (ret != DBERR_OK) {
-//         logger::log_error(ret, "Setup host process environment failed");
-//         hostTerminate();
-//         return ret;
-//     }
-
-//     if (g_node_rank == HOST_LOCAL_RANK) {
-//         // host controller has to handle setup/user input etc.
-//         ret = setup::setupSystem(argc, argv);
-//         if (ret != DBERR_OK) {
-//             logger::log_error(ret, "System setup failed");
-//             hostTerminate();
-//             return ret;
-//         }
-        
-//         // perform the user-requested actions in order
-//         ret = performActions();
-//         if (ret != DBERR_OK) {
-//             hostTerminate();
-//             return ret;
-//         }
-
-//         // terminate
-//         hostTerminate();
-//     } else {
-//         // worker controllers go directly to listening
-//         // printf("Controller %d listening...\n", g_node_rank);
-//         ret = comm::controller::listen();
-//         if (ret != DBERR_OK) {
-//             logger::log_error(ret, "Interrupted");
-//             return ret;
-//         }
-//     }
-
-//     return ret;
-// }
-
 int main(int argc, char* argv[]) {
     // initialize MPI environment parameters
     DB_STATUS ret = configurer::initMPIController(argc, argv);
     if (ret != DBERR_OK) {
-        int send_ret = comm::send::sendResponse(DRIVER_RANK, MSG_NACK, g_global_intra_comm);
+        controller::terminate();
         return ret;
     }
 
@@ -345,46 +303,45 @@ int main(int argc, char* argv[]) {
     ret = proc::setupProcesses();
     if (ret != DBERR_OK) {
         logger::log_error(ret, "Setup host process environment failed");
-        controller::hostTerminate();
-        int send_ret = comm::send::sendResponse(DRIVER_RANK, MSG_NACK, g_global_intra_comm);
+        controller::terminate();
         return ret;
     }
 
-    // logger::log_task("C. Hello! My rank is", g_node_rank, "and my known world has size", g_world_size);
-    
+    // logger::log_task("My global rank is", g_global_rank, "and my local rank is", g_node_rank);
     
     if (g_node_rank == HOST_LOCAL_RANK) {
         // host controller has to handle setup/user input etc.
         ret = setup::setupSystem(argc, argv);
         if (ret != DBERR_OK) {
             logger::log_error(ret, "System setup failed");
-            controller::hostTerminate();
-            int send_ret = comm::send::sendResponse(DRIVER_RANK, MSG_NACK, g_global_intra_comm);
+            controller::terminate();
             return ret;
         }
         // notify driver that all is well
-        ret = comm::send::sendResponse(DRIVER_RANK, MSG_ACK, g_global_intra_comm);
+        ret = comm::send::sendResponse(DRIVER_GLOBAL_RANK, MSG_ACK, g_global_intra_comm);
         if (ret != DBERR_OK) {
             logger::log_error(ret, "Responding to driver failed");
-            controller::hostTerminate();
+            controller::terminate();
             return ret;
         }
-    } 
-
-    // synchronize before moving on to listening
-    // MPI_Barrier(g_controller_comm);
-    // listen for messages
-    ret = comm::controller::listen();
-    if (ret != DBERR_OK) {
-        logger::log_error(ret, "Interrupted");
-        controller::hostTerminate();
-        int send_ret = comm::send::sendResponse(DRIVER_RANK, MSG_NACK, g_global_intra_comm);
-        return ret;
+        // listen for messages from the driver
+        ret = comm::controller::host::listen();
+        if (ret != DBERR_OK) {
+            logger::log_error(ret, "Interrupted");
+            controller::terminate();
+            return ret;
+        }
+    } else {
+        // listen for messages from the host controller
+        ret = comm::controller::listen();
+        if (ret != DBERR_OK) {
+            logger::log_error(ret, "Interrupted");
+            controller::terminate();
+            return ret;
+        }
     }
     
-    // synchronize before returning
-    logger::log_success("C. Terminating...");
-    controller::hostTerminate();
+    controller::terminate();
     // return success
     return 0;
 }

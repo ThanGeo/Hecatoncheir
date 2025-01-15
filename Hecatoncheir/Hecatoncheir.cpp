@@ -1,5 +1,7 @@
 #include "Hecatoncheir.h"
 
+#define HOST_CONTROLLER 1
+
 static DB_STATUS probeBlocking(int sourceRank, int tag, MPI_Comm &comm, MPI_Status &status) {
     int mpi_ret = MPI_Probe(sourceRank, tag, comm, &status);
     if(mpi_ret != MPI_SUCCESS) {
@@ -9,7 +11,7 @@ static DB_STATUS probeBlocking(int sourceRank, int tag, MPI_Comm &comm, MPI_Stat
     return DBERR_OK;
 }
 
-DB_STATUS receiveResponse(int sourceRank, int sourceTag, MPI_Comm &comm, MPI_Status &status) {
+static DB_STATUS receiveResponse(int sourceRank, int sourceTag, MPI_Comm &comm, MPI_Status &status) {
     // check tag validity
     if (sourceTag != MSG_ACK && sourceTag != MSG_NACK) {
         logger::log_error(DBERR_INVALID_PARAMETER, "Response tag must by either ACK or NACK. Tag:", sourceTag);
@@ -27,12 +29,12 @@ DB_STATUS receiveResponse(int sourceRank, int sourceTag, MPI_Comm &comm, MPI_Sta
 static DB_STATUS waitForResponse() {
     MPI_Status status;
     // wait for response by the host controller
-    DB_STATUS ret = probeBlocking(HOST_GLOBAL_RANK, MPI_ANY_TAG, g_global_intra_comm, status);
+    DB_STATUS ret = probeBlocking(1, MPI_ANY_TAG, g_global_intra_comm, status);
     if (ret != DBERR_OK) {
         return ret;
     }
     // receive response
-    ret = receiveResponse(HOST_GLOBAL_RANK, status.MPI_TAG, g_global_intra_comm, status);
+    ret = receiveResponse(HOST_CONTROLLER, status.MPI_TAG, g_global_intra_comm, status);
     if (ret != DBERR_OK) {
         return ret;
     }
@@ -46,7 +48,7 @@ static DB_STATUS waitForResponse() {
 
 static DB_STATUS spawnControllers(int num_procs, const std::vector<std::string> &hosts) {
     DB_STATUS ret = DBERR_OK;
-    int rank;
+    int rank, size;
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
     if (rank == 0) {
@@ -79,11 +81,10 @@ static DB_STATUS spawnControllers(int num_procs, const std::vector<std::string> 
         MPI_Comm_split(g_global_intra_comm, MPI_UNDEFINED, 0, &g_controller_comm);
         // get driver rank
         MPI_Comm_rank(g_global_intra_comm, &rank);
+        MPI_Comm_size(g_global_intra_comm, &size);
         g_global_rank = rank;
-        logger::log_success("Set my rank to", g_global_rank);
-
-        // release inter-comm
-        MPI_Comm_free(&g_global_inter_comm);
+        g_world_size = size;
+        // logger::log_success("Set my rank to", g_global_rank, "world size:", g_world_size);
 
         // wait for ACK
         MPI_Status status;
@@ -92,10 +93,24 @@ static DB_STATUS spawnControllers(int num_procs, const std::vector<std::string> 
             logger::log_error(ret, "System initialization failed.");
             return ret;
         }
+
+        // release inter-comm
+        MPI_Comm_free(&g_global_inter_comm);
     }
 
     logger::log_success("System init complete.");
     return ret;
+}
+
+static DB_STATUS terminate() {
+    // send the message
+    int mpi_ret = MPI_Ssend(NULL, 0, MPI_CHAR, HOST_CONTROLLER, MSG_INSTR_FIN, g_global_intra_comm);
+    if (mpi_ret != MPI_SUCCESS) {
+        logger::log_error(DBERR_COMM_SEND, "Send message with tag", MSG_INSTR_FIN);
+        return DBERR_COMM_SEND;
+    }
+    logger::log_success("System finalization complete.");
+    return DBERR_OK;
 }
 
 namespace hecatoncheir {
@@ -123,7 +138,12 @@ namespace hecatoncheir {
  
 
     int finalize() {
-        // controller::hostTerminate();
+        DB_STATUS ret = terminate();
+        if (ret != DBERR_OK) {
+            // finished with errors
+            logger::log_error(ret, "Termination finished with errors.");
+            return -1;
+        }
         return 0;
     }
 }

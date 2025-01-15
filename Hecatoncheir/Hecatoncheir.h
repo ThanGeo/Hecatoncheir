@@ -1,7 +1,9 @@
 #ifndef HECATONCHEIR_H
 #define HECATONCHEIR_H
 
-#include "include/controller.h"
+#include "def.h"
+#include "utils.h"
+#include "env/comm_def.h"
 
 namespace hecatoncheir {
     

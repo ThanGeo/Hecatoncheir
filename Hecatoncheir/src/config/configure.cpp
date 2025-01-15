@@ -14,10 +14,10 @@ namespace configurer
             return DBERR_MPI_INIT_FAILED;
         }
 
-        // get global comm
+        // get inter comm with parent
         g_parent_original_rank = PARENT_RANK;
-        MPI_Comm_get_parent(&g_global_inter_comm);
-        if (g_global_inter_comm == MPI_COMM_NULL) {
+        mpi_ret = MPI_Comm_get_parent(&g_global_inter_comm);
+        if (g_global_inter_comm == MPI_COMM_NULL || mpi_ret != MPI_SUCCESS) {
             logger::log_error(DBERR_MPI_INIT_FAILED, "No parent process (driver) found.");
             return DBERR_MPI_INIT_FAILED;
         }
