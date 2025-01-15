@@ -89,7 +89,7 @@ static DB_STATUS initAPRILCreation() {
     double startTime;
     startTime = mpi_timer::markTime();
     // wait for response by workers+agent that all is ok
-    ret = comm::controller::host::gatherResponses();
+    ret = comm::host::gatherResponses();
     if (ret != DBERR_OK) {
         return ret;
     }
@@ -119,7 +119,7 @@ static DB_STATUS initQueryExecution() {
     double startTime;
     startTime = mpi_timer::markTime();
     // wait for results by workers+agent
-    ret = comm::controller::host::gatherResults();
+    ret = comm::host::gatherResults();
     if (ret != DBERR_OK) {
         return ret;
     }
@@ -150,7 +150,7 @@ static DB_STATUS initLoadDataset(Dataset *dataset, DatasetIndexE datasetIndex) {
     }
 
     // wait for responses by workers+agent that all is ok
-    ret = comm::controller::host::gatherResponses();
+    ret = comm::host::gatherResponses();
     if (ret != DBERR_OK) {
         return ret;
     }
@@ -173,7 +173,7 @@ static DB_STATUS initLoadAPRIL() {
         return ret;
     }
     // wait for responses by workers+agent that all is ok
-    ret = comm::controller::host::gatherResponses();
+    ret = comm::host::gatherResponses();
     if (ret != DBERR_OK) {
         return ret;
     }
@@ -222,7 +222,7 @@ static DB_STATUS initPartitioning() {
         }
         
         // broadcast the dataset metadata to the nodes
-        ret = comm::controller::host::broadcastDatasetMetadata(&it.second);
+        ret = comm::host::broadcastDatasetMetadata(&it.second);
         if (ret != DBERR_OK) {
             return ret;
         }
@@ -325,7 +325,7 @@ int main(int argc, char* argv[]) {
             return ret;
         }
         // listen for messages from the driver
-        ret = comm::controller::host::listen();
+        ret = comm::host::listen();
         if (ret != DBERR_OK) {
             logger::log_error(ret, "Interrupted");
             controller::terminate();

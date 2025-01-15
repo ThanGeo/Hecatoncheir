@@ -675,7 +675,7 @@ namespace partitioning
         }
 
         // wait for response by workers+agent that all is ok
-        ret = comm::controller::host::gatherResponses();
+        ret = comm::host::gatherResponses();
         if (ret != DBERR_OK) {
             return ret;
         }
