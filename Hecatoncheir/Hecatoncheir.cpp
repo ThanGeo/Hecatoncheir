@@ -1,5 +1,9 @@
 #include "Hecatoncheir.h"
 
+#include "def.h"
+#include "utils.h"
+#include "env/comm_def.h"
+
 #define HOST_CONTROLLER 1
 
 static DB_STATUS probeBlocking(int sourceRank, int tag, MPI_Comm &comm, MPI_Status &status) {
@@ -113,7 +117,7 @@ static DB_STATUS terminate() {
     return DBERR_OK;
 }
 
-namespace hecatoncheir {
+namespace hec {
 
     int init(int numProcs, const std::vector<std::string> &hosts){
         DB_STATUS ret = DBERR_OK;
@@ -145,6 +149,10 @@ namespace hecatoncheir {
             return -1;
         }
         return 0;
+    }
+
+    int partitionDataset(std::string &filePath, FileType fileType, DataType dataType) {
+        
     }
 }
 

@@ -3,12 +3,12 @@
 namespace comm 
 {
     /** @brief Returns the object count of a serialized batch message.
-     * @details The first value (sizeof(DataTypeE)) indicates the data type of the objects in the message.
+     * @details The first value (sizeof(DataType)) indicates the data type of the objects in the message.
      * The second value (sizeof(size_t) is the object count.)
      */
     static size_t getBatchObjectCountFromMessage(SerializedMsg<char> &msg) {
         size_t objectCount = -1;
-        size_t offset = sizeof(DataTypeE);  // batch object count is after the data type value
+        size_t offset = sizeof(DataType);  // batch object count is after the data type value
         memcpy(&objectCount, &msg.data[offset], sizeof(size_t));
         return objectCount;
     }
@@ -478,7 +478,7 @@ STOP_LISTENING:
                 // message received
                 // create empty dataset;
                 Dataset dataset;
-                DatasetIndexE datasetIndex;
+                DatasetIndex datasetIndex;
                 // unpack metadata and store
                 ret = unpack::unpackDatasetLoadMsg(msg, dataset, datasetIndex);
                 if (ret != DBERR_OK) {
@@ -1228,7 +1228,7 @@ STOP_LISTENING:
             return ret;
         }
 
-        static DB_STATUS handleQueryResultMessage(MPI_Status &status, MPI_Comm &comm, QueryTypeE queryType, QueryOutput &queryOutput) {
+        static DB_STATUS handleQueryResultMessage(MPI_Status &status, MPI_Comm &comm, QueryType queryType, QueryOutput &queryOutput) {
             DB_STATUS ret = DBERR_OK;
             SerializedMsg<int> msg;
             // receive the serialized message

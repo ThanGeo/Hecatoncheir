@@ -18,7 +18,7 @@ namespace APRIL
          * @param[in] mbrRelationCase Indicates how the objects' MBR relate to each other.
          * @param[out] queryOutput Where the query result is appended.
          */
-        DB_STATUS IntermediateFilterEntrypoint(Shape* objR, Shape* objS, MBRRelationCaseE mbrRelationCase, QueryOutput &queryOutput);
+        DB_STATUS IntermediateFilterEntrypoint(Shape* objR, Shape* objS, MBRRelationCase mbrRelationCase, QueryOutput &queryOutput);
     }
 
     /** @brief Standard APRIL filter methods. */

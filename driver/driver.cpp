@@ -24,18 +24,24 @@ static std::vector<std::string> read_hostfile(const std::string& hostfile) {
 }
 
 int main(int argc, char* argv[]) {
+    std::string datasetFullPathR = "/home/hec/thanasis/Hecatoncheir/Hecatoncheir/data/T1.wkt";
+    std::string datasetFullPathS = "/home/hec/thanasis/Hecatoncheir/Hecatoncheir/data/T2.wkt";
 
     // Initialize Hecatoncheir. Must use this method before any other calls to the framework.
     std::vector<std::string> hosts = {"node1:1", "node2:1"};
-    hecatoncheir::init(2, hosts);
+    hec::init(2, hosts);
 
-    // load data
+    // Prepare/Analyze: Hecatoncheir must first analyze the dataset(s) to determine its metadata
+    // bounding boxes etc. This must be done for all datasets that will participate together in a query
 
+    // partition datasets
+    // hec::partitionDataset(datasetFullPathR, hec::WKT, hec::POLYGON);
+    // hec::partitionDataset(datasetFullPathS, hec::WKT, hec::POLYGON);
+    
     // run query
 
     // finalize
-    hecatoncheir::finalize();
-
+    hec::finalize();
 
     return 0;
 }

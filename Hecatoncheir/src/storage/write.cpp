@@ -8,7 +8,7 @@ namespace storage
         {
             DB_STATUS appendDatasetMetadataToPartitionFile(FILE* outFile, Dataset* dataset) {
                 // datatype
-                fwrite(&dataset->dataType, sizeof(DataTypeE), 1, outFile);
+                fwrite(&dataset->dataType, sizeof(DataType), 1, outFile);
                 // nikcname length + string
                 int length = dataset->nickname.length();
                 fwrite(&length, sizeof(int), 1, outFile);

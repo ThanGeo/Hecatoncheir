@@ -38,7 +38,7 @@ namespace pack
     DB_STATUS packDatasetsNicknames(SerializedMsg<char> &msg);
 
     /** @brief Packs the 'load dataset' message information for the given dataset and index (R or S) */
-    DB_STATUS packDatasetLoadMsg(Dataset *dataset, DatasetIndexE datasetIndex, SerializedMsg<char> &msg);
+    DB_STATUS packDatasetLoadMsg(Dataset *dataset, DatasetIndex datasetIndex, SerializedMsg<char> &msg);
 
     /** @brief Packs the query results based on query type.  */
     DB_STATUS packQueryResults(SerializedMsg<int> &msg, QueryOutput &queryOutput);
@@ -57,13 +57,13 @@ namespace unpack
     DB_STATUS unpackQueryMetadata(SerializedMsg<int> &queryMetadataMsg);
 
     /** @brief Unpacks a query results serialized message. */
-    DB_STATUS unpackQueryResults(SerializedMsg<int> &queryResultsMsg, QueryTypeE queryType, QueryOutput &queryOutput);
+    DB_STATUS unpackQueryResults(SerializedMsg<int> &queryResultsMsg, QueryType queryType, QueryOutput &queryOutput);
 
     /** @brief Unpacks a datasets' nicknames serialized message. */
     DB_STATUS unpackDatasetsNicknames(SerializedMsg<char> &msg, std::vector<std::string> &nicknames);
 
     /** @brief Unpacks a 'dataset load' message. Results are stored in the dataset and datasetIndex arguments. */
-    DB_STATUS unpackDatasetLoadMsg(SerializedMsg<char> &msg, Dataset &dataset, DatasetIndexE &datasetIndex);
+    DB_STATUS unpackDatasetLoadMsg(SerializedMsg<char> &msg, Dataset &dataset, DatasetIndex &datasetIndex);
 }
 
 #endif 

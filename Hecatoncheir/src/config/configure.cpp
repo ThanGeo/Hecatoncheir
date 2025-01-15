@@ -192,7 +192,7 @@ namespace configurer
             R.path = datasetStmt->datasetPathR;
             R.nickname = datasetStmt->datasetNicknameR;
             R.datasetName = getFileNameFromPath(R.path);
-            R.fileType = (FileTypeE) mapping::fileTypeTextToInt(datasetStmt->filetypeR);
+            R.fileType = (FileType) mapping::fileTypeTextToInt(datasetStmt->filetypeR);
             
             // add to config
             DB_STATUS ret = g_config.datasetMetadata.addDataset(DATASET_R, R);
@@ -209,7 +209,7 @@ namespace configurer
                 S.path = datasetStmt->datasetPathS;
                 S.nickname = datasetStmt->datasetNicknameS;
                 S.datasetName = getFileNameFromPath(S.path);
-                S.fileType = (FileTypeE) mapping::fileTypeTextToInt(datasetStmt->filetypeS);
+                S.fileType = (FileType) mapping::fileTypeTextToInt(datasetStmt->filetypeS);
                 // add to config
                 DB_STATUS ret = g_config.datasetMetadata.addDataset(DATASET_S, S);
                 if (ret != DBERR_OK) {

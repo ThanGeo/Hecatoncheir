@@ -227,7 +227,7 @@ namespace APRIL
         }
 
         
-        DB_STATUS IntermediateFilterEntrypoint(Shape* objR, Shape* objS, MBRRelationCaseE mbrRelationCase, QueryOutput &queryOutput) {
+        DB_STATUS IntermediateFilterEntrypoint(Shape* objR, Shape* objS, MBRRelationCase mbrRelationCase, QueryOutput &queryOutput) {
             DB_STATUS ret = DBERR_OK;
             // switch based on how the MBRs intersect, to the appropriate intermediate filter
             switch (mbrRelationCase) {

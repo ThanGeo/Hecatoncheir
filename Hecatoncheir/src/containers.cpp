@@ -94,7 +94,7 @@ void QueryOutput::countTopologyRelationResult(int relation) {
     this->topologyRelationsResultMap[relation] += 1;
 }
 
-int QueryOutput::getResultForTopologyRelation(TopologyRelationE relation) {
+int QueryOutput::getResultForTopologyRelation(TopologyRelation relation) {
     auto it = topologyRelationsResultMap.find(relation);
     if (it != topologyRelationsResultMap.end()) {
         return it->second;
@@ -162,7 +162,7 @@ int AprilConfig::getCellsPerDim() {
     return cellsPerDim;
 }
 
-std::vector<Shape*>* Partition::getContainerClassContents(TwoLayerClassE classType) {
+std::vector<Shape*>* Partition::getContainerClassContents(TwoLayerClass classType) {
     if (classType < CLASS_A || classType > CLASS_D) {
         logger::log_error(DBERR_OUT_OF_BOUNDS, "class type index out of bounds");
         return nullptr;
@@ -170,7 +170,7 @@ std::vector<Shape*>* Partition::getContainerClassContents(TwoLayerClassE classTy
     return &classIndex[classType];
 }
 
-void Partition::addObjectOfClass(Shape *objectRef, TwoLayerClassE classType) {
+void Partition::addObjectOfClass(Shape *objectRef, TwoLayerClass classType) {
     classIndex[classType].push_back(objectRef);
     // if (this->partitionID == 289605) {
     //     printf("partition %d class %s new size after insertion of %ld: %ld\n", this->partitionID, mapping::twoLayerClassIntToStr(classType).c_str(), objectRef->recID, classIndex[classType].size());
@@ -210,7 +210,7 @@ DB_STATUS Dataset::addObject(Shape &object) {
 int Dataset::calculateBufferSize() {
     int size = 0;
     // dataset data type
-    size += sizeof(DataTypeE);
+    size += sizeof(DataType);
     // dataset nickname: length + string
     size += sizeof(int) + (nickname.length() * sizeof(char));     
     // dataset's dataspace metadata (MBR)
@@ -235,8 +235,8 @@ DB_STATUS Dataset::serialize(char **buffer, int &bufferSize) {
     }
 
     // add datatype
-    memcpy(localBuffer + position, &dataType, sizeof(DataTypeE));
-    position += sizeof(DataTypeE);
+    memcpy(localBuffer + position, &dataType, sizeof(DataType));
+    position += sizeof(DataType);
     // add dataset nickname length + string
     int nicknameLength = nickname.length();
     memcpy(localBuffer + position, &nicknameLength, sizeof(int));
@@ -264,8 +264,8 @@ DB_STATUS Dataset::deserialize(const char *buffer, int bufferSize) {
     double xMin, yMin, xMax, yMax;
     
     // dataset data type
-    memcpy(&dataType, buffer + position, sizeof(DataTypeE));
-    position += sizeof(DataTypeE);
+    memcpy(&dataType, buffer + position, sizeof(DataType));
+    position += sizeof(DataType);
     // dataset nickname length + string
     memcpy(&nicknameLength, buffer + position, sizeof(int));
     position += sizeof(int);
@@ -403,7 +403,7 @@ void Dataset::printObjectsPartitions() {
     for (auto &it : objectIDs) {
         printf("id: %zu, type %s, Partitions:", it, objects[it].getShapeType().c_str());
         for (int i=0; i<objects[it].getPartitionCount(); i++) {
-            printf("(%d,%s),", objects[it].getPartitionID(i), mapping::twoLayerClassIntToStr((TwoLayerClassE) objects[it].getPartitionClass(i)).c_str());
+            printf("(%d,%s),", objects[it].getPartitionID(i), mapping::twoLayerClassIntToStr((TwoLayerClass) objects[it].getPartitionClass(i)).c_str());
         }
         printf("\n");
     }
@@ -413,8 +413,8 @@ void Dataset::printPartitions() {
     for (auto it : this->twoLayerIndex.partitions) {
         printf("Partition %d\n", it.partitionID);
         for (int c=CLASS_A; c<=CLASS_D; c++) {
-            printf("Class %s:\n", mapping::twoLayerClassIntToStr((TwoLayerClassE) c).c_str());
-            std::vector<Shape*>* container = it.getContainerClassContents((TwoLayerClassE) c);
+            printf("Class %s:\n", mapping::twoLayerClassIntToStr((TwoLayerClass) c).c_str());
+            std::vector<Shape*>* container = it.getContainerClassContents((TwoLayerClass) c);
             if (container == nullptr) {
                 printf("    nullptr\n");
             } else {
@@ -484,7 +484,7 @@ Partition* TwoLayerIndex::getOrCreatePartition(int partitionID) {
     return &partitions[it->second];
 }
 
-void TwoLayerIndex::addObject(int partitionID, TwoLayerClassE classType, Shape* objectRef) {
+void TwoLayerIndex::addObject(int partitionID, TwoLayerClass classType, Shape* objectRef) {
     auto it = partitionMap.find(partitionID);
     if (it == partitionMap.end()) {
         // new partition
@@ -546,7 +546,7 @@ Dataset* DatasetMetadata::getDatasetS() {
     return S;
 }
 
-DB_STATUS DatasetMetadata::getDatasetByIdx(DatasetIndexE datasetIndex, Dataset **datasetRef) {
+DB_STATUS DatasetMetadata::getDatasetByIdx(DatasetIndex datasetIndex, Dataset **datasetRef) {
     switch (datasetIndex) {
         case DATASET_R:
             (*datasetRef) = R;
@@ -566,7 +566,7 @@ DB_STATUS DatasetMetadata::getDatasetByIdx(DatasetIndexE datasetIndex, Dataset *
 @brief adds a Dataset to the configuration's dataset metadata
  * @warning it has to be an empty dataset BUT its nickname needs to be set
  */
-DB_STATUS DatasetMetadata::addDataset(DatasetIndexE datasetIdx, Dataset &dataset) {
+DB_STATUS DatasetMetadata::addDataset(DatasetIndex datasetIdx, Dataset &dataset) {
     // add to datasets struct
     datasets[dataset.nickname] = dataset;
     switch (datasetIdx) {
@@ -620,7 +620,7 @@ void Batch::setDestNodeRank(int destRank) {
 // calculate the size needed for the serialization buffer
 int Batch::calculateBufferSize() {
     int size = 0;
-    size += sizeof(DataTypeE);                        // datatype
+    size += sizeof(DataType);                        // datatype
     size += sizeof(size_t);                        // objectCount
     
     for (auto &it: objects) {
@@ -651,8 +651,8 @@ DB_STATUS Batch::serialize(char **buffer, int &bufferSize) {
     char* localBuffer = *buffer;
 
     // add data type
-    *reinterpret_cast<DataTypeE*>(localBuffer) = dataType;
-    localBuffer += sizeof(DataTypeE);
+    *reinterpret_cast<DataType*>(localBuffer) = dataType;
+    localBuffer += sizeof(DataType);
     // add object count
     *reinterpret_cast<size_t*>(localBuffer) = objectCount;
     localBuffer += sizeof(size_t);
@@ -705,8 +705,8 @@ DB_STATUS Batch::deserialize(const char *buffer, int bufferSize) {
     const char *localBuffer = buffer;
 
     // get data type
-    DataTypeE dataType = *reinterpret_cast<const DataTypeE*>(localBuffer);
-    localBuffer += sizeof(DataTypeE);
+    DataType dataType = *reinterpret_cast<const DataType*>(localBuffer);
+    localBuffer += sizeof(DataType);
 
     // get object count
     size_t objectCount = *reinterpret_cast<const size_t*>(localBuffer);
@@ -871,7 +871,7 @@ namespace shape_factory
         return Shape(RectangleWrapper());
     }
 
-    DB_STATUS createEmpty(DataTypeE dataType, Shape &object) {
+    DB_STATUS createEmpty(DataType dataType, Shape &object) {
         switch (dataType) {
             case DT_POINT:
                 object = createEmptyPointShape();

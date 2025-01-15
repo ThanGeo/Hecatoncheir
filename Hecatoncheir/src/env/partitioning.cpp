@@ -44,7 +44,7 @@ namespace partitioning
         return DBERR_OK;
     }
 
-    static DB_STATUS initializeBatchMap(std::unordered_map<int,Batch> &batchMap, DataTypeE dataType) {
+    static DB_STATUS initializeBatchMap(std::unordered_map<int,Batch> &batchMap, DataType dataType) {
         // initialize batches
         for (int i=0; i<g_world_size; i++) {
             Batch batch;
@@ -684,7 +684,7 @@ namespace partitioning
         return DBERR_OK;
     }
 
-    static TwoLayerClassE getTwoLayerClassForMBRandPartition(double mbrXmin, double mbrYmin, double partitionXmin, double partitionYmin) {
+    static TwoLayerClass getTwoLayerClassForMBRandPartition(double mbrXmin, double mbrYmin, double partitionXmin, double partitionYmin) {
         if (mbrXmin < partitionXmin) {
             // before in X axis
             if (mbrYmin < partitionYmin) {
@@ -744,7 +744,7 @@ namespace partitioning
                 double distPartitionXmax = g_config.partitioningMethod->distGridDataspaceMetadata.xMinGlobal + ((distPartitionIndexX+1) * g_config.partitioningMethod->getDistPartionExtentX());
                 double distPartitionYmax = g_config.partitioningMethod->distGridDataspaceMetadata.yMinGlobal + ((distPartitionIndexY+1) * g_config.partitioningMethod->getDistPartionExtentY());
                 // printf("Distribution grid partition bounds: (%f,%f),(%f,%f),(%f,%f),(%f,%f)\n", distPartitionXmin, distPartitionYmin, distPartitionXmax, distPartitionYmin, distPartitionXmax, distPartitionYmax, distPartitionXmin, distPartitionYmax);
-                TwoLayerClassE objectClassInDistributionPartition = getTwoLayerClassForMBRandPartition(xMin, yMin, distPartitionXmin, distPartitionYmin);
+                TwoLayerClass objectClassInDistributionPartition = getTwoLayerClassForMBRandPartition(xMin, yMin, distPartitionXmin, distPartitionYmin);
                 // printf("Object class in parent partition: %s\n", mapping::twoLayerClassIntToStr(objectClassInDistributionPartition).c_str());
                 // get the indices of the start/end part partitions
                 int localPartitionXstart = (xMin - distPartitionXmin) / (g_config.partitioningMethod->getDistPartionExtentX() / g_config.partitioningMethod->getPartitioningPPD());
@@ -857,7 +857,7 @@ namespace partitioning
                 double distPartitionXmin = g_config.partitioningMethod->distGridDataspaceMetadata.xMinGlobal + (distPartitionIndexX * g_config.partitioningMethod->getDistPartionExtentX());
                 double distPartitionYmin = g_config.partitioningMethod->distGridDataspaceMetadata.yMinGlobal + (distPartitionIndexY * g_config.partitioningMethod->getDistPartionExtentY());
                 // get the object's class
-                TwoLayerClassE objectClass = getTwoLayerClassForMBRandPartition(xMin, yMin, distPartitionXmin, distPartitionYmin);
+                TwoLayerClass objectClass = getTwoLayerClassForMBRandPartition(xMin, yMin, distPartitionXmin, distPartitionYmin);
                 // fill in the partition's two layer class data
                 object.setPartitionClass(i, objectClass);
             }
@@ -904,7 +904,7 @@ namespace partitioning
                         // if (batch.geometries[i].recID == 10582) {
                         //     printf("Object %ld has %d partitions:\n", batch.geometries[i].recID, batch.geometries[i].partitionCount);
                         //     for (int j=0; j < batch.geometries[i].partitionCount; j++) {
-                        //         printf("    partition: %d class %s\n", batch.geometries[i].partitions[2*j], mapping::twoLayerClassIntToStr((TwoLayerClassE) batch.geometries[i].partitions[2*j+1]).c_str());
+                        //         printf("    partition: %d class %s\n", batch.geometries[i].partitions[2*j], mapping::twoLayerClassIntToStr((TwoLayerClass) batch.geometries[i].partitions[2*j+1]).c_str());
                         //     }   
                         // }
                     }

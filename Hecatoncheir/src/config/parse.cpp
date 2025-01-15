@@ -72,15 +72,15 @@ namespace parser
         return DBERR_INVALID_PARAMETER;
     }
 
-    static DB_STATUS verifyDatatypeCombinationForQueryType(QueryTypeE queryType) {
+    static DB_STATUS verifyDatatypeCombinationForQueryType(QueryType queryType) {
         // get number of datasets
         int numberOfDatasets = g_config.datasetMetadata.getNumberOfDatasets();
         // find if query type is supported
         auto queryIT = g_querySupportMap.find(queryType);
         if (queryIT != g_querySupportMap.end()) {
-            DataTypeE dataTypeR = g_config.datasetMetadata.getDatasetR()->dataType;
+            DataType dataTypeR = g_config.datasetMetadata.getDatasetR()->dataType;
             // todo: for queries with one dataset input, handle this accordingly
-            DataTypeE dataTypeS = g_config.datasetMetadata.getDatasetS()->dataType;
+            DataType dataTypeS = g_config.datasetMetadata.getDatasetS()->dataType;
             const auto& allowedCombinations = queryIT->second;
             auto dataTypesPair = std::make_pair(dataTypeR, dataTypeS);
             auto datatypesIT = allowedCombinations.find(dataTypesPair);
@@ -212,7 +212,7 @@ namespace parser
 
         // partitioning type
         std::string partitioningTypeStr = system_config_pt.get<std::string>("Partitioning.type");
-        PartitioningTypeE partitioningType;
+        PartitioningType partitioningType;
         DB_STATUS ret = statement::getPartitioningType(partitioningTypeStr, partitioningType);
         if (ret != DBERR_OK) {
             logger::log_error(ret, "Unkown partitioning type in config file");
@@ -275,8 +275,8 @@ namespace parser
         if (datasetStmt->datasetCount > 0) {
             // R dataset
             // file type
-            FileTypeE fileTypeR = mapping::fileTypeTextToInt(datasetStmt->filetypeR);
-            if (fileTypeR == FT_INVALID) {
+            FileType fileTypeR = mapping::fileTypeTextToInt(datasetStmt->filetypeR);
+            if (fileTypeR == -1) {
                 logger::log_error(DBERR_INVALID_FILETYPE, "Unkown file type of dataset R:", datasetStmt->filetypeR);
                 return DBERR_INVALID_FILETYPE;
             }
@@ -295,8 +295,8 @@ namespace parser
                     return DBERR_INVALID_PARAMETER;
                 }
                 // file type
-                FileTypeE fileTypeS = mapping::fileTypeTextToInt(datasetStmt->filetypeS);
-                if (fileTypeS == FT_INVALID) {
+                FileType fileTypeS = mapping::fileTypeTextToInt(datasetStmt->filetypeS);
+                if (fileTypeS == -1) {
                     logger::log_error(DBERR_INVALID_FILETYPE, "Unkown file type of dataset S:", datasetStmt->filetypeS);
                     return DBERR_INVALID_FILETYPE;
                 }
@@ -390,7 +390,7 @@ namespace parser
             return DBERR_OK;
         }
         // get query type int
-        QueryTypeE queryType = mapping::queryTypeStrToInt(queryStmt->queryType);
+        QueryType queryType = mapping::queryTypeStrToInt(queryStmt->queryType);
         if (queryType == -1) {
             logger::log_error(DBERR_INVALID_PARAMETER, "Invalid query type:", queryStmt->queryType);
             return DBERR_INVALID_PARAMETER;
@@ -402,7 +402,7 @@ namespace parser
         }
 
         // set to configuration
-        g_config.queryMetadata.type = (QueryTypeE) queryType;
+        g_config.queryMetadata.type = (QueryType) queryType;
         
         return DBERR_OK;    
     }
@@ -448,7 +448,7 @@ namespace parser
                 logger::log_error(DBERR_INVALID_PARAMETER, "Unknown system setup type:", sysOpsStmt.setupType);
                 return DBERR_INVALID_PARAMETER;
             }
-            g_config.options.setupType = (SystemSetupTypeE) setupType;
+            g_config.options.setupType = (SystemSetupType) setupType;
         }
         return DBERR_OK;
     }

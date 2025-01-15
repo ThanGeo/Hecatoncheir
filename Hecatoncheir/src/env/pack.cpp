@@ -4,7 +4,7 @@ namespace pack
 {
     DB_STATUS packSystemMetadata(SerializedMsg<char> &sysMetadataMsg) {
         sysMetadataMsg.count = 0;
-        sysMetadataMsg.count += sizeof(SystemSetupTypeE);      // cluster or local
+        sysMetadataMsg.count += sizeof(SystemSetupType);      // cluster or local
         sysMetadataMsg.count += 2*sizeof(int);                  // dist + part partitions per dimension
         sysMetadataMsg.count += sizeof(int);                  // partitioning type
         sysMetadataMsg.count += sizeof(int) + g_config.dirPaths.dataPath.length() * sizeof(char);   // data directory path length + string
@@ -21,16 +21,16 @@ namespace pack
         char* localBuffer = sysMetadataMsg.data;
 
         // put objects in buffer
-        *reinterpret_cast<SystemSetupTypeE*>(localBuffer) = g_config.options.setupType;
-        localBuffer += sizeof(SystemSetupTypeE);
+        *reinterpret_cast<SystemSetupType*>(localBuffer) = g_config.options.setupType;
+        localBuffer += sizeof(SystemSetupType);
 
         *reinterpret_cast<int*>(localBuffer) = g_config.partitioningMethod->getDistributionPPD();
         localBuffer += sizeof(int);
         *reinterpret_cast<int*>(localBuffer) = g_config.partitioningMethod->getPartitioningPPD();
         localBuffer += sizeof(int);
 
-        *reinterpret_cast<PartitioningTypeE*>(localBuffer) = g_config.partitioningMethod->getType();
-        localBuffer += sizeof(PartitioningTypeE);
+        *reinterpret_cast<PartitioningType*>(localBuffer) = g_config.partitioningMethod->getType();
+        localBuffer += sizeof(PartitioningType);
 
         *reinterpret_cast<int*>(localBuffer) = g_config.dirPaths.dataPath.length();
         localBuffer += sizeof(int);
@@ -136,7 +136,7 @@ namespace pack
         return DBERR_OK;
     }
 
-    DB_STATUS packDatasetLoadMsg(Dataset *dataset, DatasetIndexE datasetIndex, SerializedMsg<char> &msg) {
+    DB_STATUS packDatasetLoadMsg(Dataset *dataset, DatasetIndex datasetIndex, SerializedMsg<char> &msg) {
         msg.count = 0;
 
         // count for buffer size
@@ -230,20 +230,20 @@ namespace pack
 namespace unpack
 {
     DB_STATUS unpackSystemMetadata(SerializedMsg<char> &sysMetadataMsg) {
-        PartitioningTypeE partitioningType;
+        PartitioningType partitioningType;
         int partPartitionsPerDim, distPartitionsPerDim;
         char *localBuffer = sysMetadataMsg.data;
         // get system setup type
-        g_config.options.setupType = *reinterpret_cast<const SystemSetupTypeE*>(localBuffer);
-        localBuffer += sizeof(SystemSetupTypeE);
+        g_config.options.setupType = *reinterpret_cast<const SystemSetupType*>(localBuffer);
+        localBuffer += sizeof(SystemSetupType);
         // get dist+part partitions per dimension
         distPartitionsPerDim = *reinterpret_cast<const int*>(localBuffer);
         localBuffer += sizeof(int);
         partPartitionsPerDim = *reinterpret_cast<const int*>(localBuffer);
         localBuffer += sizeof(int);
         // get dist+part partitioning type
-        partitioningType = *reinterpret_cast<const PartitioningTypeE*>(localBuffer);
-        localBuffer += sizeof(PartitioningTypeE);
+        partitioningType = *reinterpret_cast<const PartitioningType*>(localBuffer);
+        localBuffer += sizeof(PartitioningType);
         // set partitioning method
         if (partitioningType == PARTITIONING_ROUND_ROBIN) {
             // batch size to zero, since its irrelevant
@@ -295,7 +295,7 @@ namespace unpack
     }
 
     DB_STATUS unpackQueryMetadata(SerializedMsg<int> &queryMetadataMsg) {
-        g_config.queryMetadata.type = (QueryTypeE) queryMetadataMsg.data[0];
+        g_config.queryMetadata.type = (QueryType) queryMetadataMsg.data[0];
         g_config.queryMetadata.MBRFilter = queryMetadataMsg.data[1];
         g_config.queryMetadata.IntermediateFilter = queryMetadataMsg.data[2];
         g_config.queryMetadata.Refinement = queryMetadataMsg.data[3];
@@ -303,7 +303,7 @@ namespace unpack
         return DBERR_OK;
     }
 
-    DB_STATUS unpackQueryResults(SerializedMsg<int> &queryResultsMsg, QueryTypeE queryType, QueryOutput &queryOutput) {
+    DB_STATUS unpackQueryResults(SerializedMsg<int> &queryResultsMsg, QueryType queryType, QueryOutput &queryOutput) {
         // total results and mbr results is common
         queryOutput.queryResults = queryResultsMsg.data[0];   
         queryOutput.postMBRFilterCandidates = queryResultsMsg.data[1];    
@@ -365,11 +365,11 @@ namespace unpack
         return DBERR_OK;
     }
 
-    DB_STATUS unpackDatasetLoadMsg(SerializedMsg<char> &msg, Dataset &dataset, DatasetIndexE &datasetIndex) {
+    DB_STATUS unpackDatasetLoadMsg(SerializedMsg<char> &msg, Dataset &dataset, DatasetIndex &datasetIndex) {
         char *localBuffer = msg.data;
         int length;
         // dataset index
-        datasetIndex = (DatasetIndexE) *reinterpret_cast<const int*>(localBuffer);
+        datasetIndex = (DatasetIndex) *reinterpret_cast<const int*>(localBuffer);
         localBuffer += sizeof(int);
         // dataset nickname length
         length = *reinterpret_cast<const int*>(localBuffer);

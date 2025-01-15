@@ -904,11 +904,11 @@ public:
     /** @brief Returns the partition class for partition number 'partitionIndex' in the partitions list.
      * @param partitionIndex indicates the offset (index) of the requested partition from [0, partitionCount-1].
      */
-    inline TwoLayerClassE getPartitionClass(int partitionIndex) {
-        return (TwoLayerClassE) partitions[partitionIndex * 2 + 1];
+    inline TwoLayerClass getPartitionClass(int partitionIndex) {
+        return (TwoLayerClass) partitions[partitionIndex * 2 + 1];
     }
 
-    inline void setPartitionClass(int partitionIndex, TwoLayerClassE classType) {
+    inline void setPartitionClass(int partitionIndex, TwoLayerClass classType) {
         partitions[partitionIndex * 2 + 1] = classType;
     }
 
@@ -1192,7 +1192,7 @@ namespace shape_factory
      * @param object the return value where the empty object will be stored
      * @return DB_STATUS returns the status value of the operation
     */
-    DB_STATUS createEmpty(DataTypeE dataType, Shape &object);
+    DB_STATUS createEmpty(DataType dataType, Shape &object);
 }
 
 /**
@@ -1222,7 +1222,7 @@ struct QueryOutput {
     void countMBRresult();
     void countRefinementCandidate();
     void countTopologyRelationResult(int result);
-    int getResultForTopologyRelation(TopologyRelationE relation);
+    int getResultForTopologyRelation(TopologyRelation relation);
     void setTopologyRelationResult(int relation, int result);
     /**
     @brief copies the contents of the 'other' query output object into this struct
@@ -1280,9 +1280,9 @@ struct Partition {
         }
     }
     /** @brief Returns a reference to the partition's contents for the given class type. @param classType Either A, B, C or D. */
-    std::vector<Shape*>* getContainerClassContents(TwoLayerClassE classType);
+    std::vector<Shape*>* getContainerClassContents(TwoLayerClass classType);
 
-    void addObjectOfClass(Shape *objectRef, TwoLayerClassE classType);
+    void addObjectOfClass(Shape *objectRef, TwoLayerClass classType);
 };
 
 /** @brief Holds all two-layer related index information.
@@ -1307,7 +1307,7 @@ public:
      * @param[in] classType The class of the object in that partition.
      * @param[out] objectRef The returned object reference.
      */
-    void addObject(int partitionID, TwoLayerClassE classType, Shape* objectRef);
+    void addObject(int partitionID, TwoLayerClass classType, Shape* objectRef);
     /**
     @brief Returns the partition reference to this partition ID
      */
@@ -1322,8 +1322,8 @@ public:
  * @brief All dataset related information.
  */
 struct Dataset{
-    DataTypeE dataType;
-    FileTypeE fileType;
+    DataType dataType;
+    FileType fileType;
     std::string path;
     // derived from the path
     std::string datasetName;
@@ -1336,7 +1336,7 @@ struct Dataset{
     std::vector<size_t> objectIDs;
     std::unordered_map<size_t, Shape> objects;
     TwoLayerIndex twoLayerIndex;
-    ApproximationTypeE approxType;
+    ApproximationType approxType;
     AprilConfig aprilConfig;
     /** Section mapping. key,value = sectionID,(unordered map of key,value = recID,aprilData) @warning only sectionID = 0 is supported currently.*/
     std::unordered_map<uint, Section> sectionMap;
@@ -1378,7 +1378,7 @@ struct Dataset{
 /** @brief Holds all query-related information.
  */
 struct Query{
-    QueryTypeE type;
+    QueryType type;
     int numberOfDatasets;
     Dataset R;         // R: left dataset
     Dataset S;         // S: right dataset
@@ -1408,7 +1408,7 @@ struct DirectoryPaths {
 /** @brief Base class for the partitioning methods (abstract class). */
 struct PartitioningMethod {
     /** @brief The partitioning technique */
-    PartitioningTypeE type;
+    PartitioningType type;
     /** @brief The number of partitions per dimension */
     int distPartitionsPerDim;
     /** @brief The batch size for the data distribution, in number of objects. */             
@@ -1420,10 +1420,10 @@ struct PartitioningMethod {
     double distPartitionExtentY;
 
     /** @brief Base constructor. */
-    PartitioningMethod(PartitioningTypeE pType, int pBatchSize, int partitionsPerDimensionNum) : type(pType), batchSize(pBatchSize), distPartitionsPerDim(partitionsPerDimensionNum) {}
+    PartitioningMethod(PartitioningType pType, int pBatchSize, int partitionsPerDimensionNum) : type(pType), batchSize(pBatchSize), distPartitionsPerDim(partitionsPerDimensionNum) {}
 
     /** @brief Returns the partitioning method's type. */
-    PartitioningTypeE getType() {
+    PartitioningType getType() {
         return type;
     }
 
@@ -1506,7 +1506,7 @@ public:
     double partPartitionExtentY;
 
     /** @brief Round robing partitioning constructor. */
-    TwoGridPartitioning(PartitioningTypeE type, int batchSize, int partitionsPerDim, int fPartitionsPerDim) : PartitioningMethod(type, batchSize, partitionsPerDim), partPartitionsPerDim(fPartitionsPerDim) {
+    TwoGridPartitioning(PartitioningType type, int batchSize, int partitionsPerDim, int fPartitionsPerDim) : PartitioningMethod(type, batchSize, partitionsPerDim), partPartitionsPerDim(fPartitionsPerDim) {
         globalPartitionsPerDim = partPartitionsPerDim * distPartitionsPerDim;
     }
 
@@ -1540,7 +1540,7 @@ public:
 struct RoundRobinPartitioning : public PartitioningMethod {
 public:
     /** @brief Round robing partitioning constructor. */
-    RoundRobinPartitioning(PartitioningTypeE type, int batchSize, int partitionsPerDim) : PartitioningMethod(type, batchSize, partitionsPerDim) {}
+    RoundRobinPartitioning(PartitioningType type, int batchSize, int partitionsPerDim) : PartitioningMethod(type, batchSize, partitionsPerDim) {}
 
     /** @brief Get the grid's partition ID (from parent). */
     int getDistributionGridPartitionID(int i, int j) override;
@@ -1571,7 +1571,7 @@ public:
  */
 // struct PartitioningMetadata {
 //     /** @brief The partitioning technique */
-//     PartitioningTypeE type;                 
+//     PartitioningType type;                 
 //     /** @brief The number of partitions per dimension */
 //     int ppdNum;                
 //     /** @brief The batch size for the data distribution, in number of objects. */             
@@ -1590,11 +1590,11 @@ public:
 /** @brief Defines a system task/job that the host controller is responsible for performing/broadcasting.
  */
 struct Action {
-    ActionTypeE type;
+    ActionType type;
     Action(){
         this->type = ACTION_NONE;
     }
-    Action(ActionTypeE type) {
+    Action(ActionType type) {
         this->type = type;
     }
 };
@@ -1621,13 +1621,13 @@ public:
 
     Dataset* getDatasetS();
 
-    DB_STATUS getDatasetByIdx(DatasetIndexE datasetIndex, Dataset **datasetRef);
+    DB_STATUS getDatasetByIdx(DatasetIndex datasetIndex, Dataset **datasetRef);
 
     /**
     @brief adds a Dataset to the configuration's dataset metadata
      * @warning it has to be an empty dataset BUT its nickname needs to be set
      */
-    DB_STATUS addDataset(DatasetIndexE datasetIdx, Dataset &dataset);
+    DB_STATUS addDataset(DatasetIndex datasetIdx, Dataset &dataset);
 
     void updateDataspace();
 };
@@ -1635,12 +1635,12 @@ public:
 /** @brief Holds all approximation related metadata.
  */
 struct ApproximationMetadata {
-    ApproximationTypeE type;   // sets which of the following fields will be used
+    ApproximationType type;   // sets which of the following fields will be used
     AprilConfig aprilConfig;  
     ApproximationMetadata() {
         this->type = AT_NONE;
     }
-    ApproximationMetadata(ApproximationTypeE type) {
+    ApproximationMetadata(ApproximationType type) {
         this->type = type;
     }
 };
@@ -1648,7 +1648,7 @@ struct ApproximationMetadata {
 /** @brief Holds all the query related metadata in the configuration.
  */
 struct QueryMetadata {
-    QueryTypeE type = Q_NONE;
+    QueryType type = Q_NONE;
     int MBRFilter = 1;
     int IntermediateFilter = 1;
     int Refinement = 1;
@@ -1657,7 +1657,7 @@ struct QueryMetadata {
 /** @brief Holds all the system related metadata in the configuration.
  */
 struct SystemOptions {
-    SystemSetupTypeE setupType;
+    SystemSetupType setupType;
     std::string nodefilePath;
     uint nodeCount;
 };

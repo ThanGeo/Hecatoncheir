@@ -2,7 +2,7 @@
 
 namespace statement
 {
-    DB_STATUS getPartitioningType(std::string &typeStr, PartitioningTypeE &type) {
+    DB_STATUS getPartitioningType(std::string &typeStr, PartitioningType &type) {
         if (typeStr == "RR"){
             type = PARTITIONING_ROUND_ROBIN;
         } else if (typeStr == "TWOGRID") {
@@ -14,7 +14,7 @@ namespace statement
         return DBERR_OK;
     }
 
-    DB_STATUS getFiletype(std::string &filetypeStr, FileTypeE &filetype) {
+    DB_STATUS getFiletype(std::string &filetypeStr, FileType &filetype) {
         if (filetypeStr == "BINARY") {
             filetype = FT_BINARY;
         } else if (filetypeStr == "CSV") {

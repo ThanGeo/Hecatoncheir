@@ -19,7 +19,7 @@ struct DatasetStatement {
     std::string datasetNicknameR = "", datasetNicknameS = "";
     std::string filetypeR,filetypeS;
     int datasetCount = 0;
-    DataTypeE datatypeR, datatypeS;
+    DataType datatypeR, datatypeS;
     bool boundsSet = false;
     double xMinGlobal, yMinGlobal, xMaxGlobal, yMaxGlobal;
 };
@@ -52,13 +52,13 @@ namespace statement
      * @param[in] typeStr A string describing the partitioning method.
      * @param[out] type The returned partitioning type system parameter.
     */
-    DB_STATUS getPartitioningType(std::string &typeStr, PartitioningTypeE &type);
+    DB_STATUS getPartitioningType(std::string &typeStr, PartitioningType &type);
 
     /** @brief Sets the input data file type.
      * @param[in] filetypeStr A string describing the file type.
      * @param[out] filetype The returned file type system parameter.
     */
-    DB_STATUS getFiletype(std::string &filetypeStr, FileTypeE &filetype);
+    DB_STATUS getFiletype(std::string &filetypeStr, FileType &filetype);
 
     /** @brief Sets the create approximation action (if any).
      * @param[in] approximationStr A string describing the approximation type to create.

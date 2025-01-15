@@ -132,7 +132,7 @@ static DB_STATUS initQueryExecution() {
 }
 
 /** @brief initializes (broadcasts) the load specific dataset action for the given dataset */
-static DB_STATUS initLoadDataset(Dataset *dataset, DatasetIndexE datasetIndex) {
+static DB_STATUS initLoadDataset(Dataset *dataset, DatasetIndex datasetIndex) {
     // send load instruction + dataset metadata
     DB_STATUS ret = DBERR_OK;
     // pack nicknames

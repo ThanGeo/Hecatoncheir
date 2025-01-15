@@ -148,7 +148,7 @@ namespace mpi_timer
 
 namespace mapping
 {
-    std::string actionIntToStr(ActionTypeE action) {
+    std::string actionIntToStr(ActionType action) {
         switch (action) {
             case ACTION_NONE:
                 return "NONE";
@@ -171,7 +171,7 @@ namespace mapping
         }
     }
 
-    std::string twoLayerClassIntToStr(TwoLayerClassE classType) {
+    std::string twoLayerClassIntToStr(TwoLayerClass classType) {
         switch (classType) {
             case CLASS_A:
                 return "A";
@@ -186,7 +186,7 @@ namespace mapping
         }
     }
 
-    std::string queryTypeIntToStr(QueryTypeE val){
+    std::string queryTypeIntToStr(QueryType val){
         switch(val) {
             case Q_RANGE: return "range";
             case Q_INTERSECT: return "intersect";
@@ -203,7 +203,7 @@ namespace mapping
         }
     }
 
-    QueryTypeE queryTypeStrToInt(std::string &str) {
+    QueryType queryTypeStrToInt(std::string &str) {
         if (str == "range") {
             return Q_RANGE;
         } else if (str == "intersect") {
@@ -229,7 +229,7 @@ namespace mapping
         }
     }
 
-    std::string dataTypeIntToStr(DataTypeE val){
+    std::string dataTypeIntToStr(DataType val){
         switch(val) {
             case DT_POLYGON: return "POLYGON";
             case DT_RECTANGLE: return "RECTANGLE";
@@ -239,21 +239,21 @@ namespace mapping
         }
     }
 
-    DataTypeE dataTypeTextToInt(std::string str){
+    DataType dataTypeTextToInt(std::string str){
         if (str.compare("POLYGON") == 0) return DT_POLYGON;
         else if (str.compare("RECTANGLE") == 0) return DT_RECTANGLE;
         else if (str.compare("POINT") == 0) return DT_POINT;
         else if (str.compare("LINESTRING") == 0) return DT_LINESTRING;
 
-        return DT_INVALID;
+        return (DataType)(-1);
     }
 
-    FileTypeE fileTypeTextToInt(std::string str) {
+    FileType fileTypeTextToInt(std::string str) {
         if (str.compare("BINARY") == 0) return FT_BINARY;
         else if (str.compare("CSV") == 0) return FT_CSV;
         else if (str.compare("WKT") == 0) return FT_WKT;
 
-        return FT_INVALID;
+        return (FileType)(-1);
     }
 
     std::string relationIntToStr(int relation) {

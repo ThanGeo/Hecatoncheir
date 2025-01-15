@@ -66,7 +66,7 @@ extern MPI_Comm g_agent_comm;
  * the returned value is DBERR_OK. If not, the error should propagate and the program should terminate safely.
  * 
  */
-typedef enum DB_STATUS {
+enum DB_STATUS {
     DBERR_OK = DBBASE + 0,
     DB_FIN,
 
@@ -126,30 +126,29 @@ typedef enum DB_STATUS {
     // query
     DBERR_QUERY_INVALID_INPUT = DBBASE + 7000,
     DBERR_QUERY_INVALID_TYPE = DBBASE + 7001,
-} DB_STATUS;
+};
 
-enum DatasetIndexE {
+enum DatasetIndex {
     DATASET_R,
     DATASET_S,
 };
 
-/** @enum FileTypeE @brief Data file types. */
-enum FileTypeE {
-    FT_INVALID,
+/** @enum FileType @brief Data file types. */
+enum FileType {
     FT_BINARY,
     FT_CSV,
     FT_WKT,
 };
 
-/** @enum FilterResultE @brief Possible results for the intermediate filter. */
-enum FilterResultE {
+/** @enum FilterResult @brief Possible results for the intermediate filter. */
+enum FilterResult {
     TRUE_NEGATIVE,
     TRUE_HIT,
     INCONCLUSIVE,
 };
 
 /** @enum QueryType @brief Query types. */
-typedef enum QueryType{
+enum QueryType{
     Q_NONE, // no query
     Q_RANGE,
     Q_INTERSECT,
@@ -161,25 +160,25 @@ typedef enum QueryType{
     Q_COVERS,
     Q_COVERED_BY,
     Q_FIND_RELATION,    // find what type of topological relation is there
-}QueryTypeE;
+};
 
 /** @enum MBRRelationCase
 @brief Specific relationships between the MBRs of two objects R and S. 
  * 
  * Used in the topological MBR filter.
  * */
-typedef enum MBRRelationCase {
+enum MBRRelationCase {
     MBR_R_IN_S,
     MBR_S_IN_R,
     MBR_EQUAL,
     MBR_CROSS,
     MBR_INTERSECT,
-} MBRRelationCaseE;
+};
 
 /** @enum TopologyRelation @brief Topological relation related flags. 
  * 
  * @details Includes both the types of topological relations and the different refinement cases for the APRIL intermediate filter.  */
-typedef enum TopologyRelation {
+enum TopologyRelation {
     TR_DISJOINT,
     TR_EQUAL,
     TR_INSIDE,
@@ -201,19 +200,18 @@ typedef enum TopologyRelation {
     REFINE_COVERS_TRUEHIT_INTERSECT,
     REFINE_COVERS_COVEREDBY_TRUEHIT_INTERSECT,
     REFINE_EQUAL_COVERS_COVEREDBY_TRUEHIT_INTERSECT,
-} TopologyRelationE;
+};
 
 /** @enum DataType @brief Spatial data types. */
-typedef enum DataType{
-    DT_INVALID,
+enum DataType{
     DT_POINT,
     DT_LINESTRING,
     DT_RECTANGLE,
     DT_POLYGON,
-} DataTypeE;
+};
 
 /** @enum ApproximationType @brief Spatial approximation types (mostly for polygons). */
-typedef enum ApproximationType{
+enum ApproximationType{
     AT_NONE,
     // mine
     AT_APRIL,
@@ -222,19 +220,19 @@ typedef enum ApproximationType{
     AT_5CCH,
     AT_RA,
     AT_GEOS,
-} ApproximationTypeE;
+};
 
 /** @enum TwoLayerClass @brief The two-layer index classes. (see paper) */
-typedef enum TwoLayerClass {
+enum TwoLayerClass {
     CLASS_A = 0,
     CLASS_B = 1,
     CLASS_C = 2,
     CLASS_D = 3,
     CLASS_NONE = 777,
-} TwoLayerClassE;
+};
 
-/** @enum IntervalListsRelationshipE @brief Types of possible relationships between interval lists (IL). */
-enum IntervalListsRelationshipE {
+/** @enum IntervalListsRelationship @brief Types of possible relationships between interval lists (IL). */
+enum IntervalListsRelationship {
     // no containment, no intersection
     IL_DISJOINT,
     // no containment, yes intersection
@@ -246,7 +244,7 @@ enum IntervalListsRelationshipE {
 };
 
 /** @enum ActionType @brief Different actions (jobs/tasks) the host controller will initiate/broadcast. */
-typedef enum ActionType {
+enum ActionType {
     ACTION_NONE,
     ACTION_LOAD_DATASET_R,
     ACTION_LOAD_DATASET_S,
@@ -255,23 +253,23 @@ typedef enum ActionType {
     ACTION_LOAD_APRIL,
     ACTION_PERFORM_VERIFICATION,
     ACTION_QUERY,
-} ActionTypeE;
+};
 
 /** @enum PartitioningType @brief Data partitioning methods. Only round robin is supported currently. */
-typedef enum PartitioningType {
+enum PartitioningType {
     /** @brief The grid's cells are assigned to the nodes in a round-robin fashion. */
     PARTITIONING_ROUND_ROBIN,
     /** @brief Prefix-based assignment. @warning UNSUPPORTED. */
     PARTITIONING_PREFIX_BASED,
     /** @brief A distribution grid is used to distribute the data, then a fine-grid is used at each local node for the partitioning. */
     PARTITIONING_TWO_GRID,
-} PartitioningTypeE;
+};
 
 /** @enum SystemSetupType @brief System type: Cluster or single machine (VM) */
-typedef enum SystemSetupType {
+enum SystemSetupType {
     SYS_LOCAL_MACHINE,
     SYS_CLUSTER,
-} SystemSetupTypeE;
+};
 
 
 #endif
