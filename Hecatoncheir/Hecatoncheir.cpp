@@ -227,11 +227,60 @@ namespace hec {
             yMin = temp; 
         }
 
-        // communicate with the system to init the dataset's struct and get an ID
+        if (filePath == "") {
+            // empty path, empty dataset
+            return -1;
+        }
+        // set metadata and serialize
+        SerializedMsg<char> msg(MPI_CHAR);
+        DatasetMetadata metadata;
+        metadata.internalID = (DatasetIndex) -1;
+        metadata.path = filePath;
+        metadata.fileType = (FileType) fileType;
+        metadata.dataType = (DataType) dataType;
+        metadata.dataspaceMetadata.boundsSet = true;
+        metadata.dataspaceMetadata.xMinGlobal = xMin;
+        metadata.dataspaceMetadata.yMinGlobal = yMin;
+        metadata.dataspaceMetadata.xMaxGlobal = xMax;
+        metadata.dataspaceMetadata.yMaxGlobal = yMax;
+        DB_STATUS ret = metadata.serialize(&msg.data, msg.count);
+        if (ret != DBERR_OK) {
+            logger::log_error(ret, "Metadata serialization failed.");
+            return -1;
+        }
+
+        // send message to Host Controller to init the dataset's struct and get an ID for the dataset
+        ret = comm::send::sendMessage(msg, HOST_CONTROLLER, MSG_DATASET_METADATA, g_global_intra_comm);
+        if (ret != DBERR_OK) {
+            logger::log_error(ret, "Sending dataset metadata message failed.");
+            return -1;
+        }
+
+        // wait for response with dataset internal ID
+        MPI_Status status;
+        SerializedMsg<int> msgFromHost;
+        // probe
+        ret = comm::probe(HOST_CONTROLLER, MSG_DATASET_INDEX, g_global_intra_comm, status);
+        if (ret != DBERR_OK) {
+            logger::log_error(ret, "Probing failed agent response.");
+            return ret;
+        }
+        // receive
+        ret = comm::recv::receiveMessage(status, msgFromHost.type, g_global_intra_comm, msgFromHost);
+        if (ret != DBERR_OK) {
+            logger::log_error(ret, "Receiving failed for agent response.");
+            return ret;
+        }
+        // unpack
+        std::vector<int> indexes;
+        ret = unpack::unpackDatasetIndexes(msgFromHost, indexes);
+        if (ret != DBERR_OK) {
+            logger::log_error(ret, "Error unpacking dataste indexes.");
+            return ret;
+        }
 
         // return the ID
-
-        return 0;
+        return indexes[0];
     }
 
     int partitionDataset(DatasetID &dataset) {

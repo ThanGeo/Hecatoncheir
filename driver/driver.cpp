@@ -34,10 +34,9 @@ int main(int argc, char* argv[]) {
     // hec::init(1, hosts);
 
     // prepare datasets
-    hec::DatasetID datasetRID = hec::prepareDataset(datasetFullPathR, hec::WKT, hec::POLYGON);
+    hec::DatasetID datasetRID = hec::prepareDataset(datasetFullPathR, hec::WKT, hec::POLYGON, 420, 69, 42000, 690);
     hec::DatasetID datasetSID = hec::prepareDataset(datasetFullPathS, hec::WKT, hec::POLYGON);
     printf("Dataset ids: %d and %d\n", datasetRID, datasetSID);
-    // hec::DatasetID datasetRID = hec::prepareDataset(datasetFullPathS, hec::WKT, hec::POLYGON);
 
     // Prepare/Analyze: Hecatoncheir must first analyze the dataset(s) to determine its metadata
     // bounding boxes etc. This must be done for all datasets that will participate together in a query

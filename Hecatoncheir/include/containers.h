@@ -1361,6 +1361,11 @@ struct Dataset{
 
     Dataset(){}
     Dataset(DatasetMetadata &metadata) {
+        if (metadata.dataspaceMetadata.boundsSet) {
+            metadata.dataspaceMetadata.xExtent = metadata.dataspaceMetadata.xMaxGlobal - metadata.dataspaceMetadata.xMinGlobal;
+            metadata.dataspaceMetadata.yExtent = metadata.dataspaceMetadata.yMaxGlobal - metadata.dataspaceMetadata.yMinGlobal;
+            metadata.dataspaceMetadata.maxExtent = std::max(metadata.dataspaceMetadata.xExtent, metadata.dataspaceMetadata.yExtent);
+        }
         this->metadata = metadata;
     }        
 
