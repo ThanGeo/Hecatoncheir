@@ -594,7 +594,7 @@ EXIT_SAFELY:
             datasetMetadata.deserialize(msg.data, msg.count);
             // add the dataset structure to the config
             Dataset dataset(datasetMetadata);
-            ret = g_config.datasetOptions.addDataset(datasetMetadata.internalID, dataset);
+            ret = g_config.datasetOptions.addDataset(dataset);
             if (ret != DBERR_OK) {
                 logger::log_error(ret, "Failed to add dataset to config options.");
                 return ret;
@@ -605,7 +605,7 @@ EXIT_SAFELY:
 
             // return dataset ID
             SerializedMsg<int> msgToController(MPI_INT);
-            ret = pack::packDatasetIndexes({datasetMetadata.internalID}, msgToController);
+            ret = pack::packDatasetIndexes({dataset.metadata.internalID}, msgToController);
             if (ret != DBERR_OK) {
                 logger::log_error(ret, "Failed packing indexes to message.");
                 return ret;

@@ -697,6 +697,31 @@ DB_STATUS DatasetOptions::addDataset(DatasetIndex datasetIdx, Dataset &dataset) 
     return DBERR_OK;
 }
 
+DB_STATUS DatasetOptions::addDataset(Dataset &dataset) {
+    if (this->R == nullptr) {
+        // set as R
+        dataset.metadata.internalID = DATASET_R;
+        datasets[DATASET_R] = dataset;
+        // R is being added
+        R = &datasets[DATASET_R];
+        numberOfDatasets++;
+    } else {
+        if (this->S == nullptr) {
+            // set as S
+            dataset.metadata.internalID = DATASET_S;
+            datasets[DATASET_S] = dataset;
+            // S is being added
+            S = &datasets[DATASET_S];
+            numberOfDatasets++;
+        } else {
+            // error, R is set but S is not? 
+            logger::log_error(DBERR_INVALID_PARAMETER, "Invalid state while adding dataset: R is not set but S is set.");
+            return DBERR_INVALID_PARAMETER;
+        }
+    }
+    return DBERR_OK;
+}
+
 void DatasetOptions::updateDataspace() {
     // find the bounds that enclose both datasets
     for (auto &it: datasets) {

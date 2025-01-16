@@ -1624,8 +1624,8 @@ struct Action {
  */
 struct DatasetOptions {
 private:
-    Dataset* R;
-    Dataset* S;
+    Dataset* S = nullptr;
+    Dataset* R = nullptr;
     int numberOfDatasets;
 
 public:
@@ -1647,10 +1647,16 @@ public:
 
     /**
     @brief adds a Dataset to the configuration's dataset metadata
-     * @warning it has to be an empty dataset BUT its nickname needs to be set
      */
     DB_STATUS addDataset(DatasetIndex datasetIdx, Dataset &dataset);
 
+    /**
+     * @brief Add a dataset to the configuration. 
+     * Whether this dataset is R or S, is automatically determined by the current state.
+     * If its the first dataset to be added its R, otherwise its S.
+     * Returns error if R is null but S is already set.
+     */
+    DB_STATUS addDataset(Dataset &dataset);
 
     void updateDataspace();
 };

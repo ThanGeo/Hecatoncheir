@@ -35,7 +35,8 @@ int main(int argc, char* argv[]) {
 
     // prepare datasets
     hec::DatasetID datasetRID = hec::prepareDataset(datasetFullPathR, hec::WKT, hec::POLYGON);
-    printf("Got a dataset R id: %d\n", datasetRID);
+    hec::DatasetID datasetSID = hec::prepareDataset(datasetFullPathS, hec::WKT, hec::POLYGON);
+    printf("Dataset ids: %d and %d\n", datasetRID, datasetSID);
     // hec::DatasetID datasetRID = hec::prepareDataset(datasetFullPathS, hec::WKT, hec::POLYGON);
 
     // Prepare/Analyze: Hecatoncheir must first analyze the dataset(s) to determine its metadata

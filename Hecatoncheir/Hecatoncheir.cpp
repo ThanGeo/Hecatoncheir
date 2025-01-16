@@ -165,7 +165,7 @@ namespace hec {
         // set metadata and serialize
         SerializedMsg<char> msg(MPI_CHAR);
         DatasetMetadata metadata;
-        metadata.internalID = DATASET_R;
+        metadata.internalID = (DatasetIndex) -1;
         metadata.path = filePath;
         metadata.fileType = (FileType) fileType;
         metadata.dataType = (DataType) dataType;
