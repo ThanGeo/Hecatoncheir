@@ -2,6 +2,26 @@
 
 namespace pack
 {
+    DB_STATUS packDatasetIndexes(std::vector<int> indexes, SerializedMsg<int> &msg) {
+        msg.count = sizeof(int) + indexes.size() * sizeof(int);
+        msg.data = (int*) malloc(msg.count * sizeof(int));
+        if (msg.data == NULL) {
+            // malloc failed
+            logger::log_error(DBERR_MALLOC_FAILED, "Malloc for pack dataset index failed");
+            return DBERR_MALLOC_FAILED;
+        }
+        int* localBuffer = msg.data;
+
+        // put objects in buffer
+        *reinterpret_cast<int*>(localBuffer) = (int) indexes.size();
+        localBuffer += 1;
+        for (int i=0; i<indexes.size(); i++) {
+            *reinterpret_cast<int*>(localBuffer) = indexes[i];
+            localBuffer += 1;
+        }
+        return DBERR_OK;
+    }
+
     DB_STATUS packSystemMetadata(SerializedMsg<char> &sysMetadataMsg) {
         sysMetadataMsg.count = 0;
         sysMetadataMsg.count += sizeof(SystemSetupType);      // cluster or local
@@ -89,59 +109,11 @@ namespace pack
         return DBERR_OK;
     }
 
-    DB_STATUS packDatasetsNicknames(SerializedMsg<char> &msg) {
-        std::string nicknameR = "";
-        std::string nicknameS = "";
-        msg.count = 0;
-
-        // get dataset R
-        Dataset* R = g_config.datasetMetadata.getDatasetR();
-        if (R == nullptr) {
-            return DBERR_OK;
-        }
-        // count for buffer size
-        msg.count += sizeof(int) + R->nickname.length() * sizeof(int);
-        // keep nickname
-        nicknameR = R->nickname;
-        // get dataset S
-        Dataset* S = g_config.datasetMetadata.getDatasetS();
-        if (S != nullptr) {
-            // count for buffer size
-            msg.count += sizeof(int) + S->nickname.length() * sizeof(int);
-            // keep nickname
-            nicknameS = S->nickname;
-        }
-        // allocate space
-        msg.data = (char*) malloc(msg.count * sizeof(char));
-        if (msg.data == NULL) {
-            // malloc failed
-            logger::log_error(DBERR_MALLOC_FAILED, "Malloc for pack system metadata failed");
-            return DBERR_MALLOC_FAILED;
-        }
-        
-        char* localBuffer = msg.data;
-        // store in buffer
-        *reinterpret_cast<int*>(localBuffer) = nicknameR.length();
-        localBuffer += sizeof(int);
-        std::memcpy(localBuffer, nicknameR.data(), nicknameR.length() * sizeof(char));
-        localBuffer += nicknameR.length() * sizeof(char);
-
-        *reinterpret_cast<int*>(localBuffer) = nicknameS.length();
-        localBuffer += sizeof(int);
-        if (nicknameS.length() > 0) {
-            std::memcpy(localBuffer, nicknameS.data(), nicknameS.length() * sizeof(char));
-            localBuffer += nicknameS.length() * sizeof(char);
-        }
-
-        return DBERR_OK;
-    }
-
     DB_STATUS packDatasetLoadMsg(Dataset *dataset, DatasetIndex datasetIndex, SerializedMsg<char> &msg) {
         msg.count = 0;
 
         // count for buffer size
         msg.count += sizeof(int);           // dataset index
-        msg.count += sizeof(int) + dataset->nickname.length() * sizeof(int);     // dataset nikcname length (int) + nickname string
 
         // allocate space
         msg.data = (char*) malloc(msg.count * sizeof(char));
@@ -156,12 +128,6 @@ namespace pack
         // dataset index
         *reinterpret_cast<int*>(localBuffer) = datasetIndex;
         localBuffer += sizeof(int);
-        // dataset nickname length
-        *reinterpret_cast<int*>(localBuffer) = dataset->nickname.length();
-        localBuffer += sizeof(int);
-        // dataset nickname string
-        std::memcpy(localBuffer, dataset->nickname.data(), dataset->nickname.length() * sizeof(char));
-        localBuffer += dataset->nickname.length() * sizeof(char);
 
         return DBERR_OK;
     }
@@ -284,7 +250,7 @@ namespace unpack
         g_config.approximationMetadata.aprilConfig.partitions = aprilMetadataMsg.data[2];
         // set type
         g_config.approximationMetadata.type = AT_APRIL;
-        for (auto& it: g_config.datasetMetadata.datasets) {
+        for (auto& it: g_config.datasetOptions.datasets) {
             it.second.approxType = AT_APRIL;
             it.second.aprilConfig.setN(N);
             it.second.aprilConfig.compression = g_config.approximationMetadata.aprilConfig.compression;
@@ -300,6 +266,16 @@ namespace unpack
         g_config.queryMetadata.IntermediateFilter = queryMetadataMsg.data[2];
         g_config.queryMetadata.Refinement = queryMetadataMsg.data[3];
         
+        return DBERR_OK;
+    }
+
+    DB_STATUS unpackDatasetIndexes(SerializedMsg<int> &msg, std::vector<int> &datasetIndexes) {
+        int count = msg.data[0];
+        datasetIndexes.clear();
+        datasetIndexes.reserve(count);
+        for (int i=1; i<=count; i++) {
+            datasetIndexes.push_back(msg.data[i]);
+        }
         return DBERR_OK;
     }
 
@@ -371,13 +347,6 @@ namespace unpack
         // dataset index
         datasetIndex = (DatasetIndex) *reinterpret_cast<const int*>(localBuffer);
         localBuffer += sizeof(int);
-        // dataset nickname length
-        length = *reinterpret_cast<const int*>(localBuffer);
-        localBuffer += sizeof(int);
-        // dataset nickname 
-        std::string nickname(localBuffer, localBuffer + length);
-        localBuffer += length * sizeof(char);
-        dataset.nickname = nickname;
         return DBERR_OK;
     }
 }

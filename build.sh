@@ -42,3 +42,13 @@ for node in "${NODES[@]}"; do
 done
 echo -e "-- ${GREEN}Code sync across machines complete.${NC}"
 
+# generate doxygen
+DOC_SCRIPT="documentation.sh"
+# Check if the documentation script exists and is executable
+if [ -f "$DOC_SCRIPT" ] && [ -x "$DOC_SCRIPT" ]; then
+    # execute
+    ./"$DOC_SCRIPT"
+else
+    echo "Error: $DOC_SCRIPT does not exist or is not executable."
+    exit 1
+fi

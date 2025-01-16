@@ -8,16 +8,12 @@ namespace storage
         {
             DB_STATUS appendDatasetMetadataToPartitionFile(FILE* outFile, Dataset* dataset) {
                 // datatype
-                fwrite(&dataset->dataType, sizeof(DataType), 1, outFile);
-                // nikcname length + string
-                int length = dataset->nickname.length();
-                fwrite(&length, sizeof(int), 1, outFile);
-                fwrite(dataset->nickname.data(), length * sizeof(char), length, outFile);
+                fwrite(&dataset->metadata.dataType, sizeof(DataType), 1, outFile);
                 // dataspace MBR
-                fwrite(&dataset->dataspaceMetadata.xMinGlobal, sizeof(double), 1, outFile);
-                fwrite(&dataset->dataspaceMetadata.yMinGlobal, sizeof(double), 1, outFile);
-                fwrite(&dataset->dataspaceMetadata.xMaxGlobal, sizeof(double), 1, outFile);
-                fwrite(&dataset->dataspaceMetadata.yMaxGlobal, sizeof(double), 1, outFile);
+                fwrite(&dataset->metadata.dataspaceMetadata.xMinGlobal, sizeof(double), 1, outFile);
+                fwrite(&dataset->metadata.dataspaceMetadata.yMinGlobal, sizeof(double), 1, outFile);
+                fwrite(&dataset->metadata.dataspaceMetadata.xMaxGlobal, sizeof(double), 1, outFile);
+                fwrite(&dataset->metadata.dataspaceMetadata.yMaxGlobal, sizeof(double), 1, outFile);
                 // logger::log_success("Wrote:", dataset->dataspaceMetadata.xMinGlobal, dataset->dataspaceMetadata.yMinGlobal, dataset->dataspaceMetadata.xMaxGlobal, dataset->dataspaceMetadata.yMaxGlobal);
                 return DBERR_OK;
             }

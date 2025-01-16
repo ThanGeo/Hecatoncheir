@@ -18,6 +18,26 @@
 /** @brief System inter- and intra- communication methods. */
 namespace comm 
 {
+    /**
+     * @brief Probes for a message in a communicator (blocking).
+     * @param sourceRank Source rank to probe.
+     * @param tag MPI tag.
+     * @param comm Communicator to probe.
+     * @param status MPI status.
+     * @return DB_STATUS Error or success status.
+     */
+    DB_STATUS probe(int sourceRank, int tag, MPI_Comm &comm, MPI_Status &status);
+    /**
+     * @brief Probes for a message in a communicator (non-blocking).
+     * @param sourceRank Source rank to probe.
+     * @param tag MPI tag.
+     * @param comm Communicator to probe.
+     * @param status MPI status.
+     * @param messageExists set to true if a message with the specification was probed to exist
+     * @return DB_STATUS Error or success status.
+     */
+    DB_STATUS probe(int sourceRank, int tag, MPI_Comm &comm, MPI_Status &status, int &messageExists);
+
     /** @brief The agents' communication methods. */
     namespace agent
     {

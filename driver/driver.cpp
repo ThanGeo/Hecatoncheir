@@ -30,6 +30,13 @@ int main(int argc, char* argv[]) {
     // Initialize Hecatoncheir. Must use this method before any other calls to the framework.
     std::vector<std::string> hosts = {"node1:1", "node2:1"};
     hec::init(2, hosts);
+    // std::vector<std::string> hosts = {"node1:1"};
+    // hec::init(1, hosts);
+
+    // prepare datasets
+    hec::DatasetID datasetRID = hec::prepareDataset(datasetFullPathR, hec::WKT, hec::POLYGON);
+    printf("Got a dataset R id: %d\n", datasetRID);
+    // hec::DatasetID datasetRID = hec::prepareDataset(datasetFullPathS, hec::WKT, hec::POLYGON);
 
     // Prepare/Analyze: Hecatoncheir must first analyze the dataset(s) to determine its metadata
     // bounding boxes etc. This must be done for all datasets that will participate together in a query

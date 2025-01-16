@@ -74,13 +74,13 @@ namespace parser
 
     static DB_STATUS verifyDatatypeCombinationForQueryType(QueryType queryType) {
         // get number of datasets
-        int numberOfDatasets = g_config.datasetMetadata.getNumberOfDatasets();
+        int numberOfDatasets = g_config.datasetOptions.getNumberOfDatasets();
         // find if query type is supported
         auto queryIT = g_querySupportMap.find(queryType);
         if (queryIT != g_querySupportMap.end()) {
-            DataType dataTypeR = g_config.datasetMetadata.getDatasetR()->dataType;
+            DataType dataTypeR = g_config.datasetOptions.getDatasetR()->metadata.dataType;
             // todo: for queries with one dataset input, handle this accordingly
-            DataType dataTypeS = g_config.datasetMetadata.getDatasetS()->dataType;
+            DataType dataTypeS = g_config.datasetOptions.getDatasetS()->metadata.dataType;
             const auto& allowedCombinations = queryIT->second;
             auto dataTypesPair = std::make_pair(dataTypeR, dataTypeS);
             auto datatypesIT = allowedCombinations.find(dataTypesPair);

@@ -3,6 +3,10 @@
 #include "def.h"
 #include "utils.h"
 #include "env/comm_def.h"
+#include "env/send.h"
+#include "env/recv.h"
+#include "env/pack.h"
+#include "env/comm.h"
 
 #define HOST_CONTROLLER 1
 
@@ -117,8 +121,11 @@ static DB_STATUS terminate() {
     return DBERR_OK;
 }
 
-namespace hec {
+static DB_STATUS initiateDataPartitioning(std::vector<hec::DatasetID> &datasets) {
 
+}
+
+namespace hec {
     int init(int numProcs, const std::vector<std::string> &hosts){
         DB_STATUS ret = DBERR_OK;
         // init MPI
@@ -139,7 +146,6 @@ namespace hec {
         // all ok
         return 0;
     }
- 
 
     int finalize() {
         DB_STATUS ret = terminate();
@@ -151,8 +157,99 @@ namespace hec {
         return 0;
     }
 
-    int partitionDataset(std::string &filePath, FileType fileType, DataType dataType) {
-        
+    DatasetID prepareDataset(std::string &filePath, FileFormat fileType, SpatialDataType dataType) {
+        if (filePath == "") {
+            // empty path, empty dataset
+            return -1;
+        }
+        // set metadata and serialize
+        SerializedMsg<char> msg(MPI_CHAR);
+        DatasetMetadata metadata;
+        metadata.internalID = DATASET_R;
+        metadata.path = filePath;
+        metadata.fileType = (FileType) fileType;
+        metadata.dataType = (DataType) dataType;
+        DB_STATUS ret = metadata.serialize(&msg.data, msg.count);
+        if (ret != DBERR_OK) {
+            logger::log_error(ret, "Metadata serialization failed.");
+            return -1;
+        }
+
+        // send message to Host Controller to init the dataset's struct and get an ID for the dataset
+        ret = comm::send::sendMessage(msg, HOST_CONTROLLER, MSG_DATASET_METADATA, g_global_intra_comm);
+        if (ret != DBERR_OK) {
+            logger::log_error(ret, "Sending dataset metadata message failed.");
+            return -1;
+        }
+
+        // wait for response with dataset internal ID
+        MPI_Status status;
+        SerializedMsg<int> msgFromHost;
+        // probe
+        ret = comm::probe(HOST_CONTROLLER, MSG_DATASET_INDEX, g_global_intra_comm, status);
+        if (ret != DBERR_OK) {
+            logger::log_error(ret, "Probing failed agent response.");
+            return ret;
+        }
+        // receive
+        ret = comm::recv::receiveMessage(status, msgFromHost.type, g_global_intra_comm, msgFromHost);
+        if (ret != DBERR_OK) {
+            logger::log_error(ret, "Receiving failed for agent response.");
+            return ret;
+        }
+        // unpack
+        std::vector<int> indexes;
+        ret = unpack::unpackDatasetIndexes(msgFromHost, indexes);
+        if (ret != DBERR_OK) {
+            logger::log_error(ret, "Error unpacking dataste indexes.");
+            return ret;
+        }
+
+        // return the ID
+        return indexes[0];
+    }
+
+    DatasetID prepareDataset(std::string &filePath, FileFormat fileType, SpatialDataType dataType, double xMin, double yMin, double xMax, double yMax) {
+        if (filePath == "") {
+            // empty path, empty dataset
+            return -1;
+        }
+        if (xMax < xMin) {
+            // fix x values
+            double temp = xMax;
+            xMax = xMin;
+            xMin = temp; 
+        }
+        if (yMax < yMin) {
+            // fix y values
+            double temp = yMax;
+            yMax = yMin;
+            yMin = temp; 
+        }
+
+        // communicate with the system to init the dataset's struct and get an ID
+
+        // return the ID
+
+        return 0;
+    }
+
+    int partitionDataset(DatasetID &dataset) {
+        std::vector<DatasetID> vec = {dataset};
+        DB_STATUS ret = initiateDataPartitioning(vec);
+        if (ret != DBERR_OK) {
+            return -1;
+        }
+        return 0;
+    }
+
+    int partitionDataset(DatasetID &datasetR, DatasetID &datasetS) {
+        std::vector<DatasetID> vec = {datasetR, datasetS};
+        DB_STATUS ret = initiateDataPartitioning(vec);
+        if (ret != DBERR_OK) {
+            return -1;
+        }
+        return 0;
     }
 }
 

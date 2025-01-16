@@ -975,8 +975,8 @@ namespace twolayer
         // first, reset any query outputs
         g_queryOutput.reset();
         // get the datasets
-        Dataset* R = g_config.datasetMetadata.getDatasetR();
-        Dataset* S = g_config.datasetMetadata.getDatasetS();
+        Dataset* R = g_config.datasetOptions.getDatasetR();
+        Dataset* S = g_config.datasetOptions.getDatasetS();
         // process based on query type
         switch (g_config.queryMetadata.type) {
             case Q_RANGE:

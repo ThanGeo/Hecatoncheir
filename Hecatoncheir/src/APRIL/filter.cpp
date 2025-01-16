@@ -18,12 +18,12 @@ namespace APRIL
             DB_STATUS ret = DBERR_OK;
             int iFilterResult = INCONCLUSIVE;
             // get common sections
-            std::vector<int> commonSections = getCommonSectionIDsOfObjects(g_config.datasetMetadata.getDatasetR(), g_config.datasetMetadata.getDatasetS(), objR->recID, objS->recID);
+            std::vector<int> commonSections = getCommonSectionIDsOfObjects(g_config.datasetOptions.getDatasetR(), g_config.datasetOptions.getDatasetS(), objR->recID, objS->recID);
             // for each common section
             for (auto &sectionID : commonSections) {
                 // fetch the APRIL of R and S for this section
-                AprilData* aprilR = g_config.datasetMetadata.getDatasetR()->getAprilDataBySectionAndObjectID(sectionID, objR->recID);
-                AprilData* aprilS = g_config.datasetMetadata.getDatasetS()->getAprilDataBySectionAndObjectID(sectionID, objS->recID);
+                AprilData* aprilR = g_config.datasetOptions.getDatasetR()->getAprilDataBySectionAndObjectID(sectionID, objR->recID);
+                AprilData* aprilS = g_config.datasetOptions.getDatasetS()->getAprilDataBySectionAndObjectID(sectionID, objS->recID);
                 // use APRIL intermediate filter
                 ret = uncompressed::topology::MBRRinSContainmentJoinAPRIL(aprilR, aprilS, iFilterResult);
                 if (ret != DBERR_OK) {
@@ -74,12 +74,12 @@ namespace APRIL
             DB_STATUS ret = DBERR_OK;
             int iFilterResult = INCONCLUSIVE;
             // get common sections
-            std::vector<int> commonSections = getCommonSectionIDsOfObjects(g_config.datasetMetadata.getDatasetR(), g_config.datasetMetadata.getDatasetS(), objR->recID, objS->recID);
+            std::vector<int> commonSections = getCommonSectionIDsOfObjects(g_config.datasetOptions.getDatasetR(), g_config.datasetOptions.getDatasetS(), objR->recID, objS->recID);
             // for each common section
             for (auto &sectionID : commonSections) {
                 // fetch the APRIL of R and S for this section
-                AprilData* aprilR = g_config.datasetMetadata.getDatasetR()->getAprilDataBySectionAndObjectID(sectionID, objR->recID);
-                AprilData* aprilS = g_config.datasetMetadata.getDatasetS()->getAprilDataBySectionAndObjectID(sectionID, objS->recID);
+                AprilData* aprilR = g_config.datasetOptions.getDatasetR()->getAprilDataBySectionAndObjectID(sectionID, objR->recID);
+                AprilData* aprilS = g_config.datasetOptions.getDatasetS()->getAprilDataBySectionAndObjectID(sectionID, objS->recID);
                 // use APRIL intermediate filter
                 ret = uncompressed::topology::MBRSinRContainmentJoinAPRIL(aprilR, aprilS, iFilterResult);
                 if (ret != DBERR_OK) {
@@ -130,12 +130,12 @@ namespace APRIL
             DB_STATUS ret = DBERR_OK;
             int iFilterResult = INCONCLUSIVE;
             // get common sections
-            std::vector<int> commonSections = getCommonSectionIDsOfObjects(g_config.datasetMetadata.getDatasetR(), g_config.datasetMetadata.getDatasetS(), objR->recID, objS->recID);
+            std::vector<int> commonSections = getCommonSectionIDsOfObjects(g_config.datasetOptions.getDatasetR(), g_config.datasetOptions.getDatasetS(), objR->recID, objS->recID);
             // for each common section
             for (auto &sectionID : commonSections) {
                 // fetch the APRIL of R and S for this section
-                AprilData* aprilR = g_config.datasetMetadata.getDatasetR()->getAprilDataBySectionAndObjectID(sectionID, objR->recID);
-                AprilData* aprilS = g_config.datasetMetadata.getDatasetS()->getAprilDataBySectionAndObjectID(sectionID, objS->recID);
+                AprilData* aprilR = g_config.datasetOptions.getDatasetR()->getAprilDataBySectionAndObjectID(sectionID, objR->recID);
+                AprilData* aprilS = g_config.datasetOptions.getDatasetS()->getAprilDataBySectionAndObjectID(sectionID, objS->recID);
                 // use APRIL intermediate filter
                 ret = uncompressed::topology::MBREqualJoinAPRIL(objR, objS, aprilR, aprilS, iFilterResult);
                 if (ret != DBERR_OK) {
@@ -192,12 +192,12 @@ namespace APRIL
             DB_STATUS ret = DBERR_OK;
             int iFilterResult = INCONCLUSIVE;
             // get common sections
-            std::vector<int> commonSections = getCommonSectionIDsOfObjects(g_config.datasetMetadata.getDatasetR(), g_config.datasetMetadata.getDatasetS(), objR->recID, objS->recID);
+            std::vector<int> commonSections = getCommonSectionIDsOfObjects(g_config.datasetOptions.getDatasetR(), g_config.datasetOptions.getDatasetS(), objR->recID, objS->recID);
             // for each common section
             for (auto &sectionID : commonSections) {
                 // fetch the APRIL of R and S for this section
-                AprilData* aprilR = g_config.datasetMetadata.getDatasetR()->getAprilDataBySectionAndObjectID(sectionID, objR->recID);
-                AprilData* aprilS = g_config.datasetMetadata.getDatasetS()->getAprilDataBySectionAndObjectID(sectionID, objS->recID);
+                AprilData* aprilR = g_config.datasetOptions.getDatasetR()->getAprilDataBySectionAndObjectID(sectionID, objR->recID);
+                AprilData* aprilS = g_config.datasetOptions.getDatasetS()->getAprilDataBySectionAndObjectID(sectionID, objS->recID);
                 // use APRIL intermediate filter
                 ret = uncompressed::topology::MBRIntersectionJoinAPRIL(aprilR, aprilS, iFilterResult);
                 if (ret != DBERR_OK) {
@@ -270,12 +270,12 @@ namespace APRIL
         DB_STATUS IntermediateFilterEntrypoint(Shape* objR, Shape* objS, QueryOutput &queryOutput) {
             DB_STATUS ret = DBERR_OK;
             // get common sections
-            std::vector<int> commonSections = getCommonSectionIDsOfObjects(g_config.datasetMetadata.getDatasetR(), g_config.datasetMetadata.getDatasetS(), objR->recID, objS->recID);
+            std::vector<int> commonSections = getCommonSectionIDsOfObjects(g_config.datasetOptions.getDatasetR(), g_config.datasetOptions.getDatasetS(), objR->recID, objS->recID);
             // for each common section
             for (auto &sectionID : commonSections) {
                 // fetch the APRIL of R and S for this section
-                AprilData* aprilR = g_config.datasetMetadata.getDatasetR()->getAprilDataBySectionAndObjectID(sectionID, objR->recID);
-                AprilData* aprilS = g_config.datasetMetadata.getDatasetS()->getAprilDataBySectionAndObjectID(sectionID, objS->recID);
+                AprilData* aprilR = g_config.datasetOptions.getDatasetR()->getAprilDataBySectionAndObjectID(sectionID, objR->recID);
+                AprilData* aprilS = g_config.datasetOptions.getDatasetS()->getAprilDataBySectionAndObjectID(sectionID, objS->recID);
                 int iFilterResult = INCONCLUSIVE;
                 // use appropriate query function
                 switch (g_config.queryMetadata.type) {

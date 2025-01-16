@@ -178,6 +178,114 @@ void Partition::addObjectOfClass(Shape *objectRef, TwoLayerClass classType) {
     // printf("Adding object of type %s and class %s in partition %ld\n", objectRef->getShapeType().c_str(), mapping::twoLayerClassIntToStr(classType).c_str(), this->partitionID);
 }
 
+int DatasetMetadata::calculateBufferSize() {
+    int size = 0;
+    // dataset index
+    size += sizeof(DatasetIndex);
+    // dataset data type
+    size += sizeof(DataType);
+    // dataset file type
+    size += sizeof(FileType);
+    // dataset path: length + string
+    size += sizeof(int) + (path.length() * sizeof(char));  
+    // bounds set flag
+    size += sizeof(bool);
+    // MBR is set (4 values)
+    size += 4 * sizeof(double);
+    return size;
+}
+
+DB_STATUS DatasetMetadata::serialize(char **buffer, int &bufferSize) {
+    int position = 0;
+    // calculate size
+    int bufferSizeRet = calculateBufferSize();
+    // allocate space
+    char* localBuffer = (char*) malloc(bufferSizeRet * sizeof(char));
+    if (localBuffer == NULL) {
+        // malloc failed
+        return DBERR_MALLOC_FAILED;
+    }
+    // add internal ID
+    memcpy(localBuffer + position, &internalID, sizeof(DatasetIndex));
+    position += sizeof(DatasetIndex);
+    // add datatype
+    memcpy(localBuffer + position, &dataType, sizeof(DataType));
+    position += sizeof(DataType);
+    // add file type
+    memcpy(localBuffer + position, &fileType, sizeof(FileType));
+    position += sizeof(FileType);
+    // add dataset path length + string
+    int pathLength = path.length();
+    memcpy(localBuffer + position, &pathLength, sizeof(int));
+    position += sizeof(int);
+    memcpy(localBuffer + position, path.data(), pathLength);
+    position += pathLength * sizeof(char);
+    // add bounds set flag
+    memcpy(localBuffer + position, &dataspaceMetadata.boundsSet, sizeof(bool));
+    position += sizeof(bool);
+    if (dataspaceMetadata.boundsSet) {
+        // add dataset's dataspace MBR
+        memcpy(localBuffer + position, &dataspaceMetadata.xMinGlobal, sizeof(double));
+        position += sizeof(double);
+        memcpy(localBuffer + position, &dataspaceMetadata.yMinGlobal, sizeof(double));
+        position += sizeof(double);
+        memcpy(localBuffer + position, &dataspaceMetadata.xMaxGlobal, sizeof(double));
+        position += sizeof(double);
+        memcpy(localBuffer + position, &dataspaceMetadata.yMaxGlobal, sizeof(double));
+        position += sizeof(double);
+    }
+    // set and return
+    (*buffer) = localBuffer;
+    bufferSize = bufferSizeRet;
+    return DBERR_OK;
+}
+
+DB_STATUS DatasetMetadata::deserialize(const char *buffer, int bufferSize) {
+    int pathLength;
+    int position = 0;
+    double xMin, yMin, xMax, yMax;
+    
+    // dataset index
+    memcpy(&internalID, buffer + position, sizeof(DatasetIndex));
+    position += sizeof(DatasetIndex);
+    // dataset data type
+    memcpy(&dataType, buffer + position, sizeof(DataType));
+    position += sizeof(DataType);
+    // dataset file type
+    memcpy(&fileType, buffer + position, sizeof(FileType));
+    position += sizeof(FileType);
+    // dataset nickname length + string
+    memcpy(&pathLength, buffer + position, sizeof(int));
+    position += sizeof(int);
+    path.assign(buffer + position, pathLength);
+    position += pathLength * sizeof(char);
+    // bounds set flag
+    memcpy(&dataspaceMetadata.boundsSet, buffer + position, sizeof(bool));
+    position += sizeof(bool);
+    if (dataspaceMetadata.boundsSet) {
+        // dataset dataspace MBR
+        memcpy(&xMin, buffer + position, sizeof(double));
+        position += sizeof(double);
+        memcpy(&yMin, buffer + position, sizeof(double));
+        position += sizeof(double);
+        memcpy(&xMax, buffer + position, sizeof(double));
+        position += sizeof(double);
+        memcpy(&yMax, buffer + position, sizeof(double));
+        position += sizeof(double);
+    } else {
+        // for validity check issues
+        position += 4*sizeof(double);
+    }
+    // set
+    dataspaceMetadata.set(xMin, yMin, xMax, yMax);
+    if (position != bufferSize) {
+        logger::log_error(DBERR_DESERIALIZE, "Dataset Metadata desereialization failed.");
+        return DBERR_DESERIALIZE;
+    }
+    return DBERR_OK;
+}
+
+
 Shape* Dataset::getObject(size_t recID) {
     auto it = objects.find(recID);
     if (it == objects.end()) {
@@ -208,88 +316,91 @@ DB_STATUS Dataset::addObject(Shape &object) {
 }
 
 int Dataset::calculateBufferSize() {
-    int size = 0;
-    // dataset data type
-    size += sizeof(DataType);
-    // dataset nickname: length + string
-    size += sizeof(int) + (nickname.length() * sizeof(char));     
-    // dataset's dataspace metadata (MBR)
-    size += 4 * sizeof(double);
+    // int size = 0;
+    // // dataset data type
+    // size += sizeof(DataType);
+    // // dataset nickname: length + string
+    // size += sizeof(int) + (metadata.nickname.length() * sizeof(char));     
+    // // dataset's dataspace metadata (MBR)
+    // size += 4 * sizeof(double);
     
-    return size;
+    // return size;
+    return -1;
 }
 
 /**
  * serialize dataset metadata (only specific stuff)
  */
 DB_STATUS Dataset::serialize(char **buffer, int &bufferSize) {
-    int position = 0;
-    // calculate size
-    int bufferSizeRet = calculateBufferSize();
-    // allocate space
-    char* localBuffer = (char*) malloc(bufferSizeRet * sizeof(char));
+    // int position = 0;
+    // // calculate size
+    // int bufferSizeRet = calculateBufferSize();
+    // // allocate space
+    // char* localBuffer = (char*) malloc(bufferSizeRet * sizeof(char));
 
-    if (localBuffer == NULL) {
-        // malloc failed
-        return DBERR_MALLOC_FAILED;
-    }
+    // if (localBuffer == NULL) {
+    //     // malloc failed
+    //     return DBERR_MALLOC_FAILED;
+    // }
 
-    // add datatype
-    memcpy(localBuffer + position, &dataType, sizeof(DataType));
-    position += sizeof(DataType);
-    // add dataset nickname length + string
-    int nicknameLength = nickname.length();
-    memcpy(localBuffer + position, &nicknameLength, sizeof(int));
-    position += sizeof(int);
-    memcpy(localBuffer + position, nickname.data(), nicknameLength);
-    position += nicknameLength * sizeof(char);
-    // add dataset's dataspace MBR
-    memcpy(localBuffer + position, &dataspaceMetadata.xMinGlobal, sizeof(double));
-    position += sizeof(double);
-    memcpy(localBuffer + position, &dataspaceMetadata.yMinGlobal, sizeof(double));
-    position += sizeof(double);
-    memcpy(localBuffer + position, &dataspaceMetadata.xMaxGlobal, sizeof(double));
-    position += sizeof(double);
-    memcpy(localBuffer + position, &dataspaceMetadata.yMaxGlobal, sizeof(double));
-    position += sizeof(double);
-    // set and return
-    (*buffer) = localBuffer;
-    bufferSize = bufferSizeRet;
-    return DBERR_OK;
+    // // add datatype
+    // memcpy(localBuffer + position, &metadata.dataType, sizeof(DataType));
+    // position += sizeof(DataType);
+    // // add dataset nickname length + string
+    // int nicknameLength = metadata.nickname.length();
+    // memcpy(localBuffer + position, &nicknameLength, sizeof(int));
+    // position += sizeof(int);
+    // memcpy(localBuffer + position, metadata.nickname.data(), nicknameLength);
+    // position += nicknameLength * sizeof(char);
+    // // add dataset's dataspace MBR
+    // memcpy(localBuffer + position, &metadata.dataspaceMetadata.xMinGlobal, sizeof(double));
+    // position += sizeof(double);
+    // memcpy(localBuffer + position, &metadata.dataspaceMetadata.yMinGlobal, sizeof(double));
+    // position += sizeof(double);
+    // memcpy(localBuffer + position, &metadata.dataspaceMetadata.xMaxGlobal, sizeof(double));
+    // position += sizeof(double);
+    // memcpy(localBuffer + position, &metadata.dataspaceMetadata.yMaxGlobal, sizeof(double));
+    // position += sizeof(double);
+    // // set and return
+    // (*buffer) = localBuffer;
+    // bufferSize = bufferSizeRet;
+    // return DBERR_OK;
+    return DBERR_FEATURE_UNSUPPORTED;
 }
 
 DB_STATUS Dataset::deserialize(const char *buffer, int bufferSize) {
-    int nicknameLength;
-    int position = 0;
-    double xMin, yMin, xMax, yMax;
+    // int nicknameLength;
+    // int position = 0;
+    // double xMin, yMin, xMax, yMax;
     
-    // dataset data type
-    memcpy(&dataType, buffer + position, sizeof(DataType));
-    position += sizeof(DataType);
-    // dataset nickname length + string
-    memcpy(&nicknameLength, buffer + position, sizeof(int));
-    position += sizeof(int);
-    nickname.assign(buffer + position, nicknameLength);
-    position += nicknameLength * sizeof(char);
-    // dataset dataspace MBR
-    memcpy(&xMin, buffer + position, sizeof(double));
-    position += sizeof(double);
-    memcpy(&yMin, buffer + position, sizeof(double));
-    position += sizeof(double);
-    memcpy(&xMax, buffer + position, sizeof(double));
-    position += sizeof(double);
-    memcpy(&yMax, buffer + position, sizeof(double));
-    position += sizeof(double);
-    // set
-    dataspaceMetadata.set(xMin, yMin, xMax, yMax);
+    // // dataset data type
+    // memcpy(&metadata.dataType, buffer + position, sizeof(DataType));
+    // position += sizeof(DataType);
+    // // dataset nickname length + string
+    // memcpy(&nicknameLength, buffer + position, sizeof(int));
+    // position += sizeof(int);
+    // metadata.nickname.assign(buffer + position, nicknameLength);
+    // position += nicknameLength * sizeof(char);
+    // // dataset dataspace MBR
+    // memcpy(&xMin, buffer + position, sizeof(double));
+    // position += sizeof(double);
+    // memcpy(&yMin, buffer + position, sizeof(double));
+    // position += sizeof(double);
+    // memcpy(&xMax, buffer + position, sizeof(double));
+    // position += sizeof(double);
+    // memcpy(&yMax, buffer + position, sizeof(double));
+    // position += sizeof(double);
+    // // set
+    // metadata.dataspaceMetadata.set(xMin, yMin, xMax, yMax);
 
-    if (position == bufferSize) {
-        // all is well
-        return DBERR_OK;
-    }
-    else{
-        return DBERR_DESERIALIZE;
-    }
+    // if (position == bufferSize) {
+    //     // all is well
+    //     return DBERR_OK;
+    // }
+    // else{
+    //     return DBERR_DESERIALIZE;
+    // }
+    return DBERR_FEATURE_UNSUPPORTED;
 }
 
 void Dataset::addAprilDataToApproximationDataMap(const uint sectionID, const size_t recID, const AprilData &aprilData) {
@@ -326,13 +437,13 @@ DB_STATUS Dataset::addIntervalsToAprilData(const uint sectionID, const size_t re
     // retrieve section
     auto secIT = this->sectionMap.find(sectionID);
     if (secIT == this->sectionMap.end()) {
-        logger::log_error(DBERR_INVALID_PARAMETER, "could not find section ID", sectionID, "in section map of dataset", this->nickname);
+        logger::log_error(DBERR_INVALID_PARAMETER, "could not find section ID", sectionID, "in section map of dataset", this->metadata.internalID);
         return DBERR_INVALID_PARAMETER;
     }
     // retrieve object
     auto it = secIT->second.aprilData.find(recID);
     if (it == secIT->second.aprilData.end()) {
-        logger::log_error(DBERR_INVALID_PARAMETER, "could not find recID", recID, "in section map of dataset", this->nickname);
+        logger::log_error(DBERR_INVALID_PARAMETER, "could not find recID", recID, "in section map of dataset", this->metadata.internalID);
         return DBERR_INVALID_PARAMETER;
     }
     // replace intervals in april data
@@ -430,8 +541,8 @@ void Dataset::printPartitions() {
     }
 }
 
-Dataset* DatasetMetadata::getDatasetByNickname(std::string &nickname) {
-    auto it = datasets.find(nickname);
+Dataset* DatasetOptions::getDatasetByIdx(DatasetIndex index) {
+    auto it = datasets.find(index);
     if (it == datasets.end()) {
         return nullptr;
     }        
@@ -526,11 +637,11 @@ void TwoLayerIndex::sortPartitionsOnY() {
     }
 }
 
-int DatasetMetadata::getNumberOfDatasets() {
+int DatasetOptions::getNumberOfDatasets() {
     return numberOfDatasets;
 }
 
-void DatasetMetadata::clear() {
+void DatasetOptions::clear() {
     numberOfDatasets = 0;
     R = nullptr;
     S = nullptr;
@@ -538,15 +649,15 @@ void DatasetMetadata::clear() {
     dataspaceMetadata.clear();
 }
 
-Dataset* DatasetMetadata::getDatasetR() {
+Dataset* DatasetOptions::getDatasetR() {
     return R;
 }
 
-Dataset* DatasetMetadata::getDatasetS() {
+Dataset* DatasetOptions::getDatasetS() {
     return S;
 }
 
-DB_STATUS DatasetMetadata::getDatasetByIdx(DatasetIndex datasetIndex, Dataset **datasetRef) {
+DB_STATUS DatasetOptions::getDatasetByIdx(DatasetIndex datasetIndex, Dataset **datasetRef) {
     switch (datasetIndex) {
         case DATASET_R:
             (*datasetRef) = R;
@@ -566,17 +677,17 @@ DB_STATUS DatasetMetadata::getDatasetByIdx(DatasetIndex datasetIndex, Dataset **
 @brief adds a Dataset to the configuration's dataset metadata
  * @warning it has to be an empty dataset BUT its nickname needs to be set
  */
-DB_STATUS DatasetMetadata::addDataset(DatasetIndex datasetIdx, Dataset &dataset) {
-    // add to datasets struct
-    datasets[dataset.nickname] = dataset;
+DB_STATUS DatasetOptions::addDataset(DatasetIndex datasetIdx, Dataset &dataset) {
+    // add to datasets struct (todo, change this to use internal id)
+    datasets[datasetIdx] = dataset;
     switch (datasetIdx) {
         case DATASET_R:
             // R is being added
-            R = &datasets[dataset.nickname];
+            R = &datasets[datasetIdx];
             break;
         case DATASET_S:
             // S is being added
-            S = &datasets[dataset.nickname];
+            S = &datasets[datasetIdx];
             break;
         default:
             logger::log_error(DBERR_INVALID_PARAMETER, "Invalid dataset index. Use only DATASET_R or DATASET_S.");
@@ -586,19 +697,19 @@ DB_STATUS DatasetMetadata::addDataset(DatasetIndex datasetIdx, Dataset &dataset)
     return DBERR_OK;
 }
 
-void DatasetMetadata::updateDataspace() {
+void DatasetOptions::updateDataspace() {
     // find the bounds that enclose both datasets
     for (auto &it: datasets) {
-        dataspaceMetadata.xMinGlobal = std::min(dataspaceMetadata.xMinGlobal, it.second.dataspaceMetadata.xMinGlobal);
-        dataspaceMetadata.yMinGlobal = std::min(dataspaceMetadata.yMinGlobal, it.second.dataspaceMetadata.yMinGlobal);
-        dataspaceMetadata.xMaxGlobal = std::max(dataspaceMetadata.xMaxGlobal, it.second.dataspaceMetadata.xMaxGlobal);
-        dataspaceMetadata.yMaxGlobal = std::max(dataspaceMetadata.yMaxGlobal, it.second.dataspaceMetadata.yMaxGlobal);
+        dataspaceMetadata.xMinGlobal = std::min(dataspaceMetadata.xMinGlobal, it.second.metadata.dataspaceMetadata.xMinGlobal);
+        dataspaceMetadata.yMinGlobal = std::min(dataspaceMetadata.yMinGlobal, it.second.metadata.dataspaceMetadata.yMinGlobal);
+        dataspaceMetadata.xMaxGlobal = std::max(dataspaceMetadata.xMaxGlobal, it.second.metadata.dataspaceMetadata.xMaxGlobal);
+        dataspaceMetadata.yMaxGlobal = std::max(dataspaceMetadata.yMaxGlobal, it.second.metadata.dataspaceMetadata.yMaxGlobal);
     }
     dataspaceMetadata.xExtent = dataspaceMetadata.xMaxGlobal - dataspaceMetadata.xMinGlobal;
     dataspaceMetadata.yExtent = dataspaceMetadata.yMaxGlobal - dataspaceMetadata.yMinGlobal;
     // set as both datasets' bounds
     for (auto &it: datasets) {
-        it.second.dataspaceMetadata = dataspaceMetadata;
+        it.second.metadata.dataspaceMetadata = dataspaceMetadata;
     }
 }
 

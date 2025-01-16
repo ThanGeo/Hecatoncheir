@@ -18,17 +18,9 @@ namespace storage
                     return DBERR_DISK_READ_FAILED;
                 }
                 // read data type
-                elementsRead = fread(&dataset->dataType, sizeof(DataType), 1, pFile);
+                elementsRead = fread(&dataset->metadata.dataType, sizeof(DataType), 1, pFile);
                 if (elementsRead != 1) {
                     logger::log_error(DBERR_DISK_READ_FAILED, "Couldn't read the dataset's datatype");
-                    return DBERR_DISK_READ_FAILED;
-                }
-                // read nickname length + string
-                elementsRead = 0;
-                elementsRead += fread(&length, sizeof(int), 1, pFile);
-                elementsRead += fread(dataset->nickname.data(), length * sizeof(char), length, pFile);
-                if (elementsRead != length + 1) {
-                    logger::log_error(DBERR_DISK_READ_FAILED, "Couldn't read the dataset's nickname");
                     return DBERR_DISK_READ_FAILED;
                 }
                 // dataspace MBR
@@ -41,8 +33,7 @@ namespace storage
                     logger::log_error(DBERR_DISK_READ_FAILED, "Couldn't read the dataset's dataspace MBR");
                     return DBERR_DISK_READ_FAILED;
                 }
-                dataset->dataspaceMetadata.set(xMin, yMin, xMax, yMax);
-                // logger::log_success("loaded dataset metadata:", dataset.totalObjects, dataset.dataType, dataset.nickname, dataset.dataspaceMetadata.xMinGlobal, dataset.dataspaceMetadata.yMinGlobal, dataset.dataspaceMetadata.xMaxGlobal, dataset.dataspaceMetadata.yMaxGlobal);
+                dataset->metadata.dataspaceMetadata.set(xMin, yMin, xMax, yMax);
                 return ret;
             }
 
@@ -123,7 +114,7 @@ namespace storage
                     // store in dataset
                     ret = dataset->addObject(object);
                     if (ret != DBERR_OK) {
-                        logger::log_error(ret, "Error when adding object with id", object.recID, "in dataset", dataset->nickname);
+                        logger::log_error(ret, "Error when adding object with id", object.recID, "in dataset", dataset->metadata.internalID);
                         return ret;
                     }
                 }
@@ -145,7 +136,7 @@ namespace storage
                     // store in dataset
                     ret = dataset->addObject(object);
                     if (ret != DBERR_OK) {
-                        logger::log_error(ret, "Error when adding object with id", object.recID, "in dataset", dataset->nickname);
+                        logger::log_error(ret, "Error when adding object with id", object.recID, "in dataset", dataset->metadata.internalID);
                         return ret;
                     }
                 }
@@ -166,7 +157,7 @@ namespace storage
                     // store in dataset
                     ret = dataset->addObject(object);
                     if (ret != DBERR_OK) {
-                        logger::log_error(ret, "Error when adding object with id", object.recID, "in dataset", dataset->nickname);
+                        logger::log_error(ret, "Error when adding object with id", object.recID, "in dataset", dataset->metadata.internalID);
                         return ret;
                     }
                 }
@@ -187,7 +178,7 @@ namespace storage
                     // store in dataset
                     ret = dataset->addObject(object);
                     if (ret != DBERR_OK) {
-                        logger::log_error(ret, "Error when adding object with id", object.recID, "in dataset", dataset->nickname);
+                        logger::log_error(ret, "Error when adding object with id", object.recID, "in dataset", dataset->metadata.internalID);
                         return ret;
                     }
                 }
@@ -198,9 +189,9 @@ namespace storage
                 DB_STATUS ret = DBERR_OK;
                 int length = 0;
                 // open partition file
-                FILE* pFile = fopen(dataset->path.c_str(), "rb");
+                FILE* pFile = fopen(dataset->metadata.path.c_str(), "rb");
                 if (pFile == NULL) {
-                    logger::log_error(DBERR_MISSING_FILE, "Could not open partitioned dataset file from path:", dataset->path);
+                    logger::log_error(DBERR_MISSING_FILE, "Could not open partitioned dataset file from path:", dataset->metadata.path);
                     return DBERR_MISSING_FILE;
                 }
                 // dataset metadata
@@ -210,7 +201,7 @@ namespace storage
                     goto CLOSE_AND_EXIT;
                 }
                 // dataset contents based on type
-                switch (dataset->dataType) {
+                switch (dataset->metadata.dataType) {
                     case DT_POLYGON:
                         ret = loadPolygonDatasetContents(pFile, dataset);
                         break;

@@ -7,9 +7,6 @@
 /** @brief Methods that pack information for MPI communication into serialized messages. */
 namespace pack
 {
-    /** @brief Packs necessary system metadata for broadcast like number of partitions, system setup type etc. */
-    DB_STATUS packSystemMetadata(SerializedMsg<char> &sysMetadataMsg);
-
     /** @brief Prints the contents of a message pack. */
     template <typename T> 
     void printMsgPack(SerializedMsg<T> &msgPack) {
@@ -26,6 +23,13 @@ namespace pack
         }
     }
     
+    /** @brief Packs necessary system metadata for broadcast like number of partitions, system setup type etc. */
+    DB_STATUS packSystemMetadata(SerializedMsg<char> &sysMetadataMsg);
+
+    /** @brief Packs a vector of dataset indexes into a single message */
+    DB_STATUS packDatasetIndexes(std::vector<int> indexes, SerializedMsg<int> &msg);
+
+
     /** @brief Packs the april configuration metadata into a serialized message. */
     DB_STATUS packAPRILMetadata(AprilConfig &aprilConfig, SerializedMsg<int> &aprilMetadataMsg);
 
@@ -42,6 +46,8 @@ namespace pack
 
     /** @brief Packs the query results based on query type.  */
     DB_STATUS packQueryResults(SerializedMsg<int> &msg, QueryOutput &queryOutput);
+
+
 }
 
 /** @brief Methos that unpack serialized messages and extract their contents, based on message type. */
@@ -58,6 +64,9 @@ namespace unpack
 
     /** @brief Unpacks a query results serialized message. */
     DB_STATUS unpackQueryResults(SerializedMsg<int> &queryResultsMsg, QueryType queryType, QueryOutput &queryOutput);
+
+    /** @brief Unpacks a serialized message containing a single dataset index. */
+    DB_STATUS unpackDatasetIndexes(SerializedMsg<int> &msg, std::vector<int> &datasetIndexes);
 
     /** @brief Unpacks a datasets' nicknames serialized message. */
     DB_STATUS unpackDatasetsNicknames(SerializedMsg<char> &msg, std::vector<std::string> &nicknames);

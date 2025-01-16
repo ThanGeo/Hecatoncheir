@@ -2,36 +2,30 @@
 
 namespace storage
 {
+    /** @todo add a better way to generate names (user defined nickname?) */
     DB_STATUS generatePartitionFilePath(Dataset &dataset) {
-        if (dataset.nickname == "") {
-            logger::log_error(DBERR_MISSING_DATASET_METADATA, "Dataset nickname is missing, cannot generate partition filepath");
-            return DBERR_MISSING_DATASET_METADATA;
-        }
         if (g_config.dirPaths.partitionsPath == "") {
             logger::log_error(DBERR_MISSING_PATH, "Partition path is missing");
             return DBERR_MISSING_PATH;
         }
-        dataset.path = g_config.dirPaths.partitionsPath + dataset.nickname;
+        dataset.metadata.path = g_config.dirPaths.partitionsPath + std::to_string(dataset.metadata.internalID);
         if (g_config.options.setupType == SYS_CLUSTER) {
             // cluster
-            dataset.path += "_" + std::to_string(g_config.partitioningMethod->getGlobalPPD()) + ".dat";
+            dataset.metadata.path += "_" + std::to_string(g_config.partitioningMethod->getGlobalPPD()) + ".dat";
         } else {
             // local machine
-            dataset.path += "_Node" + std::to_string(g_parent_original_rank) + "_" + std::to_string(g_config.partitioningMethod->getGlobalPPD()) + ".dat";
+            dataset.metadata.path += "_Node" + std::to_string(g_parent_original_rank) + "_" + std::to_string(g_config.partitioningMethod->getGlobalPPD()) + ".dat";
         }
         return DBERR_OK;
     }
 
     DB_STATUS generateAPRILFilePath(Dataset &dataset) {
-        if (dataset.nickname == "") {
-            logger::log_error(DBERR_MISSING_DATASET_METADATA, "Dataset nickname is missing, cannot generate partition filepath");
-            return DBERR_MISSING_DATASET_METADATA;
-        }
+
         if (g_config.dirPaths.approximationPath == "") {
             logger::log_error(DBERR_MISSING_PATH, "Approximation path is missing");
             return DBERR_MISSING_PATH;
         }
-        dataset.aprilConfig.filepath = g_config.dirPaths.approximationPath + dataset.nickname + "_APRIL";
+        dataset.aprilConfig.filepath = g_config.dirPaths.approximationPath + std::to_string(dataset.metadata.internalID) + "_APRIL";
         if (dataset.approxType == AT_APRIL) {
             std::string aprilTail = "";
             aprilTail += "_" + std::to_string(dataset.aprilConfig.getN());

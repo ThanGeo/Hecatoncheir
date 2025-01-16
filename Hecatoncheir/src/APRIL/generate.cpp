@@ -496,14 +496,14 @@ namespace APRIL
             DB_STATUS init(Dataset &dataset) {
                 DB_STATUS ret = DBERR_OK;
                 // init rasterization environment
-                ret = setRasterBounds(dataset.dataspaceMetadata.xMinGlobal, dataset.dataspaceMetadata.yMinGlobal, dataset.dataspaceMetadata.xMaxGlobal, dataset.dataspaceMetadata.yMaxGlobal);
+                ret = setRasterBounds(dataset.metadata.dataspaceMetadata.xMinGlobal, dataset.metadata.dataspaceMetadata.yMinGlobal, dataset.metadata.dataspaceMetadata.xMaxGlobal, dataset.metadata.dataspaceMetadata.yMaxGlobal);
                 if (ret != DBERR_OK) {
                     return DBERR_INVALID_PARAMETER;
                 }
                 // open dataset file
-                FILE* pFile = fopen(dataset.path.c_str(), "rb");
+                FILE* pFile = fopen(dataset.metadata.path.c_str(), "rb");
                 if (pFile == NULL) {
-                    logger::log_error(DBERR_MISSING_FILE, "Could not open partitioned dataset file from path:", dataset.path);
+                    logger::log_error(DBERR_MISSING_FILE, "Could not open partitioned dataset file from path:", dataset.metadata.path);
                     return DBERR_MISSING_FILE;
                 }
                 // generate approximation filepaths
@@ -527,7 +527,7 @@ namespace APRIL
                 // write dummy value for object count. 
                 fwrite(&dataset.totalObjects, sizeof(size_t), 1, pFileAPRIL);
                 // switch based on data type
-                switch (dataset.dataType) {
+                switch (dataset.metadata.dataType) {
                     // intervalize dataset objects
                     case DT_POLYGON:
                         object = shape_factory::createEmptyPolygonShape();
@@ -547,7 +547,7 @@ namespace APRIL
                         break;
                     default:
                         // error
-                        logger::log_error(DBERR_INVALID_DATATYPE, "Invalid datatype in intervalization:", dataset.dataType);
+                        logger::log_error(DBERR_INVALID_DATATYPE, "Invalid datatype in intervalization:", dataset.metadata.dataType);
                         return DBERR_INVALID_DATATYPE;
                 }
                 if (ret != DBERR_OK) {
@@ -652,7 +652,7 @@ namespace APRIL
             DB_STATUS init(Dataset &dataset) {
                 DB_STATUS ret = DBERR_OK;
                 // init rasterization environment
-                ret = setRasterBounds(dataset.dataspaceMetadata.xMinGlobal, dataset.dataspaceMetadata.yMinGlobal, dataset.dataspaceMetadata.xMaxGlobal, dataset.dataspaceMetadata.yMaxGlobal);
+                ret = setRasterBounds(dataset.metadata.dataspaceMetadata.xMinGlobal, dataset.metadata.dataspaceMetadata.yMinGlobal, dataset.metadata.dataspaceMetadata.xMaxGlobal, dataset.metadata.dataspaceMetadata.yMaxGlobal);
                 if (ret != DBERR_OK) {
                     return DBERR_INVALID_PARAMETER;
                 }
@@ -674,7 +674,7 @@ namespace APRIL
                     return DBERR_DISK_WRITE_FAILED;
                 }
                 // switch based on data type
-                switch (dataset.dataType) {
+                switch (dataset.metadata.dataType) {
                     // intervalize dataset objects
                     case DT_POLYGON:
                     case DT_RECTANGLE:
@@ -686,7 +686,7 @@ namespace APRIL
                         break;
                     default:
                         // error
-                        logger::log_error(DBERR_INVALID_DATATYPE, "Invalid datatype in intervalization:", dataset.dataType);
+                        logger::log_error(DBERR_INVALID_DATATYPE, "Invalid datatype in intervalization:", dataset.metadata.dataType);
                         return DBERR_INVALID_DATATYPE;
                 }
                 if (ret != DBERR_OK) {

@@ -19,10 +19,10 @@ namespace partitioning
      * @param[out] twoLayerClasses The MBR's two-layer index classification for each individual intersecting partition.
      */
     static DB_STATUS getPartitionsForMBR(MBR &mbr, std::vector<int> &partitionIDs){
-        int minPartitionX = (mbr.pMin.x - g_config.datasetMetadata.dataspaceMetadata.xMinGlobal) / (g_config.datasetMetadata.dataspaceMetadata.xExtent / g_config.partitioningMethod->getDistributionPPD());
-        int minPartitionY = (mbr.pMin.y - g_config.datasetMetadata.dataspaceMetadata.yMinGlobal) / (g_config.datasetMetadata.dataspaceMetadata.yExtent / g_config.partitioningMethod->getDistributionPPD());
-        int maxPartitionX = (mbr.pMax.x - g_config.datasetMetadata.dataspaceMetadata.xMinGlobal) / (g_config.datasetMetadata.dataspaceMetadata.xExtent / g_config.partitioningMethod->getDistributionPPD());
-        int maxPartitionY = (mbr.pMax.y - g_config.datasetMetadata.dataspaceMetadata.yMinGlobal) / (g_config.datasetMetadata.dataspaceMetadata.yExtent / g_config.partitioningMethod->getDistributionPPD());
+        int minPartitionX = (mbr.pMin.x - g_config.datasetOptions.dataspaceMetadata.xMinGlobal) / (g_config.datasetOptions.dataspaceMetadata.xExtent / g_config.partitioningMethod->getDistributionPPD());
+        int minPartitionY = (mbr.pMin.y - g_config.datasetOptions.dataspaceMetadata.yMinGlobal) / (g_config.datasetOptions.dataspaceMetadata.yExtent / g_config.partitioningMethod->getDistributionPPD());
+        int maxPartitionX = (mbr.pMax.x - g_config.datasetOptions.dataspaceMetadata.xMinGlobal) / (g_config.datasetOptions.dataspaceMetadata.xExtent / g_config.partitioningMethod->getDistributionPPD());
+        int maxPartitionY = (mbr.pMax.y - g_config.datasetOptions.dataspaceMetadata.yMinGlobal) / (g_config.datasetOptions.dataspaceMetadata.yExtent / g_config.partitioningMethod->getDistributionPPD());
         
         int startPartitionID = g_config.partitioningMethod->getDistributionGridPartitionID(minPartitionX, minPartitionY);
         int lastPartitionID = g_config.partitioningMethod->getDistributionGridPartitionID(maxPartitionX, maxPartitionY);
@@ -156,9 +156,9 @@ namespace partitioning
         DB_STATUS calculateDatasetMetadata(Dataset* dataset) {
             DB_STATUS ret = DBERR_OK;
             // open file
-            std::ifstream fin(dataset->path);
+            std::ifstream fin(dataset->metadata.path);
             if (!fin.is_open()) {
-                logger::log_error(DBERR_MISSING_FILE, "Failed to open dataset path:", dataset->path);
+                logger::log_error(DBERR_MISSING_FILE, "Failed to open dataset path:", dataset->metadata.path);
                 return DBERR_MISSING_FILE;
             }
             std::string line;
@@ -187,9 +187,9 @@ namespace partitioning
                     toLine = objectCount+1;
                 }
                 // open file
-                std::ifstream fin(dataset->path);
+                std::ifstream fin(dataset->metadata.path);
                 if (!fin.is_open()) {
-                    logger::log_error(DBERR_MISSING_FILE, "Failed to open dataset path:", dataset->path);
+                    logger::log_error(DBERR_MISSING_FILE, "Failed to open dataset path:", dataset->metadata.path);
                     #pragma omp cancel parallel
                     ret = DBERR_MISSING_FILE;
                 }
@@ -235,7 +235,7 @@ namespace partitioning
                 return ret;
             }
             // set extent
-            dataset->dataspaceMetadata.set(global_xMin, global_yMin, global_xMax, global_yMax);
+            dataset->metadata.dataspaceMetadata.set(global_xMin, global_yMin, global_xMax, global_yMax);
             return ret;
         }
 
@@ -243,14 +243,14 @@ namespace partitioning
             DB_STATUS ret = DBERR_OK;
             // initialize batches
             std::unordered_map<int,Batch> batchMap;
-            ret = initializeBatchMap(batchMap, dataset->dataType);
+            ret = initializeBatchMap(batchMap, dataset->metadata.dataType);
             if (ret != DBERR_OK) {
                 return ret;
             }
             // open file
-            std::ifstream fin(dataset->path);
+            std::ifstream fin(dataset->metadata.path);
             if (!fin.is_open()) {
-                logger::log_error(DBERR_MISSING_FILE, "Failed to open dataset path:", dataset->path);
+                logger::log_error(DBERR_MISSING_FILE, "Failed to open dataset path:", dataset->metadata.path);
                 return DBERR_MISSING_FILE;
             }
             std::string line;
@@ -277,9 +277,9 @@ namespace partitioning
                 }
                 // logger::log_task("will handle lines", fromLine, "to", toLine);
                 // open file
-                std::ifstream fin(dataset->path);
+                std::ifstream fin(dataset->metadata.path);
                 if (!fin.is_open()) {
-                    logger::log_error(DBERR_MISSING_FILE, "Failed to open dataset path:", dataset->path);
+                    logger::log_error(DBERR_MISSING_FILE, "Failed to open dataset path:", dataset->metadata.path);
                     #pragma omp cancel parallel
                     ret = DBERR_MISSING_FILE;
                 }
@@ -290,7 +290,7 @@ namespace partitioning
 
                 // create empty object based on data type
                 Shape object;
-                local_ret = shape_factory::createEmpty(dataset->dataType, object);
+                local_ret = shape_factory::createEmpty(dataset->metadata.dataType, object);
                 if (local_ret != DBERR_OK) {
                     #pragma omp cancel parallel
                     ret = local_ret;
@@ -399,15 +399,15 @@ namespace partitioning
         DB_STATUS calculateDatasetMetadata(Dataset* dataset) {
             DB_STATUS ret = DBERR_OK;
             // open file
-            std::ifstream fin(dataset->path);
+            std::ifstream fin(dataset->metadata.path);
             if (!fin.is_open()) {
-                logger::log_error(DBERR_MISSING_FILE, "Failed to open dataset path:", dataset->path);
+                logger::log_error(DBERR_MISSING_FILE, "Failed to open dataset path:", dataset->metadata.path);
                 return DBERR_MISSING_FILE;
             }
             std::string line;
             // count total objects (lines)
             size_t totalObjects = 0;
-            ret = storage::countLinesInFile(dataset->path, totalObjects);
+            ret = storage::countLinesInFile(dataset->metadata.path, totalObjects);
             if (ret != DBERR_OK) {
                 return ret;
             }
@@ -430,9 +430,9 @@ namespace partitioning
                     toLine = totalObjects+1;
                 }
                 // open file
-                std::ifstream fin(dataset->path);
+                std::ifstream fin(dataset->metadata.path);
                 if (!fin.is_open()) {
-                    logger::log_error(DBERR_MISSING_FILE, "Failed to open dataset path:", dataset->path);
+                    logger::log_error(DBERR_MISSING_FILE, "Failed to open dataset path:", dataset->metadata.path);
                     #pragma omp cancel parallel
                     ret = DBERR_MISSING_FILE;
                 }
@@ -443,7 +443,7 @@ namespace partitioning
                 
                 // create empty object based on data type
                 Shape object;
-                local_ret = shape_factory::createEmpty(dataset->dataType, object);
+                local_ret = shape_factory::createEmpty(dataset->metadata.dataType, object);
                 if (local_ret != DBERR_OK) {
                     // error creating shape
                     #pragma omp cancel parallel
@@ -493,7 +493,7 @@ namespace partitioning
             // set total objects (valid + invalid)
             dataset->totalObjects = totalObjects;
             // set extent
-            dataset->dataspaceMetadata.set(global_xMin, global_yMin, global_xMax, global_yMax);
+            dataset->metadata.dataspaceMetadata.set(global_xMin, global_yMin, global_xMax, global_yMax);
             return ret;
         }
 
@@ -501,14 +501,14 @@ namespace partitioning
             DB_STATUS ret = DBERR_OK;
             // initialize batches
             std::unordered_map<int,Batch> batchMap;
-            ret = initializeBatchMap(batchMap, dataset->dataType);
+            ret = initializeBatchMap(batchMap, dataset->metadata.dataType);
             if (ret != DBERR_OK) {
                 return ret;
             }
             // open file
-            std::ifstream fin(dataset->path);
+            std::ifstream fin(dataset->metadata.path);
             if (!fin.is_open()) {
-                logger::log_error(DBERR_MISSING_FILE, "Failed to open dataset path:", dataset->path);
+                logger::log_error(DBERR_MISSING_FILE, "Failed to open dataset path:", dataset->metadata.path);
                 return DBERR_MISSING_FILE;
             }
             std::string line;
@@ -534,9 +534,9 @@ namespace partitioning
                 }
                 // logger::log_task("will handle lines", fromLine, "to", toLine);
                 // open file
-                std::ifstream fin(dataset->path);
+                std::ifstream fin(dataset->metadata.path);
                 if (!fin.is_open()) {
-                    logger::log_error(DBERR_MISSING_FILE, "Failed to open dataset path:", dataset->path);
+                    logger::log_error(DBERR_MISSING_FILE, "Failed to open dataset path:", dataset->metadata.path);
                     #pragma omp cancel parallel
                     ret = DBERR_MISSING_FILE;
                 }
@@ -547,7 +547,7 @@ namespace partitioning
 
                 // create empty object based on data type
                 Shape object;
-                local_ret = shape_factory::createEmpty(dataset->dataType, object);
+                local_ret = shape_factory::createEmpty(dataset->metadata.dataType, object);
                 if (local_ret != DBERR_OK) {
                     // error creating shape
                     #pragma omp cancel parallel
@@ -650,13 +650,13 @@ namespace partitioning
         DB_STATUS ret;
         // time
         startTime = mpi_timer::markTime();
-        switch (dataset->fileType) {
+        switch (dataset->metadata.fileType) {
             // perform the partitioning
             case FT_CSV:
                 // csv dataset
                 ret = csv::loadDatasetAndPartition(dataset);
                 if (ret != DBERR_OK) {
-                    logger::log_error(DBERR_PARTITIONING_FAILED, "Partitioning failed for dataset", dataset->nickname);
+                    logger::log_error(DBERR_PARTITIONING_FAILED, "Partitioning failed for dataset", dataset->metadata.internalID);
                     return ret;
                 }
                 break;
@@ -664,13 +664,13 @@ namespace partitioning
                 // wkt dataset
                 ret = wkt::loadDatasetAndPartition(dataset);
                 if (ret != DBERR_OK) {
-                    logger::log_error(DBERR_PARTITIONING_FAILED, "Partitioning failed for dataset", dataset->nickname);
+                    logger::log_error(DBERR_PARTITIONING_FAILED, "Partitioning failed for dataset", dataset->metadata.internalID);
                     return ret;
                 }
                 break;
             case FT_BINARY:
             default:
-                logger::log_error(DBERR_FEATURE_UNSUPPORTED, "Unsupported data file type:", dataset->fileType);
+                logger::log_error(DBERR_FEATURE_UNSUPPORTED, "Unsupported data file type:", dataset->metadata.fileType);
                 break;
         }
 
@@ -679,7 +679,7 @@ namespace partitioning
         if (ret != DBERR_OK) {
             return ret;
         }
-        logger::log_success("Partitioning for dataset", dataset->nickname, "finished in", mpi_timer::getElapsedTime(startTime), "seconds.");
+        logger::log_success("Partitioning for dataset", dataset->metadata.internalID, "finished in", mpi_timer::getElapsedTime(startTime), "seconds.");
                 
         return DBERR_OK;
     }

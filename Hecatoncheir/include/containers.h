@@ -1318,19 +1318,35 @@ public:
     void sortPartitionsOnY();
 };
 
+struct DatasetMetadata
+{
+private:
+    int calculateBufferSize();
+public:
+    DatasetIndex internalID;
+    DataType dataType;
+    FileType fileType;
+    std::string path;
+     // derived from the path @todo to remove
+    std::string datasetName;
+    // holds the dataset's dataspace metadata (MBR, extent)
+    DataspaceMetadata dataspaceMetadata;
+
+    /** @brief Serializes the dataset object. */
+    DB_STATUS serialize(char **buffer, int &bufferSize);
+
+    /** @brief Deserializes the given serialized buffer of the specified size into this DatasetMetadata object. 
+     * @warning Caller is responsible for the validity of the input buffer. 
+    */
+    DB_STATUS deserialize(const char *buffer, int bufferSize);
+};
+
 /**
  * @brief All dataset related information.
  */
 struct Dataset{
-    DataType dataType;
-    FileType fileType;
-    std::string path;
-    // derived from the path
-    std::string datasetName;
-    // as given by arguments and specified by datasets.ini config file
-    std::string nickname;
-    // holds the dataset's dataspace metadata (MBR, extent)
-    DataspaceMetadata dataspaceMetadata;
+    // all of the dataset's metadata
+    DatasetMetadata metadata;
     // unique object count
     size_t totalObjects = 0;
     std::vector<size_t> objectIDs;
@@ -1341,7 +1357,12 @@ struct Dataset{
     /** Section mapping. key,value = sectionID,(unordered map of key,value = recID,aprilData) @warning only sectionID = 0 is supported currently.*/
     std::unordered_map<uint, Section> sectionMap;
     /** map: key,value = recID,vector<sectionID>: maps recs to sections */
-    std::unordered_map<size_t,std::vector<uint>> recToSectionIdMap;        
+    std::unordered_map<size_t,std::vector<uint>> recToSectionIdMap;
+
+    Dataset(){}
+    Dataset(DatasetMetadata &metadata) {
+        this->metadata = metadata;
+    }        
 
     /** @brief Adds a Shape object into the two layer index and the reference map. 
      * @note Calculates the partitions and the object's classes in them. */
@@ -1601,14 +1622,14 @@ struct Action {
 
 /** @brief Holds the dataset(s) related metadata in the configuration.
  */
-struct DatasetMetadata {
+struct DatasetOptions {
 private:
     Dataset* R;
     Dataset* S;
     int numberOfDatasets;
 
 public:
-    std::unordered_map<std::string,Dataset> datasets;
+    std::unordered_map<DatasetIndex, Dataset> datasets;
     DataspaceMetadata dataspaceMetadata;
     
     Dataset* getDatasetByNickname(std::string &nickname);
@@ -1621,6 +1642,7 @@ public:
 
     Dataset* getDatasetS();
 
+    Dataset* getDatasetByIdx(DatasetIndex datasetIndex);
     DB_STATUS getDatasetByIdx(DatasetIndex datasetIndex, Dataset **datasetRef);
 
     /**
@@ -1628,6 +1650,7 @@ public:
      * @warning it has to be an empty dataset BUT its nickname needs to be set
      */
     DB_STATUS addDataset(DatasetIndex datasetIdx, Dataset &dataset);
+
 
     void updateDataspace();
 };
@@ -1670,7 +1693,7 @@ struct Config {
     std::vector<Action> actions;
     // PartitioningMetadata partitioningMetadata;
     PartitioningMethod *partitioningMethod;
-    DatasetMetadata datasetMetadata;
+    DatasetOptions datasetOptions;
     ApproximationMetadata approximationMetadata;
     QueryMetadata queryMetadata;
 };
