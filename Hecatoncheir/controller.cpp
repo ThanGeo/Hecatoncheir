@@ -307,7 +307,7 @@ int main(int argc, char* argv[]) {
         return ret;
     }
 
-    // logger::log_task("My global rank is", g_global_rank, "and my local rank is", g_node_rank);
+    logger::log_task("My global rank is", g_global_rank, "and my local rank is", g_node_rank);
     
     if (g_node_rank == HOST_LOCAL_RANK) {
         // host controller has to handle setup/user input etc.

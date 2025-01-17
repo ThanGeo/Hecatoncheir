@@ -1356,7 +1356,7 @@ struct Dataset{
     std::vector<size_t> objectIDs;
     std::unordered_map<size_t, Shape> objects;
     TwoLayerIndex twoLayerIndex;
-    ApproximationType approxType;
+    ApproximationType approxType = AT_APRIL;
     AprilConfig aprilConfig;
     /** Section mapping. key,value = sectionID,(unordered map of key,value = recID,aprilData) @warning only sectionID = 0 is supported currently.*/
     std::unordered_map<uint, Section> sectionMap;

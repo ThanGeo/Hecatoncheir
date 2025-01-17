@@ -101,7 +101,7 @@ namespace comm
          * @param[in] dataset The dataset getting partitioned
          * @param[out] continueListening If the message is empty (0 objects aster serialization), then it signals the end of the partitioning for the dataset.
         */
-        static DB_STATUS deserializeBatchMessageAndStore(char *buffer, int bufferSize, FILE* outFile, Dataset *dataset, int &continueListening) {
+        static DB_STATUS deserializeBatchMessageAndHandle(char *buffer, int bufferSize, FILE* partitionFile, FILE* aprilFile, Dataset *dataset, int &continueListening) {
             DB_STATUS ret = DBERR_OK;
             Batch batch;
             // deserialize the batch
@@ -114,17 +114,42 @@ namespace comm
             }
             // logger::log_success("Received batch with", batch.objectCount, "objects");
             if (batch.objectCount > 0) {
-                // do stuff
-                ret = storage::writer::partitionFile::appendBatchToPartitionFile(outFile, &batch, dataset);
+                // append to partition file
+                ret = storage::writer::partitionFile::appendBatchToPartitionFile(partitionFile, &batch, dataset);
                 if (ret != DBERR_OK) {
                     logger::log_error(DBERR_DISK_WRITE_FAILED, "Failed when writing batch to partition file");
                     return DBERR_DISK_WRITE_FAILED;
                 }
+                
+                // create APRIL for each object @todo paralellize? have to do a buffered write then
+                for (int i=0; i<batch.objectCount; i++) {
+                    // generate
+                    AprilData aprilData;
+                    ret = APRIL::generation::memory::createAPRILforObject(&batch.objects[i], dataset->metadata.dataType, dataset->aprilConfig, aprilData);
+                    if (ret != DBERR_OK) {
+                        logger::log_error(ret, "APRIL creation failed for object with id:", batch.objects[i].recID);
+                        return ret;
+                    }
+                    // save to file
+                    /** @todo hardcoded section ID, if we are to implement sections feature for APRIL, this needs to change. */
+                    ret = APRIL::writer::saveAPRIL(aprilFile, batch.objects[i].recID, 0, &aprilData);
+                    if (ret != DBERR_OK) {
+                        logger::log_error(ret, "Saving APRIL for object", batch.objects[i].recID, "failed.");
+                        return ret;
+                    }
+                }
+                
             } else {
                 // empty batch, set flag to stop listening for this dataset
                 continueListening = 0;
-                // and write total objects in the begining of the partitioned file
-                ret = storage::writer::updateObjectCountInFile(outFile, dataset->totalObjects);
+                // update the object count value in the files
+                ret = storage::writer::updateObjectCountInFile(partitionFile, dataset->totalObjects);
+                if (ret != DBERR_OK) {
+                    logger::log_error(DBERR_DISK_WRITE_FAILED, "Failed when updating partition file object count");
+                    return DBERR_DISK_WRITE_FAILED;
+                }
+                // update the object count value in the files
+                ret = storage::writer::updateObjectCountInFile(aprilFile, dataset->totalObjects);
                 if (ret != DBERR_OK) {
                     logger::log_error(DBERR_DISK_WRITE_FAILED, "Failed when updating partition file object count");
                     return DBERR_DISK_WRITE_FAILED;
@@ -135,7 +160,7 @@ namespace comm
             return ret;
         }
 
-        static DB_STATUS pullSerializedMessageAndHandle(MPI_Status status, FILE* outFile, Dataset *dataset, int &continueListening) {
+        static DB_STATUS pullSerializedMessageAndHandle(MPI_Status status, FILE* partitionFile, FILE* aprilFile, Dataset *dataset, int &continueListening) {
             int tag = status.MPI_TAG;
             SerializedMsg<char> msg(MPI_CHAR);
             // receive the message
@@ -150,7 +175,7 @@ namespace comm
                 case MSG_BATCH_POINT:
                 case MSG_BATCH_LINESTRING:
                 case MSG_BATCH_POLYGON:
-                    ret = deserializeBatchMessageAndStore(msg.data, msg.count, outFile, dataset, continueListening);
+                    ret = deserializeBatchMessageAndHandle(msg.data, msg.count, partitionFile, aprilFile, dataset, continueListening);
                     if (ret != DBERR_OK) {
                         return ret;
                     }
@@ -167,7 +192,8 @@ namespace comm
         static DB_STATUS listenForDatasetPartitioning(DatasetIndex datasetIndex) {
             DB_STATUS ret = DBERR_OK;
             MPI_Status status;
-            FILE* outFile;
+            FILE* partitionFile;
+            FILE* aprilFile;
             int listen = 1;
             size_t dummy = 0;
 
@@ -189,20 +215,38 @@ namespace comm
             g_config.partitioningMethod->setPartGridDataspace(dataset->metadata.dataspaceMetadata);
             
             // open the partition data file
-            outFile = fopen(dataset->metadata.path.c_str(), "wb+");
-            if (outFile == NULL) {
+            // logger::log_task("Will save the partitioned data at", dataset->metadata.path);
+            partitionFile = fopen(dataset->metadata.path.c_str(), "wb+");
+            if (partitionFile == NULL) {
                 logger::log_error(DBERR_MISSING_FILE, "Couldnt open dataset file:", dataset->metadata.path);
                 return DBERR_MISSING_FILE;
             }
 
-            // logger::log_task("Will save the partitioned data at", dataset->metadata.path);
+            // init rasterization environment
+            ret = APRIL::generation::setRasterBounds(g_config.datasetOptions.dataspaceMetadata);
+            if (ret != DBERR_OK) {
+                return DBERR_INVALID_PARAMETER;
+            }
+            // generate approximation filepaths
+            ret = storage::generateAPRILFilePath(dataset);
+            if (ret != DBERR_OK) {
+                return ret;
+            }
+
+            // open april file for writing
+            aprilFile = fopen(dataset->aprilConfig.filepath.c_str(), "wb");
+            if (aprilFile == NULL) {
+                logger::log_error(DBERR_MISSING_FILE, "Couldnt open APRIL file:", dataset->aprilConfig.filepath);
+                return DBERR_MISSING_FILE;
+            }
 
             // write a dummy value for the total object count in the very begining of the file
             // it will be corrected when the batches are finished
-            fwrite(&dummy, sizeof(size_t), 1, outFile);
+            fwrite(&dummy, sizeof(size_t), 1, partitionFile);
+            fwrite(&dummy, sizeof(size_t), 1, aprilFile);
 
             // write the dataset metadata to the partition file
-            ret = storage::writer::partitionFile::appendDatasetMetadataToPartitionFile(outFile, dataset);
+            ret = storage::writer::partitionFile::appendDatasetMetadataToPartitionFile(partitionFile, dataset);
             if (ret != DBERR_OK) {
                 logger::log_error(ret, "Failed while writing the dataset metadata to the partition file");
                 goto STOP_LISTENING;
@@ -229,7 +273,7 @@ namespace comm
                     case MSG_BATCH_LINESTRING:
                     case MSG_BATCH_POLYGON:
                         /* batch geometry message */
-                        ret = pullSerializedMessageAndHandle(status, outFile, dataset, listen);
+                        ret = pullSerializedMessageAndHandle(status, partitionFile, aprilFile, dataset, listen);
                         if (ret != DBERR_OK) {
                             goto STOP_LISTENING;
                         }  
@@ -242,9 +286,12 @@ namespace comm
             }
             
 STOP_LISTENING:
-            // close partition file
-            if (outFile == NULL) {
-                fclose(outFile);
+            // close files
+            if (partitionFile == NULL) {
+                fclose(partitionFile);
+            }
+            if (aprilFile == NULL) {
+                fclose(aprilFile);
             }
             
             return ret;
@@ -504,7 +551,7 @@ STOP_LISTENING:
                 // set approximation type for dataset
                 it.second.approxType = AT_APRIL;
                 // generate APRIL filepaths
-                ret = storage::generateAPRILFilePath(it.second);
+                ret = storage::generateAPRILFilePath(&it.second);
                 if (ret != DBERR_OK) {
                     goto EXIT_SAFELY;
                 }

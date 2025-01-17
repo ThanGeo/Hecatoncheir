@@ -298,7 +298,7 @@ namespace hec {
             logger::log_error(ret, "Partitioning finished with errors.");
             return -1;
         }        
-        
+        logger::log_success("Partitioned datasets.");
         return 0;
     }
 }

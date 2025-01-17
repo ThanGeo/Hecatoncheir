@@ -27,7 +27,7 @@ int main(int argc, char* argv[]) {
     std::string datasetFullPathR = "/home/hec/thanasis/Hecatoncheir/Hecatoncheir/datasets/T1.wkt";
     std::string datasetFullPathS = "/home/hec/thanasis/Hecatoncheir/Hecatoncheir/datasets/T2.wkt";
     std::vector<std::string> hosts = {"node1:1", "node2:1", "node3:1"};
-    // std::vector<std::string> hosts = {"node1:1", "node2:1"};
+    // std::vector<std::string> hosts = {"node1:1"};
 
     // Initialize Hecatoncheir. Must use this method before any other calls to the framework.
     hec::init(hosts.size(), hosts);
@@ -39,7 +39,10 @@ int main(int argc, char* argv[]) {
 
     // partition datasets
     hec::partitionDataset({datasetRID, datasetSID});
-    
+    // todo: when the user prepares/partitions the data, 
+    // 1) does it have to be brought in memory too at that time?
+    // 2) should i implement another command that loads the dataset on demand?
+    // 3) should it be loaded for the query?
     
     // run query
 

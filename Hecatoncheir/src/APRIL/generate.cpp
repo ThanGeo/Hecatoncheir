@@ -4,20 +4,17 @@ namespace APRIL
 {
     namespace generation 
     {
-        double rasterXmin, rasterYmin, rasterXmax, rasterYmax;
+        DataspaceMetadata rasterDataspaceMetadata;
         std::vector<int> x_offset = { 1,1,1, 0,0,-1,-1,-1};
         std::vector<int> y_offset = {-1,0,1,-1,1,-1, 0, 1};
 
-        DB_STATUS setRasterBounds(double xMin, double yMin, double xMax, double yMax) {
-            if (xMin >= xMax || yMin >= yMax) {
-                logger::log_error(DBERR_INVALID_PARAMETER, "Invalid raster bounds. min values must be smaller than the max values. Bounds:", xMin, yMin, xMax, yMax);
+        DB_STATUS setRasterBounds(DataspaceMetadata &dataspaceMetadata) {
+            if (dataspaceMetadata.xMinGlobal >= dataspaceMetadata.xMaxGlobal || dataspaceMetadata.yMinGlobal >= dataspaceMetadata.yMaxGlobal) {
+                logger::log_error(DBERR_INVALID_PARAMETER, "Invalid raster bounds. min values must be smaller than the max values. Bounds:", dataspaceMetadata.xMinGlobal, dataspaceMetadata.yMinGlobal, dataspaceMetadata.xMaxGlobal, dataspaceMetadata.yMaxGlobal);
                 return DBERR_INVALID_PARAMETER;
             }
-            rasterXmin = xMin;
-            rasterYmin = yMin;
-            rasterXmax = xMax;
-            rasterYmax = yMax;
-            // logger::log_success("Set raster bounds:", rasterXmin, rasterYmin, rasterXmax, rasterYmax);
+            rasterDataspaceMetadata = dataspaceMetadata;
+            // logger::log_success("Set raster bounds:", rasterDataspaceMetadata.xMinGlobal, rasterDataspaceMetadata.yMinGlobal, rasterDataspaceMetadata.xMaxGlobal, rasterDataspaceMetadata.yMaxGlobal);
             return DBERR_OK;
         }
         
@@ -42,8 +39,8 @@ namespace APRIL
         }
 
         static inline void mapXYToHilbert(double &x, double &y, uint32_t &cellsPerDim){
-            x = ((double) (cellsPerDim-1) / (rasterXmax - rasterXmin)) * (x - rasterXmin);
-            y = ((double) (cellsPerDim-1) / (rasterYmax - rasterYmin)) * (y - rasterYmin);
+            x = ((double) (cellsPerDim-1) / (rasterDataspaceMetadata.xMaxGlobal - rasterDataspaceMetadata.xMinGlobal)) * (x - rasterDataspaceMetadata.xMinGlobal);
+            y = ((double) (cellsPerDim-1) / (rasterDataspaceMetadata.yMaxGlobal - rasterDataspaceMetadata.yMinGlobal)) * (y - rasterDataspaceMetadata.yMinGlobal);
             if(x < 0){
                 x = 0;
             }
@@ -111,13 +108,13 @@ namespace APRIL
             }
             object.correctGeometry();
             //map the object's mbr
-            rasterData.minCellX = mapSingleValueToHilbert(object.mbr.pMin.x, rasterXmin, rasterXmax, cellsPerDim);
+            rasterData.minCellX = mapSingleValueToHilbert(object.mbr.pMin.x, rasterDataspaceMetadata.xMinGlobal, rasterDataspaceMetadata.xMaxGlobal, cellsPerDim);
             rasterData.minCellX > 0 ? rasterData.minCellX -= 1 : rasterData.minCellX = 0;
-            rasterData.minCellY = mapSingleValueToHilbert(object.mbr.pMin.y, rasterYmin, rasterYmax, cellsPerDim);
+            rasterData.minCellY = mapSingleValueToHilbert(object.mbr.pMin.y, rasterDataspaceMetadata.yMinGlobal, rasterDataspaceMetadata.yMaxGlobal, cellsPerDim);
             rasterData.minCellY > 0 ? rasterData.minCellY -= 1 : rasterData.minCellY = 0;
-            rasterData.maxCellX = mapSingleValueToHilbert(object.mbr.pMax.x, rasterXmin, rasterXmax, cellsPerDim);
+            rasterData.maxCellX = mapSingleValueToHilbert(object.mbr.pMax.x, rasterDataspaceMetadata.xMinGlobal, rasterDataspaceMetadata.xMaxGlobal, cellsPerDim);
             rasterData.maxCellX < cellsPerDim - 1 ? rasterData.maxCellX += 1 : rasterData.maxCellX = cellsPerDim - 1;
-            rasterData.maxCellY = mapSingleValueToHilbert(object.mbr.pMax.y, rasterYmin, rasterYmax, cellsPerDim);
+            rasterData.maxCellY = mapSingleValueToHilbert(object.mbr.pMax.y, rasterDataspaceMetadata.yMinGlobal, rasterDataspaceMetadata.yMaxGlobal, cellsPerDim);
             rasterData.maxCellY < cellsPerDim - 1 ? rasterData.maxCellY += 1 : rasterData.maxCellY = cellsPerDim - 1;
             //set dimensions for buffers 
             rasterData.bufferWidth = rasterData.maxCellX - rasterData.minCellX + 1;
@@ -496,7 +493,7 @@ namespace APRIL
             DB_STATUS init(Dataset &dataset) {
                 DB_STATUS ret = DBERR_OK;
                 // init rasterization environment
-                ret = setRasterBounds(dataset.metadata.dataspaceMetadata.xMinGlobal, dataset.metadata.dataspaceMetadata.yMinGlobal, dataset.metadata.dataspaceMetadata.xMaxGlobal, dataset.metadata.dataspaceMetadata.yMaxGlobal);
+                ret = setRasterBounds(dataset.metadata.dataspaceMetadata);
                 if (ret != DBERR_OK) {
                     return DBERR_INVALID_PARAMETER;
                 }
@@ -507,7 +504,7 @@ namespace APRIL
                     return DBERR_MISSING_FILE;
                 }
                 // generate approximation filepaths
-                ret = storage::generateAPRILFilePath(dataset);
+                ret = storage::generateAPRILFilePath(&dataset);
                 if (ret != DBERR_OK) {
                     return ret;
                 }
@@ -652,12 +649,12 @@ namespace APRIL
             DB_STATUS init(Dataset &dataset) {
                 DB_STATUS ret = DBERR_OK;
                 // init rasterization environment
-                ret = setRasterBounds(dataset.metadata.dataspaceMetadata.xMinGlobal, dataset.metadata.dataspaceMetadata.yMinGlobal, dataset.metadata.dataspaceMetadata.xMaxGlobal, dataset.metadata.dataspaceMetadata.yMaxGlobal);
+                ret = setRasterBounds(dataset.metadata.dataspaceMetadata);
                 if (ret != DBERR_OK) {
                     return DBERR_INVALID_PARAMETER;
                 }
                 // generate approximation filepaths
-                ret = storage::generateAPRILFilePath(dataset);
+                ret = storage::generateAPRILFilePath(&dataset);
                 if (ret != DBERR_OK) {
                     return ret;
                 }
@@ -696,6 +693,37 @@ namespace APRIL
         CLOSE_AND_EXIT:
                 fflush(pFileAPRIL);
                 fclose(pFileAPRIL);
+                return ret;
+            }
+
+            DB_STATUS createAPRILforObject(Shape* shape, DataType dataType, AprilConfig &aprilConfig, AprilData &aprilData) {
+                DB_STATUS ret = DBERR_OK;
+                // switch based on data type
+                switch (dataType) {
+                    // intervalize dataset objects
+                    case DT_POLYGON:
+                    case DT_RECTANGLE:
+                        ret = intervalizeRegionShape(*shape,  aprilConfig.getCellsPerDim(), aprilData);
+                        if (ret != DBERR_OK || aprilData.numIntervalsALL == 0) {
+                            // at least 1 ALL interval is needed for each object, otherwise there is an error
+                            logger::log_error(ret, "Failed to generate APRIL for object with ID", shape->recID);
+                            return ret;
+                        }
+                        break;
+                    case DT_POINT:
+                    case DT_LINESTRING:
+                        ret = intervalizeNonRegionShape(*shape,  aprilConfig.getCellsPerDim(), aprilData);
+                        if (ret != DBERR_OK || aprilData.numIntervalsALL == 0) {
+                            // at least 1 ALL interval is needed for each object, otherwise there is an error
+                            logger::log_error(ret, "Failed to generate APRIL for object with ID", shape->recID);
+                            return ret;
+                        }
+                        break;
+                    default:
+                        // error
+                        logger::log_error(DBERR_INVALID_DATATYPE, "Invalid datatype in intervalization:", dataType);
+                        return DBERR_INVALID_DATATYPE;
+                }
                 return ret;
             }
         }

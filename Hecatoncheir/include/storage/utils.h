@@ -17,7 +17,7 @@ namespace storage
     @brief Generates the APRIL file path for the given dataset from the dataset's nickname.
      * @warning The nickname field must be set. The APRIL path is stored in the AprilConfig field of the dataset object.
      */
-    DB_STATUS generateAPRILFilePath(Dataset &dataset);
+    DB_STATUS generateAPRILFilePath(Dataset* dataset);
 
 }
 

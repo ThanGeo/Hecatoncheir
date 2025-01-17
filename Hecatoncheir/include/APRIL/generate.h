@@ -12,10 +12,6 @@ namespace APRIL
     /** @brief APRIL generation related methods. */
     namespace generation
     {
-        extern double rasterXmin;
-        extern double rasterYmin;
-        extern double rasterXmax;
-        extern double rasterYmax;
         extern std::vector<int> x_offset;
         extern std::vector<int> y_offset;
 
@@ -32,6 +28,9 @@ namespace APRIL
             uint32_t minCellX, minCellY, maxCellX, maxCellY;
             uint32_t bufferWidth, bufferHeight;
         };
+
+        /** @brief Sets the raster bounds for the intervalization space of APRIL */
+        DB_STATUS setRasterBounds(DataspaceMetadata &dataspaceMetadata);
         
         /** @brief Disk-based APRIL generation methods, for very large datasets or when there's limited memory. */
         namespace disk
@@ -51,6 +50,9 @@ namespace APRIL
              * @warning Requires all objects to be stored already in memory (inside the dataset).
              */
             extern DB_STATUS init(Dataset &dataset);
+
+
+            extern DB_STATUS createAPRILforObject(Shape* shape, DataType dataType, AprilConfig &aprilConfig, AprilData &aprilData);
         }
     }
 }
