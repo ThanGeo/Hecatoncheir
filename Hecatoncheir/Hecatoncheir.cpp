@@ -60,7 +60,8 @@ static DB_STATUS spawnControllers(int num_procs, const std::vector<std::string> 
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
     if (rank == 0) {
-        char *cmds[2] = { (char*) CONTROLLER_EXECUTABLE_PATH.c_str(), (char*) CONTROLLER_EXECUTABLE_PATH.c_str() };
+        std::vector<char*> cmdsVec(num_procs, (char*) CONTROLLER_EXECUTABLE_PATH.c_str());
+        char** cmds = cmdsVec.data();
         int* error_codes = (int*)malloc(num_procs * sizeof(int));
         MPI_Info* info = (MPI_Info*)malloc(num_procs * sizeof(MPI_Info));
         int* np = (int*)malloc(num_procs * sizeof(int));

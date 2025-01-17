@@ -125,11 +125,11 @@ namespace comm
                 continueListening = 0;
                 // and write total objects in the begining of the partitioned file
                 ret = storage::writer::updateObjectCountInFile(outFile, dataset->totalObjects);
-                // logger::log_success("Saved", dataset->totalObjects,"total objects.");
                 if (ret != DBERR_OK) {
                     logger::log_error(DBERR_DISK_WRITE_FAILED, "Failed when updating partition file object count");
                     return DBERR_DISK_WRITE_FAILED;
                 }
+                // logger::log_success("Saved", dataset->totalObjects,"total objects.");
             }
 
             return ret;
@@ -164,7 +164,6 @@ namespace comm
             return ret;
         }
 
-        // TODO: fix logic for agent partitioning (Receiving batches and storing them)
         static DB_STATUS listenForDatasetPartitioning(DatasetIndex datasetIndex) {
             DB_STATUS ret = DBERR_OK;
             MPI_Status status;
@@ -195,8 +194,8 @@ namespace comm
                 logger::log_error(DBERR_MISSING_FILE, "Couldnt open dataset file:", dataset->metadata.path);
                 return DBERR_MISSING_FILE;
             }
-            
-            logger::log_task("Will save the partitioned data at", dataset->metadata.path);
+
+            // logger::log_task("Will save the partitioned data at", dataset->metadata.path);
 
             // write a dummy value for the total object count in the very begining of the file
             // it will be corrected when the batches are finished
@@ -1052,7 +1051,6 @@ STOP_LISTENING:
             if (ret != DBERR_OK) {
                 return ret;
             }
-            logger::log_success("Received");
             // forward to local agent
             ret = send::sendMessage(msg, AGENT_RANK, status.MPI_TAG, g_agent_comm);
             if (ret != DBERR_OK) {

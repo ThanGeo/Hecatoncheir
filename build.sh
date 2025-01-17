@@ -26,19 +26,17 @@ echo -e "-- ${GREEN}Dest directory: ${NC}" $DEST_DIR
 for node in "${NODES[@]}"; do
   ssh "$node" "mkdir -p '$SOURCE_DIR'"
 done
+
 # sync function
 sync_code() {
   local node=$1
   rsync -q -avz -e "ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no" --delete --exclude="data/" --exclude="Hecatoncheir/datasets/" $SOURCE_DIR/ ${node}:${DEST_DIR}/
 }
+# sync for each node
 echo "-- Syncing code across machines..."
-# sync for each node and append to hostfile
-hostfile="hostfile"
-> $hostfile
 for node in "${NODES[@]}"; do
+  # sync
   sync_code $node
-  # append to hostfile
-  echo "$node:1" >> $hostfile
 done
 echo -e "-- ${GREEN}Code sync across machines complete.${NC}"
 
