@@ -62,8 +62,7 @@ namespace hec {
      * @brief Partition a dataset(s) across the system. 
      * @todo: Overload with options for size of grid etc.
      */
-    int partitionDataset(DatasetID &dataset);
-    int partitionDataset(DatasetID &datasetR, DatasetID &datasetS);
+    int partitionDataset(std::vector<DatasetID> indexes);
 
     /**
      * @brief Generates a hec::Dataset metadata object with the dataset's specifications as set by the user

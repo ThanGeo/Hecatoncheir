@@ -64,6 +64,15 @@ set(SrcFiles
     src/refinement/topology.cpp
 )
 
+# Generate a configuration header file
+configure_file(
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/config_pub.h.in   # Input template file
+    ${CMAKE_CURRENT_BINARY_DIR}/config_pub.h     # Output generated file
+)
+
+# Add the binary directory to the include path
+include_directories(${PROJECT_NAME} ${CMAKE_CURRENT_BINARY_DIR})
+
 # add as library
 add_library(${PROJECT_NAME} STATIC ${SrcFiles})
 target_include_directories(${PROJECT_NAME} PUBLIC

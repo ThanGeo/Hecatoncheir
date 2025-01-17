@@ -541,8 +541,8 @@ void Dataset::printPartitions() {
     }
 }
 
-Dataset* DatasetOptions::getDatasetByIdx(DatasetIndex index) {
-    auto it = datasets.find(index);
+Dataset* DatasetOptions::getDatasetByIdx(int index) {
+    auto it = datasets.find((DatasetIndex) index);
     if (it == datasets.end()) {
         return nullptr;
     }        
@@ -564,6 +564,7 @@ void DataspaceMetadata::set(double xMinGlobal, double yMinGlobal, double xMaxGlo
     this->xExtent = this->xMaxGlobal - this->xMinGlobal;
     this->yExtent = this->yMaxGlobal - this->yMinGlobal;
     this->maxExtent = std::max(this->xExtent, this->yExtent);
+    this->boundsSet = true;
     // printf("-------------------------\n");
     // printf("Dataspace bounds: (%f,%f),(%f,%f)\n", this->xMinGlobal, this->yMinGlobal, this->xMaxGlobal, this->yMaxGlobal);
     // printf("xExtent: %f, yExtent: %f\n", this->xExtent, this->yExtent);
@@ -572,12 +573,19 @@ void DataspaceMetadata::set(double xMinGlobal, double yMinGlobal, double xMaxGlo
 }
 
 void DataspaceMetadata::clear() {
-    xMinGlobal = 0;
-    yMinGlobal = 0;
-    xMaxGlobal = 0;
-    yMaxGlobal = 0;
+    xMinGlobal = std::numeric_limits<int>::max();
+    yMinGlobal = std::numeric_limits<int>::max();
+    xMaxGlobal = -std::numeric_limits<int>::max();
+    yMaxGlobal = -std::numeric_limits<int>::max();  
     xExtent = 0;
     yExtent = 0;
+    maxExtent = 0;
+    boundsSet = false;
+}
+
+void DataspaceMetadata::print() {
+    printf("MBR: (%f,%f),(%f,%f)\n", xMinGlobal, yMinGlobal, xMaxGlobal, yMaxGlobal);
+    printf("xExtent: %f, yExtent: %f, maxExtent: %f\n", xExtent, yExtent, maxExtent);
 }
 
 Partition* TwoLayerIndex::getOrCreatePartition(int partitionID) {
@@ -657,7 +665,7 @@ Dataset* DatasetOptions::getDatasetS() {
     return S;
 }
 
-DB_STATUS DatasetOptions::getDatasetByIdx(DatasetIndex datasetIndex, Dataset **datasetRef) {
+DB_STATUS DatasetOptions::getDatasetByIdx(int datasetIndex, Dataset **datasetRef) {
     switch (datasetIndex) {
         case DATASET_R:
             (*datasetRef) = R;
@@ -705,6 +713,7 @@ DB_STATUS DatasetOptions::addDataset(Dataset &dataset) {
         // R is being added
         R = &datasets[DATASET_R];
         numberOfDatasets++;
+        this->updateDataspace();
     } else {
         if (this->S == nullptr) {
             // set as S
@@ -713,6 +722,7 @@ DB_STATUS DatasetOptions::addDataset(Dataset &dataset) {
             // S is being added
             S = &datasets[DATASET_S];
             numberOfDatasets++;
+            this->updateDataspace();
         } else {
             // error, R is set but S is not? 
             logger::log_error(DBERR_INVALID_PARAMETER, "Invalid state while adding dataset: R is not set but S is set.");
@@ -732,6 +742,7 @@ void DatasetOptions::updateDataspace() {
     }
     dataspaceMetadata.xExtent = dataspaceMetadata.xMaxGlobal - dataspaceMetadata.xMinGlobal;
     dataspaceMetadata.yExtent = dataspaceMetadata.yMaxGlobal - dataspaceMetadata.yMinGlobal;
+    dataspaceMetadata.maxExtent = std::max(dataspaceMetadata.xExtent, dataspaceMetadata.yExtent);
     // set as both datasets' bounds
     for (auto &it: datasets) {
         it.second.metadata.dataspaceMetadata = dataspaceMetadata;

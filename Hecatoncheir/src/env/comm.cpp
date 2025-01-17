@@ -164,66 +164,46 @@ namespace comm
             return ret;
         }
 
-        static DB_STATUS generateDatasetFromMessage(SerializedMsg<char> &datasetMetadataMsg, Dataset &dataset) {
-            // deserialize message
-            dataset.deserialize(datasetMetadataMsg.data, datasetMetadataMsg.count);
-            // generate partition filepath
-            DB_STATUS ret = storage::generatePartitionFilePath(dataset);
-            if (ret != DBERR_OK) {
-                return ret;
-            }
-            return DBERR_OK;
-        }
-
-        static DB_STATUS listenForDatasetPartitioning(MPI_Status status) {
-            Dataset dataset;
+        // TODO: fix logic for agent partitioning (Receiving batches and storing them)
+        static DB_STATUS listenForDatasetPartitioning(DatasetIndex datasetIndex) {
+            DB_STATUS ret = DBERR_OK;
+            MPI_Status status;
             FILE* outFile;
-            SerializedMsg<char> datasetMetadataMsg(MPI_CHAR);
             int listen = 1;
             size_t dummy = 0;
 
-            // proble blockingly for the dataset metadata
-            DB_STATUS ret = probe(PARENT_RANK, MPI_ANY_TAG, g_agent_comm, status);
-            if (ret != DBERR_OK) {
-                return ret;
+            // prepare dataset object
+            Dataset* dataset = g_config.datasetOptions.getDatasetByIdx(datasetIndex);
+            if (dataset == nullptr) {
+                logger::log_error(DBERR_NULL_PTR_EXCEPTION, "Empty dataset object (no metadata). Can not partition.");
+                return DBERR_NULL_PTR_EXCEPTION;
             }
-            // verify that it is the proper message
-            if (status.MPI_TAG != MSG_DATASET_METADATA) {
-                logger::log_error(DBERR_COMM_WRONG_MESSAGE_ORDER, "Partitioning: Expected dataset metadata message but received message with tag", status.MPI_TAG);
-                return DBERR_COMM_WRONG_MESSAGE_ORDER;
-            }
-            // retrieve dataset metadata pack
-            ret = recv::receiveMessage(status, datasetMetadataMsg.type, g_agent_comm, datasetMetadataMsg);
-            if (ret != DBERR_OK) {
-                logger::log_error(ret, "Failed pulling the dataset metadata message");
-                goto STOP_LISTENING;
-            }
-            // create dataset from the received message
-            ret = generateDatasetFromMessage(datasetMetadataMsg, dataset);
+
+            // generate the partition data name (@todo: make this happend when the metadata is sent, i.e. dataset preparation)
+            ret = storage::generatePartitionFilePath(dataset);
             if (ret != DBERR_OK) {
                 logger::log_error(ret, "Failed creating the dataset from the dataset metadata message");
                 goto STOP_LISTENING;
             }
             // update the grids' dataspace metadata in the partitioning object 
-            g_config.partitioningMethod->setDistGridDataspace(dataset.metadata.dataspaceMetadata);
-            g_config.partitioningMethod->setPartGridDataspace(dataset.metadata.dataspaceMetadata);
-
-            // free memory
-            free(datasetMetadataMsg.data);
+            g_config.partitioningMethod->setDistGridDataspace(dataset->metadata.dataspaceMetadata);
+            g_config.partitioningMethod->setPartGridDataspace(dataset->metadata.dataspaceMetadata);
             
             // open the partition data file
-            outFile = fopen(dataset.metadata.path.c_str(), "wb+");
+            outFile = fopen(dataset->metadata.path.c_str(), "wb+");
             if (outFile == NULL) {
-                logger::log_error(DBERR_MISSING_FILE, "Couldnt open dataset file:", dataset.metadata.path);
+                logger::log_error(DBERR_MISSING_FILE, "Couldnt open dataset file:", dataset->metadata.path);
                 return DBERR_MISSING_FILE;
             }
+            
+            logger::log_task("Will save the partitioned data at", dataset->metadata.path);
 
             // write a dummy value for the total object count in the very begining of the file
             // it will be corrected when the batches are finished
             fwrite(&dummy, sizeof(size_t), 1, outFile);
 
             // write the dataset metadata to the partition file
-            ret = storage::writer::partitionFile::appendDatasetMetadataToPartitionFile(outFile, &dataset);
+            ret = storage::writer::partitionFile::appendDatasetMetadataToPartitionFile(outFile, dataset);
             if (ret != DBERR_OK) {
                 logger::log_error(ret, "Failed while writing the dataset metadata to the partition file");
                 goto STOP_LISTENING;
@@ -250,7 +230,7 @@ namespace comm
                     case MSG_BATCH_LINESTRING:
                     case MSG_BATCH_POLYGON:
                         /* batch geometry message */
-                        ret = pullSerializedMessageAndHandle(status, outFile, &dataset, listen);
+                        ret = pullSerializedMessageAndHandle(status, outFile, dataset, listen);
                         if (ret != DBERR_OK) {
                             goto STOP_LISTENING;
                         }  
@@ -267,23 +247,7 @@ STOP_LISTENING:
             if (outFile == NULL) {
                 fclose(outFile);
             }
-            // respond
-            if (ret == DBERR_OK) {
-                // send ACK back that all data for this dataset has been received and processed successfully
-                ret = send::sendResponse(PARENT_RANK, MSG_ACK, g_agent_comm);
-                if (ret != DBERR_OK) {
-                    logger::log_error(ret, "Send ACK failed.");
-                }
-            } else {
-                // there was an error, send NACK and propagate error code locally
-                DB_STATUS errorCode = ret;
-                ret = send::sendResponse(PARENT_RANK, MSG_NACK, g_agent_comm);
-                if (ret != DBERR_OK) {
-                    logger::log_error(ret, "Send NACK failed.");
-                    return ret;
-                }
-                return errorCode;
-            }
+            
             return ret;
         }
 
@@ -303,13 +267,6 @@ STOP_LISTENING:
             switch (status.MPI_TAG) {
                 case MSG_INSTR_FIN:
                     return DB_FIN;
-                case MSG_INSTR_PARTITIONING_INIT:
-                    /* begin dataset partitioning */
-                    ret = listenForDatasetPartitioning(status);
-                    if (ret != DBERR_OK) {
-                        return ret;
-                    }
-                    break;
                 default:
                     logger::log_error(DBERR_COMM_UNKNOWN_INSTR, "Unknown instruction");
                     return DBERR_COMM_UNKNOWN_INSTR;
@@ -449,83 +406,83 @@ STOP_LISTENING:
             return ret;
         }
 
-        static DB_STATUS handleLoadDatasetsMessage(MPI_Status status) {
-            SerializedMsg<char> msg(MPI_CHAR);
-            std::vector<std::string> nicknames;
-            // receive the message
-            DB_STATUS ret = recv::receiveMessage(status, msg.type, g_agent_comm, msg);
-            if (ret != DBERR_OK) {
-                goto EXIT_SAFELY;
-            }
-            {
-                // message received
-                // create empty dataset;
-                Dataset dataset;
-                DatasetIndex datasetIndex;
-                // unpack metadata and store
-                ret = unpack::unpackDatasetLoadMsg(msg, dataset, datasetIndex);
-                if (ret != DBERR_OK) {
-                    goto EXIT_SAFELY;
-                }
-                // free memory
-                free(msg.data);
-                // generate partition file path from dataset nickname
-                ret = storage::generatePartitionFilePath(dataset);
-                if (ret != DBERR_OK) {
-                    goto EXIT_SAFELY;
-                }
-                // add the EMPTY dataset to the configuration
-                ret = g_config.datasetOptions.addDataset(datasetIndex, dataset);
-                if (ret != DBERR_OK) {
-                    logger::log_error(ret, "Failed to add dataset to configuration. Dataset nickname:", dataset.metadata.internalID, "dataset index:", datasetIndex);
-                    goto EXIT_SAFELY;
-                }
-                // get the dataset's reference
-                Dataset *datasetRef;
-                ret = g_config.datasetOptions.getDatasetByIdx(datasetIndex, &datasetRef);
-                if (datasetRef == nullptr) {
-                    return DBERR_NULL_PTR_EXCEPTION;
-                }
-                // load partition file (and create MBRs)
-                ret = storage::reader::partitionFile::loadDatasetComplete(datasetRef);
-                if (ret != DBERR_OK) {
-                    logger::log_error(DBERR_DISK_READ_FAILED, "Failed loading partition file MBRs");
-                    goto EXIT_SAFELY;
-                }  
-                // // dont forget to update the dataspace metadata of the configuration
-                // g_config.datasetOptions.updateDataspace();
-                // // verification prints
-                // if (datasetIndex == DATASET_R) {
-                //     printf("Loaded dataset R %s:\n", g_config.datasetOptions.getDatasetR()->nickname.c_str());
-                //     // g_config.datasetOptions.getDatasetR()->printObjectsGeometries();
-                //     // g_config.datasetOptions.getDatasetR()->printObjectsPartitions();
-                //     g_config.datasetOptions.getDatasetR()->printPartitions();
-                // } else if (datasetIndex == DATASET_S) {
-                //     // printf("Loaded dataset S %s. Objects:\n", g_config.datasetOptions.getDatasetS()->nickname.c_str());
-                //     // g_config.datasetOptions.getDatasetS()->printObjectsGeometries();
-                //     // g_config.datasetOptions.getDatasetS()->printObjectsPartitions();
-                // }
-            }
-EXIT_SAFELY:
-            // respond
-            if (ret == DBERR_OK) {
-                // send ACK back that all data for this dataset has been received and processed successfully
-                ret = send::sendResponse(PARENT_RANK, MSG_ACK, g_agent_comm);
-                if (ret != DBERR_OK) {
-                    logger::log_error(ret, "Send ACK failed.");
-                }
-            } else {
-                // there was an error, send NACK and propagate error code locally
-                DB_STATUS errorCode = ret;
-                ret = send::sendResponse(PARENT_RANK, MSG_NACK, g_agent_comm);
-                if (ret != DBERR_OK) {
-                    logger::log_error(ret, "Send NACK failed.");
-                    return ret;
-                }
-                return errorCode;
-            }
-            return ret;
-        }
+//         static DB_STATUS handleLoadDatasetsMessage(MPI_Status status) {
+//             SerializedMsg<char> msg(MPI_CHAR);
+//             std::vector<std::string> nicknames;
+//             // receive the message
+//             DB_STATUS ret = recv::receiveMessage(status, msg.type, g_agent_comm, msg);
+//             if (ret != DBERR_OK) {
+//                 goto EXIT_SAFELY;
+//             }
+//             {
+//                 // message received
+//                 // create empty dataset;
+//                 Dataset dataset;
+//                 DatasetIndex datasetIndex;
+//                 // unpack metadata and store
+//                 ret = unpack::unpackDatasetLoadMsg(msg, dataset, datasetIndex);
+//                 if (ret != DBERR_OK) {
+//                     goto EXIT_SAFELY;
+//                 }
+//                 // free memory
+//                 free(msg.data);
+//                 // generate partition file path from dataset nickname
+//                 ret = storage::generatePartitionFilePath(dataset);
+//                 if (ret != DBERR_OK) {
+//                     goto EXIT_SAFELY;
+//                 }
+//                 // add the EMPTY dataset to the configuration
+//                 ret = g_config.datasetOptions.addDataset(datasetIndex, dataset);
+//                 if (ret != DBERR_OK) {
+//                     logger::log_error(ret, "Failed to add dataset to configuration. Dataset nickname:", dataset.metadata.internalID, "dataset index:", datasetIndex);
+//                     goto EXIT_SAFELY;
+//                 }
+//                 // get the dataset's reference
+//                 Dataset *datasetRef;
+//                 ret = g_config.datasetOptions.getDatasetByIdx(datasetIndex, &datasetRef);
+//                 if (datasetRef == nullptr) {
+//                     return DBERR_NULL_PTR_EXCEPTION;
+//                 }
+//                 // load partition file (and create MBRs)
+//                 ret = storage::reader::partitionFile::loadDatasetComplete(datasetRef);
+//                 if (ret != DBERR_OK) {
+//                     logger::log_error(DBERR_DISK_READ_FAILED, "Failed loading partition file MBRs");
+//                     goto EXIT_SAFELY;
+//                 }  
+//                 // // dont forget to update the dataspace metadata of the configuration
+//                 // g_config.datasetOptions.updateDataspace();
+//                 // // verification prints
+//                 // if (datasetIndex == DATASET_R) {
+//                 //     printf("Loaded dataset R %s:\n", g_config.datasetOptions.getDatasetR()->nickname.c_str());
+//                 //     // g_config.datasetOptions.getDatasetR()->printObjectsGeometries();
+//                 //     // g_config.datasetOptions.getDatasetR()->printObjectsPartitions();
+//                 //     g_config.datasetOptions.getDatasetR()->printPartitions();
+//                 // } else if (datasetIndex == DATASET_S) {
+//                 //     // printf("Loaded dataset S %s. Objects:\n", g_config.datasetOptions.getDatasetS()->nickname.c_str());
+//                 //     // g_config.datasetOptions.getDatasetS()->printObjectsGeometries();
+//                 //     // g_config.datasetOptions.getDatasetS()->printObjectsPartitions();
+//                 // }
+//             }
+// EXIT_SAFELY:
+//             // respond
+//             if (ret == DBERR_OK) {
+//                 // send ACK back that all data for this dataset has been received and processed successfully
+//                 ret = send::sendResponse(PARENT_RANK, MSG_ACK, g_agent_comm);
+//                 if (ret != DBERR_OK) {
+//                     logger::log_error(ret, "Send ACK failed.");
+//                 }
+//             } else {
+//                 // there was an error, send NACK and propagate error code locally
+//                 DB_STATUS errorCode = ret;
+//                 ret = send::sendResponse(PARENT_RANK, MSG_NACK, g_agent_comm);
+//                 if (ret != DBERR_OK) {
+//                     logger::log_error(ret, "Send NACK failed.");
+//                     return ret;
+//                 }
+//                 return errorCode;
+//             }
+//             return ret;
+//         }
 
         static DB_STATUS handleLoadAPRILMessage(MPI_Status status) {
             SerializedMsg<int> msg(MPI_INT);
@@ -588,7 +545,6 @@ EXIT_SAFELY:
             if (ret != DBERR_OK) {
                 return ret;
             }
-            // this should not happen in the controller
             // deserialize message
             DatasetMetadata datasetMetadata;
             datasetMetadata.deserialize(msg.data, msg.count);
@@ -618,6 +574,48 @@ EXIT_SAFELY:
             return ret;
         }
 
+        static DB_STATUS handlePartitionDatasetMessage(MPI_Status &status) {
+            SerializedMsg<int> msg(MPI_INT);
+            // receive the message
+            DB_STATUS ret = recv::receiveMessage(status, msg.type, g_agent_comm, msg);
+            if (ret != DBERR_OK) {
+                return ret;
+            }
+            // unpack
+            std::vector<int> datasetIndexes;
+            ret = unpack::unpackIntegers(msg, datasetIndexes);
+            if (ret != DBERR_OK) {
+                logger::log_error(ret, "Failed to unpack dataset indexes.");
+                return ret;
+            }
+            
+            // free message memory
+            free(msg.data);
+
+            for (auto &index : datasetIndexes) {
+                // start listening for partitioning messages (batches)
+                ret = listenForDatasetPartitioning((DatasetIndex)index);
+                if (ret != DBERR_OK) {
+                    // there was an error, send NACK and propagate error code locally
+                    DB_STATUS errorCode = ret;
+                    ret = send::sendResponse(PARENT_RANK, MSG_NACK, g_agent_comm);
+                    if (ret != DBERR_OK) {
+                        logger::log_error(ret, "Send NACK failed.");
+                        return ret;
+                    }
+                    return errorCode;
+                } 
+            }
+
+            // send ACK back that all data for this dataset has been received and processed successfully
+            ret = send::sendResponse(PARENT_RANK, MSG_ACK, g_agent_comm);
+            if (ret != DBERR_OK) {
+                logger::log_error(ret, "Send ACK failed.");
+            }
+
+            return ret;
+        }
+
         /**
         @brief pulls incoming message sent by the local controller 
          * (the one probed last, whose metadata is stored in the status parameter)
@@ -641,6 +639,12 @@ EXIT_SAFELY:
                     break;
                 case MSG_DATASET_METADATA:
                     ret = handleDatasetMetadataMessage(status);
+                    if (ret != DBERR_OK) {
+                        return ret;
+                    }
+                    break;
+                case MSG_PARTITION_DATASET:
+                    ret = handlePartitionDatasetMessage(status);
                     if (ret != DBERR_OK) {
                         return ret;
                     }
@@ -974,34 +978,20 @@ STOP_LISTENING:
             return ret;
         }
 
-        static DB_STATUS listenForDatasetPartitioning(MPI_Status status) {
-            // proble blockingly for the dataset metadata
-            DB_STATUS ret = probe(HOST_LOCAL_RANK, MPI_ANY_TAG,g_controller_comm, status);
-            if (ret != DBERR_OK) {
-                return ret;
-            }
-            // verify that it is the proper message
-            if (status.MPI_TAG != MSG_DATASET_METADATA) {
-                logger::log_error(DBERR_COMM_WRONG_MESSAGE_ORDER, "Partitioning: Expected dataset metadata message but received message with tag", status.MPI_TAG);
-                return DBERR_COMM_WRONG_MESSAGE_ORDER;
-            }
-            // forward dataset metadata to agent
+        static DB_STATUS listenForDatasetPartitioning() {
+            DB_STATUS ret = DBERR_OK;
+            MPI_Status status;
             int listen = 1;
-            ret = forwardDatasetMetadataToAgent(status);
-            if (ret != DBERR_OK) {
-                return ret;
-            }
-            // next, listen for the metadataPacks and coordPacks explicitly
             while(listen) {
                 // proble blockingly
-                ret = probe(HOST_LOCAL_RANK, MPI_ANY_TAG,g_controller_comm, status);
+                ret = probe(HOST_LOCAL_RANK, MPI_ANY_TAG, g_controller_comm, status);
                 if (ret != DBERR_OK) {
                     return ret;
                 }
                 // a message has been probed, check its tag
                 switch (status.MPI_TAG) {
                     case MSG_INSTR_FIN:
-                        /* stop listening for instructions */
+                        /* stop listening  */
                         ret = recv::receiveInstructionMessage(PARENT_RANK, status.MPI_TAG, g_agent_comm, status);
                         if (ret == DBERR_OK) {
                             // break the listening loop
@@ -1022,13 +1012,6 @@ STOP_LISTENING:
                         return DBERR_COMM_WRONG_MESSAGE_ORDER;
                 }
             }
-
-            // wait for response by the agent that all is well for this dataset partitioning
-            ret = waitForResponse();
-            if (ret != DBERR_OK) {
-                return ret;
-            }
-            // todo: maybe do something on nack?
             return ret;
         }
 
@@ -1062,6 +1045,38 @@ STOP_LISTENING:
             return ret;
         }
 
+        static DB_STATUS handlePartitionDatasetMessage(MPI_Status &status) {
+            SerializedMsg<int> msg(MPI_INT);
+            // receive the message
+            DB_STATUS ret = recv::receiveMessage(status, msg.type, g_controller_comm, msg);
+            if (ret != DBERR_OK) {
+                return ret;
+            }
+            logger::log_success("Received");
+            // forward to local agent
+            ret = send::sendMessage(msg, AGENT_RANK, status.MPI_TAG, g_agent_comm);
+            if (ret != DBERR_OK) {
+                logger::log_error(ret, "Failed forwarding message to agent");
+                return ret;
+            }
+            // free message memory
+            free(msg.data);
+
+            // start listening for partitioning messages (batches)
+            ret = listenForDatasetPartitioning();
+            if (ret != DBERR_OK) {
+                return ret;
+            }
+            
+            // wait for response by agent and forward it to the host controller when it arrives
+            ret = waitForResponse();
+            if (ret != DBERR_OK) {
+                logger::log_error(ret, "Partitioning failed.");
+                return ret;
+            }
+            return ret;
+        }
+
         /**
         @brief pulls incoming message sent by the host controller 
          * (the one probed last, whose metadata is stored in the status parameter)
@@ -1086,6 +1101,13 @@ STOP_LISTENING:
                     ret = handleDatasetMetadataMessage(status);
                     if (ret != DBERR_OK) {
                         logger::log_error(ret, "Handling dataset metadata message failed.");
+                        return ret;
+                    }
+                    break;
+                case MSG_PARTITION_DATASET:
+                    ret = handlePartitionDatasetMessage(status);
+                    if (ret != DBERR_OK) {
+                        logger::log_error(ret, "Failed while handling partition dataset message.");
                         return ret;
                     }
                     break;
@@ -1322,8 +1344,8 @@ STOP_LISTENING:
                 // check response
                 if (status.MPI_TAG != MSG_ACK) {
                     #pragma omp cancel parallel
-                    logger::log_error(DBERR_PARTITIONING_FAILED, "Node", status.MPI_SOURCE, "finished with error");
-                    ret = DBERR_PARTITIONING_FAILED;
+                    logger::log_error(DBERR_OPERATION_FAILED, "Node", status.MPI_SOURCE, "finished with error");
+                    ret = DBERR_OPERATION_FAILED;
                 }
             }
 
@@ -1332,7 +1354,7 @@ STOP_LISTENING:
 
         static DB_STATUS handleQueryResultMessage(MPI_Status &status, MPI_Comm &comm, QueryType queryType, QueryOutput &queryOutput) {
             DB_STATUS ret = DBERR_OK;
-            SerializedMsg<int> msg;
+            SerializedMsg<int> msg(MPI_INT);
             // receive the serialized message
             ret = recv::receiveMessage(status, MPI_INT, comm, msg);
             if (ret != DBERR_OK) {
@@ -1464,6 +1486,21 @@ STOP_LISTENING:
                     }
                 }
             }
+
+            // deserialize message
+            DatasetMetadata datasetMetadata;
+            datasetMetadata.deserialize(msg.data, msg.count);
+            // add the dataset structure to the config
+            Dataset dataset(datasetMetadata);
+            ret = g_config.datasetOptions.addDataset(dataset);
+            if (ret != DBERR_OK) {
+                logger::log_error(ret, "Failed to add dataset to config options.");
+                return ret;
+            }
+
+            // free memory
+            free(msg.data);
+
             // wait for response from agent with the dataset ID
             SerializedMsg<int> msgToDriver(MPI_INT);
             // probe
@@ -1481,6 +1518,95 @@ STOP_LISTENING:
 
             // send the dataset ID to the driver
             ret = comm::send::sendMessage(msgToDriver, DRIVER_GLOBAL_RANK, MSG_DATASET_INDEX, g_global_intra_comm);
+            if (ret != DBERR_OK) {
+                logger::log_error(ret, "Failed sending indexes message to driver.");
+                return ret;
+            }
+            // free memory
+            free(msgToDriver.data);
+            return ret;
+        }
+
+        static DB_STATUS handlePartitionDatasetMessage(MPI_Status &status) {
+            SerializedMsg<int> msg(MPI_INT);
+            // receive the message
+            DB_STATUS ret = recv::receiveMessage(status, msg.type, g_global_intra_comm, msg);
+            if (ret != DBERR_OK) {
+                return ret;
+            }
+            
+            // unpack the indexes of the datasets to partition
+            std::vector<int> datasetIndexes;
+            ret = unpack::unpackIntegers(msg, datasetIndexes);
+            if (ret != DBERR_OK) {
+                logger::log_error(ret, "Failed to unpack dataset indexes.");
+                return ret;
+            }
+
+            // free memory
+            free(msg.data);
+
+            // first, get the global dataspace from the datasets
+            for (auto &index: datasetIndexes) {
+                ret = storage::reader::calculateDatasetMetadata(g_config.datasetOptions.getDatasetByIdx(index));
+                if (ret != DBERR_OK) {
+                    return ret;
+                }
+            }
+            // update dataspace
+            g_config.datasetOptions.updateDataspace();
+
+            // update the grids' dataspace metadata in the partitioning object 
+            g_config.partitioningMethod->setDistGridDataspace(g_config.datasetOptions.dataspaceMetadata);
+            g_config.partitioningMethod->setPartGridDataspace(g_config.datasetOptions.dataspaceMetadata);
+
+            // perform the partitioning for each dataset in the message
+            for (auto &index : datasetIndexes) {
+                // signal the begining of the partitioning
+                SerializedMsg<int> signal(MPI_INT);
+                // pack
+                ret = pack::packIntegers(signal, index);
+                if (ret != DBERR_OK) {
+                    logger::log_error(ret, "Packing partitioning init message failed.");
+                    return ret;
+                }
+                // send signal to agent + workers
+                ret = send::sendMessage(signal, AGENT_RANK, MSG_PARTITION_DATASET, g_agent_comm);
+                if (ret != DBERR_OK) {
+                    logger::log_error(ret, "Failed sending partition init message. Dataset index: ", index);
+                    return ret;
+                }
+                // send to controllers
+                #pragma omp parallel
+                {
+                    DB_STATUS local_ret = DBERR_OK;
+                    #pragma omp for
+                    for (int i=0; i<g_world_size; i++) {
+                        if (i != HOST_LOCAL_RANK) {
+                            // send to controllers
+                            local_ret = send::sendMessage(signal, i, MSG_PARTITION_DATASET, g_controller_comm);
+                            if (ret != DBERR_OK) {
+                                #pragma omp cancel for
+                                logger::log_error(DBERR_COMM_SEND, "Failed forwarding message to controller", i);
+                                ret = local_ret;
+                            }
+                        }
+                    }
+                }
+                // get dataset to partition
+                Dataset* dataset = g_config.datasetOptions.getDatasetByIdx(index);
+                // partition the data
+                ret = partitioning::partitionDataset(dataset);
+                if (ret != DBERR_OK) {
+                    logger::log_error(ret, "Failed while partitioning dataset with index", index);
+                    return ret;
+                }
+                // free memory
+                free(signal.data);
+            }
+
+            // send ACK to the driver
+            ret = comm::send::sendResponse(DRIVER_GLOBAL_RANK, MSG_ACK, g_global_intra_comm);
             if (ret != DBERR_OK) {
                 logger::log_error(ret, "Failed sending indexes message to driver.");
                 return ret;
@@ -1506,6 +1632,14 @@ STOP_LISTENING:
                     ret = handleDatasetMetadataMessage(status);
                     if (ret != DBERR_OK) {
                         logger::log_error(ret, "Failed while handling dataset metadata message.");
+                        return ret;
+                    }
+                    break;
+                case MSG_PARTITION_DATASET:
+                    /** initiate partitioning */
+                    ret = handlePartitionDatasetMessage(status);
+                    if (ret != DBERR_OK) {
+                        logger::log_error(ret, "Failed while handling partition dataset message.");
                         return ret;
                     }
                     break;

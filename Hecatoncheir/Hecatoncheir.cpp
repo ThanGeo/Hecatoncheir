@@ -121,10 +121,6 @@ static DB_STATUS terminate() {
     return DBERR_OK;
 }
 
-static DB_STATUS initiateDataPartitioning(std::vector<hec::DatasetID> &datasets) {
-
-}
-
 namespace hec {
     int init(int numProcs, const std::vector<std::string> &hosts){
         DB_STATUS ret = DBERR_OK;
@@ -239,10 +235,7 @@ namespace hec {
         metadata.fileType = (FileType) fileType;
         metadata.dataType = (DataType) dataType;
         metadata.dataspaceMetadata.boundsSet = true;
-        metadata.dataspaceMetadata.xMinGlobal = xMin;
-        metadata.dataspaceMetadata.yMinGlobal = yMin;
-        metadata.dataspaceMetadata.xMaxGlobal = xMax;
-        metadata.dataspaceMetadata.yMaxGlobal = yMax;
+        metadata.dataspaceMetadata.set(xMin, yMin, xMax, yMax);
         DB_STATUS ret = metadata.serialize(&msg.data, msg.count);
         if (ret != DBERR_OK) {
             logger::log_error(ret, "Metadata serialization failed.");
@@ -283,21 +276,28 @@ namespace hec {
         return indexes[0];
     }
 
-    int partitionDataset(DatasetID &dataset) {
-        std::vector<DatasetID> vec = {dataset};
-        DB_STATUS ret = initiateDataPartitioning(vec);
+    int partitionDataset(std::vector<DatasetID> datasetIndexes) {
+        SerializedMsg<int> msg(MPI_INT);
+        DB_STATUS ret = pack::packIntegers(msg, datasetIndexes);
         if (ret != DBERR_OK) {
+            logger::log_error(ret, "Packing dataset indexes failed.");
             return -1;
         }
-        return 0;
-    }
+        // send message to Host Controller to initiate the partitioning for the datasets indexes contained in the message
+        ret = comm::send::sendMessage(msg, HOST_CONTROLLER, MSG_PARTITION_DATASET, g_global_intra_comm);
+        if (ret != DBERR_OK) {
+            logger::log_error(ret, "Sending dataset metadata message failed.");
+            return -1;
+        }
 
-    int partitionDataset(DatasetID &datasetR, DatasetID &datasetS) {
-        std::vector<DatasetID> vec = {datasetR, datasetS};
-        DB_STATUS ret = initiateDataPartitioning(vec);
+        // wait for ACK
+        MPI_Status status;
+        ret = waitForResponse();
         if (ret != DBERR_OK) {
+            logger::log_error(ret, "Partitioning finished with errors.");
             return -1;
-        }
+        }        
+        
         return 0;
     }
 }

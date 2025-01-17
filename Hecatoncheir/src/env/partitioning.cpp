@@ -332,7 +332,7 @@ namespace partitioning
                         object.setMBR(xMin, yMin, xMax, yMax);
                         // assign to appropriate batches
                         local_ret = assignObjectToBatches(object, batchMap, batchesSent);
-                        if (ret != DBERR_OK) {
+                        if (local_ret != DBERR_OK) {
                             #pragma omp cancel parallel
                             ret = local_ret;
                             break;
@@ -407,7 +407,7 @@ namespace partitioning
             std::string line;
             // count total objects (lines)
             size_t totalObjects = 0;
-            ret = storage::countLinesInFile(dataset->metadata.path, totalObjects);
+            ret = storage::reader::getDatasetLineCount(dataset, totalObjects);
             if (ret != DBERR_OK) {
                 return ret;
             }
@@ -582,7 +582,7 @@ namespace partitioning
                             object.setMBR();
                             // assign to appropriate batches
                             local_ret = assignObjectToBatches(object, batchMap, batchesSent);
-                            if (ret != DBERR_OK) {
+                            if (local_ret != DBERR_OK) {
                                 #pragma omp cancel parallel
                                 ret = local_ret;
                                 break;
@@ -625,7 +625,7 @@ namespace partitioning
             if (ret != DBERR_OK) {
                 return ret;
             }
-            logger::log_success("Partitioned", totalValidObjects, "valid objects");
+            // logger::log_success("Partitioned", totalValidObjects, "valid objects");
             // send an empty pack to each worker to signal the end of the partitioning for this dataset
             for (int i=0; i<g_world_size; i++) {
                 // fetch batch (it is guaranteed to be empty)
@@ -646,10 +646,14 @@ namespace partitioning
     }
 
     DB_STATUS partitionDataset(Dataset *dataset) {
-        double startTime;
+        if (dataset == nullptr) {
+            logger::log_error(DBERR_NULL_PTR_EXCEPTION, "Dataset pointer is null");
+            return DBERR_NULL_PTR_EXCEPTION;
+        }
+        // double startTime;
         DB_STATUS ret;
         // time
-        startTime = mpi_timer::markTime();
+        // startTime = mpi_timer::markTime();
         switch (dataset->metadata.fileType) {
             // perform the partitioning
             case FT_CSV:
@@ -668,7 +672,6 @@ namespace partitioning
                     return ret;
                 }
                 break;
-            case FT_BINARY:
             default:
                 logger::log_error(DBERR_FEATURE_UNSUPPORTED, "Unsupported data file type:", dataset->metadata.fileType);
                 break;
@@ -679,7 +682,7 @@ namespace partitioning
         if (ret != DBERR_OK) {
             return ret;
         }
-        logger::log_success("Partitioning for dataset", dataset->metadata.internalID, "finished in", mpi_timer::getElapsedTime(startTime), "seconds.");
+        // logger::log_success("Partitioning for dataset", dataset->metadata.internalID, "finished in", mpi_timer::getElapsedTime(startTime), "seconds.");
                 
         return DBERR_OK;
     }
@@ -921,5 +924,4 @@ namespace partitioning
         }
         return ret;
     }
-        
 }

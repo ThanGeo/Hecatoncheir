@@ -22,7 +22,54 @@ namespace pack
             std::cout << std::endl;
         }
     }
-    
+
+    // Base function to calculate total size (terminates recursion)
+    inline int calculateCountINT() {
+        return 0;
+    }
+
+    // Variadic function to calculate the total size of integers
+    template <typename... Args>
+    int calculateCountINT(int first, Args... rest) {
+        return 1 + calculateCountINT(rest...);
+    }
+
+    // Base function to add integers to the buffer (terminates recursion)
+    inline void addToBuffer(int*&) {}
+
+    // Variadic function to add integers to the buffer
+    template <typename... Args>
+    void addToBuffer(int*& buffer, int first, Args... rest) {
+        *reinterpret_cast<int*>(buffer) = first; // Add the first integer
+        buffer += 1;                            // Move to the next position
+        addToBuffer(buffer, rest...);           // Recur for remaining integers
+    }
+
+    // The new method
+    template <typename... Args>
+    DB_STATUS packIntegers(SerializedMsg<int>& msg, Args... integers) {
+        // Calculate the total size of all integers
+        int count = calculateCountINT(integers...);
+        // Allocate memory for the message
+        msg.count = count;
+        msg.data = (int*)malloc(msg.count * sizeof(int));
+        if (msg.data == NULL) {
+            // malloc failed
+            logger::log_error(DBERR_MALLOC_FAILED, "Malloc for pack dataset integers failed");
+            return DBERR_MALLOC_FAILED;
+        }
+
+        int* localBuffer = msg.data;
+
+        // Add the integers to the buffer
+        addToBuffer(localBuffer, integers...);
+
+        return DBERR_OK;
+    }
+
+    /** @brief Packs a vector of integers into a serialized message */
+    DB_STATUS packIntegers(SerializedMsg<int>& msg, std::vector<int> integers);
+
     /** @brief Packs necessary system metadata for broadcast like number of partitions, system setup type etc. */
     DB_STATUS packSystemMetadata(SerializedMsg<char> &sysMetadataMsg);
 
@@ -53,6 +100,9 @@ namespace pack
 /** @brief Methos that unpack serialized messages and extract their contents, based on message type. */
 namespace unpack
 {   
+    /** @brief Unpacks a message containg integers to the given vector. The integer count is stored in the message count. */
+    DB_STATUS unpackIntegers(SerializedMsg<int> &integersMsg, std::vector<int> &integers);
+
     /** @brief Unpacks a system metadata serialized message. */
     DB_STATUS unpackSystemMetadata(SerializedMsg<char> &sysMetadataMsg);
 

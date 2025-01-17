@@ -1252,13 +1252,17 @@ struct Section {
  * @param xExtent, yExtent, maxExtent The dataspace's extent.
  */
 struct DataspaceMetadata {
-    double xMinGlobal, yMinGlobal, xMaxGlobal, yMaxGlobal;  // global bounds based on dataset bounds
+    double xMinGlobal = std::numeric_limits<int>::max();
+    double yMinGlobal = std::numeric_limits<int>::max();
+    double xMaxGlobal = -std::numeric_limits<int>::max();
+    double yMaxGlobal = -std::numeric_limits<int>::max();  
     double xExtent, yExtent, maxExtent;
     bool boundsSet = false;
 
     DataspaceMetadata();
     void set(double xMinGlobal, double yMinGlobal, double xMaxGlobal, double yMaxGlobal);
     void clear();
+    void print();
 };
 
 /** @brief Holds all necessary partition information. 
@@ -1327,7 +1331,7 @@ public:
     DataType dataType;
     FileType fileType;
     std::string path;
-     // derived from the path @todo to remove
+    // derived from the path
     std::string datasetName;
     // holds the dataset's dataspace metadata (MBR, extent)
     DataspaceMetadata dataspaceMetadata;
@@ -1366,6 +1370,7 @@ struct Dataset{
             metadata.dataspaceMetadata.yExtent = metadata.dataspaceMetadata.yMaxGlobal - metadata.dataspaceMetadata.yMinGlobal;
             metadata.dataspaceMetadata.maxExtent = std::max(metadata.dataspaceMetadata.xExtent, metadata.dataspaceMetadata.yExtent);
         }
+        metadata.datasetName = getFileNameFromPath(metadata.path);
         this->metadata = metadata;
     }        
 
@@ -1420,15 +1425,9 @@ struct DirectoryPaths {
     std::string resourceDirPath = "Hecatoncheir/resources/"; 
     std::string configFilePath = resourceDirPath + std::string("config_cluster.ini");
     const std::string datasetsConfigPath = resourceDirPath + std::string("datasets.ini");
-    std::string dataPath = std::string("data/");
+    std::string dataPath = PROJECT_SOURCE_DIR + std::string("/Hecatoncheir/data/");
     std::string partitionsPath = dataPath + std::string("partitions/");
     std::string approximationPath = dataPath + std::string("approximations/");
-
-    void setNodeDataDirectories(std::string &dataPath) {
-        this->dataPath = dataPath;
-        this->partitionsPath = dataPath + "partitions/";
-        this->approximationPath = dataPath + "approximations/";
-    }
 };
 
 /** @brief Base class for the partitioning methods (abstract class). */
@@ -1637,7 +1636,7 @@ public:
     std::unordered_map<DatasetIndex, Dataset> datasets;
     DataspaceMetadata dataspaceMetadata;
     
-    Dataset* getDatasetByNickname(std::string &nickname);
+    // Dataset* getDatasetByNickname(std::string &nickname);
 
     int getNumberOfDatasets();
 
@@ -1647,8 +1646,8 @@ public:
 
     Dataset* getDatasetS();
 
-    Dataset* getDatasetByIdx(DatasetIndex datasetIndex);
-    DB_STATUS getDatasetByIdx(DatasetIndex datasetIndex, Dataset **datasetRef);
+    Dataset* getDatasetByIdx(int datasetIndex);
+    DB_STATUS getDatasetByIdx(int datasetIndex, Dataset **datasetRef);
 
     /**
     @brief adds a Dataset to the configuration's dataset metadata

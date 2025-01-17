@@ -199,10 +199,6 @@ namespace parser
     }
 
     static DB_STATUS parsePartitioningOptions() {
-        // set node directory paths
-        std::string dataDirPath = system_config_pt.get<std::string>("Partitioning.path");
-        g_config.dirPaths.setNodeDataDirectories(dataDirPath);
-
         // batch size
         int batchSize = system_config_pt.get<int>("Partitioning.batchSize");
         if (batchSize <= 0) {

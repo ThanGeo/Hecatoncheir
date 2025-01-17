@@ -15,9 +15,7 @@ namespace statement
     }
 
     DB_STATUS getFiletype(std::string &filetypeStr, FileType &filetype) {
-        if (filetypeStr == "BINARY") {
-            filetype = FT_BINARY;
-        } else if (filetypeStr == "CSV") {
+        if (filetypeStr == "CSV") {
             filetype = FT_CSV;
         } else if (filetypeStr == "WKT") {
             filetype = FT_WKT;

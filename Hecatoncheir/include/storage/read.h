@@ -10,6 +10,13 @@ namespace storage
     /** @brief Methods for loading data from disk. */
     namespace reader
     {
+        /** @brief Uses mmap to count the total lines in a file (regardless of file type). */
+        DB_STATUS getDatasetLineCount(Dataset* dataset, size_t &totalLines);
+
+        /** @brief Calculate the metadata for the input dataset. 
+         * The dataset's path, file type and data type must be set already in the object. */
+        DB_STATUS calculateDatasetMetadata(Dataset* dataset);
+
         /** @brief Methods for the partitioned data loading. */
         namespace partitionFile
         {

@@ -24,26 +24,22 @@ static std::vector<std::string> read_hostfile(const std::string& hostfile) {
 }
 
 int main(int argc, char* argv[]) {
-    std::string datasetFullPathR = "/home/hec/thanasis/Hecatoncheir/Hecatoncheir/data/T1.wkt";
-    std::string datasetFullPathS = "/home/hec/thanasis/Hecatoncheir/Hecatoncheir/data/T2.wkt";
+    std::string datasetFullPathR = "/home/hec/thanasis/Hecatoncheir/Hecatoncheir/datasets/T1.wkt";
+    std::string datasetFullPathS = "/home/hec/thanasis/Hecatoncheir/Hecatoncheir/datasets/T2.wkt";
+    // std::vector<std::string> hosts = {"node1:1", "node2:1"};
+    std::vector<std::string> hosts = {"node1:1"};
 
     // Initialize Hecatoncheir. Must use this method before any other calls to the framework.
-    std::vector<std::string> hosts = {"node1:1", "node2:1"};
-    hec::init(2, hosts);
-    // std::vector<std::string> hosts = {"node1:1"};
-    // hec::init(1, hosts);
+    hec::init(hosts.size(), hosts);
 
     // prepare datasets
-    hec::DatasetID datasetRID = hec::prepareDataset(datasetFullPathR, hec::WKT, hec::POLYGON, 420, 69, 42000, 690);
+    hec::DatasetID datasetRID = hec::prepareDataset(datasetFullPathR, hec::WKT, hec::POLYGON);
     hec::DatasetID datasetSID = hec::prepareDataset(datasetFullPathS, hec::WKT, hec::POLYGON);
-    printf("Dataset ids: %d and %d\n", datasetRID, datasetSID);
-
-    // Prepare/Analyze: Hecatoncheir must first analyze the dataset(s) to determine its metadata
-    // bounding boxes etc. This must be done for all datasets that will participate together in a query
+    // printf("Dataset ids: %d and %d\n", datasetRID, datasetSID);
 
     // partition datasets
-    // hec::partitionDataset(datasetFullPathR, hec::WKT, hec::POLYGON);
-    // hec::partitionDataset(datasetFullPathS, hec::WKT, hec::POLYGON);
+    hec::partitionDataset({datasetRID, datasetSID});
+    
     
     // run query
 

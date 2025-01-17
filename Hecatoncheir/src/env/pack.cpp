@@ -2,8 +2,31 @@
 
 namespace pack
 {
+    DB_STATUS packIntegers(SerializedMsg<int>& msg, std::vector<int> integers) {
+        // Calculate the total size of all integers
+        int count = integers.size();
+        // Allocate memory for the message
+        msg.count = count;
+        msg.data = (int*)malloc(msg.count * sizeof(int));
+        if (msg.data == NULL) {
+            // malloc failed
+            logger::log_error(DBERR_MALLOC_FAILED, "Malloc for pack dataset integers failed");
+            return DBERR_MALLOC_FAILED;
+        }
+
+        int* localBuffer = msg.data;
+
+        // Add the integers to the buffer
+        for (auto &integer : integers) {
+            *reinterpret_cast<int*>(localBuffer) = integer;
+            localBuffer += 1;    
+        }
+
+        return DBERR_OK;
+    }
+
     DB_STATUS packDatasetIndexes(std::vector<int> indexes, SerializedMsg<int> &msg) {
-        msg.count = sizeof(int) + indexes.size() * sizeof(int);
+        msg.count = 1 + indexes.size();
         msg.data = (int*) malloc(msg.count * sizeof(int));
         if (msg.data == NULL) {
             // malloc failed
@@ -195,6 +218,14 @@ namespace pack
 
 namespace unpack
 {
+    DB_STATUS unpackIntegers(SerializedMsg<int> &integersMsg, std::vector<int> &integers) {
+        integers.reserve(integersMsg.count);
+        for (int i=0; i<integersMsg.count; i++) {
+            integers.push_back(integersMsg.data[i]);
+        }
+        return DBERR_OK;
+    }
+
     DB_STATUS unpackSystemMetadata(SerializedMsg<char> &sysMetadataMsg) {
         PartitioningType partitioningType;
         int partPartitionsPerDim, distPartitionsPerDim;
@@ -228,7 +259,6 @@ namespace unpack
         localBuffer += sizeof(int);
         std::string datapath(localBuffer, localBuffer + length);
         localBuffer += length * sizeof(char);
-        g_config.dirPaths.setNodeDataDirectories(datapath);
         // pipeline
         g_config.queryMetadata.MBRFilter = *reinterpret_cast<const int*>(localBuffer);
         localBuffer += sizeof(int);

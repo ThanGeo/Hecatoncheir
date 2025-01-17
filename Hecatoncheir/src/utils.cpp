@@ -43,7 +43,9 @@ namespace hilbert
         }
     }
 }
-
+/**
+ * @todo: add the utils methods in a utils namespace
+ */
 DB_STATUS verifyFilepath(std::string filePath) {
     if (FILE *file = fopen(filePath.c_str(), "r")) {
         fclose(file);
@@ -248,9 +250,8 @@ namespace mapping
         return (DataType)(-1);
     }
 
-    FileType fileTypeTextToInt(std::string str) {
-        if (str.compare("BINARY") == 0) return FT_BINARY;
-        else if (str.compare("CSV") == 0) return FT_CSV;
+    FileType fileTypeTextToInt(std::string str) {        
+        if (str.compare("CSV") == 0) return FT_CSV;
         else if (str.compare("WKT") == 0) return FT_WKT;
 
         return (FileType)(-1);

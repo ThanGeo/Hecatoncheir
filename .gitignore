@@ -1,6 +1,8 @@
 build/
-Hecatoncheir/data/
+Hecatoncheir/datasets/
 .vscode/
 hostfile
 run.sh
 *.txt
+*.btr
+data/

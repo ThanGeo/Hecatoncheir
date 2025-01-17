@@ -9,6 +9,8 @@
 #include <boost/geometry/geometries/linestring.hpp>
 #include <boost/geometry/geometries/box.hpp>
 
+#include "config_pub.h"
+
 /** @typedef bg_point_xy @brief boost geometry point definition. */
 typedef boost::geometry::model::d2::point_xy<double> bg_point_xy;
 /** @typedef bg_linestring @brief boost geometry linestring definition. */
@@ -90,6 +92,7 @@ enum DB_STATUS {
     DBERR_INVALID_FILE_PATH = DBBASE + 1016,
     DBERR_DIR_NOT_EXIST = DBBASE + 1017,
     DBERR_OPEN_DIR_FAILED = DBBASE + 1018,
+    DBERR_OPERATION_FAILED = DBBASE + 1019,
 
     // comm
     DBERR_COMM_RECV = DBBASE + 2000,
@@ -135,7 +138,6 @@ enum DatasetIndex {
 
 /** @enum FileType @brief Data file types. */
 enum FileType {
-    FT_BINARY,
     FT_CSV,
     FT_WKT,
 };
