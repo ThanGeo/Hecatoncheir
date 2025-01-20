@@ -277,7 +277,7 @@ namespace hec {
         return indexes[0];
     }
 
-    int partitionDataset(std::vector<DatasetID> datasetIndexes) {
+    int partition(std::vector<DatasetID> datasetIndexes) {
         SerializedMsg<int> msg(MPI_INT);
         DB_STATUS ret = pack::packIntegers(msg, datasetIndexes);
         if (ret != DBERR_OK) {
@@ -287,7 +287,7 @@ namespace hec {
         // send message to Host Controller to initiate the partitioning for the datasets indexes contained in the message
         ret = comm::send::sendMessage(msg, HOST_CONTROLLER, MSG_PARTITION_DATASET, g_global_intra_comm);
         if (ret != DBERR_OK) {
-            logger::log_error(ret, "Sending dataset metadata message failed.");
+            logger::log_error(ret, "Sending dataset partition message failed.");
             return -1;
         }
 
@@ -299,6 +299,31 @@ namespace hec {
             return -1;
         }        
         logger::log_success("Partitioned datasets.");
+        return 0;
+    }
+
+    int load(std::vector<DatasetID> datasetIndexes) {
+        SerializedMsg<int> msg(MPI_INT);
+        DB_STATUS ret = pack::packIntegers(msg, datasetIndexes);
+        if (ret != DBERR_OK) {
+            logger::log_error(ret, "Packing dataset indexes failed.");
+            return -1;
+        }
+        // send message to Host Controller to initiate the loading for the datasets indexes contained in the message
+        ret = comm::send::sendMessage(msg, HOST_CONTROLLER, MSG_LOAD_DATASET, g_global_intra_comm);
+        if (ret != DBERR_OK) {
+            logger::log_error(ret, "Sending dataset load message failed.");
+            return -1;
+        }
+
+        // wait for ACK
+        MPI_Status status;
+        ret = waitForResponse();
+        if (ret != DBERR_OK) {
+            logger::log_error(ret, "Loading finished with errors.");
+            return -1;
+        }        
+        logger::log_success("Loaded datasets.");
         return 0;
     }
 }

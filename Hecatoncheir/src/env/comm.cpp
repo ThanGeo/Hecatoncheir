@@ -662,6 +662,49 @@ EXIT_SAFELY:
             return ret;
         }
 
+        static DB_STATUS handleLoadDatasetMessage(MPI_Status &status) {
+            SerializedMsg<int> msg(MPI_INT);
+            // receive the message
+            DB_STATUS ret = recv::receiveMessage(status, msg.type, g_agent_comm, msg);
+            if (ret != DBERR_OK) {
+                return ret;
+            }
+            // unpack
+            std::vector<int> datasetIndexes;
+            ret = unpack::unpackIntegers(msg, datasetIndexes);
+            if (ret != DBERR_OK) {
+                logger::log_error(ret, "Failed to unpack dataset indexes.");
+                return ret;
+            }
+            
+            // free message memory
+            free(msg.data);
+
+            for (auto &index : datasetIndexes) {
+                // get dataset container
+                Dataset* dataset = g_config.datasetOptions.getDatasetByIdx(index);
+                if (dataset == nullptr) {
+                    logger::log_error(DBERR_NULL_PTR_EXCEPTION, "The dataset with id", index, "does not exist or has not been prepared by the system.");
+                    return DBERR_NULL_PTR_EXCEPTION;
+                }
+                // load dataset
+                ret = storage::reader::partitionFile::loadDatasetComplete(dataset);
+                if (ret != DBERR_OK) {
+                    logger::log_error(DBERR_DISK_READ_FAILED, "Failed loading partition file MBRs");
+                    return ret;
+                }  
+                
+            }
+
+            // send ACK back that the datasets has been loaded successfully
+            ret = send::sendResponse(PARENT_RANK, MSG_ACK, g_agent_comm);
+            if (ret != DBERR_OK) {
+                logger::log_error(ret, "Send ACK failed.");
+            }
+
+            return ret;
+        }
+
         /**
         @brief pulls incoming message sent by the local controller 
          * (the one probed last, whose metadata is stored in the status parameter)
@@ -691,6 +734,13 @@ EXIT_SAFELY:
                     break;
                 case MSG_PARTITION_DATASET:
                     ret = handlePartitionDatasetMessage(status);
+                    if (ret != DBERR_OK) {
+                        return ret;
+                    }
+                    break;
+                
+                case MSG_LOAD_DATASET:
+                    ret = handleLoadDatasetMessage(status);
                     if (ret != DBERR_OK) {
                         return ret;
                     }
@@ -1122,6 +1172,31 @@ STOP_LISTENING:
             return ret;
         }
 
+        static DB_STATUS handleLoadDatasetMessage(MPI_Status &status) {
+            SerializedMsg<int> msg(MPI_INT);
+            // receive the message
+            DB_STATUS ret = recv::receiveMessage(status, msg.type, g_controller_comm, msg);
+            if (ret != DBERR_OK) {
+                return ret;
+            }
+            // forward to local agent
+            ret = send::sendMessage(msg, AGENT_RANK, status.MPI_TAG, g_agent_comm);
+            if (ret != DBERR_OK) {
+                logger::log_error(ret, "Failed forwarding message to agent");
+                return ret;
+            }
+            // free message memory
+            free(msg.data);
+
+            // wait for response by agent and forward it to the host controller when it arrives
+            ret = waitForResponse();
+            if (ret != DBERR_OK) {
+                logger::log_error(ret, "Partitioning failed.");
+                return ret;
+            }
+            return ret;
+        }
+
         /**
         @brief pulls incoming message sent by the host controller 
          * (the one probed last, whose metadata is stored in the status parameter)
@@ -1153,6 +1228,13 @@ STOP_LISTENING:
                     ret = handlePartitionDatasetMessage(status);
                     if (ret != DBERR_OK) {
                         logger::log_error(ret, "Failed while handling partition dataset message.");
+                        return ret;
+                    }
+                    break;
+                case MSG_LOAD_DATASET:
+                    ret = handleLoadDatasetMessage(status);
+                    if (ret != DBERR_OK) {
+                        logger::log_error(ret, "Failed while handling load dataset message.");
                         return ret;
                     }
                     break;
@@ -1253,43 +1335,6 @@ STOP_LISTENING:
 
         namespace forward 
         {
-            /** @brief Receives and forwards a message to all controlers and the local agent */
-            template <typename T> 
-            static DB_STATUS forwardMessage(SerializedMsg<T> msg, MPI_Status &status) {
-                // receive the message
-                DB_STATUS ret = recv::receiveMessage(status, msg.type, g_global_intra_comm, msg);
-                if (ret != DBERR_OK) {
-                    return ret;
-                }
-                // forward to local agent
-                ret = send::sendMessage(msg, AGENT_RANK, status.MPI_TAG, g_agent_comm);
-                if (ret != DBERR_OK) {
-                    logger::log_error(ret, "Failed forwarding message to agent");
-                    return ret;
-                }
-                // send to controllers
-                #pragma omp parallel
-                {
-                    DB_STATUS local_ret = DBERR_OK;
-                    #pragma omp for
-                    for (int i=0; i<g_world_size; i++) {
-                        if (i != HOST_LOCAL_RANK) {
-                            // send to controllers
-                            local_ret = send::sendMessage(msg, i, status.MPI_TAG, g_controller_comm);
-                            if (ret != DBERR_OK) {
-                                #pragma omp cancel for
-                                logger::log_error(DBERR_COMM_SEND, "Failed forwarding message to controller", i);
-                                ret = local_ret;
-                            }
-                        }
-                    }
-                }
-                // free memory
-                free(msg.data);
-                
-                return ret;
-            }
-
             /** @brief received an already probed message from the driver and forwards it to the other controllers and the local agent */
             static DB_STATUS forwardInstructionMessage(int sourceTag) {
                 MPI_Status status;
@@ -1326,29 +1371,8 @@ STOP_LISTENING:
             }
         }
 
-        DB_STATUS broadcastDatasetMetadata(Dataset* dataset) {
-            // SerializedMsg<char> msgPack(MPI_CHAR);
-            // // serialize
-            // DB_STATUS ret = dataset->serialize(&msgPack.data, msgPack.count);
-            // if (ret == DBERR_MALLOC_FAILED) {
-            //     logger::log_error(DBERR_MALLOC_FAILED, "Dataset serialization failed");
-            //     return DBERR_MALLOC_FAILED;
-            // }
-            // // broadcast the pack
-            // ret = broadcast::broadcastMessage(msgPack, MSG_DATASET_METADATA);
-            // if (ret != DBERR_OK) {
-            //     logger::log_error(ret, "Failed to broadcast dataset metadata");
-            //     return ret;
-            // }
-            // // free
-            // free(msgPack.data);
-            // return ret;
-            return DBERR_FEATURE_UNSUPPORTED;
-        }
-        
         DB_STATUS gatherResponses() {
             DB_STATUS ret = DBERR_OK;
-
             // use threads to parallelize gathering of responses
             #pragma omp parallel num_threads(g_world_size)
             {
@@ -1373,19 +1397,18 @@ STOP_LISTENING:
                     }
                 } else {
                     // wait for workers' responses (each thread with id X receives from worker with rank X)
-                    local_ret = probe(tid, MPI_ANY_TAG,g_controller_comm, status);
+                    local_ret = probe(tid, MPI_ANY_TAG, g_controller_comm, status);
                     if (local_ret != DBERR_OK) {
                         #pragma omp cancel parallel
                         ret = local_ret;
                     }
                     // receive response
-                    local_ret = recv::receiveResponse(status.MPI_SOURCE, status.MPI_TAG,g_controller_comm, status);
+                    local_ret = recv::receiveResponse(status.MPI_SOURCE, status.MPI_TAG, g_controller_comm, status);
                     if (local_ret != DBERR_OK) {
                         #pragma omp cancel parallel
                         ret = local_ret;
                     }
                 }
-
                 // check response
                 if (status.MPI_TAG != MSG_ACK) {
                     #pragma omp cancel parallel
@@ -1574,6 +1597,7 @@ STOP_LISTENING:
 
         static DB_STATUS handlePartitionDatasetMessage(MPI_Status &status) {
             SerializedMsg<int> msg(MPI_INT);
+            std::vector<int> datasetIndexes;
             // receive the message
             DB_STATUS ret = recv::receiveMessage(status, msg.type, g_global_intra_comm, msg);
             if (ret != DBERR_OK) {
@@ -1581,7 +1605,6 @@ STOP_LISTENING:
             }
             
             // unpack the indexes of the datasets to partition
-            std::vector<int> datasetIndexes;
             ret = unpack::unpackIntegers(msg, datasetIndexes);
             if (ret != DBERR_OK) {
                 logger::log_error(ret, "Failed to unpack dataset indexes.");
@@ -1638,6 +1661,10 @@ STOP_LISTENING:
                         }
                     }
                 }
+                if (ret != DBERR_OK) {
+                    // parallel region failed
+                    return ret;
+                }
                 // get dataset to partition
                 Dataset* dataset = g_config.datasetOptions.getDatasetByIdx(index);
                 // partition the data
@@ -1646,8 +1673,92 @@ STOP_LISTENING:
                     logger::log_error(ret, "Failed while partitioning dataset with index", index);
                     return ret;
                 }
+                // wait for acks
+                ret = gatherResponses();
+                if (ret != DBERR_OK) {
+                    logger::log_error(ret, "Not all nodes finished successfully.");
+                    return ret;
+                }
+
                 // free memory
                 free(signal.data);
+            }
+
+            // send ACK to the driver
+            ret = comm::send::sendResponse(DRIVER_GLOBAL_RANK, MSG_ACK, g_global_intra_comm);
+            if (ret != DBERR_OK) {
+                logger::log_error(ret, "Failed sending indexes message to driver.");
+                return ret;
+            }
+            return ret;
+        }
+
+        static DB_STATUS handleLoadDatasetMessage(MPI_Status &status) {
+            SerializedMsg<int> msg(MPI_INT);
+            // receive the message
+            DB_STATUS ret = recv::receiveMessage(status, msg.type, g_global_intra_comm, msg);
+            if (ret != DBERR_OK) {
+                return ret;
+            }
+            
+            // unpack the indexes of the datasets to load
+            std::vector<int> datasetIndexes;
+            ret = unpack::unpackIntegers(msg, datasetIndexes);
+            if (ret != DBERR_OK) {
+                logger::log_error(ret, "Failed to unpack dataset indexes.");
+                return ret;
+            }
+
+            // free memory
+            free(msg.data);
+
+            // notify the controllers and the local agent to load each dataset in the message
+            for (auto &index : datasetIndexes) {
+                // signal the begining of the partitioning
+                SerializedMsg<int> signal(MPI_INT);
+                // pack
+                ret = pack::packIntegers(signal, index);
+                if (ret != DBERR_OK) {
+                    logger::log_error(ret, "Packing partitioning init message failed.");
+                    return ret;
+                }
+                // send signal to agent
+                ret = send::sendMessage(signal, AGENT_RANK, MSG_LOAD_DATASET, g_agent_comm);
+                if (ret != DBERR_OK) {
+                    logger::log_error(ret, "Failed sending partition init message. Dataset index: ", index);
+                    return ret;
+                }
+                // send to controllers
+                #pragma omp parallel
+                {
+                    DB_STATUS local_ret = DBERR_OK;
+                    #pragma omp for
+                    for (int i=0; i<g_world_size; i++) {
+                        if (i != HOST_LOCAL_RANK) {
+                            // send to controllers
+                            local_ret = send::sendMessage(signal, i, MSG_LOAD_DATASET, g_controller_comm);
+                            if (ret != DBERR_OK) {
+                                #pragma omp cancel for
+                                logger::log_error(DBERR_COMM_SEND, "Failed forwarding message to controller", i);
+                                ret = local_ret;
+                            }
+                        }
+                    }
+                }
+                if (ret != DBERR_OK) {
+                    // parallel region failed
+                    logger::log_error(ret, "Parallel send failed.");
+                    return ret;
+                }
+                // free memory
+                free(signal.data);
+            }
+
+            // wait for ACK from everyone
+            ret = gatherResponses();
+            if (ret != DBERR_OK) {
+                logger::log_error(ret, "Not all nodes finished successfully.");
+                return ret;
             }
 
             // send ACK to the driver
@@ -1685,6 +1796,15 @@ STOP_LISTENING:
                     ret = handlePartitionDatasetMessage(status);
                     if (ret != DBERR_OK) {
                         logger::log_error(ret, "Failed while handling partition dataset message.");
+                        return ret;
+                    }
+                    break;
+                
+                case MSG_LOAD_DATASET:
+                    /** initiate dataset loading */
+                    ret = handleLoadDatasetMessage(status);
+                    if (ret != DBERR_OK) {
+                        logger::log_error(ret, "Failed while handling load dataset message.");
                         return ret;
                     }
                     break;

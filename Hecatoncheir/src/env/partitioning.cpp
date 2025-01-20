@@ -677,13 +677,7 @@ namespace partitioning
                 break;
         }
 
-        // wait for response by workers+agent that all is ok
-        ret = comm::host::gatherResponses();
-        if (ret != DBERR_OK) {
-            return ret;
-        }
-        // logger::log_success("Partitioning for dataset", dataset->metadata.internalID, "finished in", mpi_timer::getElapsedTime(startTime), "seconds.");
-                
+        // logger::log_success("Partitioning for dataset", dataset->metadata.internalID, "finished in", mpi_timer::getElapsedTime(startTime), "seconds.");                
         return DBERR_OK;
     }
 

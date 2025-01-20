@@ -38,11 +38,15 @@ int main(int argc, char* argv[]) {
     // printf("Dataset ids: %d and %d\n", datasetRID, datasetSID);
 
     // partition datasets
-    hec::partitionDataset({datasetRID, datasetSID});
+    hec::partition({datasetRID, datasetSID});
     // todo: when the user prepares/partitions the data, 
     // 1) does it have to be brought in memory too at that time?
     // 2) should i implement another command that loads the dataset on demand?
     // 3) should it be loaded for the query?
+
+
+    // load datasets
+    hec::load({datasetRID, datasetSID});
     
     // run query
 
