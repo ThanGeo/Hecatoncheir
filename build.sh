@@ -5,24 +5,49 @@ GREEN='\033[0;32m'
 YELLOW='\e[0;33m'
 NC='\033[0m'
 
+# Default compiler paths (can be overridden via arguments or environment variables)
+DEFAULT_C_COMPILER="mpicc.mpich"
+DEFAULT_CXX_COMPILER="mpicxx.mpich"
+
+# Parse arguments for custom compilers
+while [[ "$#" -gt 0 ]]; do
+    case $1 in
+        --c-compiler) C_COMPILER="$2"; shift ;;
+        --cxx-compiler) CXX_COMPILER="$2"; shift ;;
+        *) echo -e "${RED}Unknown parameter passed: $1${NC}"; exit 1 ;;
+    esac
+    shift
+done
+
+# Use environment variables if set, otherwise fall back to defaults
+C_COMPILER=${C_COMPILER:-${DEFAULT_C_COMPILER}}
+CXX_COMPILER=${CXX_COMPILER:-${DEFAULT_CXX_COMPILER}}
+
+echo -e "-- ${GREEN}Using C compiler: ${NC}${C_COMPILER}"
+echo -e "-- ${GREEN}Using C++ compiler: ${NC}${CXX_COMPILER}"
 
 # create build directory
 mkdir -p build
 
-# build the code. It's the same for both local/cluster, but with different build types
-cd build && cmake -D CMAKE_C_COMPILER=mpicc.mpich -D CMAKE_CXX_COMPILER=mpicxx.mpich -DCMAKE_BUILD_TYPE=Release .. && cmake --build .
-# cd build && cmake -D CMAKE_C_COMPILER=mpicc.mpich -D CMAKE_CXX_COMPILER=mpicxx.mpich -DCMAKE_BUILD_TYPE=Debug .. && cmake --build .
+# Build the code
+cd build
+cmake -D CMAKE_C_COMPILER="$C_COMPILER" -D CMAKE_CXX_COMPILER="$CXX_COMPILER" -D CMAKE_BUILD_TYPE=Release ..
+cmake --build .
 cd ..
 
 # the nodes(addresses) are stored in the file "nodes"
 nodefile="nodes"
 mapfile -t NODES < "$nodefile"
+
 # get current directory in host machine
 SOURCE_DIR=$( cd "$(dirname "${BASH_SOURCE[0]}")" ; pwd -P )
+
 # directory where the code should be placed on each node
 DEST_DIR="$SOURCE_DIR"
+
 echo -e "-- ${GREEN}Host directory: ${NC}" $SOURCE_DIR
 echo -e "-- ${GREEN}Dest directory: ${NC}" $DEST_DIR
+
 # make the same directory in the nodes (if it does not exist)
 for node in "${NODES[@]}"; do
   ssh "$node" "mkdir -p '$SOURCE_DIR'"
@@ -33,19 +58,17 @@ sync_code() {
   local node=$1
   rsync -q -avz -e "ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no" --delete --exclude="data/" --exclude="Hecatoncheir/datasets/" $SOURCE_DIR/ ${node}:${DEST_DIR}/
 }
+
 # sync for each node
 echo "-- Syncing code across machines..."
 for node in "${NODES[@]}"; do
-  # sync
   sync_code $node
 done
 echo -e "-- ${GREEN}Code sync across machines complete.${NC}"
 
 # generate doxygen
 DOC_SCRIPT="documentation.sh"
-# Check if the documentation script exists and is executable
 if [ -f "$DOC_SCRIPT" ] && [ -x "$DOC_SCRIPT" ]; then
-    # execute
     ./"$DOC_SCRIPT"
 else
     echo "Error: $DOC_SCRIPT does not exist or is not executable."

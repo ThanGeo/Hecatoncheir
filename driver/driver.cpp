@@ -43,7 +43,7 @@ int main(int argc, char* argv[]) {
     // partition datasets
     auto start = std::chrono::high_resolution_clock::now();
     
-    hec::partition({datasetRID, datasetSID});
+    // hec::partition({datasetRID, datasetSID});
 
     auto end = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double> duration = end - start;

@@ -111,27 +111,6 @@ namespace pack
         return DBERR_OK;
     }
 
-    // DB_STATUS packQueryMetadata(QueryMetadata &queryMetadata, SerializedMsg<int> &queryMetadataMsg) {
-    //     queryMetadataMsg.count = 0;
-    //     queryMetadataMsg.count += 4;    // query type, MBR, intermediatefilter, refinement
-
-    //     // allocate space
-    //     queryMetadataMsg.data = (int*) malloc(queryMetadataMsg.count * sizeof(int));
-    //     if (queryMetadataMsg.data == NULL) {
-    //         // malloc failed
-    //         logger::log_error(DBERR_MALLOC_FAILED, "Malloc for query metadata failed");
-    //         return DBERR_MALLOC_FAILED;
-    //     }
-
-    //     // put objects in buffer
-    //     queryMetadataMsg.data[0] = queryMetadata.type;
-    //     queryMetadataMsg.data[1] = queryMetadata.MBRFilter;
-    //     queryMetadataMsg.data[2] = queryMetadata.IntermediateFilter;
-    //     queryMetadataMsg.data[3] = queryMetadata.Refinement;
-
-    //     return DBERR_OK;
-    // }
-
     DB_STATUS packDatasetLoadMsg(Dataset *dataset, DatasetIndex datasetIndex, SerializedMsg<char> &msg) {
         msg.count = 0;
 
@@ -154,65 +133,6 @@ namespace pack
 
         return DBERR_OK;
     }
-
-    // DB_STATUS packQueryResults(SerializedMsg<int> &msg, QueryOutput &queryOutput) {
-    //     DB_STATUS ret = DBERR_OK;
-    //     // serialize based on query type
-    //     switch (g_config.queryMetadata.type) {
-    //         case hec::Q_RANGE:
-    //         case hec::Q_DISJOINT_JOIN:
-    //         case hec::Q_INTERSECTION_JOIN:
-    //         case hec::Q_INSIDE_JOIN:
-    //         case hec::Q_CONTAINS_JOIN:
-    //         case hec::Q_COVERS_JOIN:
-    //         case hec::Q_COVERED_BY_JOIN:
-    //         case hec::Q_MEET_JOIN:
-    //         case hec::Q_EQUAL_JOIN:
-    //             // mbr results, accept, reject, inconclusive, result count
-    //             msg.count += 5;
-    //             // allocate space
-    //             msg.data = (int*) malloc(msg.count * sizeof(int));
-    //             if (msg.data == NULL) {
-    //                 // malloc failed
-    //                 logger::log_error(DBERR_MALLOC_FAILED, "Malloc for query results msg failed");
-    //                 return DBERR_MALLOC_FAILED;
-    //             }
-    //             // put objects in buffer
-    //             msg.data[0] = queryOutput.queryResults;
-    //             msg.data[1] = queryOutput.postMBRFilterCandidates;
-    //             msg.data[2] = queryOutput.trueHits;
-    //             msg.data[3] = queryOutput.trueNegatives;
-    //             msg.data[4] = queryOutput.refinementCandidates;
-    //             break;
-    //         case hec::Q_FIND_RELATION_JOIN:
-    //             // total results, mbr results, inconclusive, disjoint, intersect, inside, contains, covers, covered by, meet, equal
-    //             msg.count += 11;
-    //             // allocate space
-    //             msg.data = (int*) malloc(msg.count * sizeof(int));
-    //             if (msg.data == NULL) {
-    //                 // malloc failed
-    //                 logger::log_error(DBERR_MALLOC_FAILED, "Malloc for query results msg failed");
-    //                 return DBERR_MALLOC_FAILED;
-    //             }
-    //             // put objects in buffer
-    //             msg.data[0] = queryOutput.queryResults;
-    //             msg.data[1] = queryOutput.postMBRFilterCandidates;
-    //             msg.data[2] = queryOutput.refinementCandidates;
-    //             msg.data[3] = queryOutput.getResultForTopologyRelation(TR_DISJOINT);
-    //             msg.data[4] = queryOutput.getResultForTopologyRelation(TR_INTERSECT);
-    //             msg.data[5] = queryOutput.getResultForTopologyRelation(TR_INSIDE);
-    //             msg.data[6] = queryOutput.getResultForTopologyRelation(TR_CONTAINS);
-    //             msg.data[7] = queryOutput.getResultForTopologyRelation(TR_COVERS);
-    //             msg.data[8] = queryOutput.getResultForTopologyRelation(TR_COVERED_BY);
-    //             msg.data[9] = queryOutput.getResultForTopologyRelation(TR_MEET);
-    //             msg.data[10] = queryOutput.getResultForTopologyRelation(TR_EQUAL);
-    //             break;
-    //         default:
-    //             logger::log_error(DBERR_QUERY_INVALID_TYPE, "Invalid query type:", g_config.queryMetadata.type);
-    //             return DBERR_QUERY_INVALID_TYPE;
-    //     }
-    //     return ret;
-    // }
 
     static DB_STATUS packRangeQuery(hec::RangeQuery *query, SerializedMsg<char> &msg) {
         msg.count = 0;
@@ -385,15 +305,6 @@ namespace unpack
         return DBERR_OK;
     }
 
-    // DB_STATUS unpackQueryMetadata(SerializedMsg<int> &queryMetadataMsg) {
-    //     g_config.queryMetadata.type = (QueryType) queryMetadataMsg.data[0];
-    //     g_config.queryMetadata.MBRFilter = queryMetadataMsg.data[1];
-    //     g_config.queryMetadata.IntermediateFilter = queryMetadataMsg.data[2];
-    //     g_config.queryMetadata.Refinement = queryMetadataMsg.data[3];
-        
-    //     return DBERR_OK;
-    // }
-
     DB_STATUS unpackDatasetIndexes(SerializedMsg<int> &msg, std::vector<int> &datasetIndexes) {
         int count = msg.data[0];
         datasetIndexes.clear();
@@ -403,45 +314,6 @@ namespace unpack
         }
         return DBERR_OK;
     }
-
-    // DB_STATUS unpackQueryResults(SerializedMsg<int> &queryResultsMsg, hec::QueryType queryType, QueryOutput &queryOutput) {
-    //     // total results and mbr results is common
-    //     queryOutput.queryResults = queryResultsMsg.data[0];   
-    //     queryOutput.postMBRFilterCandidates = queryResultsMsg.data[1];    
-    //     // unpack based on query type
-    //     switch (queryType) {
-    //         case hec::Q_RANGE:
-    //         case hec::Q_DISJOINT_JOIN:
-    //         case hec::Q_INTERSECTION_JOIN:
-    //         case hec::Q_INSIDE_JOIN:
-    //         case hec::Q_CONTAINS_JOIN:
-    //         case hec::Q_COVERS_JOIN:
-    //         case hec::Q_COVERED_BY_JOIN:
-    //         case hec::Q_MEET_JOIN:
-    //         case hec::Q_EQUAL_JOIN:
-    //             // accept, reject, inconclusive, result count
-    //             queryOutput.trueHits = queryResultsMsg.data[2];
-    //             queryOutput.trueNegatives = queryResultsMsg.data[3];
-    //             queryOutput.refinementCandidates = queryResultsMsg.data[4];
-    //             break;
-    //         case hec::Q_FIND_RELATION_JOIN:
-    //             // inconclusive, disjoint, intersect, inside, contains, covers, covered by, meet, equal
-    //             queryOutput.refinementCandidates = queryResultsMsg.data[2];
-    //             queryOutput.setTopologyRelationResult(TR_DISJOINT, queryResultsMsg.data[3]);
-    //             queryOutput.setTopologyRelationResult(TR_INTERSECT, queryResultsMsg.data[4]);
-    //             queryOutput.setTopologyRelationResult(TR_INSIDE, queryResultsMsg.data[5]);
-    //             queryOutput.setTopologyRelationResult(TR_CONTAINS, queryResultsMsg.data[6]);
-    //             queryOutput.setTopologyRelationResult(TR_COVERS, queryResultsMsg.data[7]);
-    //             queryOutput.setTopologyRelationResult(TR_COVERED_BY, queryResultsMsg.data[8]);
-    //             queryOutput.setTopologyRelationResult(TR_MEET, queryResultsMsg.data[9]);
-    //             queryOutput.setTopologyRelationResult(TR_EQUAL, queryResultsMsg.data[10]);
-    //             break;
-    //         default:
-    //             logger::log_error(DBERR_QUERY_INVALID_TYPE, "Invalid query type:", g_config.queryMetadata.type);
-    //             return DBERR_QUERY_INVALID_TYPE;
-    //     }
-    //     return DBERR_OK;
-    // }
 
     DB_STATUS unpackDatasetsNicknames(SerializedMsg<char> &msg, std::vector<std::string> &nicknames) {
         char *localBuffer = msg.data;

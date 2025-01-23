@@ -231,10 +231,10 @@ namespace parser
                 logger::log_error(DBERR_INVALID_PARAMETER, "TWOGRID: Distribution grid's ppd should be at least as many as the number of nodes. ppdNum: ", ppdNum);
                 return DBERR_INVALID_PARAMETER;
             } 
-            if (ppdNum / dgppdNum < g_world_size) {
-                logger::log_error(DBERR_INVALID_PARAMETER, "TWOGRID: Partitioning grid's ppd divided by the distribution grid's ppd should be at least as many as the number of nodes. ppdNum / dgppdNum =", ppdNum / dgppdNum);
-                return DBERR_INVALID_PARAMETER;
-            }
+            // if (ppdNum / dgppdNum < g_world_size) {
+            //     logger::log_error(DBERR_INVALID_PARAMETER, "TWOGRID: Partitioning grid's ppd divided by the distribution grid's ppd should be at least as many as the number of nodes. ppdNum / dgppdNum =", ppdNum / dgppdNum);
+            //     return DBERR_INVALID_PARAMETER;
+            // }
             ppdNum = ppdNum / dgppdNum;
             // create the two grid partitioning method object into the configuration.
             g_config.partitioningMethod = new TwoGridPartitioning(partitioningType, batchSize, dgppdNum, ppdNum);

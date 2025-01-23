@@ -1197,31 +1197,6 @@ namespace shape_factory
     DB_STATUS createEmpty(DataType dataType, Shape &object);
 }
 
-/**
- * @brief Holds all the query result related information.
- */
-// struct QueryOutput {
-//     hec::QueryResult *queryResult;
-
-//     QueryOutput(hec::QueryResultType type);
-
-//     void countAPRILresult(int result);
-//     void countResult();
-//     void countMBRresult();
-//     void countRefinementCandidate();
-//     void countTopologyRelationResult(int result);
-//     int getResultForTopologyRelation(TopologyRelation relation);
-//     void setTopologyRelationResult(int relation, int result);
-//     /**
-//     @brief copies the contents of the 'other' query output object into this struct
-//      */
-//     void shallowCopy(QueryOutput &other);
-// };
-// /** @brief The main query output global variable used by the host controller to store the results. */
-// extern QueryOutput g_queryOutput;
-
-
-
 /** @brief Holds information about sections, i.e. APRIL partitions.
  */
 struct Section {

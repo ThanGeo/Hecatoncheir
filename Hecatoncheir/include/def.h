@@ -9,6 +9,8 @@
 #include <boost/geometry/geometries/linestring.hpp>
 #include <boost/geometry/geometries/box.hpp>
 
+#include <omp.h>
+
 #include "config_pub.h"
 
 /** @typedef bg_point_xy @brief boost geometry point definition. */
@@ -44,6 +46,8 @@ extern int g_world_size;
 extern int g_node_rank;
 extern int g_global_rank;
 extern int g_parent_original_rank;
+
+extern int MAX_THREADS;
 
 enum PROCESS_TYPE {
     DRIVER,

@@ -397,227 +397,6 @@ STOP_LISTENING:
             return ret;
         }
 
-        // static DB_STATUS handleAPRILMetadataMessage(MPI_Status status) {
-        //     SerializedMsg<int> msg(MPI_INT);
-        //     // receive the message
-        //     DB_STATUS ret = recv::receiveMessage(status, msg.type, g_agent_comm, msg);
-        //     if (ret != DBERR_OK) {
-        //         return ret;
-        //     }
-        //     // unpack metadata and store
-        //     ret = unpack::unpackAPRILMetadata(msg);
-        //     if (ret != DBERR_OK) {
-        //         return ret;
-        //     }
-        //     // free memory
-        //     free(msg.data);
-
-        //     // create the APRIL approximations for the dataset(s)
-        //     for (auto& it: g_config.datasetOptions.datasets) {
-        //         // ret = APRIL::generation::disk::init(it.second);
-        //         ret = APRIL::generation::memory::init(it.second);
-        //         if (ret != DBERR_OK) {
-        //             logger::log_error(ret, "Failed to generate APRIL for dataset", it.second.metadata.internalID);
-        //         }
-        //     }
-        //     if (ret == DBERR_OK) {
-        //         // send ACK back that all data for this dataset has been received and processed successfully
-        //         ret = send::sendResponse(PARENT_RANK, MSG_ACK, g_agent_comm);
-        //         if (ret != DBERR_OK) {
-        //             logger::log_error(ret, "Send ACK failed.");
-        //         }
-        //     } else {
-        //         // there was an error, send NACK and propagate error code locally
-        //         DB_STATUS errorCode = ret;
-        //         ret = send::sendResponse(PARENT_RANK, MSG_NACK, g_agent_comm);
-        //         if (ret != DBERR_OK) {
-        //             logger::log_error(ret, "Send NACK failed.");
-        //             return ret;
-        //         }
-        //         return errorCode;
-        //     }
-        //     return ret;
-        // }
-
-        // static DB_STATUS respondWithQueryResults(QueryOutput &queryOutput) {
-        //     // serialize results
-        //     SerializedMsg<int> msg(MPI_INT);
-        //     DB_STATUS ret = pack::packQueryResults(msg, queryOutput);
-        //     if (ret != DBERR_OK) {
-        //         logger::log_error(ret, "Serializing query output failed");
-        //         return ret;
-        //     }
-        //     // send to local controller
-        //     ret = send::sendMessage(msg, PARENT_RANK, MSG_QUERY_RESULT, g_agent_comm);
-        //     if (ret != DBERR_OK) {
-        //         logger::log_error(ret, "Send query results failed");
-        //         return ret;
-        //     }
-        //     return ret;
-        // }
-
-        // static DB_STATUS handleQueryMetadataMessage(MPI_Status status) {
-        //     SerializedMsg<int> msg(MPI_INT);
-        //     // receive the message
-        //     DB_STATUS ret = recv::receiveMessage(status, msg.type, g_agent_comm, msg);
-        //     if (ret != DBERR_OK) {
-        //         return ret;
-        //     }
-        //     // unpack metadata and store
-        //     ret = unpack::unpackQueryMetadata(msg);
-        //     if (ret != DBERR_OK) {
-        //         return ret;
-        //     }
-        //     // free memory
-        //     free(msg.data);
-        //     QueryOutput queryOutput;
-        //     // execute
-        //     ret = twolayer::processQuery(queryOutput);
-        //     if (ret != DBERR_OK) {
-        //         logger::log_error(ret, "Processing query failed.");
-        //         return ret;
-        //     }
-        //     // send the result to the local controller
-        //     ret = respondWithQueryResults(queryOutput);
-        //     if (ret != DBERR_OK) {
-        //         logger::log_error(ret, "Responding with query results failed.");
-        //         return ret;
-        //     }
-        //     return ret;
-        // }
-
-//         static DB_STATUS handleLoadDatasetsMessage(MPI_Status status) {
-//             SerializedMsg<char> msg(MPI_CHAR);
-//             std::vector<std::string> nicknames;
-//             // receive the message
-//             DB_STATUS ret = recv::receiveMessage(status, msg.type, g_agent_comm, msg);
-//             if (ret != DBERR_OK) {
-//                 goto EXIT_SAFELY;
-//             }
-//             {
-//                 // message received
-//                 // create empty dataset;
-//                 Dataset dataset;
-//                 DatasetIndex datasetIndex;
-//                 // unpack metadata and store
-//                 ret = unpack::unpackDatasetLoadMsg(msg, dataset, datasetIndex);
-//                 if (ret != DBERR_OK) {
-//                     goto EXIT_SAFELY;
-//                 }
-//                 // free memory
-//                 free(msg.data);
-//                 // generate partition file path from dataset nickname
-//                 ret = storage::generatePartitionFilePath(dataset);
-//                 if (ret != DBERR_OK) {
-//                     goto EXIT_SAFELY;
-//                 }
-//                 // add the EMPTY dataset to the configuration
-//                 ret = g_config.datasetOptions.addDataset(datasetIndex, dataset);
-//                 if (ret != DBERR_OK) {
-//                     logger::log_error(ret, "Failed to add dataset to configuration. Dataset nickname:", dataset.metadata.internalID, "dataset index:", datasetIndex);
-//                     goto EXIT_SAFELY;
-//                 }
-//                 // get the dataset's reference
-//                 Dataset *datasetRef;
-//                 ret = g_config.datasetOptions.getDatasetByIdx(datasetIndex, &datasetRef);
-//                 if (datasetRef == nullptr) {
-//                     return DBERR_NULL_PTR_EXCEPTION;
-//                 }
-//                 // load partition file (and create MBRs)
-//                 ret = storage::reader::partitionFile::loadDatasetComplete(datasetRef);
-//                 if (ret != DBERR_OK) {
-//                     logger::log_error(DBERR_DISK_READ_FAILED, "Failed loading partition file MBRs");
-//                     goto EXIT_SAFELY;
-//                 }  
-//                 // // dont forget to update the dataspace metadata of the configuration
-//                 // g_config.datasetOptions.updateDataspace();
-//                 // // verification prints
-//                 // if (datasetIndex == DATASET_R) {
-//                 //     printf("Loaded dataset R %s:\n", g_config.datasetOptions.getDatasetR()->nickname.c_str());
-//                 //     // g_config.datasetOptions.getDatasetR()->printObjectsGeometries();
-//                 //     // g_config.datasetOptions.getDatasetR()->printObjectsPartitions();
-//                 //     g_config.datasetOptions.getDatasetR()->printPartitions();
-//                 // } else if (datasetIndex == DATASET_S) {
-//                 //     // printf("Loaded dataset S %s. Objects:\n", g_config.datasetOptions.getDatasetS()->nickname.c_str());
-//                 //     // g_config.datasetOptions.getDatasetS()->printObjectsGeometries();
-//                 //     // g_config.datasetOptions.getDatasetS()->printObjectsPartitions();
-//                 // }
-//             }
-// EXIT_SAFELY:
-//             // respond
-//             if (ret == DBERR_OK) {
-//                 // send ACK back that all data for this dataset has been received and processed successfully
-//                 ret = send::sendResponse(PARENT_RANK, MSG_ACK, g_agent_comm);
-//                 if (ret != DBERR_OK) {
-//                     logger::log_error(ret, "Send ACK failed.");
-//                 }
-//             } else {
-//                 // there was an error, send NACK and propagate error code locally
-//                 DB_STATUS errorCode = ret;
-//                 ret = send::sendResponse(PARENT_RANK, MSG_NACK, g_agent_comm);
-//                 if (ret != DBERR_OK) {
-//                     logger::log_error(ret, "Send NACK failed.");
-//                     return ret;
-//                 }
-//                 return errorCode;
-//             }
-//             return ret;
-//         }
-
-//         static DB_STATUS handleLoadAPRILMessage(MPI_Status status) {
-//             SerializedMsg<int> msg(MPI_INT);
-//             // receive the message
-//             DB_STATUS ret = recv::receiveMessage(status, msg.type, g_agent_comm, msg);
-//             if (ret != DBERR_OK) {
-//                 goto EXIT_SAFELY;
-//             }
-//             // unpack metadata and store
-//             ret = unpack::unpackAPRILMetadata(msg);
-//             if (ret != DBERR_OK) {
-//                 goto EXIT_SAFELY;
-//             }
-//             // free memory
-//             free(msg.data);
-            
-//             // load APRIL for each dataset
-//             for (auto &it: g_config.datasetOptions.datasets) {
-//                 // logger::log_task("APRIL metadata: N =", dataset.aprilConfig.getN(), "compression = ", dataset.aprilConfig.compression, "partitions = ", dataset.aprilConfig.partitions);
-//                 // set approximation type for dataset
-//                 it.second.approxType = AT_APRIL;
-//                 // generate APRIL filepaths
-//                 ret = storage::generateAPRILFilePath(&it.second);
-//                 if (ret != DBERR_OK) {
-//                     goto EXIT_SAFELY;
-//                 }
-//                 // load
-//                 ret = APRIL::reader::loadAPRIL(it.second);
-//                 if (ret != DBERR_OK) {
-//                     logger::log_error(DBERR_DISK_READ_FAILED, "Failed loading APRIL");
-//                     goto EXIT_SAFELY;
-//                 }
-//             }
-// EXIT_SAFELY:
-//             // respond
-//             if (ret == DBERR_OK) {
-//                 // send ACK back that all data for this dataset has been received and processed successfully
-//                 ret = send::sendResponse(PARENT_RANK, MSG_ACK, g_agent_comm);
-//                 if (ret != DBERR_OK) {
-//                     logger::log_error(ret, "Send ACK failed.");
-//                 }
-//             } else {
-//                 // there was an error, send NACK and propagate error code locally
-//                 DB_STATUS errorCode = ret;
-//                 ret = send::sendResponse(PARENT_RANK, MSG_NACK, g_agent_comm);
-//                 if (ret != DBERR_OK) {
-//                     logger::log_error(ret, "Send NACK failed.");
-//                     return ret;
-//                 }
-//                 return errorCode;
-//             }
-
-//             return ret;
-//         }
-
         static DB_STATUS handleDatasetMetadataMessage(MPI_Status &status) {
             SerializedMsg<char> msg(MPI_CHAR);
             // receive the message
@@ -1165,32 +944,6 @@ STOP_LISTENING:
             return ret;
         }
 
-        /**
-        @brief Pulls and forwards a dataset metadata message to the local agent
-         * 
-         * @param status 
-         * @return DB_STATUS 
-         */
-        // static DB_STATUS forwardDatasetMetadataToAgent(MPI_Status status) {
-        //     DB_STATUS ret = DBERR_OK;
-        //     int tag = status.MPI_TAG;
-        //     SerializedMsg<char> datasetMetadataMsg(MPI_CHAR);
-        //     // receive dataset metadata message
-        //     ret = recv::receiveMessage(status, datasetMetadataMsg.type,g_controller_comm, datasetMetadataMsg);
-        //     if (ret != DBERR_OK) {
-        //         logger::log_error(ret, "Failed pulling the dataset metadata message");
-        //         return ret;
-        //     }
-        //     // send
-        //     ret = send::sendDatasetMetadataMessage(datasetMetadataMsg, AGENT_RANK, status.MPI_TAG, g_agent_comm);
-        //     if (ret != DBERR_OK) {
-        //         return ret;
-        //     } 
-        //     // free temp memory
-        //     free(datasetMetadataMsg.data);
-        //     return ret;
-        // }
-
         static DB_STATUS listenForDatasetPartitioning() {
             DB_STATUS ret = DBERR_OK;
             MPI_Status status;
@@ -1493,7 +1246,8 @@ STOP_LISTENING:
                 }
                 
                 // send to controllers
-                #pragma omp parallel num_threads(g_world_size)
+                int threadsToSpawn = std::min(g_world_size, MAX_THREADS);
+                #pragma omp parallel num_threads(threadsToSpawn)
                 {
                     DB_STATUS local_ret = DBERR_OK;
                     #pragma omp for
@@ -1523,7 +1277,8 @@ STOP_LISTENING:
         DB_STATUS gatherResponses() {
             DB_STATUS ret = DBERR_OK;
             // use threads to parallelize gathering of responses
-            #pragma omp parallel num_threads(g_world_size)
+            int threadsToSpawn = std::min(g_world_size, MAX_THREADS);
+            #pragma omp parallel num_threads(threadsToSpawn)
             {
                 DB_STATUS local_ret = DBERR_OK;
                 int messageFound = 0;
@@ -1569,110 +1324,6 @@ STOP_LISTENING:
             return ret;
         }
 
-        // static DB_STATUS handleQueryResultMessage(MPI_Status &status, MPI_Comm &comm, hec::QueryType queryType, QueryOutput &queryOutput) {
-        //     DB_STATUS ret = DBERR_OK;
-        //     SerializedMsg<int> msg(MPI_INT);
-        //     // receive the serialized message
-        //     ret = recv::receiveMessage(status, MPI_INT, comm, msg);
-        //     if (ret != DBERR_OK) {
-        //         logger::log_error(ret, "Error receiving query result message");
-        //         return ret;
-        //     }
-        //     // unpack
-        //     ret = unpack::unpackQueryResults(msg, queryType, queryOutput);
-        //     if (ret != DBERR_OK) {
-        //         logger::log_error(ret, "Error unpacking query results message");
-        //         return ret;
-        //     }
-        //     return ret;
-        // }
-
-        // DB_STATUS gatherResults() {
-        //     DB_STATUS ret = DBERR_OK;
-        //     int threadThatFailed = -1;
-        //     QueryOutput queryOutput;
-        //     // use threads to parallelize gathering of results
-        //     #pragma omp parallel num_threads(g_world_size) num_threads(g_world_size) reduction(query_output_reduction:queryOutput)
-        //     {
-        //         DB_STATUS local_ret = DBERR_OK;
-        //         int messageFound = 0;
-        //         MPI_Status status;
-        //         int tid = omp_get_thread_num();
-        //         QueryOutput localQueryOutput;
-
-        //         // probe for results
-        //         if (tid == 0) {
-        //             // wait for agent's results
-        //             local_ret = probe(AGENT_RANK, MPI_ANY_TAG, g_agent_comm, status);
-        //             if (local_ret != DBERR_OK) {
-        //                 #pragma omp cancel parallel
-        //                 threadThatFailed = tid;
-        //                 ret = local_ret;
-        //             }
-        //             // todo: check tag?
-        //             // receive results
-        //             local_ret = handleQueryResultMessage(status, g_agent_comm, g_config.queryMetadata.type, localQueryOutput);
-        //             if (local_ret != DBERR_OK) {
-        //                 #pragma omp cancel parallel
-        //                 threadThatFailed = tid;
-        //                 ret = local_ret;
-        //             }
-        //         } else {
-        //             // wait for workers' results (each thread with id X receives from worker with rank X)
-        //             local_ret = probe(tid, MPI_ANY_TAG,g_controller_comm, status);
-        //             if (local_ret != DBERR_OK) {
-        //                 #pragma omp cancel parallel
-        //                 threadThatFailed = tid;
-        //                 ret = local_ret;
-        //             }
-        //             // todo: check tag?
-        //             // receive results
-        //             local_ret = handleQueryResultMessage(status,g_controller_comm, g_config.queryMetadata.type, localQueryOutput);
-        //             if (local_ret != DBERR_OK) {
-        //                 #pragma omp cancel parallel
-        //                 threadThatFailed = tid;
-        //                 ret = local_ret;
-        //             }
-        //         }
-        //         // add localQueryOutput to reduction
-        //         queryOutput.queryResults += localQueryOutput.queryResults;
-        //         queryOutput.postMBRFilterCandidates += localQueryOutput.postMBRFilterCandidates;
-        //         queryOutput.refinementCandidates += localQueryOutput.refinementCandidates;
-        //         switch (g_config.queryMetadata.type) {
-        //             case hec::Q_RANGE:
-        //             case hec::Q_DISJOINT_JOIN:
-        //             case hec::Q_INTERSECTION_JOIN:
-        //             case hec::Q_INSIDE_JOIN:
-        //             case hec::Q_CONTAINS_JOIN:
-        //             case hec::Q_COVERS_JOIN:
-        //             case hec::Q_COVERED_BY_JOIN:
-        //             case hec::Q_MEET_JOIN:
-        //             case hec::Q_EQUAL_JOIN:
-        //                 queryOutput.trueHits += localQueryOutput.trueHits;
-        //                 queryOutput.trueNegatives += localQueryOutput.trueNegatives;
-        //                 break;
-        //             case hec::Q_FIND_RELATION_JOIN:
-        //                 for (auto &it : localQueryOutput.topologyRelationsResultMap) {
-        //                     queryOutput.topologyRelationsResultMap[it.first] += it.second;
-        //                 }
-        //                 break;
-        //             default:
-        //                 logger::log_error(DBERR_QUERY_INVALID_TYPE, "Invalid query type:", g_config.queryMetadata.type);
-        //                 threadThatFailed = tid;
-        //                 ret = DBERR_QUERY_INVALID_TYPE;
-        //                 break;
-        //         }
-        //     }
-        //     // check for errors
-        //     if (ret != DBERR_OK) {
-        //         logger::log_error(ret, "Gathering results failed. Thread responsible:", threadThatFailed);
-        //         return ret;
-        //     }
-        //     // store to the global output and return
-        //     g_queryOutput.shallowCopy(queryOutput);
-        //     return ret;
-        // }
-
         static DB_STATUS handleDatasetMetadataMessage(MPI_Status &status) {
             SerializedMsg<char> msg(MPI_CHAR);
             // receive the message
@@ -1682,7 +1333,8 @@ STOP_LISTENING:
             }
             
             // send to controllers
-            #pragma omp parallel num_threads(g_world_size)
+            int threadsToSpawn = std::min(g_world_size, MAX_THREADS);
+            #pragma omp parallel num_threads(threadsToSpawn)
             {
                 DB_STATUS local_ret = DBERR_OK;
                 #pragma omp for
@@ -1793,7 +1445,8 @@ STOP_LISTENING:
             }
 
             // send a message with the global dataspace info to all workers
-            #pragma omp parallel num_threads(g_world_size)
+            int threadsToSpawn = std::min(g_world_size, MAX_THREADS);
+            #pragma omp parallel num_threads(threadsToSpawn)
             {
                 DB_STATUS local_ret = DBERR_OK;
                 #pragma omp for
@@ -1835,7 +1488,8 @@ STOP_LISTENING:
                     return ret;
                 }
                 // send to all workers
-                #pragma omp parallel num_threads(g_world_size)
+                int threadsToSpawn = std::min(g_world_size, MAX_THREADS);
+                #pragma omp parallel num_threads(threadsToSpawn)
                 {
                     DB_STATUS local_ret = DBERR_OK;
                     #pragma omp for
@@ -1922,7 +1576,8 @@ STOP_LISTENING:
                 }
                 
                 // send to controllers
-                #pragma omp parallel num_threads(g_world_size)
+                int threadsToSpawn = std::min(g_world_size, MAX_THREADS);
+                #pragma omp parallel num_threads(threadsToSpawn)
                 {
                     DB_STATUS local_ret = DBERR_OK;
                     #pragma omp for
@@ -1973,7 +1628,8 @@ STOP_LISTENING:
         static DB_STATUS gatherResults(hec::QueryResult &totalResults) {
             DB_STATUS ret = DBERR_OK;
             // use threads to parallelize gathering of responses
-            #pragma omp parallel num_threads(g_world_size) reduction(query_output_reduction:totalResults)
+            int threadsToSpawn = std::min(g_world_size, MAX_THREADS);
+            #pragma omp parallel num_threads(threadsToSpawn) reduction(query_output_reduction:totalResults)
             {
                 DB_STATUS local_ret = DBERR_OK;
                 int messageFound = 0;
@@ -2059,7 +1715,8 @@ STOP_LISTENING:
                 return ret;
             }
             // send to workers
-            #pragma omp parallel num_threads(g_world_size)
+            int threadsToSpawn = std::min(g_world_size, MAX_THREADS);
+            #pragma omp parallel num_threads(threadsToSpawn)
             {
                 DB_STATUS local_ret = DBERR_OK;
                 #pragma omp for

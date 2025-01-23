@@ -81,8 +81,9 @@ namespace comm
         template <typename T>
         DB_STATUS broadcastMessage(SerializedMsg<T> &msg, int tag) {
             DB_STATUS ret = DBERR_OK;
+            int threadsToSpawn = std::min(g_world_size, MAX_THREADS);
             // broadcast to all other controllers parallely
-            #pragma omp parallel num_threads(g_world_size)
+            #pragma omp parallel num_threads(threadsToSpawn)
             {
                 DB_STATUS local_ret = DBERR_OK;
                 #pragma omp for

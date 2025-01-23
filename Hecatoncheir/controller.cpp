@@ -40,37 +40,6 @@ namespace controller
     }
 }
 
-// static void printResults() {
-//     logger::log_success("MBR Results:", g_queryOutput.postMBRFilterCandidates);
-//     switch (g_config.queryMetadata.type) {
-//         case hec::Q_RANGE:
-//         case hec::Q_DISJOINT_JOIN:
-//         case hec::Q_INTERSECTION_JOIN:
-//         case hec::Q_INSIDE_JOIN:
-//         case hec::Q_CONTAINS_JOIN:
-//         case hec::Q_COVERS_JOIN:
-//         case hec::Q_COVERED_BY_JOIN:
-//         case hec::Q_MEET_JOIN:
-//         case hec::Q_EQUAL_JOIN:
-//             logger::log_success("Total Results:", g_queryOutput.queryResults);
-//             logger::log_success("       Accept:", g_queryOutput.trueHits / (double) g_queryOutput.postMBRFilterCandidates * 100, "%");
-//             logger::log_success("       Reject:", g_queryOutput.trueNegatives / (double) g_queryOutput.postMBRFilterCandidates * 100, "%");
-//             logger::log_success(" Inconclusive:", g_queryOutput.refinementCandidates / (double) g_queryOutput.postMBRFilterCandidates * 100, "%");
-//             break;
-//         case hec::Q_FIND_RELATION_JOIN:
-//             logger::log_success(" Inconclusive:", g_queryOutput.refinementCandidates / (double) g_queryOutput.postMBRFilterCandidates * 100, "%");
-//             logger::log_success("     Disjoint:", g_queryOutput.topologyRelationsResultMap[TR_DISJOINT]);
-//             logger::log_success("    Intersect:", g_queryOutput.topologyRelationsResultMap[TR_INTERSECT]);
-//             logger::log_success("       Inside:", g_queryOutput.topologyRelationsResultMap[TR_INSIDE]);
-//             logger::log_success("     Contains:", g_queryOutput.topologyRelationsResultMap[TR_CONTAINS]);
-//             logger::log_success("       Covers:", g_queryOutput.topologyRelationsResultMap[TR_COVERS]);
-//             logger::log_success("   Covered by:", g_queryOutput.topologyRelationsResultMap[TR_COVERED_BY]);
-//             logger::log_success("         Meet:", g_queryOutput.topologyRelationsResultMap[TR_MEET]);
-//             logger::log_success("        Equal:", g_queryOutput.topologyRelationsResultMap[TR_EQUAL]);
-//             break;
-//     }
-// }
-
 static DB_STATUS initAPRILCreation() {
     SerializedMsg<int> aprilMetadataMsg(MPI_INT);
     // pack the APRIL metadata
@@ -97,38 +66,6 @@ static DB_STATUS initAPRILCreation() {
 
     return ret;
 }
-
-// static DB_STATUS initQueryExecution() {
-//     SerializedMsg<int> queryMetadataMsg(MPI_INT);
-//     // pack the APRIL metadata
-//     DB_STATUS ret = pack::packQueryMetadata(g_config.queryMetadata, queryMetadataMsg);
-//     if (ret != DBERR_OK) {
-//         logger::log_error(ret, "Failed to pack query metadata");
-//         return ret;
-//     }
-//     // broadcast message
-//     ret = comm::broadcast::broadcastMessage(queryMetadataMsg, MSG_QUERY_INIT);
-//     if (ret != DBERR_OK) {
-//         logger::log_error(ret, "Failed to broadcast query metadata");
-//         return ret;
-//     }
-//     // reset query outpyt
-//     g_queryOutput.reset();
-//     // measure response time
-//     double startTime;
-//     startTime = mpi_timer::markTime();
-//     // wait for results by workers+agent
-//     ret = comm::host::gatherResults();
-//     if (ret != DBERR_OK) {
-//         return ret;
-//     }
-//     logger::log_success("Query evaluated in", mpi_timer::getElapsedTime(startTime), "seconds.");
-
-//     // print results
-//     printResults();
-
-//     return DBERR_OK;
-// }
 
 /** @brief initializes (broadcasts) the load specific dataset action for the given dataset */
 static DB_STATUS initLoadDataset(Dataset *dataset, DatasetIndex datasetIndex) {
@@ -177,118 +114,6 @@ static DB_STATUS initLoadAPRIL() {
         return ret;
     }
     return ret;
-}
-
-// static DB_STATUS initPartitioning() {
-//     DB_STATUS ret = DBERR_OK;
-//     // claculate dataset metadata if not given
-//     for (auto &it: g_config.datasetOptions.datasets) {
-//         Dataset* dataset = g_config.datasetOptions.getDatasetByNickname(it.second.metadata.nickname);
-//         if (!dataset->metadata.dataspaceMetadata.boundsSet) {
-            
-//             switch (dataset->metadata.fileType) {
-//                 case FT_CSV:
-//                     ret = partitioning::csv::calculateDatasetMetadata(dataset);
-//                     if (ret != DBERR_OK) {
-//                         logger::log_error(ret, "Failed to calculate CSV dataset metadata.");
-//                         return ret;
-//                     }
-//                     break;
-//                 case FT_WKT:
-//                     ret = partitioning::wkt::calculateDatasetMetadata(dataset);
-//                     if (ret != DBERR_OK) {
-//                         logger::log_error(ret, "Failed to calculate WKT dataset metadata.");
-//                         return ret;
-//                     }
-//                     break;
-//                 case FT_BINARY:
-//                 default:
-//                     logger::log_error(DBERR_FEATURE_UNSUPPORTED, "Unsupported data file type:", dataset->metadata.fileType);
-//                     break;
-//             }
-
-//         }
-//     }
-//     // update the global dataspace
-//     g_config.datasetOptions.updateDataspace();
-    
-//     // perform partitioning for each dataset
-//     for (auto &it: g_config.datasetOptions.datasets) {
-//         // first, issue the partitioning instruction
-//         ret = comm::broadcast::broadcastInstructionMessage(MSG_INSTR_PARTITIONING_INIT);
-//         if (ret != DBERR_OK) {
-//             return ret;
-//         }
-        
-//         // broadcast the dataset metadata to the nodes
-//         ret = comm::host::broadcastDatasetMetadata(&it.second);
-//         if (ret != DBERR_OK) {
-//             return ret;
-//         }
-
-//         // partition
-//         ret = partitioning::partitionDataset(g_config.datasetOptions.getDatasetByNickname(it.second.metadata.nickname));
-//         if (ret != DBERR_OK) {
-//             logger::log_error(ret, "Partitioning dataset", it.second.metadata.nickname, "failed");
-//             return ret;
-//         }
-//     }
-//     return ret;
-// }
-
-static DB_STATUS performActions() {
-    // DB_STATUS ret = DBERR_OK;
-    // // perform the user-requested actions in order
-    // for(int i=0;i <g_config.actions.size(); i++) {
-    //     logger::log_task("*** Action:", mapping::actionIntToStr(g_config.actions.at(i).type),"***");
-    //     switch(g_config.actions.at(i).type) {
-    //         case ACTION_PERFORM_PARTITIONING:
-    //             ret = initPartitioning();
-    //             if (ret != DBERR_OK) {
-    //                 logger::log_error(ret, "Partitioning action failed");
-    //                 return ret;
-    //             }
-    //             break;
-    //         case ACTION_LOAD_DATASET_R:
-    //             ret = initLoadDataset(g_config.datasetOptions.getDatasetR(), DATASET_R);
-    //             if (ret != DBERR_OK) {
-    //                 return ret;
-    //             }
-    //             break;
-    //         case ACTION_LOAD_DATASET_S:
-    //             ret = initLoadDataset(g_config.datasetOptions.getDatasetS(), DATASET_S);
-    //             if (ret != DBERR_OK) {
-    //                 return ret;
-    //             }
-    //             break;
-    //         case ACTION_LOAD_APRIL:
-    //             /* instruct workers to load the APRIL*/
-    //             ret = initLoadAPRIL();
-    //             if (ret != DBERR_OK) {
-    //                 return ret;
-    //             }
-    //             break;
-    //         case ACTION_CREATE_APRIL:
-    //             // initialize APRIL creation
-    //             ret = initAPRILCreation();
-    //             if (ret != DBERR_OK) {
-    //                 return ret;
-    //             }
-    //             break;
-    //         case ACTION_QUERY:
-    //             // send query metadata and begin evaluating
-    //             ret = initQueryExecution();
-    //             if (ret != DBERR_OK) {
-    //                 return ret;
-    //             }
-    //             break;
-    //         default:
-    //             logger::log_error(DBERR_INVALID_PARAMETER, "Unknown action. Type:",g_config.actions.at(i).type);
-    //             return ret;
-    //     }
-    // }
-    // return DBERR_OK;
-    return DBERR_FEATURE_UNSUPPORTED;
 }
 
 int main(int argc, char* argv[]) {

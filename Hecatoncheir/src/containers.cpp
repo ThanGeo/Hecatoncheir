@@ -2,8 +2,6 @@
 
 Config g_config;
 
-// QueryOutput g_queryOutput;
-
 DB_STATUS queryResultReductionFunc(hec::QueryResult &in, hec::QueryResult &out) {
     DB_STATUS ret = DBERR_OK;
     
@@ -15,69 +13,6 @@ DB_STATUS queryResultReductionFunc(hec::QueryResult &in, hec::QueryResult &out) 
 std::vector<std::pair<size_t,size_t>>* hec::QueryResult::getResultPairs() {
     return &this->pairs;
 }
-
-// void QueryOutput::countAPRILresult(int result) {
-//     switch (result) {
-//         case TRUE_HIT:
-//             this->trueHits += 1;
-//             this->queryResults += 1;
-//             break;
-//         case TRUE_NEGATIVE:
-//             this->trueNegatives += 1;
-//             break;
-//         case INCONCLUSIVE:
-//             this->refinementCandidates += 1;
-//             break;
-//     }
-// }
-
-// void QueryOutput::countResult(){
-//     this->queryResults += 1;
-// }
-
-// void QueryOutput::countMBRresult(){
-//     this->postMBRFilterCandidates += 1;
-// }
-
-// void QueryOutput::countRefinementCandidate(){
-//     this->refinementCandidates += 1;
-// }
-
-// void QueryOutput::countTopologyRelationResult(int relation) {
-//     this->topologyRelationsResultMap[relation] += 1;
-// }
-
-// int QueryOutput::getResultForTopologyRelation(TopologyRelation relation) {
-//     auto it = topologyRelationsResultMap.find(relation);
-//     if (it != topologyRelationsResultMap.end()) {
-//         return it->second;
-//     }
-//     return -1;
-// }
-
-// void QueryOutput::setTopologyRelationResult(int relation, int result) {
-//     topologyRelationsResultMap[relation] = result;
-// }
-
-// void QueryOutput::shallowCopy(QueryOutput &other) {
-//     // result
-//     this->queryResults = other.queryResults;
-//     // topology relations results
-//     this->topologyRelationsResultMap.clear();
-//     for (auto &it: other.topologyRelationsResultMap) {
-//         this->topologyRelationsResultMap[it.first] = it.second;
-//     }
-//     // statistics
-//     this->postMBRFilterCandidates = other.postMBRFilterCandidates;
-//     this->refinementCandidates = other.refinementCandidates;
-//     this->trueHits = other.trueHits;
-//     this->trueNegatives = other.trueNegatives;
-    
-//     // time
-//     this->mbrFilterTime = other.mbrFilterTime;
-//     this->iFilterTime = other.iFilterTime;
-//     this->refinementTime = other.refinementTime;
-// }
 
 void AprilData::printALLintervals() {
     for (int i=0; i<intervalsALL.size(); i+=2) {

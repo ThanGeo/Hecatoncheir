@@ -1,9 +1,11 @@
 cmake_minimum_required(VERSION 3.0.0)
-project(Hecatoncheir VERSION 1.0.0)
+project(Hecatoncheir VERSION 1.0.1)
 
 set(CMAKE_CXX_FLAGS "-fopenmp")
 set(CMAKE_CXX_FLAGS_DEBUG "-g")
 set(CMAKE_CXX_FLAGS_RELEASE "-O3")
+
+set(CMAKE_CXX_STANDARD 17)
 
 if(MSVC)
     add_compile_options(/std::c++latest)
@@ -23,7 +25,7 @@ endif()
 
 # find boost
 set(Boost_USE_STATIC_LIBS ON)
-find_package(Boost 1.50 COMPONENTS REQUIRED)
+find_package(Boost 1.74 COMPONENTS REQUIRED)
 if(Boost_FOUND)
     add_definitions("-DBOOST_ALLOW_DEPRECATED_HEADERS")
     add_definitions("-DBOOST_BIND_GLOBAL_PLACEHOLDERS")
