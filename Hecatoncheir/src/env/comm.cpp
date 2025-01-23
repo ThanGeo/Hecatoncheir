@@ -167,40 +167,46 @@ namespace comm
                     return DBERR_DISK_WRITE_FAILED;
                 }
                 
-                // create APRIL for each object @todo paralellize? have to do a buffered write then
-                for (int i=0; i<batch.objectCount; i++) {
-                    // generate
-                    AprilData aprilData;
-                    ret = APRIL::generation::memory::createAPRILforObject(&batch.objects[i], dataset->metadata.dataType, dataset->aprilConfig, aprilData);
-                    if (ret != DBERR_OK) {
-                        logger::log_error(ret, "APRIL creation failed for object with id:", batch.objects[i].recID);
-                        return ret;
-                    }
-                    // save to file
-                    /** @todo hardcoded section ID, if we are to implement sections feature for APRIL, this needs to change. */
-                    ret = APRIL::writer::saveAPRIL(aprilFile, batch.objects[i].recID, 0, &aprilData);
-                    if (ret != DBERR_OK) {
-                        logger::log_error(ret, "Saving APRIL for object", batch.objects[i].recID, "failed.");
-                        return ret;
+                // if APRIL is enabled, generate it
+                if (g_config.queryMetadata.IntermediateFilter) {
+                    // create APRIL for each object @todo paralellize? have to do a buffered write then
+                    for (int i=0; i<batch.objectCount; i++) {
+                        // generate
+                        AprilData aprilData;
+                        ret = APRIL::generation::memory::createAPRILforObject(&batch.objects[i], dataset->metadata.dataType, dataset->aprilConfig, aprilData);
+                        if (ret != DBERR_OK) {
+                            logger::log_error(ret, "APRIL creation failed for object with id:", batch.objects[i].recID);
+                            return ret;
+                        }
+                        // save to file
+                        /** @todo hardcoded section ID, if we are to implement sections feature for APRIL, this needs to change. */
+                        ret = APRIL::writer::saveAPRIL(aprilFile, batch.objects[i].recID, 0, &aprilData);
+                        if (ret != DBERR_OK) {
+                            logger::log_error(ret, "Saving APRIL for object", batch.objects[i].recID, "failed.");
+                            return ret;
+                        }
                     }
                 }
-                
             } else {
                 // empty batch, set flag to stop listening for this dataset
                 continueListening = 0;
-                // update the object count value in the files
+                // update the object count value in the file
                 ret = storage::writer::updateObjectCountInFile(partitionFile, dataset->totalObjects);
                 if (ret != DBERR_OK) {
                     logger::log_error(DBERR_DISK_WRITE_FAILED, "Failed when updating partition file object count");
                     return DBERR_DISK_WRITE_FAILED;
                 }
-                // update the object count value in the files
-                ret = storage::writer::updateObjectCountInFile(aprilFile, dataset->totalObjects);
-                if (ret != DBERR_OK) {
-                    logger::log_error(DBERR_DISK_WRITE_FAILED, "Failed when updating partition file object count");
-                    return DBERR_DISK_WRITE_FAILED;
+
+                // if APRIL is enabled, generate it
+                if (g_config.queryMetadata.IntermediateFilter) {
+                    // update the object count value in the file
+                    ret = storage::writer::updateObjectCountInFile(aprilFile, dataset->totalObjects);
+                    if (ret != DBERR_OK) {
+                        logger::log_error(DBERR_DISK_WRITE_FAILED, "Failed when updating partition file object count");
+                        return DBERR_DISK_WRITE_FAILED;
+                    }
+                    // logger::log_success("Saved", dataset->totalObjects,"total objects.");
                 }
-                // logger::log_success("Saved", dataset->totalObjects,"total objects.");
             }
 
             return ret;
@@ -260,24 +266,29 @@ namespace comm
                 logger::log_error(DBERR_MISSING_FILE, "Couldnt open dataset file:", dataset->metadata.path);
                 return DBERR_MISSING_FILE;
             }
-
-            // init rasterization environment
-            ret = APRIL::generation::setRasterBounds(g_config.datasetOptions.dataspaceMetadata);
-            if (ret != DBERR_OK) {
-                return DBERR_INVALID_PARAMETER;
-            }
-
-            // open april file for writing
-            aprilFile = fopen(dataset->aprilConfig.filepath.c_str(), "wb");
-            if (aprilFile == NULL) {
-                logger::log_error(DBERR_MISSING_FILE, "Couldnt open APRIL file:", dataset->aprilConfig.filepath);
-                return DBERR_MISSING_FILE;
-            }
-
             // write a dummy value for the total object count in the very begining of the file
             // it will be corrected when the batches are finished
             fwrite(&dummy, sizeof(size_t), 1, partitionFile);
-            fwrite(&dummy, sizeof(size_t), 1, aprilFile);
+
+            // if APRIL is enabled
+            if (g_config.queryMetadata.IntermediateFilter) {
+                // init rasterization environment
+                ret = APRIL::generation::setRasterBounds(g_config.datasetOptions.dataspaceMetadata);
+                if (ret != DBERR_OK) {
+                    return DBERR_INVALID_PARAMETER;
+                }
+
+                // open april file for writing
+                aprilFile = fopen(dataset->aprilConfig.filepath.c_str(), "wb");
+                if (aprilFile == NULL) {
+                    logger::log_error(DBERR_MISSING_FILE, "Couldnt open APRIL file:", dataset->aprilConfig.filepath);
+                    return DBERR_MISSING_FILE;
+                }
+
+                // write a dummy value for the total object count in the very begining of the file
+                // it will be corrected when the batches are finished
+                fwrite(&dummy, sizeof(size_t), 1, aprilFile);
+            }
 
             // write the dataset metadata to the partition file
             ret = storage::writer::partitionFile::appendDatasetMetadataToPartitionFile(partitionFile, dataset);
@@ -324,8 +335,10 @@ STOP_LISTENING:
             if (partitionFile == NULL) {
                 fclose(partitionFile);
             }
-            if (aprilFile == NULL) {
-                fclose(aprilFile);
+            if (g_config.queryMetadata.IntermediateFilter) {
+                if (aprilFile == NULL) {
+                    fclose(aprilFile);
+                }
             }
             
             return ret;

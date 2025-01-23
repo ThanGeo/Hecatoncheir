@@ -979,7 +979,6 @@ namespace twolayer
                 // cast
                 hec::JoinQuery* joinQuery = dynamic_cast<hec::JoinQuery*>(query);
                 // evaluate
-                logger::log_task("Intermediate filter:", g_config.queryMetadata.IntermediateFilter);
                 ret = mbr_intersection_join_filter::evaluate(joinQuery, queryResult);
                 if (ret != DBERR_OK) {
                     return ret;
@@ -991,7 +990,6 @@ namespace twolayer
                 // cast
                 hec::JoinQuery* joinQuery = dynamic_cast<hec::JoinQuery*>(query);
                 // evaluate
-                logger::log_task("Intermediate filter:", g_config.queryMetadata.IntermediateFilter);
                 ret = mbr_topological_join_filter::evaluate(joinQuery, queryResult);
                 if (ret != DBERR_OK) {
                     return ret;

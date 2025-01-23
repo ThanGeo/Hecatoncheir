@@ -99,7 +99,6 @@ namespace parser
 
     static DB_STATUS loadAPRILconfig() {
         ApproximationMetadata approxMetadata(AT_APRIL);
-
         int N = system_config_pt.get<int>("APRIL.N");
         if (N < 10 || N > 16) {
             logger::log_error(DBERR_INVALID_PARAMETER, "APRIL granularity must be in range [10,16]. N:", N);
