@@ -14,6 +14,7 @@ namespace APRIL
                 return DBERR_INVALID_PARAMETER;
             }
             rasterDataspaceMetadata = dataspaceMetadata;
+            // logger::log_success("Raster bounds set:", dataspaceMetadata.xMinGlobal, dataspaceMetadata.yMinGlobal, dataspaceMetadata.xMaxGlobal, dataspaceMetadata.yMaxGlobal);
             return DBERR_OK;
         }
         
@@ -360,7 +361,7 @@ namespace APRIL
         }
 
         // intervalize shape with area (polygons and rectangles)
-        static DB_STATUS intervalizeRegionShape(Shape &object, uint32_t cellsPerDim, AprilData &aprilData){
+        static DB_STATUS intervalizeRegionShape(Shape object, uint32_t cellsPerDim, AprilData &aprilData){
             DB_STATUS ret = DBERR_OK;
             clock_t timer;
             RasterData rasterData;
@@ -559,142 +560,6 @@ namespace APRIL
 
         namespace memory
         {
-            static DB_STATUS intervalizeRegionShapes(Dataset &dataset, FILE* pFileAPRIL) {
-                // logger::log_task("Generating APRIL in parlalel...");
-                DB_STATUS ret = DBERR_OK;
-                // loop objects from map
-                #pragma omp parallel
-                {
-                    DB_STATUS local_ret = DBERR_OK;
-                    #pragma omp for
-                    for (int i=0; i<dataset.objectIDs.size(); i++) {
-                        // get next object
-                        Shape* object = dataset.getObject(dataset.objectIDs[i]);
-                        // generate APRIL
-                        AprilData aprilData;
-                        local_ret = intervalizeRegionShape(*object, dataset.aprilConfig.getCellsPerDim(), aprilData);
-                        if (local_ret != DBERR_OK || aprilData.numIntervalsALL == 0) {
-                            // at least 1 ALL interval is needed for each object, otherwise there is an error
-                            #pragma cancel for
-                            ret = local_ret;
-                            logger::log_error(local_ret, "Failed to generate APRIL for object with ID", object->recID);
-                        }
-                        // store in dataset
-                        local_ret = dataset.setAprilDataForSectionAndObjectID(0, object->recID, aprilData);
-                        if (local_ret != DBERR_OK) {
-                            #pragma cancel for
-                            ret = local_ret;
-                            logger::log_error(local_ret, "Parallel intervalization failed for object with ID", object->recID);
-                        }
-                    }
-                }
-                // check if it ended successfully
-                if (ret != DBERR_OK) {
-                    logger::log_error(DBERR_APRIL_CREATE, "Parallel APRIL generation failed.");
-                    return DBERR_APRIL_CREATE;
-                }
-                // save dataset APRIL on disk
-                ret = APRIL::writer::saveAPRIL(pFileAPRIL, dataset);
-                if (ret != DBERR_OK) {
-                    logger::log_error(ret, "Saving APRIL objects on disk failed.");
-                    return ret;
-                }
-                return ret;
-            }
-
-            static DB_STATUS intervalizeNonRegionShapes(Dataset &dataset, FILE* pFileAPRIL) {
-                // logger::log_task("Generating APRIL in parlalel...");
-                DB_STATUS ret = DBERR_OK;
-                // loop objects from map
-                #pragma omp parallel
-                {
-                    DB_STATUS local_ret = DBERR_OK;
-                    #pragma omp for
-                    for (int i=0; i<dataset.objectIDs.size(); i++) {
-                        // get next object
-                        Shape* object = dataset.getObject(dataset.objectIDs[i]);
-                        // generate APRIL
-                        AprilData aprilData;
-                        ret = intervalizeNonRegionShape(*object, dataset.aprilConfig.getCellsPerDim(), aprilData);
-                        if (local_ret != DBERR_OK || aprilData.numIntervalsALL == 0) {
-                            // at least 1 ALL interval is needed for each object, otherwise there is an error
-                            #pragma cancel for
-                            ret = local_ret;
-                            logger::log_error(local_ret, "Failed to generate APRIL for object with ID", object->recID);
-                        }
-                        // store in dataset
-                        local_ret = dataset.setAprilDataForSectionAndObjectID(0, object->recID, aprilData);
-                        if (local_ret != DBERR_OK) {
-                            #pragma cancel for
-                            ret = local_ret;
-                            logger::log_error(local_ret, "Parallel intervalization failed for object with ID", object->recID);
-                        }
-                    }
-                }
-                // check if it ended successfully
-                if (ret != DBERR_OK) {
-                    logger::log_error(DBERR_APRIL_CREATE, "Parallel APRIL generation failed.");
-                    return DBERR_APRIL_CREATE;
-                }
-                // save dataset APRIL on disk
-                ret = APRIL::writer::saveAPRIL(pFileAPRIL, dataset);
-                if (ret != DBERR_OK) {
-                    logger::log_error(ret, "Saving APRIL objects on disk failed.");
-                    return ret;
-                }
-                return ret;
-            }
-
-            DB_STATUS init(Dataset &dataset) {
-                DB_STATUS ret = DBERR_OK;
-                // init rasterization environment
-                ret = setRasterBounds(dataset.metadata.dataspaceMetadata);
-                if (ret != DBERR_OK) {
-                    return DBERR_INVALID_PARAMETER;
-                }
-                // generate approximation filepaths
-                ret = storage::generateAPRILFilePath(&dataset);
-                if (ret != DBERR_OK) {
-                    return ret;
-                }
-                // open april file for writing
-                FILE* pFileAPRIL = fopen(dataset.aprilConfig.filepath.c_str(), "wb");
-                if (pFileAPRIL == NULL) {
-                    logger::log_error(DBERR_MISSING_FILE, "Couldnt open APRIL file:", dataset.aprilConfig.filepath);
-                    return DBERR_MISSING_FILE;
-                }
-                // write dummy value for object count. 
-                size_t elementsWritten = fwrite(&dataset.totalObjects, sizeof(size_t), 1, pFileAPRIL);
-                if (elementsWritten != 1) {
-                    logger::log_error(DBERR_DISK_WRITE_FAILED, "Writing total objects in ALL file failed");
-                    return DBERR_DISK_WRITE_FAILED;
-                }
-                // switch based on data type
-                switch (dataset.metadata.dataType) {
-                    // intervalize dataset objects
-                    case DT_POLYGON:
-                    case DT_RECTANGLE:
-                        ret = intervalizeRegionShapes(dataset, pFileAPRIL);
-                        break;
-                    case DT_POINT:
-                    case DT_LINESTRING:
-                        ret = intervalizeNonRegionShapes(dataset, pFileAPRIL);
-                        break;
-                    default:
-                        // error
-                        logger::log_error(DBERR_INVALID_DATATYPE, "Invalid datatype in intervalization:", dataset.metadata.dataType);
-                        return DBERR_INVALID_DATATYPE;
-                }
-                if (ret != DBERR_OK) {
-                    logger::log_error(ret, "Failed to load and intervalize dataset contents.");
-                    goto CLOSE_AND_EXIT;
-                }
-        CLOSE_AND_EXIT:
-                fflush(pFileAPRIL);
-                fclose(pFileAPRIL);
-                return ret;
-            }
-
             DB_STATUS createAPRILforObject(Shape* shape, DataType dataType, AprilConfig &aprilConfig, AprilData &aprilData) {
                 DB_STATUS ret = DBERR_OK;
                 // switch based on data type

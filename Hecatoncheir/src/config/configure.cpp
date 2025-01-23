@@ -159,6 +159,8 @@ namespace configurer
             return ret;
         }
 
+        // set up
+
         // wait for response by workers+agent that all is ok
         ret = comm::host::gatherResponses();
         if (ret != DBERR_OK) {

@@ -34,6 +34,9 @@ namespace partitioning
 
     /** @brief Calculates all partition two-layer classes for a given batch, based on the partitioning method specified in the global configuration. */
     DB_STATUS calculateTwoLayerClasses(Batch &batch);
+    
+    /** @brief Adds a batch to the two layer index of the given dataset. */
+    DB_STATUS addBatchToTwoLayerIndex(Dataset* dataset, Batch &batch);
 }
 
 #endif

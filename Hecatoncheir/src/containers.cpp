@@ -68,6 +68,8 @@ void Partition::addObjectOfClass(Shape *objectRef, TwoLayerClass classType) {
 
 int DatasetMetadata::calculateBufferSize() {
     int size = 0;
+    // persistence
+    size += sizeof(bool);
     // dataset index
     size += sizeof(DatasetIndex);
     // dataset data type
@@ -95,6 +97,9 @@ DB_STATUS DatasetMetadata::serialize(char **buffer, int &bufferSize) {
     }
     char* localBuffer = *buffer;
 
+    // add persistence
+    memcpy(localBuffer + position, &persist, sizeof(bool));
+    position += sizeof(bool);
     // add internal ID
     memcpy(localBuffer + position, &internalID, sizeof(DatasetIndex));
     position += sizeof(DatasetIndex);
@@ -133,7 +138,10 @@ DB_STATUS DatasetMetadata::deserialize(const char *buffer, int bufferSize) {
     int pathLength;
     int position = 0;
     double xMin, yMin, xMax, yMax;
-    
+
+    // bool
+    memcpy(&persist, buffer + position, sizeof(bool));
+    position += sizeof(bool);
     // dataset index
     memcpy(&internalID, buffer + position, sizeof(DatasetIndex));
     position += sizeof(DatasetIndex);
@@ -200,6 +208,14 @@ DB_STATUS Dataset::addObject(Shape &object) {
     objectIDs.push_back(object.recID);
     /** add object to section map (section 0) @warning do not remove, will break the parallel in-memory APRIL generation */
     this->addObjectToSectionMap(0, object.recID);
+
+    // if (object.recID == 43895) {
+    //     logger::log_success("Added object to dataset", this->metadata.datasetName);
+    //     // object.printGeometry();
+    //     // logger::log_task("MBR:", object.mbr.pMin.x, object.mbr.pMin.y, object.mbr.pMax.x, object.mbr.pMax.y);
+    //     AprilData* aprilData = this->getAprilDataBySectionAndObjectID(0, object.recID);
+    //     logger::log_task("222. Retrievd april data:", aprilData->numIntervalsALL, aprilData->numIntervalsFULL);
+    // }
 
     return DBERR_OK;
 }
@@ -292,21 +308,6 @@ DB_STATUS Dataset::deserialize(const char *buffer, int bufferSize) {
     return DBERR_FEATURE_UNSUPPORTED;
 }
 
-void Dataset::addAprilDataToApproximationDataMap(const uint sectionID, const size_t recID, const AprilData &aprilData) {
-    // store april data
-    this->sectionMap[sectionID].aprilData[recID] = aprilData;
-    // store mapping recID -> sectionID
-    auto it = this->recToSectionIdMap.find(recID);
-    if (it != this->recToSectionIdMap.end()) {
-        // exists, append
-        it->second.emplace_back(sectionID);
-    } else {
-        // doesnt exist, new entry
-        std::vector<uint> sectionIDs = {sectionID};
-        this->recToSectionIdMap[recID] = sectionIDs;
-    }
-}
-
 void Dataset::addObjectToSectionMap(const uint sectionID, const size_t recID) {
     AprilData aprilData;
     this->sectionMap[sectionID].aprilData[recID] = aprilData;
@@ -347,6 +348,9 @@ DB_STATUS Dataset::addIntervalsToAprilData(const uint sectionID, const size_t re
 }
 
 void Dataset::addAprilData(const uint sectionID, const size_t recID, const AprilData &aprilData) {
+    if (recID == 43895) {
+        logger::log_task("adding april data to section ID", sectionID);
+    }
     this->sectionMap[sectionID].aprilData[recID] = aprilData;
     // store mapping recID -> sectionID
     auto it = this->recToSectionIdMap.find(recID);
@@ -377,7 +381,6 @@ DB_STATUS Dataset::setAprilDataForSectionAndObjectID(uint sectionID, size_t recI
         // add new section
         this->addObjectToSectionMap(sectionID, recID);
         sec = this->sectionMap.find(sectionID);
-        logger::log_warning("Added new section in the section map. This shouldn't happen in parallel APRIL generation.");
     }
     // section exists
     auto obj = sec->second.aprilData.find(recID);
@@ -387,7 +390,6 @@ DB_STATUS Dataset::setAprilDataForSectionAndObjectID(uint sectionID, size_t recI
     } else {
         // add april data for the object, in section map
         sec->second.aprilData[recID] = aprilData;
-        logger::log_warning("Added new object in the section map. This shouldn't happen in parallel APRIL generation.");
     }
     return DBERR_OK;
 }

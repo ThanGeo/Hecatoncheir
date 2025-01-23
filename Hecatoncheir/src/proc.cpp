@@ -14,6 +14,8 @@ namespace proc
         MPI_Info_set(mpi_info, "host", processor_name); 
          // Array to store the error codes for each spawned process
         int* error_codes = (int*)malloc(1 * sizeof(int));
+        
+        // logger::log_task("processor name for agent", processor_name);
 
         // spawn the agent
         int mpi_ret = MPI_Comm_spawn(AGENT_EXECUTABLE_PATH.c_str(), NULL, 1, mpi_info, 0, MPI_COMM_SELF, &g_agent_comm, error_codes);

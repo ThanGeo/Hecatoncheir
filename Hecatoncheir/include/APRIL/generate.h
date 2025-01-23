@@ -45,13 +45,7 @@ namespace APRIL
         /** @brief In-memory APRIL generation methods. Loads the entire dataset in memory and then generates APRIL. */
         namespace memory
         {
-            /**
-            @brief Generates the APRIL approximations for the given dataset.
-             * @warning Requires all objects to be stored already in memory (inside the dataset).
-             */
-            extern DB_STATUS init(Dataset &dataset);
-
-
+            /** @brief creates the APRIL for an object */
             extern DB_STATUS createAPRILforObject(Shape* shape, DataType dataType, AprilConfig &aprilConfig, AprilData &aprilData);
         }
     }

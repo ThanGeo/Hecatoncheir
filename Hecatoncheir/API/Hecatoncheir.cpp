@@ -115,7 +115,12 @@ static DB_STATUS spawnControllers(int num_procs, const std::vector<std::string> 
             np[i] = 1;
             // Set the host for each process using MPI_Info_set
             MPI_Info_create(&info[i]);
-            MPI_Info_set(info[i], "host", hosts[i].c_str());
+            int mpi_set_result = MPI_Info_set(info[i], "host", hosts[i].c_str());
+            if (mpi_set_result != MPI_SUCCESS) {
+                logger::log_error(DBERR_MPI_INFO_FAILED, "Failed to set MPI_Info host for process " + std::to_string(i));
+                return DBERR_MPI_INFO_FAILED;
+            }
+            // logger::log_task("Spawning at", hosts[i].c_str());
         }
 
         // spawn the controllers
@@ -200,7 +205,7 @@ namespace hec {
         return 0;
     }
 
-    DatasetID prepareDataset(std::string &filePath, std::string fileTypeStr, std::string dataTypeStr) {
+    DatasetID prepareDataset(std::string &filePath, std::string fileTypeStr, std::string dataTypeStr, bool persist) {
         if (filePath == "") {
             // empty path, empty dataset
             return -1;
@@ -208,6 +213,7 @@ namespace hec {
         // set metadata and serialize
         SerializedMsg<char> msg(MPI_CHAR);
         DatasetMetadata metadata;
+        metadata.persist = persist;
         metadata.internalID = (DatasetIndex) -1;
         metadata.path = filePath;
         metadata.fileType = mapping::fileTypeTextToInt(fileTypeStr);

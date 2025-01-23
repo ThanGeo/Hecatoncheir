@@ -1295,6 +1295,7 @@ struct DatasetMetadata
 private:
     int calculateBufferSize();
 public:
+    bool persist = true;
     DatasetIndex internalID;
     DataType dataType;
     hec::FileType fileType;
@@ -1355,8 +1356,6 @@ struct Dataset{
     DB_STATUS serialize(char **buffer, int &bufferSize);
     /** @brief Deserializes the given serialized buffer of the specified size into this Dataset object. @warning Caller is responsible for the validity of the input buffer. */
     DB_STATUS deserialize(const char *buffer, int bufferSize);
-    /** @warning UNSUPPORTED */
-    void addAprilDataToApproximationDataMap(const uint sectionID, const size_t recID, const AprilData &aprilData);
     /** @brief Adds the given object ID to the specified section ID. @warning UNSUPPORTED for sections IDs different than 0 (1 partition) */
     void addObjectToSectionMap(const uint sectionID, const size_t recID);
     /** @brief Adds the given intervals into the given object with recID in the given section with section ID.
@@ -1373,18 +1372,6 @@ struct Dataset{
     void printObjectsPartitions();
     void printPartitions();
 };
-
-/** @brief Holds all query-related information.
- * @deprecated No longer being used
- */
-// struct Query{
-//     hec::QueryType type;
-//     int numberOfDatasets;
-//     Dataset R;         // R: left dataset
-//     Dataset S;         // S: right dataset
-//     bool boundsSet = false;
-//     DataspaceMetadata dataspaceMetadata;
-// };
 
 /** @brief Holds all system-related directory paths.
  * @note They refer to node-local paths.
@@ -1561,25 +1548,6 @@ public:
     double getPartPartionExtentY() override;
 };
 
-/** @brief Holds all partitioning related information.
- */
-// struct PartitioningMetadata {
-//     /** @brief The partitioning technique */
-//     PartitioningType type;                 
-//     /** @brief The number of partitions per dimension */
-//     int ppdNum;                
-//     /** @brief The batch size for the data distribution, in number of objects. */             
-//     int batchSize;                         
-    
-//     // cell enumeration function
-//     int getCellID(int i, int j) {
-//         return (i + (j * ppdNum));
-//     }
-//     // node assignment function
-//     int getNodeRankForPartitionID(int partitionID) {
-//         return (partitionID % g_world_size);
-//     }
-// };
 
 /** @brief Defines a system task/job that the host controller is responsible for performing/broadcasting.
  */
@@ -1671,7 +1639,6 @@ struct Config {
     DirectoryPaths dirPaths;
     SystemOptions options;
     std::vector<Action> actions;
-    // PartitioningMetadata partitioningMetadata;
     PartitioningMethod *partitioningMethod;
     DatasetOptions datasetOptions;
     ApproximationMetadata approximationMetadata;

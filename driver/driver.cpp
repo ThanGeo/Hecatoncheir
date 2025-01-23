@@ -27,17 +27,18 @@ static std::vector<std::string> read_hostfile(const std::string& hostfile) {
 
 int main(int argc, char* argv[]) {
     std::string datasetFullPathR = "/home/hec/thanasis/Hecatoncheir/Hecatoncheir/datasets/T1.wkt";
-    // std::string datasetFullPathS = "/home/hec/thanasis/Hecatoncheir/Hecatoncheir/datasets/T2.wkt";
-    std::string datasetFullPathS = "/home/hec/thanasis/Hecatoncheir/Hecatoncheir/datasets/T8.wkt";
+    std::string datasetFullPathS = "/home/hec/thanasis/Hecatoncheir/Hecatoncheir/datasets/T2.wkt";
+    // std::string datasetFullPathS = "/home/hec/thanasis/Hecatoncheir/Hecatoncheir/datasets/T8.wkt";
     std::vector<std::string> hosts = {"node1:1", "node2:1", "node3:1", "node4:1", "node5:1"};
     // std::vector<std::string> hosts = {"node1:1"};
+    // std::vector<std::string> hosts = {"node1:1","node2:1","node3:1","node4:1","node5:1"};
 
     // Initialize Hecatoncheir. Must use this method before any other calls to the framework.
     hec::init(hosts.size(), hosts);
 
     // prepare datasets
-    hec::DatasetID datasetRID = hec::prepareDataset(datasetFullPathR, "WKT", "POLYGON");
-    hec::DatasetID datasetSID = hec::prepareDataset(datasetFullPathS, "WKT", "LINESTRING");
+    hec::DatasetID datasetRID = hec::prepareDataset(datasetFullPathR, "WKT", "POLYGON", false);
+    hec::DatasetID datasetSID = hec::prepareDataset(datasetFullPathS, "WKT", "POLYGON", false);
     // printf("Dataset ids: %d and %d\n", datasetRID, datasetSID);
 
     // partition datasets
@@ -50,7 +51,7 @@ int main(int argc, char* argv[]) {
     std::cout << "Partitioning time: " << duration.count() << " seconds" << std::endl;
 
     // load datasets
-    hec::load({datasetRID, datasetSID});
+    // hec::load({datasetRID, datasetSID});
     
     // run query (@todo maybe merge creating a query object and calling hec::query into a single thing)
     // -87.906508 32.896858,-87.906483 32.896926
