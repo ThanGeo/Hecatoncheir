@@ -8,6 +8,7 @@
 #include "env/partitioning.h"
 #include "statement.h"
 #include "configure.h"
+#include "../API/def.h"
 
 #include <unordered_map>
 
@@ -29,7 +30,7 @@ namespace parser
     /** @typedef SupportStatus @brief Map that defines the supported data type combinations. */
     using SupportStatus = std::unordered_map<DataTypePair, bool, pair_hash>;
     /** @typedef SupportStatus @brief Map that defines the supported query types for various data type pairs. */
-    using QuerySupportMap = std::unordered_map<QueryType, SupportStatus>;
+    using QuerySupportMap = std::unordered_map<hec::QueryType, SupportStatus>;
 
     extern QuerySupportMap g_querySupportMap;
 

@@ -40,36 +40,36 @@ namespace controller
     }
 }
 
-static void printResults() {
-    logger::log_success("MBR Results:", g_queryOutput.postMBRFilterCandidates);
-    switch (g_config.queryMetadata.type) {
-        case Q_RANGE:
-        case Q_DISJOINT:
-        case Q_INTERSECT:
-        case Q_INSIDE:
-        case Q_CONTAINS:
-        case Q_COVERS:
-        case Q_COVERED_BY:
-        case Q_MEET:
-        case Q_EQUAL:
-            logger::log_success("Total Results:", g_queryOutput.queryResults);
-            logger::log_success("       Accept:", g_queryOutput.trueHits / (double) g_queryOutput.postMBRFilterCandidates * 100, "%");
-            logger::log_success("       Reject:", g_queryOutput.trueNegatives / (double) g_queryOutput.postMBRFilterCandidates * 100, "%");
-            logger::log_success(" Inconclusive:", g_queryOutput.refinementCandidates / (double) g_queryOutput.postMBRFilterCandidates * 100, "%");
-            break;
-        case Q_FIND_RELATION:
-            logger::log_success(" Inconclusive:", g_queryOutput.refinementCandidates / (double) g_queryOutput.postMBRFilterCandidates * 100, "%");
-            logger::log_success("     Disjoint:", g_queryOutput.topologyRelationsResultMap[TR_DISJOINT]);
-            logger::log_success("    Intersect:", g_queryOutput.topologyRelationsResultMap[TR_INTERSECT]);
-            logger::log_success("       Inside:", g_queryOutput.topologyRelationsResultMap[TR_INSIDE]);
-            logger::log_success("     Contains:", g_queryOutput.topologyRelationsResultMap[TR_CONTAINS]);
-            logger::log_success("       Covers:", g_queryOutput.topologyRelationsResultMap[TR_COVERS]);
-            logger::log_success("   Covered by:", g_queryOutput.topologyRelationsResultMap[TR_COVERED_BY]);
-            logger::log_success("         Meet:", g_queryOutput.topologyRelationsResultMap[TR_MEET]);
-            logger::log_success("        Equal:", g_queryOutput.topologyRelationsResultMap[TR_EQUAL]);
-            break;
-    }
-}
+// static void printResults() {
+//     logger::log_success("MBR Results:", g_queryOutput.postMBRFilterCandidates);
+//     switch (g_config.queryMetadata.type) {
+//         case hec::Q_RANGE:
+//         case hec::Q_DISJOINT_JOIN:
+//         case hec::Q_INTERSECTION_JOIN:
+//         case hec::Q_INSIDE_JOIN:
+//         case hec::Q_CONTAINS_JOIN:
+//         case hec::Q_COVERS_JOIN:
+//         case hec::Q_COVERED_BY_JOIN:
+//         case hec::Q_MEET_JOIN:
+//         case hec::Q_EQUAL_JOIN:
+//             logger::log_success("Total Results:", g_queryOutput.queryResults);
+//             logger::log_success("       Accept:", g_queryOutput.trueHits / (double) g_queryOutput.postMBRFilterCandidates * 100, "%");
+//             logger::log_success("       Reject:", g_queryOutput.trueNegatives / (double) g_queryOutput.postMBRFilterCandidates * 100, "%");
+//             logger::log_success(" Inconclusive:", g_queryOutput.refinementCandidates / (double) g_queryOutput.postMBRFilterCandidates * 100, "%");
+//             break;
+//         case hec::Q_FIND_RELATION_JOIN:
+//             logger::log_success(" Inconclusive:", g_queryOutput.refinementCandidates / (double) g_queryOutput.postMBRFilterCandidates * 100, "%");
+//             logger::log_success("     Disjoint:", g_queryOutput.topologyRelationsResultMap[TR_DISJOINT]);
+//             logger::log_success("    Intersect:", g_queryOutput.topologyRelationsResultMap[TR_INTERSECT]);
+//             logger::log_success("       Inside:", g_queryOutput.topologyRelationsResultMap[TR_INSIDE]);
+//             logger::log_success("     Contains:", g_queryOutput.topologyRelationsResultMap[TR_CONTAINS]);
+//             logger::log_success("       Covers:", g_queryOutput.topologyRelationsResultMap[TR_COVERS]);
+//             logger::log_success("   Covered by:", g_queryOutput.topologyRelationsResultMap[TR_COVERED_BY]);
+//             logger::log_success("         Meet:", g_queryOutput.topologyRelationsResultMap[TR_MEET]);
+//             logger::log_success("        Equal:", g_queryOutput.topologyRelationsResultMap[TR_EQUAL]);
+//             break;
+//     }
+// }
 
 static DB_STATUS initAPRILCreation() {
     SerializedMsg<int> aprilMetadataMsg(MPI_INT);
@@ -98,37 +98,37 @@ static DB_STATUS initAPRILCreation() {
     return ret;
 }
 
-static DB_STATUS initQueryExecution() {
-    SerializedMsg<int> queryMetadataMsg(MPI_INT);
-    // pack the APRIL metadata
-    DB_STATUS ret = pack::packQueryMetadata(g_config.queryMetadata, queryMetadataMsg);
-    if (ret != DBERR_OK) {
-        logger::log_error(ret, "Failed to pack query metadata");
-        return ret;
-    }
-    // broadcast message
-    ret = comm::broadcast::broadcastMessage(queryMetadataMsg, MSG_QUERY_INIT);
-    if (ret != DBERR_OK) {
-        logger::log_error(ret, "Failed to broadcast query metadata");
-        return ret;
-    }
-    // reset query outpyt
-    g_queryOutput.reset();
-    // measure response time
-    double startTime;
-    startTime = mpi_timer::markTime();
-    // wait for results by workers+agent
-    ret = comm::host::gatherResults();
-    if (ret != DBERR_OK) {
-        return ret;
-    }
-    logger::log_success("Query evaluated in", mpi_timer::getElapsedTime(startTime), "seconds.");
+// static DB_STATUS initQueryExecution() {
+//     SerializedMsg<int> queryMetadataMsg(MPI_INT);
+//     // pack the APRIL metadata
+//     DB_STATUS ret = pack::packQueryMetadata(g_config.queryMetadata, queryMetadataMsg);
+//     if (ret != DBERR_OK) {
+//         logger::log_error(ret, "Failed to pack query metadata");
+//         return ret;
+//     }
+//     // broadcast message
+//     ret = comm::broadcast::broadcastMessage(queryMetadataMsg, MSG_QUERY_INIT);
+//     if (ret != DBERR_OK) {
+//         logger::log_error(ret, "Failed to broadcast query metadata");
+//         return ret;
+//     }
+//     // reset query outpyt
+//     g_queryOutput.reset();
+//     // measure response time
+//     double startTime;
+//     startTime = mpi_timer::markTime();
+//     // wait for results by workers+agent
+//     ret = comm::host::gatherResults();
+//     if (ret != DBERR_OK) {
+//         return ret;
+//     }
+//     logger::log_success("Query evaluated in", mpi_timer::getElapsedTime(startTime), "seconds.");
 
-    // print results
-    printResults();
+//     // print results
+//     printResults();
 
-    return DBERR_OK;
-}
+//     return DBERR_OK;
+// }
 
 /** @brief initializes (broadcasts) the load specific dataset action for the given dataset */
 static DB_STATUS initLoadDataset(Dataset *dataset, DatasetIndex datasetIndex) {
@@ -299,7 +299,8 @@ int main(int argc, char* argv[]) {
         return ret;
     }
 
-    // // all nodes create their agent process
+
+    // all nodes create their agent process
     ret = proc::setupProcesses();
     if (ret != DBERR_OK) {
         logger::log_error(ret, "Setup host process environment failed");
@@ -307,7 +308,10 @@ int main(int argc, char* argv[]) {
         return ret;
     }
 
-    logger::log_task("My global rank is", g_global_rank, "and my local rank is", g_node_rank);
+    // syncrhonize with host controller
+    MPI_Barrier(g_global_intra_comm);
+
+    // logger::log_task("My global rank is", g_global_rank, "and my local rank is", g_node_rank);
     
     if (g_node_rank == HOST_LOCAL_RANK) {
         // host controller has to handle setup/user input etc.

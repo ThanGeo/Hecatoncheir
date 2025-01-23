@@ -19,6 +19,8 @@
 #include "def.h"
 #include "utils.h"
 #include "env/comm_def.h"
+#include "../API/containers.h"
+#include "../API/def.h"
 
 /**
  * @brief Holds all the APRIL related metadata for a single object
@@ -1198,39 +1200,27 @@ namespace shape_factory
 /**
  * @brief Holds all the query result related information.
  */
-struct QueryOutput {
-    // for regular query rsesults
-    int queryResults;
-    // for topology relations results
-    std::unordered_map<int,uint> topologyRelationsResultMap;
-    // statistics
-    int postMBRFilterCandidates;
-    int refinementCandidates;
-    int trueHits;
-    int trueNegatives;
-    // times
-    double totalTime;
-    double mbrFilterTime;
-    double iFilterTime;
-    double refinementTime;
+// struct QueryOutput {
+//     hec::QueryResult *queryResult;
 
-    QueryOutput();
+//     QueryOutput(hec::QueryResultType type);
 
-    void reset();
-    void countAPRILresult(int result);
-    void countResult();
-    void countMBRresult();
-    void countRefinementCandidate();
-    void countTopologyRelationResult(int result);
-    int getResultForTopologyRelation(TopologyRelation relation);
-    void setTopologyRelationResult(int relation, int result);
-    /**
-    @brief copies the contents of the 'other' query output object into this struct
-     */
-    void shallowCopy(QueryOutput &other);
-};
-/** @brief The main query output global variable used by the host controller to store the results. */
-extern QueryOutput g_queryOutput;
+//     void countAPRILresult(int result);
+//     void countResult();
+//     void countMBRresult();
+//     void countRefinementCandidate();
+//     void countTopologyRelationResult(int result);
+//     int getResultForTopologyRelation(TopologyRelation relation);
+//     void setTopologyRelationResult(int relation, int result);
+//     /**
+//     @brief copies the contents of the 'other' query output object into this struct
+//      */
+//     void shallowCopy(QueryOutput &other);
+// };
+// /** @brief The main query output global variable used by the host controller to store the results. */
+// extern QueryOutput g_queryOutput;
+
+
 
 /** @brief Holds information about sections, i.e. APRIL partitions.
  */
@@ -1263,6 +1253,9 @@ struct DataspaceMetadata {
     void set(double xMinGlobal, double yMinGlobal, double xMaxGlobal, double yMaxGlobal);
     void clear();
     void print();
+    int calculateBufferSize();
+    DB_STATUS serialize(double **buffer, int &bufferSize);
+    DB_STATUS deserialize(const double *buffer, int bufferSize);
 };
 
 /** @brief Holds all necessary partition information. 
@@ -1329,7 +1322,7 @@ private:
 public:
     DatasetIndex internalID;
     DataType dataType;
-    FileType fileType;
+    hec::FileType fileType;
     std::string path;
     // derived from the path
     std::string datasetName;
@@ -1407,15 +1400,16 @@ struct Dataset{
 };
 
 /** @brief Holds all query-related information.
+ * @deprecated No longer being used
  */
-struct Query{
-    QueryType type;
-    int numberOfDatasets;
-    Dataset R;         // R: left dataset
-    Dataset S;         // S: right dataset
-    bool boundsSet = false;
-    DataspaceMetadata dataspaceMetadata;
-};
+// struct Query{
+//     hec::QueryType type;
+//     int numberOfDatasets;
+//     Dataset R;         // R: left dataset
+//     Dataset S;         // S: right dataset
+//     bool boundsSet = false;
+//     DataspaceMetadata dataspaceMetadata;
+// };
 
 /** @brief Holds all system-related directory paths.
  * @note They refer to node-local paths.
@@ -1663,6 +1657,7 @@ public:
     DB_STATUS addDataset(Dataset &dataset);
 
     void updateDataspace();
+    void updateDatasetDataspaceToGlobal();
 };
 
 /** @brief Holds all approximation related metadata.
@@ -1681,7 +1676,7 @@ struct ApproximationMetadata {
 /** @brief Holds all the query related metadata in the configuration.
  */
 struct QueryMetadata {
-    QueryType type = Q_NONE;
+    hec::QueryType queryType;
     int MBRFilter = 1;
     int IntermediateFilter = 1;
     int Refinement = 1;
@@ -1705,7 +1700,7 @@ struct Config {
     PartitioningMethod *partitioningMethod;
     DatasetOptions datasetOptions;
     ApproximationMetadata approximationMetadata;
-    QueryMetadata queryMetadata;
+    QueryMetadata queryMetadata;    // rename to query pipeline
 };
 
 /**
@@ -1756,10 +1751,10 @@ extern Config g_config;
 @brief Based on query type in config, it thread-safely appends new results to the query output in parallel.
  * Used only in parallel sections for OpenMP.
  */
-DB_STATUS queryResultReductionFunc(QueryOutput &in, QueryOutput &out);
+DB_STATUS queryResultReductionFunc(hec::QueryResult &in, hec::QueryResult &out);
 
 // Declare the parallel reduction function
-#pragma omp declare reduction (query_output_reduction: QueryOutput: queryResultReductionFunc(omp_in, omp_out)) initializer(omp_priv = QueryOutput())
+#pragma omp declare reduction (query_output_reduction: hec::QueryResult: queryResultReductionFunc(omp_in, omp_out)) initializer(omp_priv = hec::QueryResult(omp_orig.getID(), omp_orig.getQueryType(), omp_orig.getResultType()))
 
 
 #endif

@@ -119,16 +119,16 @@ CLOSE_AND_EXIT:
             return ret;
         }
 
-        DB_STATUS loadAPRIL(Dataset &dataset) {
+        DB_STATUS loadAPRIL(Dataset* dataset) {
             DB_STATUS ret = DBERR_OK;
             int buf[3];
             size_t objectCount;
             size_t recID;
             int sectionID, totalValuesALL, totalValuesFULL;
             // open APRIL file
-            FILE* pFile = fopen(dataset.aprilConfig.filepath.c_str(), "rb");
+            FILE* pFile = fopen(dataset->aprilConfig.filepath.c_str(), "rb");
             if (pFile == NULL) {
-                logger::log_error(DBERR_MISSING_FILE, "Could not open partitioned dataset file from path:", dataset.aprilConfig.filepath);
+                logger::log_error(DBERR_MISSING_FILE, "Could not open partitioned dataset file from path:", dataset->aprilConfig.filepath);
                 return DBERR_MISSING_FILE;
             }
             // read object count
@@ -184,7 +184,7 @@ CLOSE_AND_EXIT:
                     }
                 }
                 // add APRIL to the dataset
-                dataset.addAprilData(sectionID, recID, aprilData);
+                dataset->addAprilData(sectionID, recID, aprilData);
             }
 CLOSE_AND_EXIT:
             fclose(pFile);

@@ -188,46 +188,64 @@ namespace mapping
         }
     }
 
-    std::string queryTypeIntToStr(QueryType val){
+    std::string queryTypeIntToStr(hec::QueryType val){
         switch(val) {
-            case Q_RANGE: return "range";
-            case Q_INTERSECT: return "intersect";
-            case Q_INSIDE: return "inside";
-            case Q_DISJOINT: return "disjoint";
-            case Q_EQUAL: return "equal";
-            case Q_COVERED_BY: return "covered by";
-            case Q_COVERS: return "covers";
-            case Q_CONTAINS: return "contains";
-            case Q_MEET: return "meet";
-            case Q_FIND_RELATION: return "find relation";
-            case Q_NONE: return "no query";
+            case hec::Q_RANGE: return "range";
+            case hec::Q_INTERSECTION_JOIN: return "intersect";
+            case hec::Q_INSIDE_JOIN: return "inside";
+            case hec::Q_DISJOINT_JOIN: return "disjoint";
+            case hec::Q_EQUAL_JOIN: return "equal";
+            case hec::Q_COVERED_BY_JOIN: return "covered by";
+            case hec::Q_COVERS_JOIN: return "covers";
+            case hec::Q_CONTAINS_JOIN: return "contains";
+            case hec::Q_MEET_JOIN: return "meet";
+            case hec::Q_FIND_RELATION_JOIN: return "find relation";
+            case hec::Q_NONE: return "no query";
             default: return "";
         }
     }
 
-    QueryType queryTypeStrToInt(std::string &str) {
+    hec::QueryType queryTypeStrToInt(std::string &str) {
         if (str == "range") {
-            return Q_RANGE;
+            return hec::Q_RANGE;
         } else if (str == "intersect") {
-            return Q_INTERSECT;
+            return hec::Q_INTERSECTION_JOIN;
         } else if (str == "inside") {
-            return Q_INSIDE;
+            return hec::Q_INSIDE_JOIN;
         } else if (str == "disjoint") {
-            return Q_DISJOINT;
+            return hec::Q_DISJOINT_JOIN;
         } else if (str == "equal") {
-            return Q_EQUAL;
+            return hec::Q_EQUAL_JOIN;
         } else if (str == "meet") {
-            return Q_MEET;
+            return hec::Q_MEET_JOIN;
         } else if (str == "contains") {
-            return Q_CONTAINS;
+            return hec::Q_CONTAINS_JOIN;
         } else if (str == "covered_by") {
-            return Q_COVERED_BY;
+            return hec::Q_COVERED_BY_JOIN;
         } else if (str == "covers") {
-            return Q_COVERS;
+            return hec::Q_COVERS_JOIN;
         } else if (str == "find_relation") {
-            return Q_FIND_RELATION;
+            return hec::Q_FIND_RELATION_JOIN;
         } else {
-            return Q_NONE;
+            return hec::Q_NONE;
+        }
+    }
+
+    hec::QueryResultType queryResultTypeStrToInt(std::string &str) {
+        if (str == "COUNT") {
+            return hec::QR_COUNT;
+        } else if (str == "COLLECT") {
+            return hec::QR_COLLECT;
+        } else {
+            return hec::QR_NONE;
+        }
+    }
+
+    std::string queryResultTypeIntToStr(hec::QueryResultType val) {
+        switch(val) {
+            case hec::QR_COUNT: return "COUNT";
+            case hec::QR_COLLECT: return "COLLECT";
+            default: return "";
         }
     }
 
@@ -250,11 +268,11 @@ namespace mapping
         return (DataType)(-1);
     }
 
-    FileType fileTypeTextToInt(std::string str) {        
-        if (str.compare("CSV") == 0) return FT_CSV;
-        else if (str.compare("WKT") == 0) return FT_WKT;
+    hec::FileType fileTypeTextToInt(std::string str) {        
+        if (str.compare("CSV") == 0) return hec::FT_CSV;
+        else if (str.compare("WKT") == 0) return hec::FT_WKT;
 
-        return (FileType)(-1);
+        return (hec::FileType)(-1);
     }
 
     std::string relationIntToStr(int relation) {

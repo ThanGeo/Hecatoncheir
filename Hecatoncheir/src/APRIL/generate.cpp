@@ -14,7 +14,6 @@ namespace APRIL
                 return DBERR_INVALID_PARAMETER;
             }
             rasterDataspaceMetadata = dataspaceMetadata;
-            // logger::log_success("Set raster bounds:", rasterDataspaceMetadata.xMinGlobal, rasterDataspaceMetadata.yMinGlobal, rasterDataspaceMetadata.xMaxGlobal, rasterDataspaceMetadata.yMaxGlobal);
             return DBERR_OK;
         }
         

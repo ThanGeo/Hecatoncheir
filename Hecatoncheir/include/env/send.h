@@ -40,7 +40,7 @@ namespace comm
          * @param[in] tag The tag of the message.
          * @param[in] comm The communicator through which the message will be sent through.
          */
-        DB_STATUS sendDatasetMetadataMessage(SerializedMsg<char> &datasetMetadataMsg, int destRank, int tag, MPI_Comm &comm);
+        // DB_STATUS sendDatasetMetadataMessage(SerializedMsg<char> &datasetMetadataMsg, int destRank, int tag, MPI_Comm &comm);
         
 
         /** @brief Sends a serialized message of template type T.
@@ -82,12 +82,13 @@ namespace comm
         DB_STATUS broadcastMessage(SerializedMsg<T> &msg, int tag) {
             DB_STATUS ret = DBERR_OK;
             // broadcast to all other controllers parallely
-            #pragma omp parallel
+            #pragma omp parallel num_threads(g_world_size)
             {
                 DB_STATUS local_ret = DBERR_OK;
                 #pragma omp for
                 for(int i=0; i<g_world_size; i++) {
                     if (i != HOST_LOCAL_RANK) {
+                        // send to controller i
                         local_ret = send::sendMessage(msg, i, tag, g_controller_comm);
                         if (local_ret != DBERR_OK) {
                             #pragma omp cancel for

@@ -3,6 +3,7 @@
 
 #include "containers.h"
 #include "comm_def.h"
+#include "../API/containers.h"
 
 /** @brief Methods that pack information for MPI communication into serialized messages. */
 namespace pack
@@ -80,7 +81,10 @@ namespace pack
     /** @brief Packs the april configuration metadata into a serialized message. */
     DB_STATUS packAPRILMetadata(AprilConfig &aprilConfig, SerializedMsg<int> &aprilMetadataMsg);
 
-    /** @brief Packs the query metadata into a serialized message. */
+    /** @brief Packs the query metadata into a serialized message. 
+     * @deprecated no longer being used. Use packQuery instead.
+     * 
+    */
     DB_STATUS packQueryMetadata(QueryMetadata &queryMetadata, SerializedMsg<int> &queryMetadataMsg);
 
     /** @brief Packs the loaded dataset nicknames (both R and S, or only R if there's no S)
@@ -92,8 +96,10 @@ namespace pack
     DB_STATUS packDatasetLoadMsg(Dataset *dataset, DatasetIndex datasetIndex, SerializedMsg<char> &msg);
 
     /** @brief Packs the query results based on query type.  */
-    DB_STATUS packQueryResults(SerializedMsg<int> &msg, QueryOutput &queryOutput);
+    // DB_STATUS packQueryResults(SerializedMsg<int> &msg, QueryOutput &queryOutput);
 
+    /** @brief Packs the query metadata into a serialized message. */
+    DB_STATUS packQuery(hec::Query *query, SerializedMsg<char> &msg);
 
 }
 
@@ -113,7 +119,7 @@ namespace unpack
     DB_STATUS unpackQueryMetadata(SerializedMsg<int> &queryMetadataMsg);
 
     /** @brief Unpacks a query results serialized message. */
-    DB_STATUS unpackQueryResults(SerializedMsg<int> &queryResultsMsg, QueryType queryType, QueryOutput &queryOutput);
+    // DB_STATUS unpackQueryResults(SerializedMsg<int> &queryResultsMsg, hec::QueryType queryType, QueryOutput &queryOutput);
 
     /** @brief Unpacks a serialized message containing a single dataset index. */
     DB_STATUS unpackDatasetIndexes(SerializedMsg<int> &msg, std::vector<int> &datasetIndexes);
@@ -123,6 +129,11 @@ namespace unpack
 
     /** @brief Unpacks a 'dataset load' message. Results are stored in the dataset and datasetIndex arguments. */
     DB_STATUS unpackDatasetLoadMsg(SerializedMsg<char> &msg, Dataset &dataset, DatasetIndex &datasetIndex);
+
+    /** @brief Unpacks a query message. Results are stored in the pointer of the address, casted to the appropriate type. 
+     * The caller is responsible to call delete for the queryPtr after they are done with it.
+    */
+    DB_STATUS unpackQuery(SerializedMsg<char> &msg, hec::Query** queryPtr);
 }
 
 #endif 

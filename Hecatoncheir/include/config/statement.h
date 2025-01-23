@@ -2,6 +2,7 @@
 #define D_CONFIG_STATEMENT
 
 #include "containers.h"
+#include "../API/def.h"
 
 /** @brief Statement containing the requested actions, based on the user and system configuration. */
 struct ActionsStatement {
@@ -58,7 +59,7 @@ namespace statement
      * @param[in] filetypeStr A string describing the file type.
      * @param[out] filetype The returned file type system parameter.
     */
-    DB_STATUS getFiletype(std::string &filetypeStr, FileType &filetype);
+    DB_STATUS getFiletype(std::string &filetypeStr, hec::FileType &filetype);
 
     /** @brief Sets the create approximation action (if any).
      * @param[in] approximationStr A string describing the approximation type to create.

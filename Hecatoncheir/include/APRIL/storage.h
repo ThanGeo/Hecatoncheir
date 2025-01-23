@@ -27,7 +27,7 @@ namespace APRIL
     namespace reader
     {
         /** @brief Loads all APRIL data for a dataset from disk. */
-        DB_STATUS loadAPRIL(Dataset &dataset);
+        DB_STATUS loadAPRIL(Dataset* dataset);
     }
 }
 

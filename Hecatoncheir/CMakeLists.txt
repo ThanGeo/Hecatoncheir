@@ -31,7 +31,8 @@ if(Boost_FOUND)
 endif()
 
 set(SrcFiles
-    Hecatoncheir.cpp
+    API/Hecatoncheir.cpp
+    API/containers.cpp
 
     src/def.cpp
     src/containers.cpp
@@ -67,7 +68,8 @@ set(SrcFiles
 # Generate a configuration header file
 configure_file(
     ${CMAKE_CURRENT_SOURCE_DIR}/include/config_pub.h.in   # Input template file
-    ${CMAKE_CURRENT_BINARY_DIR}/config_pub.h     # Output generated file
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/config_pub.h   # Output generated file
+    # ${CMAKE_CURRENT_BINARY_DIR}/config_pub.h     # Output generated file
 )
 
 # Add the binary directory to the include path

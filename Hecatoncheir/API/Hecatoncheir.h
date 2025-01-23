@@ -9,34 +9,9 @@
 #ifndef HECATONCHEIR_H
 #define HECATONCHEIR_H
 
-#include <vector>
-#include <string>
+#include "containers.h"
 
 namespace hec {
-    
-    /** 
-     * @brief Spatial data types supported by Hecatoncheir. 
-     * 
-     */
-    enum SpatialDataType{
-        POINT,
-        LINESTRING,
-        RECTANGLE,
-        POLYGON,
-    };
-
-    /** @brief Input file types supported by Hecatoncheir.
-     * @details 
-     * - CSV assumes there is no header line in the beginning of the file.
-     * - WKT assumes that the file is indeed a CSV, but the first column is a WKT with the shape (disregards the rest)
-     */
-    enum FileFormat {
-        CSV,
-        WKT,
-    };
-
-    typedef int DatasetID;
-    
     /** @brief Initialize function with parameters.
      * @param[in] numProcs: number of nodes to use.
      * @param[in] hosts: the hosts addresses and slots (right now, only 1 slot per node is supported)
@@ -56,7 +31,7 @@ namespace hec {
      * @return Assigned dataset id.
      * @details Internally, generates and assigns a Dataset object to Hecatoncheir's configuration.
      */
-    DatasetID prepareDataset(std::string &filePath, FileFormat fileType, SpatialDataType dataType);
+    DatasetID prepareDataset(std::string &filePath, std::string fileTypeStr, std::string dataTypeStr);
 
     /**
      * @brief Prepares a dataset object for handling, manually setting its bounding box. 
@@ -64,7 +39,7 @@ namespace hec {
      * @return Assigned dataset id.
      * @details Internally, generates and assigns a Dataset object to Hecatoncheir's configuration.
      */
-    DatasetID prepareDataset(std::string &filePath, FileFormat fileType, SpatialDataType dataType, double xMin, double yMin, double xMax, double yMax);
+    DatasetID prepareDataset(std::string &filePath, std::string fileTypeStr, std::string dataTypeStr, double xMin, double yMin, double xMax, double yMax);
 
 
     /**
@@ -74,11 +49,15 @@ namespace hec {
 
     /**
      * @brief Load dataset(s) across the system. 
+     * @todo: make an Unload function as well.
      */
     int load(std::vector<DatasetID> indexes);
 
-    
+    /** @brief Run a query described by the passed object. */
+    hec::QueryResult query(Query* query);
 
+    /** @brief Run queries in batches. */
+    std::vector<size_t> query(std::vector<Query> &queryBatch);
 
 }
 

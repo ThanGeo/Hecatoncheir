@@ -34,6 +34,19 @@ static DB_STATUS receiveResponse(int sourceRank, int sourceTag, MPI_Comm &comm, 
     return DBERR_OK;
 }
 
+static DB_STATUS receiveResult(int sourceRank, int sourceTag, MPI_Comm &comm, MPI_Status &status, hec::QueryResult &finalResults) {
+    SerializedMsg<char> msg(MPI_CHAR);
+    // receive message
+    DB_STATUS ret = comm::recv::receiveMessage(status, msg.type, g_global_intra_comm, msg);
+    if (ret != DBERR_OK) {
+        return ret;
+    }
+    // unpack
+    finalResults.deserialize(msg.data, msg.count);
+
+    return DBERR_OK;
+}
+
 static DB_STATUS waitForResponse() {
     MPI_Status status;
     // wait for response by the host controller
@@ -53,6 +66,36 @@ static DB_STATUS waitForResponse() {
     }
     return ret;
 }    
+
+static DB_STATUS waitForResult(hec::QueryResult &finalResults) {
+    MPI_Status status;
+    // wait for response by the host controller
+    DB_STATUS ret = probeBlocking(1, MPI_ANY_TAG, g_global_intra_comm, status);
+    if (ret != DBERR_OK) {
+        return ret;
+    }
+    switch (status.MPI_TAG) {
+        case MSG_NACK:
+            // receive response
+            ret = receiveResponse(HOST_CONTROLLER, status.MPI_TAG, g_global_intra_comm, status);
+            if (ret != DBERR_OK) {
+                return ret;
+            }
+            logger::log_error(DBERR_COMM_RECEIVED_NACK, "Query failed.");
+            return DBERR_COMM_RECEIVED_NACK;
+        case MSG_QUERY_RESULT:
+            // receive result
+            ret = receiveResult(HOST_CONTROLLER, status.MPI_TAG, g_global_intra_comm, status, finalResults);
+            if (ret != DBERR_OK) {
+                return ret;
+            }
+            break;
+        default:
+            break;
+    }
+    
+    return ret;
+}
 
 static DB_STATUS spawnControllers(int num_procs, const std::vector<std::string> &hosts) {
     DB_STATUS ret = DBERR_OK;
@@ -94,6 +137,9 @@ static DB_STATUS spawnControllers(int num_procs, const std::vector<std::string> 
         g_global_rank = rank;
         g_world_size = size;
         // logger::log_success("Set my rank to", g_global_rank, "world size:", g_world_size);
+
+        // syncrhonize with host controller
+        MPI_Barrier(g_global_intra_comm);
 
         // wait for ACK
         MPI_Status status;
@@ -154,7 +200,7 @@ namespace hec {
         return 0;
     }
 
-    DatasetID prepareDataset(std::string &filePath, FileFormat fileType, SpatialDataType dataType) {
+    DatasetID prepareDataset(std::string &filePath, std::string fileTypeStr, std::string dataTypeStr) {
         if (filePath == "") {
             // empty path, empty dataset
             return -1;
@@ -164,8 +210,8 @@ namespace hec {
         DatasetMetadata metadata;
         metadata.internalID = (DatasetIndex) -1;
         metadata.path = filePath;
-        metadata.fileType = (FileType) fileType;
-        metadata.dataType = (DataType) dataType;
+        metadata.fileType = mapping::fileTypeTextToInt(fileTypeStr);
+        metadata.dataType = mapping::dataTypeTextToInt(dataTypeStr);
         DB_STATUS ret = metadata.serialize(&msg.data, msg.count);
         if (ret != DBERR_OK) {
             logger::log_error(ret, "Metadata serialization failed.");
@@ -178,6 +224,9 @@ namespace hec {
             logger::log_error(ret, "Sending dataset metadata message failed.");
             return -1;
         }
+
+        // free
+        free(msg.data);
 
         // wait for response with dataset internal ID
         MPI_Status status;
@@ -202,11 +251,14 @@ namespace hec {
             return ret;
         }
 
+        // free
+        free(msgFromHost.data);
+
         // return the ID
         return indexes[0];
     }
 
-    DatasetID prepareDataset(std::string &filePath, FileFormat fileType, SpatialDataType dataType, double xMin, double yMin, double xMax, double yMax) {
+    DatasetID prepareDataset(std::string &filePath, std::string fileTypeStr, std::string dataTypeStr, double xMin, double yMin, double xMax, double yMax) {
         if (filePath == "") {
             // empty path, empty dataset
             return -1;
@@ -233,8 +285,8 @@ namespace hec {
         DatasetMetadata metadata;
         metadata.internalID = (DatasetIndex) -1;
         metadata.path = filePath;
-        metadata.fileType = (FileType) fileType;
-        metadata.dataType = (DataType) dataType;
+        metadata.fileType = mapping::fileTypeTextToInt(fileTypeStr);
+        metadata.dataType = mapping::dataTypeTextToInt(dataTypeStr);
         metadata.dataspaceMetadata.boundsSet = true;
         metadata.dataspaceMetadata.set(xMin, yMin, xMax, yMax);
         DB_STATUS ret = metadata.serialize(&msg.data, msg.count);
@@ -249,6 +301,9 @@ namespace hec {
             logger::log_error(ret, "Sending dataset metadata message failed.");
             return -1;
         }
+
+        // free
+        free(msg.data);
 
         // wait for response with dataset internal ID
         MPI_Status status;
@@ -272,6 +327,9 @@ namespace hec {
             logger::log_error(ret, "Error unpacking dataste indexes.");
             return ret;
         }
+
+        // free
+        free(msgFromHost.data);
 
         // return the ID
         return indexes[0];
@@ -325,6 +383,53 @@ namespace hec {
         }        
         logger::log_success("Loaded datasets.");
         return 0;
+    }
+
+    hec::QueryResult query(Query* query) {
+        DB_STATUS ret = DBERR_OK;
+        hec::QueryResult finalResults(query->getQueryID(), query->getQueryType(), (hec::QueryResultType) query->getResultType());
+        SerializedMsg<char> msg(MPI_CHAR);
+        switch (query->getQueryType()) {
+            case Q_RANGE:
+                // range queries are accompanied by a specified window
+                logger::log_error(DBERR_FEATURE_UNSUPPORTED, "FEATURE UNSUPPORTED");
+                return finalResults;
+                break;
+            case Q_INTERSECTION_JOIN:
+            case Q_INSIDE_JOIN:
+            case Q_DISJOINT_JOIN:
+            case Q_EQUAL_JOIN:
+            case Q_MEET_JOIN:
+            case Q_CONTAINS_JOIN:
+            case Q_COVERS_JOIN:
+            case Q_COVERED_BY_JOIN:
+            case Q_FIND_RELATION_JOIN:
+                // pack query info
+                ret = pack::packQuery(query, msg);
+                if (ret != DBERR_OK) {
+                    logger::log_error(ret, "Failed to pack query.");
+                    return finalResults;
+                }
+                // send the query to Host Controller
+                ret = comm::send::sendMessage(msg, HOST_CONTROLLER, MSG_QUERY, g_global_intra_comm);
+                if (ret != DBERR_OK) {
+                    logger::log_error(ret, "Sending dataset load message failed.");
+                    return finalResults;
+                }
+                // wait for result
+                ret = waitForResult(finalResults);
+                if (ret != DBERR_OK) {
+                    logger::log_error(ret, "Receiving query results failed.");
+                    return finalResults;
+                }
+                break;
+            default:
+                // error
+                logger::log_error(DBERR_QUERY_INVALID_TYPE, "Invalid query name:", query->getQueryType());
+                return finalResults;
+        }
+
+        return finalResults;
     }
 }
 

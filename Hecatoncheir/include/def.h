@@ -20,12 +20,6 @@ typedef boost::geometry::model::box<bg_point_xy> bg_rectangle;
 /** @typedef bg_polygon @brief boost geometry polygon definition. */
 typedef boost::geometry::model::polygon<bg_point_xy> bg_polygon;
 
-enum PROCESS_TYPE {
-    DRIVER,
-    CONTROLLER,
-    AGENT,
-};
-
 #define DRIVER_GLOBAL_RANK 0
 #define HOST_GLOBAL_RANK 1
 #define HOST_LOCAL_RANK 0
@@ -34,8 +28,6 @@ enum PROCESS_TYPE {
 
 extern std::string AGENT_EXECUTABLE_PATH;
 extern std::string CONTROLLER_EXECUTABLE_PATH;
-// #define AGENT_EXECUTABLE_PATH "build/Hecatoncheir/agent"
-// #define CONTROLLER_EXECUTABLE_PATH "build/Hecatoncheir/controller"
 
 #define RED "\e[0;31m"
 #define GREEN "\e[0;32m"
@@ -47,12 +39,17 @@ extern std::string CONTROLLER_EXECUTABLE_PATH;
 #define NC "\e[0m"
 
 #define EPS 1e-08
-#define DBBASE 100000
 
 extern int g_world_size;
 extern int g_node_rank;
 extern int g_global_rank;
 extern int g_parent_original_rank;
+
+enum PROCESS_TYPE {
+    DRIVER,
+    CONTROLLER,
+    AGENT,
+};
 
 extern PROCESS_TYPE g_proc_type;
 
@@ -60,6 +57,8 @@ extern MPI_Comm g_global_inter_comm;
 extern MPI_Comm g_global_intra_comm;
 extern MPI_Comm g_controller_comm;
 extern MPI_Comm g_agent_comm;
+
+#define DBBASE 100000
 
 /** @enum DB_STATUS 
 @brief Flags/states for status reporting. 
@@ -88,11 +87,13 @@ enum DB_STATUS {
     DBERR_NULL_PTR_EXCEPTION = DBBASE + 1012,
     DBERR_DUPLICATE_ENTRY = DBBASE + 1013,
     DBERR_INVALID_KEY = DBBASE + 1014,
-    DBERR_DESERIALIZE = DBBASE + 1015,
-    DBERR_INVALID_FILE_PATH = DBBASE + 1016,
-    DBERR_DIR_NOT_EXIST = DBBASE + 1017,
-    DBERR_OPEN_DIR_FAILED = DBBASE + 1018,
-    DBERR_OPERATION_FAILED = DBBASE + 1019,
+    DBERR_SERIALIZE_FAILED = DBBASE + 1015,
+    DBERR_DESERIALIZE_FAILED = DBBASE + 1016,
+    DBERR_INVALID_FILE_PATH = DBBASE + 1017,
+    DBERR_DIR_NOT_EXIST = DBBASE + 1018,
+    DBERR_OPEN_DIR_FAILED = DBBASE + 1019,
+    DBERR_OPERATION_FAILED = DBBASE + 1020,
+    DBERR_BUFFER_SIZE_MISMATCH = DBBASE + 1021,
 
     // comm
     DBERR_COMM_RECV = DBBASE + 2000,
@@ -129,6 +130,7 @@ enum DB_STATUS {
     // query
     DBERR_QUERY_INVALID_INPUT = DBBASE + 7000,
     DBERR_QUERY_INVALID_TYPE = DBBASE + 7001,
+    DBERR_QUERY_RESULT_INVALID_TYPE = DBBASE + 7002,
 };
 
 enum DatasetIndex {
@@ -136,10 +138,12 @@ enum DatasetIndex {
     DATASET_S,
 };
 
-/** @enum FileType @brief Data file types. */
-enum FileType {
-    FT_CSV,
-    FT_WKT,
+/** @enum DataType @brief Spatial data types. */
+enum DataType{
+    DT_POINT,
+    DT_LINESTRING,
+    DT_RECTANGLE,
+    DT_POLYGON,
 };
 
 /** @enum FilterResult @brief Possible results for the intermediate filter. */
@@ -147,21 +151,6 @@ enum FilterResult {
     TRUE_NEGATIVE,
     TRUE_HIT,
     INCONCLUSIVE,
-};
-
-/** @enum QueryType @brief Query types. */
-enum QueryType{
-    Q_NONE, // no query
-    Q_RANGE,
-    Q_INTERSECT,
-    Q_INSIDE,
-    Q_DISJOINT,
-    Q_EQUAL,
-    Q_MEET,
-    Q_CONTAINS,
-    Q_COVERS,
-    Q_COVERED_BY,
-    Q_FIND_RELATION,    // find what type of topological relation is there
 };
 
 /** @enum MBRRelationCase
@@ -181,8 +170,8 @@ enum MBRRelationCase {
  * 
  * @details Includes both the types of topological relations and the different refinement cases for the APRIL intermediate filter.  */
 enum TopologyRelation {
-    TR_DISJOINT,
     TR_EQUAL,
+    TR_DISJOINT,
     TR_INSIDE,
     TR_CONTAINS,
     TR_MEET,
@@ -202,14 +191,6 @@ enum TopologyRelation {
     REFINE_COVERS_TRUEHIT_INTERSECT,
     REFINE_COVERS_COVEREDBY_TRUEHIT_INTERSECT,
     REFINE_EQUAL_COVERS_COVEREDBY_TRUEHIT_INTERSECT,
-};
-
-/** @enum DataType @brief Spatial data types. */
-enum DataType{
-    DT_POINT,
-    DT_LINESTRING,
-    DT_RECTANGLE,
-    DT_POLYGON,
 };
 
 /** @enum ApproximationType @brief Spatial approximation types (mostly for polygons). */

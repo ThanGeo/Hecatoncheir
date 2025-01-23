@@ -2,6 +2,8 @@
 #include <fstream>
 #include <iostream>
 
+#include <chrono>
+
 #include <Hecatoncheir.h>
 
 static std::vector<std::string> read_hostfile(const std::string& hostfile) {
@@ -25,30 +27,58 @@ static std::vector<std::string> read_hostfile(const std::string& hostfile) {
 
 int main(int argc, char* argv[]) {
     std::string datasetFullPathR = "/home/hec/thanasis/Hecatoncheir/Hecatoncheir/datasets/T1.wkt";
-    std::string datasetFullPathS = "/home/hec/thanasis/Hecatoncheir/Hecatoncheir/datasets/T2.wkt";
-    std::vector<std::string> hosts = {"node1:1", "node2:1", "node3:1"};
+    // std::string datasetFullPathS = "/home/hec/thanasis/Hecatoncheir/Hecatoncheir/datasets/T2.wkt";
+    std::string datasetFullPathS = "/home/hec/thanasis/Hecatoncheir/Hecatoncheir/datasets/T8.wkt";
+    std::vector<std::string> hosts = {"node1:1", "node2:1", "node3:1", "node4:1", "node5:1"};
     // std::vector<std::string> hosts = {"node1:1"};
 
     // Initialize Hecatoncheir. Must use this method before any other calls to the framework.
     hec::init(hosts.size(), hosts);
 
     // prepare datasets
-    hec::DatasetID datasetRID = hec::prepareDataset(datasetFullPathR, hec::WKT, hec::POLYGON);
-    hec::DatasetID datasetSID = hec::prepareDataset(datasetFullPathS, hec::WKT, hec::POLYGON);
+    hec::DatasetID datasetRID = hec::prepareDataset(datasetFullPathR, "WKT", "POLYGON");
+    hec::DatasetID datasetSID = hec::prepareDataset(datasetFullPathS, "WKT", "LINESTRING");
     // printf("Dataset ids: %d and %d\n", datasetRID, datasetSID);
 
     // partition datasets
+    auto start = std::chrono::high_resolution_clock::now();
+    
     hec::partition({datasetRID, datasetSID});
-    // todo: when the user prepares/partitions the data, 
-    // 1) does it have to be brought in memory too at that time?
-    // 2) should i implement another command that loads the dataset on demand?
-    // 3) should it be loaded for the query?
 
+    auto end = std::chrono::high_resolution_clock::now();
+    std::chrono::duration<double> duration = end - start;
+    std::cout << "Partitioning time: " << duration.count() << " seconds" << std::endl;
 
     // load datasets
     hec::load({datasetRID, datasetSID});
     
-    // run query
+    // run query (@todo maybe merge creating a query object and calling hec::query into a single thing)
+    // -87.906508 32.896858,-87.906483 32.896926
+    hec::JoinQuery intersectionJoinQuery(datasetRID, datasetSID, 0, hec::spatialQueries.INTERSECTS(), hec::queryResultTypes.COUNT());
+    
+    start = std::chrono::high_resolution_clock::now();
+
+    hec::QueryResult result =  hec::query(&intersectionJoinQuery);
+
+    end = std::chrono::high_resolution_clock::now();
+    duration = end - start;
+    std::cout << "Query Evaluation time: " << duration.count() << " seconds" << std::endl;
+    printf("Total results: %lu\n", result.getResultCount());
+
+
+
+
+
+    hec::JoinQuery findRelationJoinQuery(datasetRID, datasetSID, 0, hec::spatialQueries.FIND_RELATION(), hec::queryResultTypes.COUNT());
+    start = std::chrono::high_resolution_clock::now();
+
+    result =  hec::query(&findRelationJoinQuery);
+
+    end = std::chrono::high_resolution_clock::now();
+    duration = end - start;
+    std::cout << "Query Evaluation time: " << duration.count() << " seconds" << std::endl;
+    
+    result.print();
 
     // finalize
     hec::finalize();

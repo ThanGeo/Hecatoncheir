@@ -105,14 +105,16 @@ namespace configurer
         g_world_size = wsize;
 
         // receive parent's original rank from the parent
-        // mpi_ret = MPI_Bcast(&g_parent_original_rank, 1, MPI_INT, PARENT_RANK, g_agent_comm);
         MPI_Status status;
         mpi_ret = MPI_Recv(&g_parent_original_rank, 1, MPI_INT, PARENT_RANK, 0, g_agent_comm, &status);
         if (mpi_ret) {
             logger::log_error(DBERR_COMM_BCAST, "Receiving parent rank failed", DBERR_COMM_BCAST);
             return DBERR_COMM_BCAST;
         }
-        // print cpu
+
+        // syncrhonize with parent
+        MPI_Barrier(g_agent_comm);
+
         return DBERR_OK;
     }
 
@@ -191,7 +193,7 @@ namespace configurer
             R.metadata.dataType = datasetStmt->datatypeR;
             R.metadata.path = datasetStmt->datasetPathR;
             R.metadata.datasetName = getFileNameFromPath(R.metadata.path);
-            R.metadata.fileType = (FileType) mapping::fileTypeTextToInt(datasetStmt->filetypeR);
+            R.metadata.fileType = (hec::FileType) mapping::fileTypeTextToInt(datasetStmt->filetypeR);
             
             // add to config
             DB_STATUS ret = g_config.datasetOptions.addDataset(DATASET_R, R);
@@ -207,7 +209,7 @@ namespace configurer
                 S.metadata.dataType = datasetStmt->datatypeS;
                 S.metadata.path = datasetStmt->datasetPathS;
                 S.metadata.datasetName = getFileNameFromPath(S.metadata.path);
-                S.metadata.fileType = (FileType) mapping::fileTypeTextToInt(datasetStmt->filetypeS);
+                S.metadata.fileType = (hec::FileType) mapping::fileTypeTextToInt(datasetStmt->filetypeS);
                 // add to config
                 DB_STATUS ret = g_config.datasetOptions.addDataset(DATASET_S, S);
                 if (ret != DBERR_OK) {

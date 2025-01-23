@@ -14,11 +14,11 @@ namespace statement
         return DBERR_OK;
     }
 
-    DB_STATUS getFiletype(std::string &filetypeStr, FileType &filetype) {
+    DB_STATUS getFiletype(std::string &filetypeStr, hec::FileType &filetype) {
         if (filetypeStr == "CSV") {
-            filetype = FT_CSV;
+            filetype = hec::FT_CSV;
         } else if (filetypeStr == "WKT") {
-            filetype = FT_WKT;
+            filetype = hec::FT_WKT;
         } else {
             // unknown type
             logger::log_error(DBERR_UNKNOWN_ARGUMENT, "Unknown file type request:", filetypeStr);

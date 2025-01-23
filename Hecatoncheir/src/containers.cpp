@@ -2,129 +2,82 @@
 
 Config g_config;
 
-QueryOutput g_queryOutput;
+// QueryOutput g_queryOutput;
 
-DB_STATUS queryResultReductionFunc(QueryOutput &in, QueryOutput &out) {
+DB_STATUS queryResultReductionFunc(hec::QueryResult &in, hec::QueryResult &out) {
     DB_STATUS ret = DBERR_OK;
-    out.queryResults += in.queryResults;
-    out.postMBRFilterCandidates += in.postMBRFilterCandidates;
-    out.refinementCandidates += in.refinementCandidates;
-    switch (g_config.queryMetadata.type) {
-        case Q_RANGE: 
-        case Q_DISJOINT: 
-        case Q_INTERSECT:
-        case Q_INSIDE: 
-        case Q_CONTAINS: 
-        case Q_COVERS: 
-        case Q_COVERED_BY: 
-        case Q_MEET: 
-        case Q_EQUAL: 
-            out.trueHits += in.trueHits;
-            out.trueNegatives += in.trueNegatives;
-            return ret;
-        case Q_FIND_RELATION:
-            for (auto &it : in.topologyRelationsResultMap) {
-                out.topologyRelationsResultMap[it.first] += it.second;
-            }
-            return ret;
-        default:
-            logger::log_error(DBERR_QUERY_INVALID_TYPE, "Unsupported query type:", g_config.queryMetadata.type);
-            return DBERR_QUERY_INVALID_TYPE;            
-    }
-}
-
-QueryOutput::QueryOutput() {
-    // result
-    this->reset();
-}
-
-void QueryOutput::reset() {
-    // result
-    this->queryResults = 0;
-    // topology relations results
-    this->topologyRelationsResultMap.clear();
-    this->topologyRelationsResultMap[TR_DISJOINT] = 0;
-    this->topologyRelationsResultMap[TR_EQUAL] = 0;
-    this->topologyRelationsResultMap[TR_MEET] = 0;
-    this->topologyRelationsResultMap[TR_CONTAINS] = 0;
-    this->topologyRelationsResultMap[TR_COVERS] = 0;
-    this->topologyRelationsResultMap[TR_COVERED_BY] = 0;
-    this->topologyRelationsResultMap[TR_INSIDE] = 0;
-    this->topologyRelationsResultMap[TR_INTERSECT] = 0;
-    // statistics
-    this->postMBRFilterCandidates = 0;
-    this->refinementCandidates = 0;
-    this->trueHits = 0;
-    this->trueNegatives = 0;
     
-    // time
-    this->mbrFilterTime = 0;
-    this->iFilterTime = 0;
-    this->refinementTime = 0;
+    out.mergeResults(in);
+
+    return ret;
 }
 
-void QueryOutput::countAPRILresult(int result) {
-    switch (result) {
-        case TRUE_HIT:
-            this->trueHits += 1;
-            this->queryResults += 1;
-            break;
-        case TRUE_NEGATIVE:
-            this->trueNegatives += 1;
-            break;
-        case INCONCLUSIVE:
-            this->refinementCandidates += 1;
-            break;
-    }
+std::vector<std::pair<size_t,size_t>>* hec::QueryResult::getResultPairs() {
+    return &this->pairs;
 }
 
-void QueryOutput::countResult(){
-    this->queryResults += 1;
-}
+// void QueryOutput::countAPRILresult(int result) {
+//     switch (result) {
+//         case TRUE_HIT:
+//             this->trueHits += 1;
+//             this->queryResults += 1;
+//             break;
+//         case TRUE_NEGATIVE:
+//             this->trueNegatives += 1;
+//             break;
+//         case INCONCLUSIVE:
+//             this->refinementCandidates += 1;
+//             break;
+//     }
+// }
 
-void QueryOutput::countMBRresult(){
-    this->postMBRFilterCandidates += 1;
-}
+// void QueryOutput::countResult(){
+//     this->queryResults += 1;
+// }
 
-void QueryOutput::countRefinementCandidate(){
-    this->refinementCandidates += 1;
-}
+// void QueryOutput::countMBRresult(){
+//     this->postMBRFilterCandidates += 1;
+// }
 
-void QueryOutput::countTopologyRelationResult(int relation) {
-    this->topologyRelationsResultMap[relation] += 1;
-}
+// void QueryOutput::countRefinementCandidate(){
+//     this->refinementCandidates += 1;
+// }
 
-int QueryOutput::getResultForTopologyRelation(TopologyRelation relation) {
-    auto it = topologyRelationsResultMap.find(relation);
-    if (it != topologyRelationsResultMap.end()) {
-        return it->second;
-    }
-    return -1;
-}
+// void QueryOutput::countTopologyRelationResult(int relation) {
+//     this->topologyRelationsResultMap[relation] += 1;
+// }
 
-void QueryOutput::setTopologyRelationResult(int relation, int result) {
-    topologyRelationsResultMap[relation] = result;
-}
+// int QueryOutput::getResultForTopologyRelation(TopologyRelation relation) {
+//     auto it = topologyRelationsResultMap.find(relation);
+//     if (it != topologyRelationsResultMap.end()) {
+//         return it->second;
+//     }
+//     return -1;
+// }
 
-void QueryOutput::shallowCopy(QueryOutput &other) {
-    // result
-    this->queryResults = other.queryResults;
-    // topology relations results
-    this->topologyRelationsResultMap.clear();
-    for (auto &it: other.topologyRelationsResultMap) {
-        this->topologyRelationsResultMap[it.first] = it.second;
-    }
-    // statistics
-    this->postMBRFilterCandidates = other.postMBRFilterCandidates;
-    this->refinementCandidates = other.refinementCandidates;
-    this->trueHits = other.trueHits;
-    this->trueNegatives = other.trueNegatives;
+// void QueryOutput::setTopologyRelationResult(int relation, int result) {
+//     topologyRelationsResultMap[relation] = result;
+// }
+
+// void QueryOutput::shallowCopy(QueryOutput &other) {
+//     // result
+//     this->queryResults = other.queryResults;
+//     // topology relations results
+//     this->topologyRelationsResultMap.clear();
+//     for (auto &it: other.topologyRelationsResultMap) {
+//         this->topologyRelationsResultMap[it.first] = it.second;
+//     }
+//     // statistics
+//     this->postMBRFilterCandidates = other.postMBRFilterCandidates;
+//     this->refinementCandidates = other.refinementCandidates;
+//     this->trueHits = other.trueHits;
+//     this->trueNegatives = other.trueNegatives;
     
-    // time
-    this->mbrFilterTime = other.mbrFilterTime;
-    this->iFilterTime = other.iFilterTime;
-    this->refinementTime = other.refinementTime;
-}
+//     // time
+//     this->mbrFilterTime = other.mbrFilterTime;
+//     this->iFilterTime = other.iFilterTime;
+//     this->refinementTime = other.refinementTime;
+// }
 
 void AprilData::printALLintervals() {
     for (int i=0; i<intervalsALL.size(); i+=2) {
@@ -185,7 +138,7 @@ int DatasetMetadata::calculateBufferSize() {
     // dataset data type
     size += sizeof(DataType);
     // dataset file type
-    size += sizeof(FileType);
+    size += sizeof(hec::FileType);
     // dataset path: length + string
     size += sizeof(int) + (path.length() * sizeof(char));  
     // bounds set flag
@@ -200,11 +153,13 @@ DB_STATUS DatasetMetadata::serialize(char **buffer, int &bufferSize) {
     // calculate size
     int bufferSizeRet = calculateBufferSize();
     // allocate space
-    char* localBuffer = (char*) malloc(bufferSizeRet * sizeof(char));
-    if (localBuffer == NULL) {
+    (*buffer) = (char*) malloc(bufferSizeRet * sizeof(char));
+    if ((*buffer) == NULL) {
         // malloc failed
         return DBERR_MALLOC_FAILED;
     }
+    char* localBuffer = *buffer;
+
     // add internal ID
     memcpy(localBuffer + position, &internalID, sizeof(DatasetIndex));
     position += sizeof(DatasetIndex);
@@ -212,8 +167,8 @@ DB_STATUS DatasetMetadata::serialize(char **buffer, int &bufferSize) {
     memcpy(localBuffer + position, &dataType, sizeof(DataType));
     position += sizeof(DataType);
     // add file type
-    memcpy(localBuffer + position, &fileType, sizeof(FileType));
-    position += sizeof(FileType);
+    memcpy(localBuffer + position, &fileType, sizeof(hec::FileType));
+    position += sizeof(hec::FileType);
     // add dataset path length + string
     int pathLength = path.length();
     memcpy(localBuffer + position, &pathLength, sizeof(int));
@@ -235,7 +190,6 @@ DB_STATUS DatasetMetadata::serialize(char **buffer, int &bufferSize) {
         position += sizeof(double);
     }
     // set and return
-    (*buffer) = localBuffer;
     bufferSize = bufferSizeRet;
     return DBERR_OK;
 }
@@ -252,8 +206,8 @@ DB_STATUS DatasetMetadata::deserialize(const char *buffer, int bufferSize) {
     memcpy(&dataType, buffer + position, sizeof(DataType));
     position += sizeof(DataType);
     // dataset file type
-    memcpy(&fileType, buffer + position, sizeof(FileType));
-    position += sizeof(FileType);
+    memcpy(&fileType, buffer + position, sizeof(hec::FileType));
+    position += sizeof(hec::FileType);
     // dataset nickname length + string
     memcpy(&pathLength, buffer + position, sizeof(int));
     position += sizeof(int);
@@ -279,8 +233,8 @@ DB_STATUS DatasetMetadata::deserialize(const char *buffer, int bufferSize) {
     // set
     dataspaceMetadata.set(xMin, yMin, xMax, yMax);
     if (position != bufferSize) {
-        logger::log_error(DBERR_DESERIALIZE, "Dataset Metadata desereialization failed.");
-        return DBERR_DESERIALIZE;
+        logger::log_error(DBERR_DESERIALIZE_FAILED, "Dataset Metadata desereialization failed.");
+        return DBERR_DESERIALIZE_FAILED;
     }
     return DBERR_OK;
 }
@@ -398,7 +352,7 @@ DB_STATUS Dataset::deserialize(const char *buffer, int bufferSize) {
     //     return DBERR_OK;
     // }
     // else{
-    //     return DBERR_DESERIALIZE;
+    //     return DBERR_DESERIALIZE_FAILED;
     // }
     return DBERR_FEATURE_UNSUPPORTED;
 }
@@ -588,6 +542,71 @@ void DataspaceMetadata::print() {
     printf("xExtent: %f, yExtent: %f, maxExtent: %f\n", xExtent, yExtent, maxExtent);
 }
 
+int DataspaceMetadata::calculateBufferSize() {
+    int size = 0;
+    size += 4; // dataspace
+    size += 3; // extents
+    return size;
+}
+
+DB_STATUS DataspaceMetadata::serialize(double **buffer, int &bufferSize) {
+    // calculate size
+    int bufferSizeRet = calculateBufferSize();
+    // allocate space
+    (*buffer) = (double*) malloc(bufferSizeRet * sizeof(double));
+    if ((*buffer) == NULL) {
+        // malloc failed
+        return DBERR_MALLOC_FAILED;
+    }
+    double* localBuffer = *buffer;
+
+    // add dataspace
+    *reinterpret_cast<double*>(localBuffer) = (double) this->xMinGlobal;
+    localBuffer += 1;
+    *reinterpret_cast<double*>(localBuffer) = (double) this->yMinGlobal;
+    localBuffer += 1;
+    *reinterpret_cast<double*>(localBuffer) = (double) this->xMaxGlobal;
+    localBuffer += 1;
+    *reinterpret_cast<double*>(localBuffer) = (double) this->yMaxGlobal;
+    localBuffer += 1;
+    // extents
+    *reinterpret_cast<double*>(localBuffer) = (double) this->xExtent;
+    localBuffer += 1;
+    *reinterpret_cast<double*>(localBuffer) = (double) this->yExtent;
+    localBuffer += 1;
+    *reinterpret_cast<double*>(localBuffer) = (double) this->maxExtent;
+    localBuffer += 1;
+
+    // set and return
+    bufferSize = bufferSizeRet;
+    return DBERR_OK;
+}
+
+DB_STATUS DataspaceMetadata::deserialize(const double *buffer, int bufferSize) {
+    const double *localBuffer = buffer;
+    if (bufferSize != this->calculateBufferSize()) {
+        return DBERR_BUFFER_SIZE_MISMATCH;
+    }
+    // dataspace
+    this->xMinGlobal = (double) *reinterpret_cast<const double*>(localBuffer);
+    localBuffer += 1;
+    this->yMinGlobal = (double) *reinterpret_cast<const double*>(localBuffer);
+    localBuffer += 1;
+    this->xMaxGlobal = (double) *reinterpret_cast<const double*>(localBuffer);
+    localBuffer += 1;
+    this->yMaxGlobal = (double) *reinterpret_cast<const double*>(localBuffer);
+    localBuffer += 1;
+    // extents
+    this->xExtent = (double) *reinterpret_cast<const double*>(localBuffer);
+    localBuffer += 1;
+    this->yExtent = (double) *reinterpret_cast<const double*>(localBuffer);
+    localBuffer += 1;
+    this->maxExtent = (double) *reinterpret_cast<const double*>(localBuffer);
+    localBuffer += 1;
+
+    return DBERR_OK;
+}
+
 Partition* TwoLayerIndex::getOrCreatePartition(int partitionID) {
     // return &it->second;
     auto it = partitionMap.find(partitionID);
@@ -746,6 +765,20 @@ void DatasetOptions::updateDataspace() {
     // set as both datasets' bounds
     for (auto &it: datasets) {
         it.second.metadata.dataspaceMetadata = dataspaceMetadata;
+    }
+
+    // logger::log_success("Updated global dataspace:", g_config.datasetOptions.dataspaceMetadata.xMinGlobal, g_config.datasetOptions.dataspaceMetadata.yMinGlobal, g_config.datasetOptions.dataspaceMetadata.xMaxGlobal, g_config.datasetOptions.dataspaceMetadata.yMaxGlobal);
+}
+
+void DatasetOptions::updateDatasetDataspaceToGlobal() {
+    for (auto &it: datasets) {
+        it.second.metadata.dataspaceMetadata.xMinGlobal = dataspaceMetadata.xMinGlobal;
+        it.second.metadata.dataspaceMetadata.yMinGlobal = dataspaceMetadata.yMinGlobal;
+        it.second.metadata.dataspaceMetadata.xMaxGlobal = dataspaceMetadata.xMaxGlobal;
+        it.second.metadata.dataspaceMetadata.yMaxGlobal = dataspaceMetadata.yMaxGlobal;
+        it.second.metadata.dataspaceMetadata.xExtent = dataspaceMetadata.xExtent;
+        it.second.metadata.dataspaceMetadata.yExtent = dataspaceMetadata.yExtent;
+        it.second.metadata.dataspaceMetadata.maxExtent = dataspaceMetadata.maxExtent;
     }
 }
 

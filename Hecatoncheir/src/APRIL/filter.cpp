@@ -14,7 +14,7 @@ namespace APRIL
     namespace topology
     {
         
-        static DB_STATUS specializedTopologyRinSContainment(Shape* objR, Shape* objS, QueryOutput &queryOutput) {
+        static DB_STATUS specializedTopologyRinSContainment(Shape* objR, Shape* objS, hec::QueryResult &queryResult) {
             DB_STATUS ret = DBERR_OK;
             int iFilterResult = INCONCLUSIVE;
             // get common sections
@@ -37,12 +37,11 @@ namespace APRIL
                     case TR_DISJOINT:
                     case TR_INTERSECT:
                         // result
-                        queryOutput.countTopologyRelationResult(iFilterResult);
+                        queryResult.countTopologyRelationResult(iFilterResult, objR->recID, objS->recID);
                         return ret;
                 }
             }
             // count refinement candidate
-            queryOutput.countAPRILresult(INCONCLUSIVE);
             int relation = -1;
             // switch based on result
             switch(iFilterResult) {            
@@ -62,15 +61,13 @@ namespace APRIL
                 
             }
             // count the refinement result
-            queryOutput.countTopologyRelationResult(relation);
-            // if (relation == TR_MEET) {
-            //     printf("%d,%d\n", objR->recID, objS->recID);
-            // }
+            queryResult.countTopologyRelationResult(relation, objR->recID, objS->recID);
+
             return ret;
         }
 
         
-        static DB_STATUS specializedTopologySinRContainment(Shape* objR, Shape* objS, QueryOutput &queryOutput) {
+        static DB_STATUS specializedTopologySinRContainment(Shape* objR, Shape* objS, hec::QueryResult &queryResult) {
             DB_STATUS ret = DBERR_OK;
             int iFilterResult = INCONCLUSIVE;
             // get common sections
@@ -93,12 +90,11 @@ namespace APRIL
                     case TR_DISJOINT:
                     case TR_INTERSECT:
                         // result
-                        queryOutput.countTopologyRelationResult(iFilterResult);
+                        queryResult.countTopologyRelationResult(iFilterResult, objR->recID, objS->recID);
                         return ret;
                 }
             }
             // count refinement candidate
-            queryOutput.countAPRILresult(INCONCLUSIVE);
             int relation = -1;
             // switch based on result
             switch(iFilterResult) {            
@@ -117,16 +113,15 @@ namespace APRIL
                     return DBERR_APRIL_UNEXPECTED_RESULT;
                 
             }
-            // if (relation == TR_MEET) {
-            //     printf("%d,%d\n", objR->recID, objS->recID);
-            // }
+            
             // count the refinement result
-            queryOutput.countTopologyRelationResult(relation);
+            queryResult.countTopologyRelationResult(relation, objR->recID, objS->recID);
+
             return ret;
         }
 
         
-        static DB_STATUS specializedTopologyEqual(Shape* objR, Shape* objS, QueryOutput &queryOutput) {
+        static DB_STATUS specializedTopologyEqual(Shape* objR, Shape* objS, hec::QueryResult &queryResult) {
             DB_STATUS ret = DBERR_OK;
             int iFilterResult = INCONCLUSIVE;
             // get common sections
@@ -151,12 +146,11 @@ namespace APRIL
                     case TR_INTERSECT:
                     case TR_MEET:
                         // result
-                        queryOutput.countTopologyRelationResult(iFilterResult);
+                        queryResult.countTopologyRelationResult(iFilterResult, objR->recID, objS->recID);
                         return ret;
                 }
             }
             // count refinement candidate
-            queryOutput.countAPRILresult(INCONCLUSIVE);
             int relation = -1;
             // switch based on result
             switch(iFilterResult) {            
@@ -183,12 +177,12 @@ namespace APRIL
                     return DBERR_APRIL_UNEXPECTED_RESULT;
             }
             // count the refinement result
-            queryOutput.countTopologyRelationResult(relation);
+            queryResult.countTopologyRelationResult(relation, objR->recID, objS->recID);
             return ret;
         }
 
         
-        static DB_STATUS specializedTopologyIntersection(Shape* objR, Shape* objS, QueryOutput &queryOutput) {
+        static DB_STATUS specializedTopologyIntersection(Shape* objR, Shape* objS, hec::QueryResult &queryResult) {
             DB_STATUS ret = DBERR_OK;
             int iFilterResult = INCONCLUSIVE;
             // get common sections
@@ -210,47 +204,43 @@ namespace APRIL
                     case TR_DISJOINT:
                     case TR_INTERSECT:
                         // result
-                        queryOutput.countTopologyRelationResult(iFilterResult);
+                        queryResult.countTopologyRelationResult(iFilterResult, objR->recID, objS->recID);
                         return ret;
                 }
             }
             // count refinement candidate
-            queryOutput.countAPRILresult(INCONCLUSIVE);
             // refine
             int relation = refinement::topology::refineDisjointMeetIntersect(objR, objS);
-            // if (relation == TR_MEET) {
-            //     printf("%d,%d\n", objR->recID, objS->recID);
-            // }
             // count the refinement relation result
-            queryOutput.countTopologyRelationResult(relation);
+            queryResult.countTopologyRelationResult(relation, objR->recID, objS->recID);
             return ret;
         }
 
         
-        DB_STATUS IntermediateFilterEntrypoint(Shape* objR, Shape* objS, MBRRelationCase mbrRelationCase, QueryOutput &queryOutput) {
+        DB_STATUS IntermediateFilterEntrypoint(Shape* objR, Shape* objS, MBRRelationCase mbrRelationCase, hec::QueryResult &queryResult) {
             DB_STATUS ret = DBERR_OK;
             // switch based on how the MBRs intersect, to the appropriate intermediate filter
             switch (mbrRelationCase) {
                 case MBR_R_IN_S:
-                    ret = specializedTopologyRinSContainment(objR, objS, queryOutput);
+                    ret = specializedTopologyRinSContainment(objR, objS, queryResult);
                     if (ret != DBERR_OK) {
                         logger::log_error(ret, "specialized topology R in S containment filter failed.");
                     }
                     break;
                 case MBR_S_IN_R:
-                    ret = specializedTopologySinRContainment(objR, objS, queryOutput);
+                    ret = specializedTopologySinRContainment(objR, objS, queryResult);
                     if (ret != DBERR_OK) {
                         logger::log_error(ret, "specialized topology S in R containment filter failed.");
                     }
                     break;
                 case MBR_EQUAL:
-                    ret = specializedTopologyEqual(objR, objS, queryOutput);
+                    ret = specializedTopologyEqual(objR, objS, queryResult);
                     if (ret != DBERR_OK) {
                         logger::log_error(ret, "specialized topology S in R containment filter failed.");
                     }
                     break;
                 case MBR_INTERSECT:
-                    ret = specializedTopologyIntersection(objR, objS, queryOutput);
+                    ret = specializedTopologyIntersection(objR, objS, queryResult);
                     if (ret != DBERR_OK) {
                         logger::log_error(ret, "specialized topology S in R containment filter failed.");
                     }
@@ -267,7 +257,7 @@ namespace APRIL
     namespace standard
     {
         
-        DB_STATUS IntermediateFilterEntrypoint(Shape* objR, Shape* objS, QueryOutput &queryOutput) {
+        DB_STATUS IntermediateFilterEntrypoint(Shape* objR, Shape* objS, hec::QueryResult &queryResult) {
             DB_STATUS ret = DBERR_OK;
             // get common sections
             std::vector<int> commonSections = getCommonSectionIDsOfObjects(g_config.datasetOptions.getDatasetR(), g_config.datasetOptions.getDatasetS(), objR->recID, objS->recID);
@@ -278,46 +268,47 @@ namespace APRIL
                 AprilData* aprilS = g_config.datasetOptions.getDatasetS()->getAprilDataBySectionAndObjectID(sectionID, objS->recID);
                 int iFilterResult = INCONCLUSIVE;
                 // use appropriate query function
-                switch (g_config.queryMetadata.type) {
-                    case Q_RANGE:
-                    case Q_INTERSECT:
+                switch (g_config.queryMetadata.queryType) {
+                    case hec::Q_RANGE:
+                        return DBERR_FEATURE_UNSUPPORTED;
+                    case hec::Q_INTERSECTION_JOIN:
                         ret = uncompressed::standard::intersectionJoinAPRIL(aprilR, aprilS, iFilterResult);
                         if (ret != DBERR_OK) {
                             logger::log_error(ret, "APRIL intersection join failed for pair", objR->recID, "and", objS->recID);
                             return ret;
                         }
                         break;
-                    case Q_COVERED_BY:   
-                    case Q_INSIDE:
+                    case hec::Q_COVERED_BY_JOIN:   
+                    case hec::Q_INSIDE_JOIN:
                         ret = uncompressed::standard::insideCoveredByJoinAPRIL(aprilR, aprilS, iFilterResult);
                         if (ret != DBERR_OK) {
                             logger::log_error(ret, "APRIL inside/covered by join failed for pair", objR->recID, "and", objS->recID);
                             return ret;
                         }
                         break;
-                    case Q_DISJOINT:
+                    case hec::Q_DISJOINT_JOIN:
                         ret = uncompressed::standard::disjointJoinAPRIL(aprilR, aprilS, iFilterResult);
                         if (ret != DBERR_OK) {
                             logger::log_error(ret, "APRIL disjoint join failed for pair", objR->recID, "and", objS->recID);
                             return ret;
                         }
                         break;
-                    case Q_EQUAL:
+                    case hec::Q_EQUAL_JOIN:
                         ret = uncompressed::standard::equalJoinAPRIL(aprilR, aprilS, iFilterResult);
                         if (ret != DBERR_OK) {
                             logger::log_error(ret, "APRIL equality join failed for pair", objR->recID, "and", objS->recID);
                             return ret;
                         }
                         break;
-                    case Q_MEET:
+                    case hec::Q_MEET_JOIN:
                         ret = uncompressed::standard::meetJoinAPRIL(aprilR, aprilS, iFilterResult);
                         if (ret != DBERR_OK) {
                             logger::log_error(ret, "APRIL meet join failed for pair", objR->recID, "and", objS->recID);
                             return ret;
                         }
                         break;
-                    case Q_CONTAINS:
-                    case Q_COVERS:
+                    case hec::Q_CONTAINS_JOIN:
+                    case hec::Q_COVERS_JOIN:
                         ret = uncompressed::standard::containsCoversJoinAPRIL(aprilR, aprilS, iFilterResult);
                         if (ret != DBERR_OK) {
                             logger::log_error(ret, "APRIL contains/covers join failed for pair", objR->recID, "and", objS->recID);
@@ -326,49 +317,49 @@ namespace APRIL
                         break;
                     default:
                         // not supported/unknown
-                        logger::log_error(DBERR_QUERY_INVALID_TYPE, "Unsupported query for standard APRIL intermediate filter. Query type:", mapping::queryTypeIntToStr(g_config.queryMetadata.type));
+                        logger::log_error(DBERR_QUERY_INVALID_TYPE, "Unsupported query for standard APRIL intermediate filter. Query type:", mapping::queryTypeIntToStr(g_config.queryMetadata.queryType));
                         return DBERR_QUERY_INVALID_TYPE;
                 }
                 // if true negative or true hit, return
                 if (iFilterResult != INCONCLUSIVE) {
                     // count APRIL result
-                    queryOutput.countAPRILresult(iFilterResult);
+                    if (iFilterResult == TRUE_HIT) {
+                        queryResult.countResult(objR->recID, objS->recID);
+                    }
                     return ret;
                 }
             }
-            // count refinement candidate (inconclusive)
-            queryOutput.countAPRILresult(INCONCLUSIVE);
-
             // refine based on query type
-            switch (g_config.queryMetadata.type) {
-                case Q_RANGE:
-                case Q_INTERSECT:
-                    refinement::relate::refineIntersectionJoin(objR, objS, queryOutput);
+            switch (g_config.queryMetadata.queryType) {
+                case hec::Q_RANGE:
+                        return DBERR_FEATURE_UNSUPPORTED;
+                case hec::Q_INTERSECTION_JOIN:
+                    refinement::relate::refineIntersectionJoin(objR, objS, queryResult);
                     break;
-                case Q_COVERED_BY:
-                    refinement::relate::refineCoveredByJoin(objR, objS, queryOutput);
+                case hec::Q_COVERED_BY_JOIN:
+                    refinement::relate::refineCoveredByJoin(objR, objS, queryResult);
                     break;
-                case Q_INSIDE:
-                    refinement::relate::refineInsideJoin(objR, objS, queryOutput);
+                case hec::Q_INSIDE_JOIN:
+                    refinement::relate::refineInsideJoin(objR, objS, queryResult);
                     break;
-                case Q_DISJOINT:
-                    refinement::relate::refineDisjointJoin(objR, objS, queryOutput);
+                case hec::Q_DISJOINT_JOIN:
+                    refinement::relate::refineDisjointJoin(objR, objS, queryResult);
                     break;
-                case Q_EQUAL:
-                    refinement::relate::refineEqualJoin(objR, objS, queryOutput);
+                case hec::Q_EQUAL_JOIN:
+                    refinement::relate::refineEqualJoin(objR, objS, queryResult);
                     break;
-                case Q_MEET:
-                    refinement::relate::refineMeetJoin(objR, objS, queryOutput);
+                case hec::Q_MEET_JOIN:
+                    refinement::relate::refineMeetJoin(objR, objS, queryResult);
                     break;
-                case Q_CONTAINS:
-                    refinement::relate::refineContainsJoin(objR, objS, queryOutput);
+                case hec::Q_CONTAINS_JOIN:
+                    refinement::relate::refineContainsJoin(objR, objS, queryResult);
                     break;
-                case Q_COVERS:
-                    refinement::relate::refineCoversJoin(objR, objS, queryOutput);
+                case hec::Q_COVERS_JOIN:
+                    refinement::relate::refineCoversJoin(objR, objS, queryResult);
                     break;
                 default:
                     // not supported/unknown
-                    logger::log_error(DBERR_QUERY_INVALID_TYPE, "Unsupported query for refinement. Query type:", mapping::queryTypeIntToStr(g_config.queryMetadata.type));
+                    logger::log_error(DBERR_QUERY_INVALID_TYPE, "Unsupported query for refinement. Query type:", mapping::queryTypeIntToStr(g_config.queryMetadata.queryType));
                     return DBERR_QUERY_INVALID_TYPE;
             }
             return ret;

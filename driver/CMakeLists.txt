@@ -8,7 +8,7 @@ set(CMAKE_CXX_FLAGS_RELEASE "-O3")
 add_executable(driver driver.cpp)
 # Include directories for the driver
 target_include_directories(driver PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}/../Hecatoncheir  # Include the header directory
+    ${CMAKE_CURRENT_SOURCE_DIR}/../Hecatoncheir/API  # Include the API directory
 )
 
 find_package(MPI REQUIRED)

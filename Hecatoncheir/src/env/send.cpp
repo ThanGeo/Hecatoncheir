@@ -45,20 +45,20 @@ namespace comm
             return DBERR_OK;
         }
 
-        DB_STATUS sendDatasetMetadataMessage(SerializedMsg<char> &datasetMetadataMsg, int destRank, int tag, MPI_Comm &comm) {
-            // check tag validity
-            if (tag != MSG_DATASET_METADATA) {
-                logger::log_error(DBERR_COMM_INVALID_MSG_TAG, "Dataset metadata messages must have the appropriate tag. Current tag", tag);
-                return DBERR_COMM_INVALID_MSG_TAG;
-            }
-            // send the message
-            int mpi_ret = MPI_Send(datasetMetadataMsg.data, datasetMetadataMsg.count, MPI_CHAR, destRank, tag, comm);
-            if (mpi_ret != MPI_SUCCESS) {
-                logger::log_error(DBERR_COMM_SEND, "Send message with tag", tag);
-                return DBERR_COMM_SEND;
-            }
-            return DBERR_OK;
-        }
+        // DB_STATUS sendDatasetMetadataMessage(SerializedMsg<char> &datasetMetadataMsg, int destRank, int tag, MPI_Comm &comm) {
+        //     // check tag validity
+        //     if (tag != MSG_DATASET_METADATA) {
+        //         logger::log_error(DBERR_COMM_INVALID_MSG_TAG, "Dataset metadata messages must have the appropriate tag. Current tag", tag);
+        //         return DBERR_COMM_INVALID_MSG_TAG;
+        //     }
+        //     // send the message
+        //     int mpi_ret = MPI_Send(datasetMetadataMsg.data, datasetMetadataMsg.count, MPI_CHAR, destRank, tag, comm);
+        //     if (mpi_ret != MPI_SUCCESS) {
+        //         logger::log_error(DBERR_COMM_SEND, "Send message with tag", tag);
+        //         return DBERR_COMM_SEND;
+        //     }
+        //     return DBERR_OK;
+        // }
         
     }
 

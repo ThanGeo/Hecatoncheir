@@ -247,7 +247,7 @@ namespace storage
             DB_STATUS ret = DBERR_OK;
             switch (dataset->metadata.fileType) {
                 // perform the partitioning
-                case FT_CSV:
+                case hec::FT_CSV:
                     // csv dataset
                     ret = csv::calculateDatasetMetadata(dataset);
                     if (ret != DBERR_OK) {
@@ -255,7 +255,7 @@ namespace storage
                         return ret;
                     }
                     break;
-                case FT_WKT:
+                case hec::FT_WKT:
                     // wkt dataset
                     ret = wkt::calculateDatasetMetadata(dataset);
                     if (ret != DBERR_OK) {

@@ -23,8 +23,6 @@ namespace proc
         }
 
         // broadcast the controller's node rank to the agent
-        // @todo: USE SEND/RECV not BROADCAST
-        // mpi_ret = MPI_Bcast(&g_node_rank, 1, MPI_INT, AGENT_RANK, g_agent_comm);
         mpi_ret = MPI_Send(&g_node_rank, 1, MPI_INT, AGENT_RANK, 0, g_agent_comm);
         if (mpi_ret != MPI_SUCCESS) {
             logger::log_error(DBERR_COMM_BCAST, "Broadcasting controller rank failed");
@@ -35,12 +33,8 @@ namespace proc
         MPI_Info_free(&mpi_info);
         free(error_codes);
 
-        // sanity check (obsolete)
-        // if (HOST_LOCAL_RANK != AGENT_RANK) {
-        //     // this will never happen unless somebody did a malakia
-        //     logger::log_error(DBERR_INVALID_PARAMETER, "Host node rank and every agent's rank must match");
-        //     return DBERR_INVALID_PARAMETER;
-        // }
+        // syncrhonize with agent
+        MPI_Barrier(g_agent_comm);
 
         return DBERR_OK;
     }

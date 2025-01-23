@@ -9,6 +9,8 @@
 
 #include <mpi.h>
 
+#include "../API/containers.h"
+#include "../API/def.h"
 #include "def.h"
 
 /** @brief Verifies that the file at the specified filepath exists on disk.
@@ -214,12 +216,14 @@ namespace logger
 namespace mapping
 {
     extern std::string actionIntToStr(ActionType action);
-    std::string twoLayerClassIntToStr(TwoLayerClass classType);
-    extern std::string queryTypeIntToStr(QueryType val);
-    extern QueryType queryTypeStrToInt(std::string &str);
+    extern std::string twoLayerClassIntToStr(TwoLayerClass classType);
+    extern std::string queryTypeIntToStr(hec::QueryType val);
+    extern hec::QueryType queryTypeStrToInt(std::string &str);
+    extern hec::QueryResultType queryResultTypeStrToInt(std::string &str);
+    extern std::string queryResultTypeIntToStr(hec::QueryResultType val);
     extern std::string dataTypeIntToStr(DataType val);
     extern DataType dataTypeTextToInt(std::string str);
-    extern FileType fileTypeTextToInt(std::string str);
+    extern hec::FileType fileTypeTextToInt(std::string str);
     extern std::string relationIntToStr(int relation);
 }
 

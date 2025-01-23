@@ -10,7 +10,8 @@ NC='\033[0m'
 mkdir -p build
 
 # build the code. It's the same for both local/cluster, but with different build types
-cd build && cmake -D CMAKE_C_COMPILER=mpicc.mpich -D CMAKE_CXX_COMPILER=mpicxx.mpich -DCMAKE_BUILD_TYPE=$buildtype .. && cmake --build .
+cd build && cmake -D CMAKE_C_COMPILER=mpicc.mpich -D CMAKE_CXX_COMPILER=mpicxx.mpich -DCMAKE_BUILD_TYPE=Release .. && cmake --build .
+# cd build && cmake -D CMAKE_C_COMPILER=mpicc.mpich -D CMAKE_CXX_COMPILER=mpicxx.mpich -DCMAKE_BUILD_TYPE=Debug .. && cmake --build .
 cd ..
 
 # the nodes(addresses) are stored in the file "nodes"

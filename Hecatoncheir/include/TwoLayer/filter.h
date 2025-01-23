@@ -3,13 +3,14 @@
 
 #include "containers.h"
 #include "APRIL/filter.h"
+#include "../API/containers.h"
 #include <omp.h>
 
 /** @brief The two-layer MBR filter methods. */
 namespace twolayer
 {
-    /** @brief Begins the query processing based on the system's query configuration. */
-    DB_STATUS processQuery(QueryOutput &queryOutput);
+    /** @brief Begins the query processing specified by the query object and stores the result in the hec::QueryResult object. */
+    DB_STATUS processQuery(hec::Query* query, hec::QueryResult &queryResult);
 }
 
 

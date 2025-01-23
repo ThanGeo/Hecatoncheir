@@ -8,52 +8,52 @@ namespace parser
 
     // query support map
     QuerySupportMap g_querySupportMap = {
-        {Q_RANGE, {
+        {hec::Q_RANGE, {
             {{DT_POLYGON, DT_LINESTRING}, true},
             {{DT_POLYGON, DT_POLYGON}, true},
             // {{DT_POLYGON, DT_POINT}, true},
         }},
-        {Q_INTERSECT, {
+        {hec::Q_INTERSECTION_JOIN, {
             {{DT_POLYGON, DT_LINESTRING}, true},
             {{DT_POLYGON, DT_POLYGON}, true},
             {{DT_LINESTRING, DT_POLYGON}, true}
         }},
-        {Q_INSIDE, {
+        {hec::Q_INSIDE_JOIN, {
             {{DT_POLYGON, DT_LINESTRING}, true},
             {{DT_POLYGON, DT_POLYGON}, true},
             {{DT_LINESTRING, DT_POLYGON}, true}
         }},
-        {Q_COVERED_BY, {
+        {hec::Q_COVERED_BY_JOIN, {
             {{DT_POLYGON, DT_LINESTRING}, true},
             {{DT_POLYGON, DT_POLYGON}, true},
             {{DT_LINESTRING, DT_POLYGON}, true}
         }},
-        {Q_COVERS, {
+        {hec::Q_COVERS_JOIN, {
             {{DT_POLYGON, DT_LINESTRING}, true},
             {{DT_POLYGON, DT_POLYGON}, true},
             {{DT_LINESTRING, DT_POLYGON}, true}
         }},
-        {Q_CONTAINS, {
+        {hec::Q_CONTAINS_JOIN, {
             {{DT_POLYGON, DT_LINESTRING}, true},
             {{DT_POLYGON, DT_POLYGON}, true},
             {{DT_LINESTRING, DT_POLYGON}, true}
         }},
-        {Q_DISJOINT, {
+        {hec::Q_DISJOINT_JOIN, {
             {{DT_POLYGON, DT_LINESTRING}, true},
             {{DT_POLYGON, DT_POLYGON}, true},
             {{DT_LINESTRING, DT_POLYGON}, true}
         }},
-        {Q_EQUAL, {
+        {hec::Q_EQUAL_JOIN, {
             {{DT_POLYGON, DT_LINESTRING}, true},
             {{DT_POLYGON, DT_POLYGON}, true},
             {{DT_LINESTRING, DT_POLYGON}, true}
         }},
-        {Q_MEET, {
+        {hec::Q_MEET_JOIN, {
             {{DT_POLYGON, DT_LINESTRING}, true},
             {{DT_POLYGON, DT_POLYGON}, true},
             {{DT_LINESTRING, DT_POLYGON}, true}
         }},
-        {Q_FIND_RELATION, {
+        {hec::Q_FIND_RELATION_JOIN, {
             {{DT_POLYGON, DT_LINESTRING}, true},
             {{DT_POLYGON, DT_POLYGON}, true},
             {{DT_LINESTRING, DT_POLYGON}, true}
@@ -72,30 +72,30 @@ namespace parser
         return DBERR_INVALID_PARAMETER;
     }
 
-    static DB_STATUS verifyDatatypeCombinationForQueryType(QueryType queryType) {
-        // get number of datasets
-        int numberOfDatasets = g_config.datasetOptions.getNumberOfDatasets();
-        // find if query type is supported
-        auto queryIT = g_querySupportMap.find(queryType);
-        if (queryIT != g_querySupportMap.end()) {
-            DataType dataTypeR = g_config.datasetOptions.getDatasetR()->metadata.dataType;
-            // todo: for queries with one dataset input, handle this accordingly
-            DataType dataTypeS = g_config.datasetOptions.getDatasetS()->metadata.dataType;
-            const auto& allowedCombinations = queryIT->second;
-            auto dataTypesPair = std::make_pair(dataTypeR, dataTypeS);
-            auto datatypesIT = allowedCombinations.find(dataTypesPair);
-            if (datatypesIT != allowedCombinations.end()) {
-                // query data types combination supported
-                return DBERR_OK;
-            } else {
-                logger::log_error(DBERR_QUERY_INVALID_TYPE, "Data type combination unsupported for query", mapping::queryTypeIntToStr(g_config.queryMetadata.type), "combination:", mapping::dataTypeIntToStr(dataTypeR), "and", mapping::dataTypeIntToStr(dataTypeS));
-                return DBERR_QUERY_INVALID_TYPE;
-            }
-        }
-        // error for query type
-        logger::log_error(DBERR_QUERY_INVALID_TYPE, "Query type unsupported. Query code:", queryType);
-        return DBERR_QUERY_INVALID_TYPE;
-    }
+    // static DB_STATUS verifyDatatypeCombinationForQueryType(hec::QueryType queryType) {
+    //     // get number of datasets
+    //     int numberOfDatasets = g_config.datasetOptions.getNumberOfDatasets();
+    //     // find if query type is supported
+    //     auto queryIT = g_querySupportMap.find(queryType);
+    //     if (queryIT != g_querySupportMap.end()) {
+    //         DataType dataTypeR = g_config.datasetOptions.getDatasetR()->metadata.dataType;
+    //         // todo: for queries with one dataset input, handle this accordingly
+    //         DataType dataTypeS = g_config.datasetOptions.getDatasetS()->metadata.dataType;
+    //         const auto& allowedCombinations = queryIT->second;
+    //         auto dataTypesPair = std::make_pair(dataTypeR, dataTypeS);
+    //         auto datatypesIT = allowedCombinations.find(dataTypesPair);
+    //         if (datatypesIT != allowedCombinations.end()) {
+    //             // query data types combination supported
+    //             return DBERR_OK;
+    //         } else {
+    //             logger::log_error(DBERR_QUERY_INVALID_TYPE, "Data type combination unsupported for query", mapping::queryTypeIntToStr(g_config.queryMetadata.type), "combination:", mapping::dataTypeIntToStr(dataTypeR), "and", mapping::dataTypeIntToStr(dataTypeS));
+    //             return DBERR_QUERY_INVALID_TYPE;
+    //         }
+    //     }
+    //     // error for query type
+    //     logger::log_error(DBERR_QUERY_INVALID_TYPE, "Query type unsupported. Query code:", queryType);
+    //     return DBERR_QUERY_INVALID_TYPE;
+    // }
 
     static DB_STATUS loadAPRILconfig() {
         ApproximationMetadata approxMetadata(AT_APRIL);
@@ -133,55 +133,55 @@ namespace parser
      * @param actionsStmt 
      * @return DB_STATUS 
      */
-    static DB_STATUS parseActions(ActionsStatement *actionsStmt) {
-        DB_STATUS ret = DBERR_OK;
-        // partitioning always before issuing the load datasets action
-        if (actionsStmt->performPartitioning) {
-            Action action(ACTION_PERFORM_PARTITIONING);
-            g_config.actions.emplace_back(action);
-        }
-        // load dataset actions
-        if (actionsStmt->loadDatasetR && g_config.queryMetadata.type != Q_NONE) {
-            Action action(ACTION_LOAD_DATASET_R);
-            g_config.actions.emplace_back(action);
-        }
-        if (actionsStmt->loadDatasetS && g_config.queryMetadata.type != Q_NONE) {
-            Action action(ACTION_LOAD_DATASET_S);
-            g_config.actions.emplace_back(action);
-        }
-        // create APRIL
-        for (int i=0; i<actionsStmt->createApproximations.size(); i++) {
-            Action action;
-            ret = statement::getCreateApproximationAction(actionsStmt->createApproximations.at(i), action);
-            if (ret != DBERR_OK) {
-                return ret;
-            }
-            g_config.actions.emplace_back(action);
-            // load APRIL configuration from configuration file
-            ret = loadAPRILconfig();
-            if (ret != DBERR_OK) {
-                logger::log_error(DBERR_CONFIG_FILE, "Failed to load APRIL config from system configuration file");
-                return DBERR_CONFIG_FILE;
-            }
-        }
-        // load APRIL (after any creation and after the datasets have been loaded)
-        // only of there is at least one dataset and the intermediate filter is enabled
-        if ((actionsStmt->loadDatasetR || actionsStmt->loadDatasetS) && g_config.queryMetadata.IntermediateFilter && g_config.queryMetadata.type != Q_NONE) {
-            Action action(ACTION_LOAD_APRIL);
-            g_config.actions.emplace_back(action);
-        }
-        // queries
-        if (g_config.queryMetadata.type != Q_NONE) {
-            Action action(ACTION_QUERY);
-            g_config.actions.emplace_back(action);
-        }
-        // verification always last (todo)
-        if (actionsStmt->performVerification) {
-            Action action(ACTION_PERFORM_VERIFICATION);
-            g_config.actions.emplace_back(action);
-        }
-        return DBERR_OK;
-    }
+    // static DB_STATUS parseActions(ActionsStatement *actionsStmt) {
+    //     DB_STATUS ret = DBERR_OK;
+    //     // partitioning always before issuing the load datasets action
+    //     if (actionsStmt->performPartitioning) {
+    //         Action action(ACTION_PERFORM_PARTITIONING);
+    //         g_config.actions.emplace_back(action);
+    //     }
+    //     // load dataset actions
+    //     if (actionsStmt->loadDatasetR && g_config.queryMetadata.type != hec::Q_NONE) {
+    //         Action action(ACTION_LOAD_DATASET_R);
+    //         g_config.actions.emplace_back(action);
+    //     }
+    //     if (actionsStmt->loadDatasetS && g_config.queryMetadata.type != hec::Q_NONE) {
+    //         Action action(ACTION_LOAD_DATASET_S);
+    //         g_config.actions.emplace_back(action);
+    //     }
+    //     // create APRIL
+    //     for (int i=0; i<actionsStmt->createApproximations.size(); i++) {
+    //         Action action;
+    //         ret = statement::getCreateApproximationAction(actionsStmt->createApproximations.at(i), action);
+    //         if (ret != DBERR_OK) {
+    //             return ret;
+    //         }
+    //         g_config.actions.emplace_back(action);
+    //         // load APRIL configuration from configuration file
+    //         ret = loadAPRILconfig();
+    //         if (ret != DBERR_OK) {
+    //             logger::log_error(DBERR_CONFIG_FILE, "Failed to load APRIL config from system configuration file");
+    //             return DBERR_CONFIG_FILE;
+    //         }
+    //     }
+    //     // load APRIL (after any creation and after the datasets have been loaded)
+    //     // only of there is at least one dataset and the intermediate filter is enabled
+    //     if ((actionsStmt->loadDatasetR || actionsStmt->loadDatasetS) && g_config.queryMetadata.IntermediateFilter && g_config.queryMetadata.type != hec::Q_NONE) {
+    //         Action action(ACTION_LOAD_APRIL);
+    //         g_config.actions.emplace_back(action);
+    //     }
+    //     // queries
+    //     if (g_config.queryMetadata.type != hec::Q_NONE) {
+    //         Action action(ACTION_QUERY);
+    //         g_config.actions.emplace_back(action);
+    //     }
+    //     // verification always last (todo)
+    //     if (actionsStmt->performVerification) {
+    //         Action action(ACTION_PERFORM_VERIFICATION);
+    //         g_config.actions.emplace_back(action);
+    //     }
+    //     return DBERR_OK;
+    // }
 
     /**
     @brief adjust the number of partitions based on how many nodes are there 
@@ -271,7 +271,7 @@ namespace parser
         if (datasetStmt->datasetCount > 0) {
             // R dataset
             // file type
-            FileType fileTypeR = mapping::fileTypeTextToInt(datasetStmt->filetypeR);
+            hec::FileType fileTypeR = mapping::fileTypeTextToInt(datasetStmt->filetypeR);
             if (fileTypeR == -1) {
                 logger::log_error(DBERR_INVALID_FILETYPE, "Unkown file type of dataset R:", datasetStmt->filetypeR);
                 return DBERR_INVALID_FILETYPE;
@@ -291,7 +291,7 @@ namespace parser
                     return DBERR_INVALID_PARAMETER;
                 }
                 // file type
-                FileType fileTypeS = mapping::fileTypeTextToInt(datasetStmt->filetypeS);
+                hec::FileType fileTypeS = mapping::fileTypeTextToInt(datasetStmt->filetypeS);
                 if (fileTypeS == -1) {
                     logger::log_error(DBERR_INVALID_FILETYPE, "Unkown file type of dataset S:", datasetStmt->filetypeS);
                     return DBERR_INVALID_FILETYPE;
@@ -380,28 +380,28 @@ namespace parser
         return DBERR_OK;
     }
 
-    static DB_STATUS parseQueryOptions(QueryStatement *queryStmt) {
-        if (queryStmt->queryType == "") {
-            // no query was selected
-            return DBERR_OK;
-        }
-        // get query type int
-        QueryType queryType = mapping::queryTypeStrToInt(queryStmt->queryType);
-        if (queryType == -1) {
-            logger::log_error(DBERR_INVALID_PARAMETER, "Invalid query type:", queryStmt->queryType);
-            return DBERR_INVALID_PARAMETER;
-        }
-        // verify query validity with input datasets
-        DB_STATUS ret = verifyDatatypeCombinationForQueryType(queryType);
-        if (ret != DBERR_OK) {
-            return ret;
-        }
+    // static DB_STATUS parseQueryOptions(QueryStatement *queryStmt) {
+    //     if (queryStmt->queryType == "") {
+    //         // no query was selected
+    //         return DBERR_OK;
+    //     }
+    //     // get query type int
+    //     hec::QueryType queryType = mapping::queryTypeStrToInt(queryStmt->queryType);
+    //     if (queryType == -1) {
+    //         logger::log_error(DBERR_INVALID_PARAMETER, "Invalid query type:", queryStmt->queryType);
+    //         return DBERR_INVALID_PARAMETER;
+    //     }
+    //     // verify query validity with input datasets
+    //     DB_STATUS ret = verifyDatatypeCombinationForQueryType(queryType);
+    //     if (ret != DBERR_OK) {
+    //         return ret;
+    //     }
 
-        // set to configuration
-        g_config.queryMetadata.type = (QueryType) queryType;
+    //     // set to configuration
+    //     g_config.queryMetadata.type = (QueryType) queryType;
         
-        return DBERR_OK;    
-    }
+    //     return DBERR_OK;    
+    // }
 
     /**
     @brief passes the configuration on to the sysOps return object

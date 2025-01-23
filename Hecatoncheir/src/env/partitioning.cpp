@@ -656,7 +656,7 @@ namespace partitioning
         // startTime = mpi_timer::markTime();
         switch (dataset->metadata.fileType) {
             // perform the partitioning
-            case FT_CSV:
+            case hec::FT_CSV:
                 // csv dataset
                 ret = csv::loadDatasetAndPartition(dataset);
                 if (ret != DBERR_OK) {
@@ -664,7 +664,7 @@ namespace partitioning
                     return ret;
                 }
                 break;
-            case FT_WKT:
+            case hec::FT_WKT:
                 // wkt dataset
                 ret = wkt::loadDatasetAndPartition(dataset);
                 if (ret != DBERR_OK) {
