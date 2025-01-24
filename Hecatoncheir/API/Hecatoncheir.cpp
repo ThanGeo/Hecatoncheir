@@ -228,7 +228,7 @@ namespace hec {
         }
 
         // send message to Host Controller to init the dataset's struct and get an ID for the dataset
-        ret = comm::send::sendMessage(msg, HOST_CONTROLLER, MSG_DATASET_METADATA, g_global_intra_comm);
+        ret = comm::send::sendMessage(msg, HOST_CONTROLLER, MSG_PREPARE_DATASET, g_global_intra_comm);
         if (ret != DBERR_OK) {
             logger::log_error(ret, "Sending dataset metadata message failed.");
             return -1;
@@ -305,7 +305,7 @@ namespace hec {
         }
 
         // send message to Host Controller to init the dataset's struct and get an ID for the dataset
-        ret = comm::send::sendMessage(msg, HOST_CONTROLLER, MSG_DATASET_METADATA, g_global_intra_comm);
+        ret = comm::send::sendMessage(msg, HOST_CONTROLLER, MSG_PREPARE_DATASET, g_global_intra_comm);
         if (ret != DBERR_OK) {
             logger::log_error(ret, "Sending dataset metadata message failed.");
             return -1;

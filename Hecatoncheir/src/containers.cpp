@@ -206,8 +206,10 @@ DB_STATUS Dataset::addObject(Shape &object) {
     }
     // keep the ID in the list
     objectIDs.push_back(object.recID);
-    /** add object to section map (section 0) @warning do not remove, will break the parallel in-memory APRIL generation */
-    this->addObjectToSectionMap(0, object.recID);
+    if (g_config.queryMetadata.IntermediateFilter && (object.getSpatialType() != DT_POINT)) {
+        /** add object to section map (section 0) @warning do not remove, will break the parallel in-memory APRIL generation */
+        this->addObjectToSectionMap(0, object.recID);
+    }
 
     // if (object.recID == 43895) {
     //     logger::log_success("Added object to dataset", this->metadata.datasetName);
@@ -757,6 +759,7 @@ void Batch::clear() {
 }
 
 DB_STATUS Batch::serialize(char **buffer, int &bufferSize) {
+    DB_STATUS ret = DBERR_OK;
     // calculate size
     int bufferSizeRet = calculateBufferSize();
     // allocate space
@@ -786,18 +789,28 @@ DB_STATUS Batch::serialize(char **buffer, int &bufferSize) {
         *reinterpret_cast<int*>(localBuffer) = it.getVertexCount();
         localBuffer += sizeof(int);
 
-        // get reference to points in boost geometry format
-        const std::vector<bg_point_xy>* pointsRef = it.getReferenceToPoints();
-        // transform to continuous double vector
-        std::vector<double> pointsList(it.getVertexCount()*2);
-        for (int i=0; i<it.getVertexCount(); i++) {
-            pointsList[i*2] = pointsRef->at(i).x(); 
-            pointsList[i*2+1] = pointsRef->at(i).y(); 
-        }
-        // copy points to buffer
-        std::memcpy(localBuffer, pointsList.data(), it.getVertexCount() * 2 * sizeof(double));
-        localBuffer += it.getVertexCount() * 2 * sizeof(double);
 
+        // get reference to points in boost geometry format
+        // const std::vector<bg_point_xy>* pointsRef = it.getReferenceToPoints();
+        // // transform to continuous double vector
+        // std::vector<double> pointsList(it.getVertexCount()*2);
+        // // logger::log_task("Adding object:", it.recID, "with", it.getVertexCount(), "points", "pointsRef size:", pointsRef->size(), "pointsList.size()", pointsList.size());
+        // for (int i=0; i<it.getVertexCount(); i++) {
+        //     pointsList[i*2] = pointsRef->at(i).x(); 
+        //     pointsList[i*2+1] = pointsRef->at(i).y(); 
+        // }
+
+        // serialize and copy coordinates to buffer
+        double* bufferPtr;
+        int bufferElementCount;
+        ret = it.serializeCoordinates(&bufferPtr, bufferElementCount);
+        if (ret != DBERR_OK) {
+            logger::log_error(ret, "Serializing coordinates failed.");
+            return ret;
+        }
+        // logger::log_task("Adding object to buffer with", bufferElementCount, "elements");
+        std::memcpy(localBuffer, bufferPtr, bufferElementCount * sizeof(double));
+        localBuffer += bufferElementCount * sizeof(double);
 
         // printf("Serialized Object %ld with %d partitions:\n ", it.recID, it.getPartitionCount());
         // std::vector<int>* partitionRef = it.getPartitionsRef();
@@ -808,7 +821,7 @@ DB_STATUS Batch::serialize(char **buffer, int &bufferSize) {
         // it.printGeometry();
     }
     bufferSize = bufferSizeRet;
-    return DBERR_OK;
+    return ret;
 }
 
 /**

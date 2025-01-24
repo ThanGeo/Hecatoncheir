@@ -153,6 +153,11 @@ public:
         return DBERR_INVALID_OPERATION;
     }
 
+    DB_STATUS serializeCoordinates(double** buffer, int &bufferSize) {
+        logger::log_error(DBERR_INVALID_OPERATION, "Geometry wrapper can be accessed directly for operation: serializeCoordinates");
+        return DBERR_INVALID_OPERATION;
+    }
+
     void reset() {
         logger::log_error(DBERR_INVALID_OPERATION, "Geometry wrapper can be accessed directly for operation: reset");
     }
@@ -186,6 +191,11 @@ public:
     int getVertexCount() const {
         logger::log_error(DBERR_INVALID_OPERATION, "Geometry wrapper can be accessed directly for operation: getVertexCount.");
         return 0;
+    }
+
+    DataType getSpatialType() const {
+        logger::log_error(DBERR_INVALID_OPERATION, "Geometry wrapper can be accessed directly for operation: getSpatialType.");
+        return 777;
     }
 
     template<typename OtherGeometryType>
@@ -239,6 +249,8 @@ public:
         logger::log_error(DBERR_INVALID_OPERATION, "meets predicate unsupported for the invoked shapes.");
         return false;
     }
+
+
 };
 
 /**
@@ -248,7 +260,6 @@ template<>
 struct GeometryWrapper<bg_point_xy> {
 public:
     bg_point_xy geometry;
-    std::vector<bg_point_xy> vertex;
     GeometryWrapper(){}
     GeometryWrapper(const bg_point_xy &geom) : geometry(geom) {}
 
@@ -256,7 +267,6 @@ public:
     void addPoint(const double x, const double y) {
         // For points, simply replace the existing point
         geometry = bg_point_xy(x, y);
-        vertex.emplace_back(geometry);
     }
 
     void getBoostEnvelope(bg_rectangle &envelope) {
@@ -270,7 +280,6 @@ public:
 
     void reset() {
         boost::geometry::clear(geometry);
-        vertex.clear();
     }
 
     DB_STATUS setFromWKT(std::string &wktText) {
@@ -301,7 +310,27 @@ public:
         return DBERR_OK;
     }
 
-    
+    DB_STATUS serializeCoordinates(double** buffer, int &bufferSize) {
+        // calculate size
+        int bufferSizeRet = 2;
+        // allocate space
+        (*buffer) = (double*) malloc(bufferSizeRet * sizeof(double));
+        if ((*buffer) == NULL) {
+            // malloc failed
+            return DBERR_MALLOC_FAILED;
+        }
+        double* localBuffer = *buffer;
+
+        // add dataspace
+        *reinterpret_cast<double*>(localBuffer) = (double) this->geometry.x();
+        localBuffer += 1;
+        *reinterpret_cast<double*>(localBuffer) = (double) this->geometry.y();
+        localBuffer += 1;
+
+        // set and return
+        bufferSize = bufferSizeRet;
+        return DBERR_OK;
+    }
 
     bool pipTest(const bg_point_xy &point) const {
         return false;
@@ -316,16 +345,19 @@ public:
             logger::log_error(DBERR_INVALID_OPERATION, "Ignoring non-zero index for point shape, modifying the point anyway.");
         }
         geometry = bg_point_xy(x, y);
-        vertex[index] = bg_point_xy(x, y);
     }
 
 
     const std::vector<bg_point_xy>* getReferenceToPoints() const {
-        return &vertex;
+        return nullptr;
     }
 
     int getVertexCount() const {
         return 1;
+    }
+
+    DataType getSpatialType() const {
+        return DT_POINT;
     }
 
     /**
@@ -425,6 +457,32 @@ public:
         return DBERR_OK;
     }
 
+    DB_STATUS serializeCoordinates(double** buffer, int &bufferSize) {
+        // calculate size
+        int bufferSizeRet = 4;
+        // allocate space
+        (*buffer) = (double*) malloc(bufferSizeRet * sizeof(double));
+        if ((*buffer) == NULL) {
+            // malloc failed
+            return DBERR_MALLOC_FAILED;
+        }
+        double* localBuffer = *buffer;
+
+        // add dataspace
+        *reinterpret_cast<double*>(localBuffer) = (double) this->geometry.min_corner().x();
+        localBuffer += 1;
+        *reinterpret_cast<double*>(localBuffer) = (double) this->geometry.min_corner().y();
+        localBuffer += 1;
+        *reinterpret_cast<double*>(localBuffer) = (double) this->geometry.max_corner().x();
+        localBuffer += 1;
+        *reinterpret_cast<double*>(localBuffer) = (double) this->geometry.max_corner().y();
+        localBuffer += 1;
+
+        // set and return
+        bufferSize = bufferSizeRet;
+        return DBERR_OK;
+    }
+
     void correctGeometry() {
         boost::geometry::correct(geometry);
     }
@@ -462,6 +520,10 @@ public:
 
     int getVertexCount() const {
         return 2;
+    }
+
+    DataType getSpatialType() const {
+        return DT_RECTANGLE;
     }
 
     /**
@@ -566,6 +628,29 @@ public:
         return DBERR_OK;
     }
 
+    DB_STATUS serializeCoordinates(double** buffer, int &bufferSize) {
+        // calculate size
+        int bufferSizeRet = geometry.size() * 2;
+        // allocate space
+        (*buffer) = (double*) malloc(bufferSizeRet * sizeof(double));
+        if ((*buffer) == NULL) {
+            // malloc failed
+            return DBERR_MALLOC_FAILED;
+        }
+        double* localBuffer = *buffer;
+
+        for (auto &p : geometry) {
+            *reinterpret_cast<double*>(localBuffer) = (double) p.x();
+            localBuffer += 1;
+            *reinterpret_cast<double*>(localBuffer) = (double) p.y();
+            localBuffer += 1;
+        }
+
+        // set and return
+        bufferSize = bufferSizeRet;
+        return DBERR_OK;
+    }
+
     void printGeometry() {
         for(auto &it: geometry) {
             printf("(%f,%f),", it.x(), it.y());
@@ -591,6 +676,10 @@ public:
 
     int getVertexCount() const {
         return geometry.size();
+    }
+
+    DataType getSpatialType() const {
+        return DT_LINESTRING;
     }
 
     // topology
@@ -699,6 +788,29 @@ public:
         return DBERR_OK;
     }
 
+    DB_STATUS serializeCoordinates(double** buffer, int &bufferSize) {
+        // calculate size
+        int bufferSizeRet = geometry.outer().size() * 2;
+        // allocate space
+        (*buffer) = (double*) malloc(bufferSizeRet * sizeof(double));
+        if ((*buffer) == NULL) {
+            // malloc failed
+            return DBERR_MALLOC_FAILED;
+        }
+        double* localBuffer = *buffer;
+
+        for (auto &p : geometry.outer()) {
+            *reinterpret_cast<double*>(localBuffer) = (double) p.x();
+            localBuffer += 1;
+            *reinterpret_cast<double*>(localBuffer) = (double) p.y();
+            localBuffer += 1;
+        }
+
+        // set and return
+        bufferSize = bufferSizeRet;
+        return DBERR_OK;
+    }
+
     void reset() {
         boost::geometry::clear(geometry);
     }
@@ -717,6 +829,10 @@ public:
 
     int getVertexCount() const {
         return geometry.outer().size();
+    }
+
+    DataType getSpatialType() const {
+        return DT_POLYGON;
     }
 
     // APRIL
@@ -1029,6 +1145,12 @@ public:
         }, shape);
     }
 
+    DB_STATUS serializeCoordinates(double** buffer, int &bufferSize) {
+        return std::visit([&buffer, &bufferSize](auto&& arg) {
+            return arg.serializeCoordinates(buffer, bufferSize);
+        }, shape);
+    }
+
     /** @brief Modifies the point specified by 'index' with the new values x,y. (see derived method definitions) 
      * @param index The position of the point to modify in the geometry object.
      * @param x The new x value.
@@ -1059,6 +1181,13 @@ public:
     int getVertexCount() {
         return std::visit([](auto&& arg) -> int {
             return arg.getVertexCount();
+        }, shape);
+    }
+
+    /** @brief Returns the point count of the geometry. */
+    DataType getSpatialType() {
+        return std::visit([](auto&& arg) -> DataType {
+            return arg.getSpatialType();
         }, shape);
     }
 

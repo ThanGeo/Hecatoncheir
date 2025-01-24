@@ -139,7 +139,6 @@ namespace pack
         msg.count += sizeof(int);               // query id
         msg.count += sizeof(hec::QueryType);         // query type
         msg.count += sizeof(hec::QueryResultType);   // result type
-        msg.count += sizeof(DataType);          // window type
         msg.count += sizeof(hec::DatasetID);    // dataset id
         std::vector<double> coords = query->getCoords();
         msg.count += sizeof(int);               // number of coord values
@@ -162,8 +161,6 @@ namespace pack
         localBuffer += sizeof(hec::QueryType);
         *reinterpret_cast<hec::QueryResultType*>(localBuffer) = query->getResultType();
         localBuffer += sizeof(hec::QueryResultType);
-        *reinterpret_cast<DataType*>(localBuffer) = (DataType) query->getWindowType();
-        localBuffer += sizeof(DataType);
         *reinterpret_cast<int*>(localBuffer) = (int) query->getDatasetID();
         localBuffer += sizeof(int);
         *reinterpret_cast<int*>(localBuffer) = (int) coords.size();
@@ -365,8 +362,6 @@ namespace unpack
             case hec::Q_RANGE:
                 {
                     // unpack the rest of the info
-                    int windowType = (DataType) *reinterpret_cast<const DataType*>(localBuffer);
-                    localBuffer += sizeof(DataType);
                     hec::DatasetID datasetID = (hec::DatasetID) *reinterpret_cast<const hec::DatasetID*>(localBuffer);
                     localBuffer += sizeof(hec::DatasetID);
                     int coordsSize = (int) *reinterpret_cast<const int*>(localBuffer);
@@ -377,7 +372,7 @@ namespace unpack
                         localBuffer += sizeof(double);
                     }
                     // the caller is responsible for freeing this memory
-                    hec::RangeQuery* rangeQuery = new hec::RangeQuery(datasetID, id, windowType, coords, queryResultType);
+                    hec::RangeQuery* rangeQuery = new hec::RangeQuery(datasetID, id, coords, queryResultType);
                     (*queryPtr) = rangeQuery;
                 }
                 break;

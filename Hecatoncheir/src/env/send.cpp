@@ -47,7 +47,7 @@ namespace comm
 
         // DB_STATUS sendDatasetMetadataMessage(SerializedMsg<char> &datasetMetadataMsg, int destRank, int tag, MPI_Comm &comm) {
         //     // check tag validity
-        //     if (tag != MSG_DATASET_METADATA) {
+        //     if (tag != MSG_PREPARE_DATASET) {
         //         logger::log_error(DBERR_COMM_INVALID_MSG_TAG, "Dataset metadata messages must have the appropriate tag. Current tag", tag);
         //         return DBERR_COMM_INVALID_MSG_TAG;
         //     }

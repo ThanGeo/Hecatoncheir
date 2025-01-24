@@ -168,7 +168,7 @@ namespace comm
                 }
                 
                 // if APRIL is enabled, generate it
-                if (g_config.queryMetadata.IntermediateFilter) {
+                if (g_config.queryMetadata.IntermediateFilter && (dataset->metadata.dataType == DT_POLYGON || dataset->metadata.dataType == DT_LINESTRING)) {
                     // create APRIL for each object @todo paralellize? have to do a buffered write then
                     for (int i=0; i<batch.objectCount; i++) {
                         // generate
@@ -313,7 +313,6 @@ namespace comm
             g_config.partitioningMethod->setDistGridDataspace(g_config.datasetOptions.dataspaceMetadata);
             g_config.partitioningMethod->setPartGridDataspace(g_config.datasetOptions.dataspaceMetadata);
 
-            
             // if APRIL is enabled
             if (g_config.queryMetadata.IntermediateFilter) {
                 // init rasterization environment
@@ -322,7 +321,8 @@ namespace comm
                     return DBERR_INVALID_PARAMETER;
                 }
             }
-
+            // logger::log_success("Global dataspace:", g_config.datasetOptions.dataspaceMetadata.xMinGlobal, g_config.datasetOptions.dataspaceMetadata.yMinGlobal, g_config.datasetOptions.dataspaceMetadata.xMaxGlobal, g_config.datasetOptions.dataspaceMetadata.yMaxGlobal);
+            // logger::log_task("Listening for batches...");
             // listen for dataset batches until an empty batch arrives
             while(listen) {
                 // proble blockingly for batch
@@ -529,7 +529,7 @@ STOP_LISTENING:
             return ret;
         }
 
-        static DB_STATUS handleDatasetMetadataMessage(MPI_Status &status) {
+        static DB_STATUS handlePrepareDatsetMessage(MPI_Status &status) {
             SerializedMsg<char> msg(MPI_CHAR);
             // receive the message
             DB_STATUS ret = recv::receiveMessage(status, msg.type, g_agent_comm, msg);
@@ -779,9 +779,9 @@ STOP_LISTENING:
                         return ret;
                     }
                     break;
-                case MSG_DATASET_METADATA:
-                    // logger::log_success("MSG_DATASET_METADATA");
-                    ret = handleDatasetMetadataMessage(status);
+                case MSG_PREPARE_DATASET:
+                    // logger::log_success("MSG_PREPARE_DATASET");
+                    ret = handlePrepareDatsetMessage(status);
                     if (ret != DBERR_OK) {
                         return ret;
                     }
@@ -1128,7 +1128,7 @@ STOP_LISTENING:
             return ret;
         }
 
-        static DB_STATUS handleDatasetMetadataMessage(MPI_Status status) {
+        static DB_STATUS handlePrepareDatsetMessage(MPI_Status status) {
             SerializedMsg<char> msg(MPI_CHAR);
             // receive the message
             DB_STATUS ret = recv::receiveMessage(status, msg.type, g_controller_comm, msg);
@@ -1281,8 +1281,8 @@ STOP_LISTENING:
                         return ret;
                     }
                     return DB_FIN;
-                case MSG_DATASET_METADATA:
-                    ret = handleDatasetMetadataMessage(status);
+                case MSG_PREPARE_DATASET:
+                    ret = handlePrepareDatsetMessage(status);
                     if (ret != DBERR_OK) {
                         logger::log_error(ret, "Handling dataset metadata message failed.");
                         return ret;
@@ -1471,7 +1471,7 @@ STOP_LISTENING:
             return ret;
         }
 
-        static DB_STATUS handleDatasetMetadataMessage(MPI_Status &status) {
+        static DB_STATUS handlePrepareDatsetMessage(MPI_Status &status) {
             SerializedMsg<char> msg(MPI_CHAR);
             // receive the message
             DB_STATUS ret = recv::receiveMessage(status, msg.type, g_global_intra_comm, msg);
@@ -1936,10 +1936,10 @@ STOP_LISTENING:
                         return DBERR_COMM_RECV;
                     }
                     return DB_FIN;
-                case MSG_DATASET_METADATA:
+                case MSG_PREPARE_DATASET:
                     /* dataset metadata message */
-                    // logger::log_success("MSG_DATASET_METADATA");
-                    ret = handleDatasetMetadataMessage(status);
+                    // logger::log_success("MSG_PREPARE_DATASET");
+                    ret = handlePrepareDatsetMessage(status);
                     if (ret != DBERR_OK) {
                         logger::log_error(ret, "Failed while handling dataset metadata message.");
                         return ret;
@@ -1954,7 +1954,6 @@ STOP_LISTENING:
                         return ret;
                     }
                     break;
-                
                 case MSG_LOAD_DATASET:
                     /** initiate dataset loading */
                     // logger::log_success("MSG_LOAD_DATASET");

@@ -122,14 +122,12 @@ namespace hec
     struct RangeQuery : public Query {
     private:
         DatasetID datasetID;
-        int windowType;
         std::vector<double> coords;
     public:
-        RangeQuery(DatasetID datasetID, int queryID, int windowType, std::vector<double> &coords);
-        RangeQuery(DatasetID datasetID, int queryID, int windowType, std::vector<double> &coords, std::string resultType);
-        RangeQuery(DatasetID datasetID, int queryID, int windowType, std::vector<double> &coords, QueryResultType resultType);
+        RangeQuery(DatasetID datasetID, int queryID, std::vector<double> &coords);
+        RangeQuery(DatasetID datasetID, int queryID, std::vector<double> &coords, std::string resultType);
+        RangeQuery(DatasetID datasetID, int queryID, std::vector<double> &coords, QueryResultType resultType);
         std::vector<double> getCoords();
-        int getWindowType();
         DatasetID getDatasetID() {
             return datasetID;
         }

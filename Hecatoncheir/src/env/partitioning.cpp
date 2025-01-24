@@ -134,7 +134,7 @@ namespace partitioning
                 // add moddified geometry to this batch
                 // logger::log_task("Added geometry", objectCopy.recID, " to batch");
                 batch->addObjectToBatch(objectCopy);
-                // printf("Added geometry %ld to batch\n", geometryCopy.recID);
+
                 // if batch is full, send and reset
                 if (batch->objectCount >= batch->maxObjectCount) {
                     ret = comm::controller::serializeAndSendGeometryBatch(batch);
@@ -517,7 +517,7 @@ namespace partitioning
             size_t totalValidObjects = 0;
             // count how many batches have been sent in total
             int batchesSent = 0;
-            #pragma omp parallel firstprivate(batchMap, line, totalObjects) reduction(+:batchesSent) reduction(+:totalValidObjects)
+            #pragma omp parallel num_threads(1) firstprivate(batchMap, line, totalObjects) reduction(+:batchesSent) reduction(+:totalValidObjects)
             {
                 int partitionID;
                 double x,y;
@@ -706,20 +706,32 @@ namespace partitioning
     namespace two_grid
     {
         /** @brief The agent repartitions the geometry using a finer grid as defined by the two-grid partitioning
-         *  and sets the geometry's class in each partition. */
+         *  and sets the geometry's class in each partition. 
+         * @todo: revisit this method. Too many extra computations? why compute the mbr again?
+         * */
         static DB_STATUS setPartitionClassesForObject(Shape &object){
-            // calculate the object's MBR
-            const std::vector<bg_point_xy>* pointsRef = object.getReferenceToPoints();
-            object.mbr.pMin.x = std::numeric_limits<int>::max();
-            object.mbr.pMin.y = std::numeric_limits<int>::max();
-            object.mbr.pMax.x = -std::numeric_limits<int>::max();
-            object.mbr.pMax.y = -std::numeric_limits<int>::max();
-            for (auto &it: *pointsRef) {
-                object.mbr.pMin.x = std::min(object.mbr.pMin.x, it.x());
-                object.mbr.pMin.y = std::min(object.mbr.pMin.y, it.y());
-                object.mbr.pMax.x = std::max(object.mbr.pMax.x, it.x());
-                object.mbr.pMax.y = std::max(object.mbr.pMax.y, it.y());
-            }             
+            switch (object.getSpatialType()) {
+                case DT_POINT:
+                    // calculate the object's MBR
+                    object.setMBR();
+                    break;
+                case DT_POLYGON:
+                case DT_LINESTRING:
+                case DT_RECTANGLE:
+                    // calculate the object's MBR (why not use setMBR?)
+                    const std::vector<bg_point_xy>* pointsRef = object.getReferenceToPoints();
+                    object.mbr.pMin.x = std::numeric_limits<int>::max();
+                    object.mbr.pMin.y = std::numeric_limits<int>::max();
+                    object.mbr.pMax.x = -std::numeric_limits<int>::max();
+                    object.mbr.pMax.y = -std::numeric_limits<int>::max();
+                    for (auto &it: *pointsRef) {
+                        object.mbr.pMin.x = std::min(object.mbr.pMin.x, it.x());
+                        object.mbr.pMin.y = std::min(object.mbr.pMin.y, it.y());
+                        object.mbr.pMax.x = std::max(object.mbr.pMax.x, it.x());
+                        object.mbr.pMax.y = std::max(object.mbr.pMax.y, it.y());
+                    }             
+                    break;
+            }
             // vector for the new partitions
             std::vector<int> newPartitions;
             // for each distribution partition
@@ -929,7 +941,7 @@ namespace partitioning
                     }
                     
                     // if APRIL is enabled
-                    if (g_config.queryMetadata.IntermediateFilter) {
+                    if (g_config.queryMetadata.IntermediateFilter && (dataset->metadata.dataType == DT_POLYGON || dataset->metadata.dataType == DT_LINESTRING)) {
                         // create APRIL for the object 
                         AprilData aprilData;
                         ret = APRIL::generation::memory::createAPRILforObject(&batch.objects[i], dataset->metadata.dataType, dataset->aprilConfig, aprilData);

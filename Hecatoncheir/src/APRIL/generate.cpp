@@ -94,6 +94,7 @@ namespace APRIL
             //first, map the object's coordinates to this section's hilbert space
             double x,y;
             const std::vector<bg_point_xy>* vertices = object.getReferenceToPoints();
+            
             if (vertices == nullptr) {
                 logger::log_error(DBERR_NULL_PTR_EXCEPTION, "Empty vertex list returned for object with id", object.recID);
                 return DBERR_NULL_PTR_EXCEPTION;

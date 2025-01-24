@@ -47,55 +47,26 @@ namespace hec
         logger::log_error(DBERR_QUERY_INVALID_TYPE, "Invalid predicate for a join query:", predicate);
     }
 
-    RangeQuery::RangeQuery(DatasetID datasetID, int id, int windowType, std::vector<double> &coords) {
-        switch (windowType) {
-            case DT_RECTANGLE:
-                if (coords.size() != 4) {
-                    logger::log_error(DBERR_INVALID_PARAMETER, "Invalid coord size for rectangle range query:", coords.size(), "values instead of 4 (xMin, yMin, xMax, yMax).");
-                    return;
-                } 
-                break;
-            case DT_POLYGON:
-                if (coords.size() < 6) {
-                    logger::log_error(DBERR_INVALID_PARAMETER, "Invalid coord size for polygonal range query:", coords.size(), "values instead of at least 6 (i.e. 3 pairs of (x,y)).");
-                    return;
-                }
-                break;
-            default:
-                logger::log_error(DBERR_INVALID_DATATYPE, "Invalid data type for the range query window:", windowType);
-                return;
+    RangeQuery::RangeQuery(DatasetID datasetID, int id, std::vector<double> &coords) {
+        if (coords.size() < 6) {
+            logger::log_error(DBERR_INVALID_PARAMETER, "Invalid coord size for range query:", coords.size(), "values instead of at least 6 (i.e. 3 pairs of (x,y)).");
+            return;
         }
         this->datasetID = datasetID;
         this->queryID = id;
         this->queryType = Q_RANGE;
         this->resultType = QR_COUNT;
-        this->windowType = windowType;
         this->coords = coords;
     }
 
-    RangeQuery::RangeQuery(DatasetID datasetID, int id, int windowType, std::vector<double> &coords, std::string resultTypeStr) {
-        switch (windowType) {
-            case DT_RECTANGLE:
-                if (coords.size() != 4) {
-                    logger::log_error(DBERR_INVALID_PARAMETER, "Invalid coord size for rectangle range query:", coords.size(), "values instead of 4 (xMin, yMin, xMax, yMax).");
-                    return;
-                } 
-                break;
-            case DT_POLYGON:
-                if (coords.size() < 6) {
-                    logger::log_error(DBERR_INVALID_PARAMETER, "Invalid coord size for polygonal range query:", coords.size(), "values instead of at least 6 (i.e. 3 pairs of (x,y)).");
-                    return;
-                }
-                break;
-            default:
-                logger::log_error(DBERR_INVALID_DATATYPE, "Invalid data type for the range query window:", windowType);
-                return;
+    RangeQuery::RangeQuery(DatasetID datasetID, int id, std::vector<double> &coords, std::string resultTypeStr) {
+        if (coords.size() < 6) {
+            logger::log_error(DBERR_INVALID_PARAMETER, "Invalid coord size for polygonal range query:", coords.size(), "values instead of at least 6 (i.e. 3 pairs of (x,y)).");
+            return;
         }
-
         this->datasetID = datasetID;
         this->queryID = id;
         this->queryType = Q_RANGE;
-        this->windowType = windowType;
         this->coords = coords;
         QueryResultType resultType = mapping::queryResultTypeStrToInt(resultTypeStr);
         if (resultType != QR_COUNT && resultType != QR_COLLECT) {
@@ -105,29 +76,14 @@ namespace hec
         this->resultType = resultType;
     }
 
-    RangeQuery::RangeQuery(DatasetID datasetID, int id, int windowType, std::vector<double> &coords, QueryResultType resultType) {
-        switch (windowType) {
-            case DT_RECTANGLE:
-                if (coords.size() != 4) {
-                    logger::log_error(DBERR_INVALID_PARAMETER, "Invalid coord size for rectangle range query:", coords.size(), "values instead of 4 (xMin, yMin, xMax, yMax).");
-                    return;
-                } 
-                break;
-            case DT_POLYGON:
-                if (coords.size() < 6) {
-                    logger::log_error(DBERR_INVALID_PARAMETER, "Invalid coord size for polygonal range query:", coords.size(), "values instead of at least 6 (i.e. 3 pairs of (x,y)).");
-                    return;
-                }
-                break;
-            default:
-                logger::log_error(DBERR_INVALID_DATATYPE, "Invalid data type for the range query window:", windowType);
-                return;
+    RangeQuery::RangeQuery(DatasetID datasetID, int id, std::vector<double> &coords, QueryResultType resultType) {
+        if (coords.size() < 6) {
+            logger::log_error(DBERR_INVALID_PARAMETER, "Invalid coord size for polygonal range query:", coords.size(), "values instead of at least 6 (i.e. 3 pairs of (x,y)).");
+            return;
         }
-
         this->datasetID = datasetID;
         this->queryID = id;
         this->queryType = Q_RANGE;
-        this->windowType = windowType;
         this->coords = coords;
         if (resultType != QR_COUNT && resultType != QR_COLLECT) {
             logger::log_error(DBERR_INVALID_PARAMETER, "Invalid result type parameter:", resultType);
@@ -138,10 +94,6 @@ namespace hec
 
     std::vector<double> RangeQuery::getCoords() {
         return this->coords;
-    }
-
-    int RangeQuery::getWindowType() {
-        return this->windowType;
     }
 
     QueryResult::QueryResult(int queryID, QueryType queryType, QueryResultType queryResultType) {

@@ -19,6 +19,7 @@ namespace storage
             }
 
             DB_STATUS appendBatchToPartitionFile(FILE* outFile, Batch* batch, Dataset* dataset) {
+                DB_STATUS ret = DBERR_OK;
                 size_t elementsWritten;
                 // store each geometry
                 for(auto &it: batch->objects) {
@@ -45,22 +46,36 @@ namespace storage
                         return DBERR_DISK_WRITE_FAILED;
                     }
 
-                    const std::vector<bg_point_xy>* bgPointsRef = it.getReferenceToPoints();
-                    std::vector<double> pointList(vertexCount * 2);
-                    for (int i=0; i<vertexCount; i++) {
-                        pointList[2*i] = bgPointsRef->at(i).x();
-                        pointList[2*i + 1] = bgPointsRef->at(i).y();
+                    // const std::vector<bg_point_xy>* bgPointsRef = it.getReferenceToPoints();
+                    // std::vector<double> pointList(vertexCount * 2);
+                    // for (int i=0; i<vertexCount; i++) {
+                    //     pointList[2*i] = bgPointsRef->at(i).x();
+                    //     pointList[2*i + 1] = bgPointsRef->at(i).y();
+                    // }
+                    // elementsWritten = fwrite(pointList.data(), sizeof(double), vertexCount * 2, outFile);
+                    // if (elementsWritten != vertexCount * 2) {
+                    //     logger::log_error(DBERR_DISK_WRITE_FAILED, "Wrote", elementsWritten, "instead of", vertexCount * 2, " elements for points.");
+                    //     return DBERR_DISK_WRITE_FAILED;
+                    // }
+
+                    double* bufferPtr;
+                    int bufferElementCount;
+                    ret = it.serializeCoordinates(&bufferPtr, bufferElementCount);
+                    if (ret != DBERR_OK) {
+                        logger::log_error(ret, "Serializing coordinates failed.");
+                        return ret;
                     }
-                    elementsWritten = fwrite(pointList.data(), sizeof(double), vertexCount * 2, outFile);
-                    if (elementsWritten != vertexCount * 2) {
-                        logger::log_error(DBERR_DISK_WRITE_FAILED, "Wrote", elementsWritten, "instead of", vertexCount * 2, " elements for points.");
+                    elementsWritten = fwrite(bufferPtr, sizeof(double), bufferElementCount, outFile);
+                    if (elementsWritten != bufferElementCount) {
+                        logger::log_error(DBERR_DISK_WRITE_FAILED, "Wrote", elementsWritten, "instead of", bufferElementCount, " elements for points.");
                         return DBERR_DISK_WRITE_FAILED;
                     }
+                    
                 }
                 // append batch count to dataset count
                 dataset->totalObjects += batch->objectCount;
 
-                return DBERR_OK;
+                return ret;
             }
 
         }
