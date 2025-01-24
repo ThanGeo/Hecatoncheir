@@ -242,12 +242,13 @@ public:
 };
 
 /**
-@brief Point geometry derived struct. 
+    @brief Point geometry derived struct. 
  */
 template<>
 struct GeometryWrapper<bg_point_xy> {
 public:
     bg_point_xy geometry;
+    std::vector<bg_point_xy> vertex;
     GeometryWrapper(){}
     GeometryWrapper(const bg_point_xy &geom) : geometry(geom) {}
 
@@ -255,10 +256,12 @@ public:
     void addPoint(const double x, const double y) {
         // For points, simply replace the existing point
         geometry = bg_point_xy(x, y);
+        vertex.emplace_back(geometry);
     }
 
     void getBoostEnvelope(bg_rectangle &envelope) {
-        boost::geometry::envelope(geometry, envelope);
+        // boost::geometry::envelope(geometry, envelope);
+        envelope = bg_rectangle(geometry, geometry);
     }
 
     void correctGeometry() {
@@ -267,6 +270,7 @@ public:
 
     void reset() {
         boost::geometry::clear(geometry);
+        vertex.clear();
     }
 
     DB_STATUS setFromWKT(std::string &wktText) {
@@ -312,12 +316,12 @@ public:
             logger::log_error(DBERR_INVALID_OPERATION, "Ignoring non-zero index for point shape, modifying the point anyway.");
         }
         geometry = bg_point_xy(x, y);
+        vertex[index] = bg_point_xy(x, y);
     }
 
 
     const std::vector<bg_point_xy>* getReferenceToPoints() const {
-        logger::log_error(DBERR_INVALID_OPERATION, "Can't return reference to points on Point shape.");
-        return nullptr;
+        return &vertex;
     }
 
     int getVertexCount() const {

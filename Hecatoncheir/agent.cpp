@@ -11,7 +11,6 @@ void terminateAgent() {
     // wait for the rest of the processes in the intercomm to finish
     MPI_Barrier(g_agent_comm);
     // Finalize the MPI environment.
-    logger::log_task("Calling MPI_Finalize()");
     MPI_Finalize();
 }
 
@@ -24,7 +23,7 @@ int main(int argc, char* argv[]) {
     }
     
     // logger::log_task("Runs on cpu", sched_getcpu());
-    logger::log_task("My controller's local rank is", g_parent_original_rank, "and my local rank is", g_node_rank);
+    // logger::log_task("My controller's local rank is", g_parent_original_rank, "and my local rank is", g_node_rank);
     
     // printf("Agent with parent %d and rank %d runs on cpu %d\n", g_parent_original_rank, g_node_rank, sched_getcpu());
     ret = comm::agent::listen();

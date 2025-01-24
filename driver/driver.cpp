@@ -43,9 +43,7 @@ int main(int argc, char* argv[]) {
 
     // partition datasets
     auto start = std::chrono::high_resolution_clock::now();
-    
     hec::partition({datasetRID, datasetSID});
-
     auto end = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double> duration = end - start;
     std::cout << "Partitioning time: " << duration.count() << " seconds" << std::endl;
@@ -56,29 +54,20 @@ int main(int argc, char* argv[]) {
     // run query (@todo maybe merge creating a query object and calling hec::query into a single thing)
     // -87.906508 32.896858,-87.906483 32.896926
     hec::JoinQuery intersectionJoinQuery(datasetRID, datasetSID, 0, hec::spatialQueries.INTERSECTS(), hec::queryResultTypes.COUNT());
-    
     start = std::chrono::high_resolution_clock::now();
-
     hec::QueryResult result =  hec::query(&intersectionJoinQuery);
-
     end = std::chrono::high_resolution_clock::now();
     duration = end - start;
     std::cout << "Query Evaluation time: " << duration.count() << " seconds" << std::endl;
     printf("Total results: %lu\n", result.getResultCount());
 
 
-
-
-
     hec::JoinQuery findRelationJoinQuery(datasetRID, datasetSID, 0, hec::spatialQueries.FIND_RELATION(), hec::queryResultTypes.COUNT());
     start = std::chrono::high_resolution_clock::now();
-
     result =  hec::query(&findRelationJoinQuery);
-
     end = std::chrono::high_resolution_clock::now();
     duration = end - start;
     std::cout << "Query Evaluation time: " << duration.count() << " seconds" << std::endl;
-    
     result.print();
 
     // finalize

@@ -33,7 +33,6 @@ namespace controller
         MPI_Barrier(g_controller_comm);
 
         // Finalize the MPI environment.
-        logger::log_task("Calling MPI_Finalize()");
         MPI_Finalize();
         // if (g_node_rank == HOST_LOCAL_RANK) {
         //     logger::log_success("System finalized successfully");
