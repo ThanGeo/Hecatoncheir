@@ -1381,7 +1381,7 @@ struct DirectoryPaths {
     std::string resourceDirPath = "Hecatoncheir/resources/"; 
     std::string configFilePath = resourceDirPath + std::string("config_cluster.ini");
     const std::string datasetsConfigPath = resourceDirPath + std::string("datasets.ini");
-    std::string dataPath = PROJECT_SOURCE_DIR + std::string("/Hecatoncheir/data/");
+    std::string dataPath = PROJECT_BINARY_DIR + std::string("/Hecatoncheir/data/");
     std::string partitionsPath = dataPath + std::string("partitions/");
     std::string approximationPath = dataPath + std::string("approximations/");
 };

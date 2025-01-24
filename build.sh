@@ -39,12 +39,11 @@ cd ..
 nodefile="nodes"
 mapfile -t NODES < "$nodefile"
 
-# get current directory in host machine
-SOURCE_DIR=$( cd "$(dirname "${BASH_SOURCE[0]}")" ; pwd -P )
+# get current directory in host machine (only the build directory)
+SOURCE_DIR=$( cd "$(dirname "${BASH_SOURCE[0]}")" ; pwd -P )/build
 
 # directory where the code should be placed on each node
 DEST_DIR="$SOURCE_DIR"
-
 echo -e "-- ${GREEN}Host directory: ${NC}" $SOURCE_DIR
 echo -e "-- ${GREEN}Dest directory: ${NC}" $DEST_DIR
 
@@ -56,7 +55,7 @@ done
 # sync function
 sync_code() {
   local node=$1
-  rsync -q -avz -e "ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no" --delete --exclude="data/" --exclude="Hecatoncheir/datasets/" $SOURCE_DIR/ ${node}:${DEST_DIR}/
+  rsync -q -avz -e "ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no" --delete $SOURCE_DIR/ ${node}:${DEST_DIR}/
 }
 
 # sync for each node

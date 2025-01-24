@@ -34,7 +34,7 @@ namespace configurer
         g_global_rank = rank;
 
         // split intra-comm to form the group
-        mpi_ret = MPI_Comm_split(g_global_intra_comm, 1, g_global_rank-1, &g_controller_comm);
+        mpi_ret = MPI_Comm_split(g_global_intra_comm, 1, g_global_rank, &g_controller_comm);
         if (mpi_ret != MPI_SUCCESS) {
             logger::log_error(DBERR_MPI_INIT_FAILED, "Comm split failed. MPI ret code:", mpi_ret);
             return DBERR_MPI_INIT_FAILED;

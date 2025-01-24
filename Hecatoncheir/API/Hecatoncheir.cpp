@@ -132,6 +132,9 @@ static DB_STATUS spawnControllers(int num_procs, const std::vector<std::string> 
             }
         }
 
+        // Free the MPI_Info object after use
+        MPI_Info_free(info);
+
         // merge inter-comm to intra-comm
         MPI_Intercomm_merge(g_global_inter_comm, 0, &g_global_intra_comm);
         // spit intra-comm to groups

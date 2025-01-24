@@ -26,12 +26,12 @@ static std::vector<std::string> read_hostfile(const std::string& hostfile) {
 }
 
 int main(int argc, char* argv[]) {
-    std::string datasetFullPathR = "/home/hec/thanasis/Hecatoncheir/Hecatoncheir/datasets/T1.wkt";
-    std::string datasetFullPathS = "/home/hec/thanasis/Hecatoncheir/Hecatoncheir/datasets/T2.wkt";
+    std::string datasetFullPathR = "/home/hec/thanasis/datasets/T1.wkt";
+    std::string datasetFullPathS = "/home/hec/thanasis/datasets/T2.wkt";
     // std::string datasetFullPathS = "/home/hec/thanasis/Hecatoncheir/Hecatoncheir/datasets/T8.wkt";
-    std::vector<std::string> hosts = {"node1:1", "node2:1", "node3:1", "node4:1", "node5:1"};
+    // std::vector<std::string> hosts = {"node1:1", "node2:1", "node3:1", "node4:1", "node5:1"};
     // std::vector<std::string> hosts = {"node1:1"};
-    // std::vector<std::string> hosts = {"node1:1","node2:1","node3:1","node4:1","node5:1"};
+    std::vector<std::string> hosts = {"node1:1", "node2:1", "node3:1"};
 
     // Initialize Hecatoncheir. Must use this method before any other calls to the framework.
     hec::init(hosts.size(), hosts);
