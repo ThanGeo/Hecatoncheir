@@ -517,7 +517,7 @@ namespace partitioning
             size_t totalValidObjects = 0;
             // count how many batches have been sent in total
             int batchesSent = 0;
-            #pragma omp parallel num_threads(1) firstprivate(batchMap, line, totalObjects) reduction(+:batchesSent) reduction(+:totalValidObjects)
+            #pragma omp parallel firstprivate(batchMap, line, totalObjects) reduction(+:batchesSent) reduction(+:totalValidObjects)
             {
                 int partitionID;
                 double x,y;

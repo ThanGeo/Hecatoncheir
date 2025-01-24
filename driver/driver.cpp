@@ -98,7 +98,7 @@ int main(int argc, char* argv[]) {
     // Initialize Hecatoncheir. Must use this method before any other calls to the framework.
     hec::init(hosts.size(), hosts);
 
-    if (false) {
+    if (true) {
         // join queries
         runJoins();
     } else {

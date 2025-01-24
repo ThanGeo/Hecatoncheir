@@ -1844,7 +1844,6 @@ STOP_LISTENING:
                         hec::QueryResult localResult(totalResults.getID(), totalResults.getQueryType(), totalResults.getResultType());
                         localResult.deserialize(msg.data, msg.count);
                         // add results
-                        /** @todo THIS DOES NOT WORK FOR FIND RELATION. FIND A BETTER WAY TO COUNT/COLLECT/MERGE RESULTS */
                         totalResults.mergeResults(localResult);
                         
                     }
