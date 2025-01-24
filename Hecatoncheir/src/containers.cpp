@@ -746,6 +746,7 @@ int Batch::calculateBufferSize() {
         size += sizeof(size_t); // recID
         size += sizeof(int);    // partition count
         size += it.getPartitionCount() * 2 * sizeof(int); // partitions id + class
+        size += 4 * sizeof(double);             // mbr
         size += sizeof(it.getVertexCount()); // vertex count
         size += it.getVertexCount() * 2 * sizeof(double);    // vertices
     }
@@ -786,20 +787,19 @@ DB_STATUS Batch::serialize(char **buffer, int &bufferSize) {
         std::memcpy(localBuffer, it.getPartitionsRef()->data(), it.getPartitionCount() * 2 * sizeof(int));
         localBuffer += it.getPartitionCount() * 2 * sizeof(int);
        
+        // mbr
+        *reinterpret_cast<double*>(localBuffer) = it.mbr.pMin.x;
+        localBuffer += sizeof(double);
+        *reinterpret_cast<double*>(localBuffer) = it.mbr.pMin.y;
+        localBuffer += sizeof(double);
+        *reinterpret_cast<double*>(localBuffer) = it.mbr.pMax.x;
+        localBuffer += sizeof(double);
+        *reinterpret_cast<double*>(localBuffer) = it.mbr.pMax.y;
+        localBuffer += sizeof(double);
+
+        // vertex count
         *reinterpret_cast<int*>(localBuffer) = it.getVertexCount();
         localBuffer += sizeof(int);
-
-
-        // get reference to points in boost geometry format
-        // const std::vector<bg_point_xy>* pointsRef = it.getReferenceToPoints();
-        // // transform to continuous double vector
-        // std::vector<double> pointsList(it.getVertexCount()*2);
-        // // logger::log_task("Adding object:", it.recID, "with", it.getVertexCount(), "points", "pointsRef size:", pointsRef->size(), "pointsList.size()", pointsList.size());
-        // for (int i=0; i<it.getVertexCount(); i++) {
-        //     pointsList[i*2] = pointsRef->at(i).x(); 
-        //     pointsList[i*2+1] = pointsRef->at(i).y(); 
-        // }
-
         // serialize and copy coordinates to buffer
         double* bufferPtr;
         int bufferElementCount;
@@ -859,7 +859,7 @@ DB_STATUS Batch::deserialize(const char *buffer, int bufferSize) {
         // rec id
         object.recID = *reinterpret_cast<const size_t*>(localBuffer);
         localBuffer += sizeof(size_t);
-        // partitions + partition count
+        // partition count + partitions
         partitionCount = *reinterpret_cast<const int*>(localBuffer);
         localBuffer += sizeof(int);
         std::vector<int> partitions(partitionCount * 2);
@@ -869,25 +869,28 @@ DB_STATUS Batch::deserialize(const char *buffer, int bufferSize) {
         }
         localBuffer += partitionCount * 2 * sizeof(int);
         object.setPartitions(partitions, partitionCount);
+        // mbr
+        double xMin, yMin, xMax, yMax;
+        xMin = *reinterpret_cast<const double*>(localBuffer);
+        localBuffer += sizeof(double);
+        yMin = *reinterpret_cast<const double*>(localBuffer);
+        localBuffer += sizeof(double);
+        xMax = *reinterpret_cast<const double*>(localBuffer);
+        localBuffer += sizeof(double);
+        yMax = *reinterpret_cast<const double*>(localBuffer);
+        localBuffer += sizeof(double);
+        object.setMBR(xMin, yMin, xMax, yMax);
         // vertex count
         vertexCount = *reinterpret_cast<const int*>(localBuffer);
         localBuffer += sizeof(int);
         // vertices
-        std::vector<double> coords(vertexCount * 2);
+        // std::vector<double> coords(vertexCount * 2);
         const double* vertexDataPtr = reinterpret_cast<const double*>(localBuffer);
-        for (size_t j = 0; j < vertexCount * 2; j++) {
-            coords[j] = vertexDataPtr[j];
+        for (size_t j = 0; j < vertexCount * 2; j+=2) {
+            object.addPoint(vertexDataPtr[j], vertexDataPtr[j+1]);
         }
         localBuffer += vertexCount * 2 * sizeof(double);
-        object.setPoints(coords);
-
-        // printf("Deserialized Object %ld with %d partitions:\n ", object.recID, object.getPartitionCount());
-        // std::vector<int>* partitionRef = object.getPartitionsRef();
-        // for (int i=0; i<object.getPartitionCount(); i++) {
-        //     printf("(%d,%s),", object.getPartitionID(i), mapping::twoLayerClassIntToStr(object.getPartitionClass(i)).c_str());
-        // }
-        // printf("\n");
-        // object.printGeometry();
+        // object.setPoints(coords);
 
         // add to batch
         this->addObjectToBatch(object);

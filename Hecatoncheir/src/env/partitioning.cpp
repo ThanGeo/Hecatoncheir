@@ -86,6 +86,12 @@ namespace partitioning
         if (ret != DBERR_OK) {
             return ret;
         }
+        // if (object.recID == 129173) {
+        //     logger::log_task("partitions for object ", object.recID, ":");
+        //     for (auto &it: partitionIDs) {
+        //         logger::log_task("  ", it);
+        //     }
+        // }
         // set partitions to object
         object.initPartitions(partitionIDs);
         // find which nodes need to receive this geometry
@@ -710,28 +716,6 @@ namespace partitioning
          * @todo: revisit this method. Too many extra computations? why compute the mbr again?
          * */
         static DB_STATUS setPartitionClassesForObject(Shape &object){
-            switch (object.getSpatialType()) {
-                case DT_POINT:
-                    // calculate the object's MBR
-                    object.setMBR();
-                    break;
-                case DT_POLYGON:
-                case DT_LINESTRING:
-                case DT_RECTANGLE:
-                    // calculate the object's MBR (why not use setMBR?)
-                    const std::vector<bg_point_xy>* pointsRef = object.getReferenceToPoints();
-                    object.mbr.pMin.x = std::numeric_limits<int>::max();
-                    object.mbr.pMin.y = std::numeric_limits<int>::max();
-                    object.mbr.pMax.x = -std::numeric_limits<int>::max();
-                    object.mbr.pMax.y = -std::numeric_limits<int>::max();
-                    for (auto &it: *pointsRef) {
-                        object.mbr.pMin.x = std::min(object.mbr.pMin.x, it.x());
-                        object.mbr.pMin.y = std::min(object.mbr.pMin.y, it.y());
-                        object.mbr.pMax.x = std::max(object.mbr.pMax.x, it.x());
-                        object.mbr.pMax.y = std::max(object.mbr.pMax.y, it.y());
-                    }             
-                    break;
-            }
             // vector for the new partitions
             std::vector<int> newPartitions;
             // for each distribution partition
@@ -934,6 +918,15 @@ namespace partitioning
                         logger::log_error(ret, "Setting partition classes for object with ID", batch.objects[i].recID, "failed.");
                         return ret;
                     }
+
+                    // if (batch.objects[i].recID == 129173) {
+                    //     logger::log_task("partitions for object ", batch.objects[i].recID, ":");
+                        
+                    //     for (auto &it: *batch.objects[i].getPartitionsRef()) {
+                    //         logger::log_task("  ", it);
+                    //     }
+                    // }
+
                     // add to dataset
                     ret = dataset->addObject(batch.objects[i]);
                     if (ret != DBERR_OK) {

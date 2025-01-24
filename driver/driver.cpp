@@ -93,7 +93,7 @@ int main(int argc, char* argv[]) {
     // std::string datasetFullPathS = "/home/hec/thanasis/Hecatoncheir/Hecatoncheir/datasets/T8.wkt";
     // std::vector<std::string> hosts = {"node1:1", "node2:1", "node3:1", "node4:1", "node5:1"};
     // std::vector<std::string> hosts = {"node1:1"};
-    std::vector<std::string> hosts = {"node1:1"};
+    std::vector<std::string> hosts = {"node1:1", "node2:1", "node3:1"};
 
     // Initialize Hecatoncheir. Must use this method before any other calls to the framework.
     hec::init(hosts.size(), hosts);
