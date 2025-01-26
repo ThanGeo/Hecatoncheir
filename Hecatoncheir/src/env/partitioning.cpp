@@ -184,14 +184,10 @@ namespace partitioning
                 double x,y;
                 DB_STATUS local_ret = DBERR_OK;
                 int tid = omp_get_thread_num();
-                int totalThreads = omp_get_num_threads();
                 // calculate which lines this thread will handle
-                size_t linesPerThread = (objectCount / totalThreads);
-                size_t fromLine = 1 + (tid * linesPerThread);          // first line is object count
-                size_t toLine = 1 + ((tid + 1) * linesPerThread);    // exclusive
-                if (tid == totalThreads - 1) {
-                    toLine = objectCount+1;
-                }
+                size_t linesPerThread = ceil(objectCount / MAX_THREADS);
+                size_t fromLine = (tid * linesPerThread);
+                size_t toLine = std::min(fromLine + linesPerThread, objectCount+1);
                 // open file
                 std::ifstream fin(dataset->metadata.path);
                 if (!fin.is_open()) {
@@ -273,14 +269,10 @@ namespace partitioning
                 double xMin, yMin, xMax, yMax;
                 DB_STATUS local_ret = DBERR_OK;
                 int tid = omp_get_thread_num();
-                int totalThreads = omp_get_num_threads();
                 // calculate which lines this thread will handle
-                size_t linesPerThread = (objectCount / totalThreads);
-                size_t fromLine = 1 + (tid * linesPerThread);          // first line is object count
-                size_t toLine = 1 + ((tid + 1) * linesPerThread);    // exclusive
-                if (tid == totalThreads - 1) {
-                    toLine = objectCount+1;
-                }
+                size_t linesPerThread = ceil(objectCount / MAX_THREADS);
+                size_t fromLine = (tid * linesPerThread);
+                size_t toLine = std::min(fromLine + linesPerThread, objectCount+1);
                 // logger::log_task("will handle lines", fromLine, "to", toLine);
                 // open file
                 std::ifstream fin(dataset->metadata.path);
@@ -402,6 +394,7 @@ namespace partitioning
 
     namespace wkt
     {
+        
         DB_STATUS calculateDatasetMetadata(Dataset* dataset) {
             DB_STATUS ret = DBERR_OK;
             // open file
@@ -427,14 +420,10 @@ namespace partitioning
             {
                 DB_STATUS local_ret = DBERR_OK;
                 int tid = omp_get_thread_num();
-                int totalThreads = omp_get_num_threads();
                 // calculate which lines this thread will handle
-                size_t linesPerThread = (totalObjects / totalThreads);
-                size_t fromLine = 1 + (tid * linesPerThread);          // first line is object count
-                size_t toLine = 1 + ((tid + 1) * linesPerThread);    // exclusive
-                if (tid == totalThreads - 1) {
-                    toLine = totalObjects+1;
-                }
+                size_t linesPerThread = ceil(totalObjects / MAX_THREADS);
+                size_t fromLine = (tid * linesPerThread);
+                size_t toLine = std::min(fromLine + linesPerThread, totalObjects+1);
                 // open file
                 std::ifstream fin(dataset->metadata.path);
                 if (!fin.is_open()) {
@@ -530,14 +519,10 @@ namespace partitioning
                 double xMin, yMin, xMax, yMax;
                 DB_STATUS local_ret = DBERR_OK;
                 int tid = omp_get_thread_num();
-                int totalThreads = omp_get_num_threads();
                 // calculate which lines this thread will handle
-                size_t linesPerThread = (totalObjects / totalThreads);
-                size_t fromLine = 1 + (tid * linesPerThread);          // first line is object count
-                size_t toLine = 1 + ((tid + 1) * linesPerThread);    // exclusive
-                if (tid == totalThreads - 1) {
-                    toLine = totalObjects+1;
-                }
+                size_t linesPerThread = ceil(totalObjects / MAX_THREADS);
+                size_t fromLine = (tid * linesPerThread);
+                size_t toLine = std::min(fromLine + linesPerThread, totalObjects+1);
                 // logger::log_task("will handle lines", fromLine, "to", toLine);
                 // open file
                 std::ifstream fin(dataset->metadata.path);
@@ -547,9 +532,12 @@ namespace partitioning
                     ret = DBERR_MISSING_FILE;
                 }
                 // jump to start line
-                for (size_t i=0; i<fromLine; i++) {
-                    fin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+                std::string token;
+                size_t currentLine = 0;
+                while (currentLine < fromLine && std::getline(fin, line)) {
+                    currentLine++;
                 }
+
 
                 // create empty object based on data type
                 Shape object;
@@ -561,8 +549,6 @@ namespace partitioning
                 } else {
                     // shape created
                     // loop
-                    size_t currentLine = fromLine;
-                    std::string token;
                     while (true) {
                         // reset shape object
                         object.reset();
@@ -649,17 +635,19 @@ namespace partitioning
             // logger::log_success("Sent", batchesSent, "non-empty batches.");
             return ret;
         }
+
+        
     }
+
+    
 
     DB_STATUS partitionDataset(Dataset *dataset) {
         if (dataset == nullptr) {
             logger::log_error(DBERR_NULL_PTR_EXCEPTION, "Dataset pointer is null");
             return DBERR_NULL_PTR_EXCEPTION;
         }
-        // double startTime;
         DB_STATUS ret;
         // time
-        // startTime = mpi_timer::markTime();
         switch (dataset->metadata.fileType) {
             // perform the partitioning
             case hec::FT_CSV:
@@ -918,14 +906,6 @@ namespace partitioning
                         logger::log_error(ret, "Setting partition classes for object with ID", batch.objects[i].recID, "failed.");
                         return ret;
                     }
-
-                    // if (batch.objects[i].recID == 129173) {
-                    //     logger::log_task("partitions for object ", batch.objects[i].recID, ":");
-                        
-                    //     for (auto &it: *batch.objects[i].getPartitionsRef()) {
-                    //         logger::log_task("  ", it);
-                    //     }
-                    // }
 
                     // add to dataset
                     ret = dataset->addObject(batch.objects[i]);

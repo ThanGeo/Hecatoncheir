@@ -35,12 +35,11 @@ namespace storage
                     double x,y;
                     DB_STATUS local_ret = DBERR_OK;
                     int tid = omp_get_thread_num();
-                    int totalThreads = omp_get_num_threads();
                     // calculate which lines this thread will handle
-                    size_t linesPerThread = (objectCount / totalThreads);
+                    size_t linesPerThread = (objectCount / MAX_THREADS);
                     size_t fromLine = 1 + (tid * linesPerThread);          // first line is object count
                     size_t toLine = 1 + ((tid + 1) * linesPerThread);    // exclusive
-                    if (tid == totalThreads - 1) {
+                    if (tid == MAX_THREADS - 1) {
                         toLine = objectCount+1;
                     }
                     // open file
@@ -124,12 +123,11 @@ namespace storage
                 {
                     DB_STATUS local_ret = DBERR_OK;
                     int tid = omp_get_thread_num();
-                    int totalThreads = omp_get_num_threads();
                     // calculate which lines this thread will handle
-                    size_t linesPerThread = (totalObjects / totalThreads);
+                    size_t linesPerThread = (totalObjects / MAX_THREADS);
                     size_t fromLine = 1 + (tid * linesPerThread);          // first line is object count
                     size_t toLine = 1 + ((tid + 1) * linesPerThread);    // exclusive
-                    if (tid == totalThreads - 1) {
+                    if (tid == MAX_THREADS - 1) {
                         toLine = totalObjects+1;
                     }
                     // open file

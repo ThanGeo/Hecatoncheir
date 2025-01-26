@@ -1455,8 +1455,11 @@ struct Dataset{
     DatasetMetadata metadata;
     // unique object count
     size_t totalObjects = 0;
-    std::vector<size_t> objectIDs;
-    std::unordered_map<size_t, Shape> objects;
+    // vector of objects
+    std::vector<Shape> objects;
+    // map of object id-position in the objects vector
+    std::unordered_map<size_t,size_t> objectPosMap;
+    // the two layer index
     TwoLayerIndex twoLayerIndex;
     ApproximationType approxType = AT_APRIL;
     AprilConfig aprilConfig;
@@ -1465,7 +1468,9 @@ struct Dataset{
     /** map: key,value = recID,vector<sectionID>: maps recs to sections */
     std::unordered_map<size_t,std::vector<uint>> recToSectionIdMap;
 
-    Dataset(){}
+    Dataset(){
+        this->totalObjects = 0;
+    }
     Dataset(DatasetMetadata &metadata) {
         if (metadata.dataspaceMetadata.boundsSet) {
             metadata.dataspaceMetadata.xExtent = metadata.dataspaceMetadata.xMaxGlobal - metadata.dataspaceMetadata.xMinGlobal;
@@ -1474,11 +1479,15 @@ struct Dataset{
         }
         metadata.datasetName = getFileNameFromPath(metadata.path);
         this->metadata = metadata;
-    }        
+        this->totalObjects = 0;
+    }
 
     /** @brief Adds a Shape object into the two layer index and the reference map. 
      * @note Calculates the partitions and the object's classes in them. */
     DB_STATUS addObject(Shape &object);
+
+    /** @brief Adds a Shape object to the dataset. No indexing will take place with this method. */
+    DB_STATUS storeObject(Shape &object);
 
     /** @brief Returns a reference to the object with the given ID. */
     Shape* getObject(size_t recID);

@@ -219,17 +219,16 @@ namespace comm
             batch.deserialize(buffer, bufferSize);
             // logger::log_success("Received batch with", batch.objectCount, "objects");
             if (batch.objectCount > 0) {      
-                // calculate two layer classes for each object, in each partition
-                ret = partitioning::addBatchToTwoLayerIndex(dataset, batch);
-                if (ret != DBERR_OK) {
-                    logger::log_error(ret, "Calculating two layer index classes failed for batch.");
-                    return ret;
+                for (auto &obj : batch.objects) {
+                    // store into dataset
+                    dataset->storeObject(obj);
                 }
             } else {
                 // empty batch, set flag to stop listening for this dataset
                 continueListening = 0;
-                // sort two layer
-                dataset->twoLayerIndex.sortPartitionsOnY();
+                // update total object count and capacity
+                dataset->totalObjects = dataset->objects.size();
+                dataset->objects.shrink_to_fit();
             }
 
             return ret;
@@ -308,21 +307,11 @@ namespace comm
                 logger::log_error(DBERR_NULL_PTR_EXCEPTION, "Empty dataset object (no metadata). Can not partition.");
                 return DBERR_NULL_PTR_EXCEPTION;
             }
-            
-            // update the grids' dataspace metadata in the partitioning object 
-            g_config.partitioningMethod->setDistGridDataspace(g_config.datasetOptions.dataspaceMetadata);
-            g_config.partitioningMethod->setPartGridDataspace(g_config.datasetOptions.dataspaceMetadata);
 
-            // if APRIL is enabled
-            if (g_config.queryMetadata.IntermediateFilter) {
-                // init rasterization environment
-                ret = APRIL::generation::setRasterBounds(g_config.datasetOptions.dataspaceMetadata);
-                if (ret != DBERR_OK) {
-                    return DBERR_INVALID_PARAMETER;
-                }
-            }
+            // allocate space based on total objects
+            dataset->objects.reserve(dataset->totalObjects);
+            
             // logger::log_success("Global dataspace:", g_config.datasetOptions.dataspaceMetadata.xMinGlobal, g_config.datasetOptions.dataspaceMetadata.yMinGlobal, g_config.datasetOptions.dataspaceMetadata.xMaxGlobal, g_config.datasetOptions.dataspaceMetadata.yMaxGlobal);
-            // logger::log_task("Listening for batches...");
             // listen for dataset batches until an empty batch arrives
             while(listen) {
                 // proble blockingly for batch
@@ -580,6 +569,28 @@ STOP_LISTENING:
             return ret;
         }
 
+        static DB_STATUS handleDatasetInfoMessage(MPI_Status &status) {
+            SerializedMsg<char> msg(MPI_CHAR);
+            // receive the message
+            DB_STATUS ret = recv::receiveMessage(status, msg.type, g_agent_comm, msg);
+            if (ret != DBERR_OK) {
+                return ret;
+            }
+            // temp Dataset object
+            Dataset tempDataset;
+            ret = tempDataset.deserialize(msg.data, msg.count);
+            if (ret != DBERR_OK) {
+                logger::log_error(ret, "Deserializing dataset info failed.");
+                return ret;
+            }
+            // get actual dataset and replace total object count + dataspace info
+            Dataset* dataset = g_config.datasetOptions.getDatasetByIdx(tempDataset.metadata.internalID);
+            dataset->totalObjects = tempDataset.totalObjects;
+            dataset->metadata.dataspaceMetadata = tempDataset.metadata.dataspaceMetadata;
+
+            return ret;
+        }
+
         static DB_STATUS handlePartitionDatasetMessage(MPI_Status &status) {
             SerializedMsg<int> msg(MPI_INT);
             // receive the message
@@ -601,6 +612,10 @@ STOP_LISTENING:
             for (auto &index : datasetIndexes) {
                 if (g_config.datasetOptions.getDatasetByIdx(index)->metadata.persist) {
                     // if we need persistence (store on disk)
+                    
+                    // @todo revisit later
+                    return DBERR_FEATURE_UNSUPPORTED;
+
                     ret = listenForDatasetPartitioningWithPersistence((DatasetIndex)index);
                     if (ret != DBERR_OK) {
                         // there was an error, send NACK and propagate error code locally
@@ -782,6 +797,12 @@ STOP_LISTENING:
                 case MSG_PREPARE_DATASET:
                     // logger::log_success("MSG_PREPARE_DATASET");
                     ret = handlePrepareDatsetMessage(status);
+                    if (ret != DBERR_OK) {
+                        return ret;
+                    }
+                    break;
+                case MSG_DATASET_METADATA:
+                    ret = handleDatasetInfoMessage(status);
                     if (ret != DBERR_OK) {
                         return ret;
                     }
@@ -1158,6 +1179,24 @@ STOP_LISTENING:
             return ret;
         }
 
+        static DB_STATUS handleDatasetInfoMessage(MPI_Status status) {
+            SerializedMsg<char> msg(MPI_CHAR);
+            // receive the message
+            DB_STATUS ret = recv::receiveMessage(status, msg.type, g_controller_comm, msg);
+            if (ret != DBERR_OK) {
+                return ret;
+            }
+            // forward to local agent
+            ret = send::sendMessage(msg, AGENT_RANK, status.MPI_TAG, g_agent_comm);
+            if (ret != DBERR_OK) {
+                logger::log_error(ret, "Failed forwarding message to agent");
+                return ret;
+            }
+            // free message memory
+            free(msg.data);
+            return ret;
+        }
+
         static DB_STATUS handlePartitionDatasetMessage(MPI_Status &status) {
             SerializedMsg<int> msg(MPI_INT);
             // receive the message
@@ -1285,6 +1324,12 @@ STOP_LISTENING:
                     ret = handlePrepareDatsetMessage(status);
                     if (ret != DBERR_OK) {
                         logger::log_error(ret, "Handling dataset metadata message failed.");
+                        return ret;
+                    }
+                    break;
+                case MSG_DATASET_METADATA:
+                    ret = handleDatasetInfoMessage(status);
+                    if (ret != DBERR_OK) {
                         return ret;
                     }
                     break;
@@ -1583,89 +1628,36 @@ STOP_LISTENING:
             g_config.partitioningMethod->setDistGridDataspace(g_config.datasetOptions.dataspaceMetadata);
             g_config.partitioningMethod->setPartGridDataspace(g_config.datasetOptions.dataspaceMetadata);
 
-            // serialize dataspace metadata to send
-            SerializedMsg<double> dataspaceMsg(MPI_DOUBLE);
-            ret = g_config.datasetOptions.dataspaceMetadata.serialize(&dataspaceMsg.data, dataspaceMsg.count);
-            if (ret != DBERR_OK) {
-                logger::log_error(ret, "Serialize global dataspace info failed.");
-                return ret;
-            }
-
-            // send a message with the global dataspace info to all workers
-            int threadsToSpawn = std::min(g_world_size, MAX_THREADS);
-            #pragma omp parallel num_threads(threadsToSpawn)
-            {
-                DB_STATUS local_ret = DBERR_OK;
-                #pragma omp for
-                for (int i=0; i<g_world_size; i++) {
-                    // send to controllers
-                    if (i != HOST_LOCAL_RANK) {
-                        // send to controllers
-                        local_ret = send::sendMessage(dataspaceMsg, i, MSG_GLOBAL_DATASPACE, g_controller_comm);
-                        if (ret != DBERR_OK) {
-                            #pragma omp cancel for
-                            logger::log_error(DBERR_COMM_SEND, "Failed sending dataspace message to controller", i);
-                            ret = local_ret;
-                        }
-                    } else {
-                        local_ret = send::sendMessage(dataspaceMsg, AGENT_RANK, MSG_GLOBAL_DATASPACE, g_agent_comm);
-                        if (local_ret != DBERR_OK) {
-                            ret = local_ret;
-                            logger::log_error(ret, "Failed sending dataspace message to agent");
-                        }
-                    }
-                }
-            }
-            if (ret != DBERR_OK) {
-                // parallel region failed
-                return ret;
-            }
-
-            // free memory
-            free(dataspaceMsg.data);
-
             // perform the partitioning for each dataset in the message
             for (auto &index : datasetIndexes) {
+                // get dataset to partition
+                Dataset* dataset = g_config.datasetOptions.getDatasetByIdx(index);
+                // serialize dataset metadata to send
+                SerializedMsg<char> datasetInfoMsg(MPI_CHAR);
+                ret = dataset->serialize(&datasetInfoMsg.data, datasetInfoMsg.count);
+                if (ret != DBERR_OK) {
+                    logger::log_error(ret, "Dataset info serialization failed.");
+                    return ret;
+                }
+                // broadcast dataset info to workers + agent
+                ret = broadcast::broadcastMessage(datasetInfoMsg, MSG_DATASET_METADATA);
+                if (ret != DBERR_OK) {
+                    return ret;
+                }
+
                 // signal the begining of the partitioning
                 SerializedMsg<int> signal(MPI_INT);
-                // pack
                 ret = pack::packIntegers(signal, index);
                 if (ret != DBERR_OK) {
                     logger::log_error(ret, "Packing partitioning init message failed.");
                     return ret;
                 }
-                // send to all workers
-                int threadsToSpawn = std::min(g_world_size, MAX_THREADS);
-                #pragma omp parallel num_threads(threadsToSpawn)
-                {
-                    DB_STATUS local_ret = DBERR_OK;
-                    #pragma omp for
-                    for (int i=0; i<g_world_size; i++) {
-                        // send to controllers
-                        if (i != HOST_LOCAL_RANK) {
-                            // send to controllers
-                            local_ret = send::sendMessage(signal, i, MSG_PARTITION_DATASET, g_controller_comm);
-                            if (ret != DBERR_OK) {
-                                #pragma omp cancel for
-                                logger::log_error(DBERR_COMM_SEND, "Failed forwarding message to controller", i);
-                                ret = local_ret;
-                            }
-                        } else {
-                            // send signal to agent
-                            local_ret = send::sendMessage(signal, AGENT_RANK, MSG_PARTITION_DATASET, g_agent_comm);
-                            if (local_ret != DBERR_OK) {
-                                ret = local_ret;
-                                logger::log_error(ret, "Failed sending partition init message.");
-                            }
-                        }
-                    }
-                }
+                // broadcast to all workers + agent
+                ret = broadcast::broadcastMessage(signal, MSG_PARTITION_DATASET);
                 if (ret != DBERR_OK) {
-                    // parallel region failed
                     return ret;
                 }
-                // get dataset to partition
-                Dataset* dataset = g_config.datasetOptions.getDatasetByIdx(index);
+                
                 // partition the data
                 ret = partitioning::partitionDataset(dataset);
                 if (ret != DBERR_OK) {

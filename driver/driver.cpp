@@ -45,21 +45,21 @@ void runJoins() {
     
     // run query (@todo maybe merge creating a query object and calling hec::query into a single thing)
     // -87.906508 32.896858,-87.906483 32.896926
-    hec::JoinQuery intersectionJoinQuery(datasetRID, datasetSID, 0, hec::spatialQueries.INTERSECTS(), hec::queryResultTypes.COUNT());
-    start = std::chrono::high_resolution_clock::now();
-    hec::QueryResult result =  hec::query(&intersectionJoinQuery);
-    end = std::chrono::high_resolution_clock::now();
-    duration = end - start;
-    std::cout << "Query Evaluation time: " << duration.count() << " seconds" << std::endl;
-    printf("Total results: %lu\n", result.getResultCount());
+    // hec::JoinQuery intersectionJoinQuery(datasetRID, datasetSID, 0, hec::spatialQueries.INTERSECTS(), hec::queryResultTypes.COUNT());
+    // start = std::chrono::high_resolution_clock::now();
+    // hec::QueryResult result =  hec::query(&intersectionJoinQuery);
+    // end = std::chrono::high_resolution_clock::now();
+    // duration = end - start;
+    // std::cout << "Query Evaluation time: " << duration.count() << " seconds" << std::endl;
+    // printf("Total results: %lu\n", result.getResultCount());
 
-    hec::JoinQuery findRelationJoinQuery(datasetRID, datasetSID, 0, hec::spatialQueries.FIND_RELATION(), hec::queryResultTypes.COUNT());
-    start = std::chrono::high_resolution_clock::now();
-    result =  hec::query(&findRelationJoinQuery);
-    end = std::chrono::high_resolution_clock::now();
-    duration = end - start;
-    std::cout << "Query Evaluation time: " << duration.count() << " seconds" << std::endl;
-    result.print();
+    // hec::JoinQuery findRelationJoinQuery(datasetRID, datasetSID, 0, hec::spatialQueries.FIND_RELATION(), hec::queryResultTypes.COUNT());
+    // start = std::chrono::high_resolution_clock::now();
+    // result =  hec::query(&findRelationJoinQuery);
+    // end = std::chrono::high_resolution_clock::now();
+    // duration = end - start;
+    // std::cout << "Query Evaluation time: " << duration.count() << " seconds" << std::endl;
+    // result.print();
 
 }
 
@@ -92,8 +92,8 @@ int main(int argc, char* argv[]) {
     
     // std::string datasetFullPathS = "/home/hec/thanasis/Hecatoncheir/Hecatoncheir/datasets/T8.wkt";
     // std::vector<std::string> hosts = {"node1:1", "node2:1", "node3:1", "node4:1", "node5:1"};
-    // std::vector<std::string> hosts = {"node1:1"};
-    std::vector<std::string> hosts = {"node1:1", "node2:1", "node3:1"};
+    std::vector<std::string> hosts = {"node1:1"};
+    // std::vector<std::string> hosts = {"node1:1", "node2:1", "node3:1"};
 
     // Initialize Hecatoncheir. Must use this method before any other calls to the framework.
     hec::init(hosts.size(), hosts);
