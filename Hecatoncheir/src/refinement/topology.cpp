@@ -374,10 +374,14 @@ namespace refinement
             // objR->printGeometry();
             // objS->printGeometry();
             // printf("Data types: %s and %s\n", objR->getShapeType().c_str(), objS->getShapeType().c_str());
+            // if (objR->recID == 129032 && objS->recID == 2292762) {
+            //     logger::log_task("Refining", objR->recID, "and", objS->recID);
+            // }
+
             if (objR->intersects(*objS)) {
                 queryResult.countResult(objR->recID, objS->recID);
                 // printf("%lu,%lu\n", objR->recID, objS->recID);
-                // if (objR->recID == 101911 && objS->recID == 1691538) {
+                // if (objR->recID == 129032 && objS->recID == 2292762) {
                 //     logger::log_task(objR->recID, "and", objS->recID, "is result");
                 // }
             }

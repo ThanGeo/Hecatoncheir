@@ -696,11 +696,17 @@ namespace twolayer
                 // forward pair
                 if (flag) {
                     // pivot is R, rec is S
+                    if ((*pivot)->recID == 129032 && (*rec)->recID == 2292762) {
+                        logger::log_task("Spotted in filter: mbrs ", (*pivot)->mbr.pMin.x, (*pivot)->mbr.pMin.y, (*pivot)->mbr.pMax.x, (*pivot)->mbr.pMax.y, "and" , (*rec)->mbr.pMin.x, (*rec)->mbr.pMin.y, (*rec)->mbr.pMax.x, (*rec)->mbr.pMax.y);
+                    }
                     ret = forwardPair(*pivot, *rec, queryResult);
                     if (ret != DBERR_OK) {
                         return ret;
                     }
                 } else {
+                    if ((*pivot)->recID == 2292762 && (*rec)->recID == 129032) {
+                        logger::log_task("Spotted in filter: mbrs ",  (*rec)->mbr.pMin.x, (*rec)->mbr.pMin.y, (*rec)->mbr.pMax.x, (*rec)->mbr.pMax.y,  "and" , (*pivot)->mbr.pMin.x, (*pivot)->mbr.pMin.y, (*pivot)->mbr.pMax.x, (*pivot)->mbr.pMax.y);
+                    }
                     // rec is R, pivot is S
                     ret = forwardPair(*rec, *pivot, queryResult);
                     if (ret != DBERR_OK) {

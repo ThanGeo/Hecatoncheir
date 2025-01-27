@@ -105,15 +105,16 @@ namespace partitioning
                     return DBERR_INVALID_PARAMETER;
                 }
                 Batch *batch = &it->second;
-                // if (object.recID == 101911 || object.recID == 1691538) {
-                //     logger::log_task("object", object.recID, "partitions:");
+                // make a copy of the geometry
+                Shape objectCopy = object;
+                // if (objectCopy.recID == 99943 || objectCopy.recID == 1661475) {
+                //     logger::log_task("object", objectCopy.recID, "partitions:");
                 //     for (auto &it: partitionIDs) {
                 //         logger::log_task("  ", it);
                 //     }
                 //     logger::log_task("Will be sent to node", nodeRank);
+                //     logger::log_task("MBR:", objectCopy.mbr.pMin.x, objectCopy.mbr.pMin.y, objectCopy.mbr.pMax.x, objectCopy.mbr.pMax.y);
                 // }
-                // make a copy of the geometry
-                Shape objectCopy = object;
 
                 // add moddified geometry to this batch
                 // logger::log_task("Added geometry", objectCopy.recID, " to batch");
@@ -498,9 +499,9 @@ namespace partitioning
                 DB_STATUS local_ret = DBERR_OK;
                 int tid = omp_get_thread_num();
                 // calculate which lines this thread will handle
-                size_t linesPerThread = ceil(totalObjects / MAX_THREADS);
+                size_t linesPerThread = (totalObjects + MAX_THREADS - 1) / MAX_THREADS;
                 size_t fromLine = (tid * linesPerThread);
-                size_t toLine = std::min(fromLine + linesPerThread, totalObjects+1);
+                size_t toLine = std::min(fromLine + linesPerThread, totalObjects);
                 // logger::log_task("will handle lines", fromLine, "to", toLine);
                 // open file
                 std::ifstream fin(dataset->metadata.path);

@@ -615,6 +615,12 @@ DB_STATUS TwoLayerIndex::getPartitionsForMBR(Shape* objectRef, std::vector<int> 
     //     logger::log_task("original x,y:", originalMinX, originalMinY);
     // }
 
+    // if (objectRef->recID == 99943 || objectRef->recID == 1661475) {
+    //     logger::log_task("Object", objectRef->recID, "with MBR: ", objectRef->mbr.pMin.x, objectRef->mbr.pMin.y, objectRef->mbr.pMax.x, objectRef->mbr.pMax.y);
+    //     logger::log_task(" range in fine grid", fineMinX, fineMinY, fineMaxX, fineMaxY);
+    // }
+
+
     // Iterate over the coarse grid cells overlapping the MBR
     for (int coarseX = coarseMinX; coarseX <= coarseMaxX; ++coarseX) {
         for (int coarseY = coarseMinY; coarseY <= coarseMaxY; ++coarseY) {
@@ -644,7 +650,7 @@ DB_STATUS TwoLayerIndex::getPartitionsForMBR(Shape* objectRef, std::vector<int> 
                 // Iterate over overlapping fine grid cells within the coarse grid bounds
                 for (int fineX = startMinX; fineX <= endMinX; fineX++) {
                     for (int fineY = startMinY; fineY <= endMinY; fineY++) {
-                        // if (objectRef->recID == 101911 || objectRef->recID == 1691538) {
+                        // if (objectRef->recID == 99943 || objectRef->recID == 1661475) {
                         //     logger::log_task("indexes:", fineX, fineY, "id:", partitioning->getPartitionID(fineX, fineY, partitioning->getGlobalPPD()));
                         // }
 
@@ -654,25 +660,25 @@ DB_STATUS TwoLayerIndex::getPartitionsForMBR(Shape* objectRef, std::vector<int> 
                         if (fineX == originalMinX && fineY == originalMinY) {
                             // Class A
                             partionClasses.push_back(CLASS_A);
-                            // if (objectRef->recID == 101911 || objectRef->recID == 1691538) {
+                            // if (objectRef->recID == 99943 || objectRef->recID == 1661475) {
                             //     logger::log_task("assigned node rank:", assignedNodeRank, "Added object ", objectRef->recID, "to partition", partitionID, "with class", CLASS_A);
                             // }
                         } else if (fineX == originalMinX && fineY != originalMinY) {
                             // Class B
                             partionClasses.push_back(CLASS_B);
-                            // if (objectRef->recID == 101911 || objectRef->recID == 1691538) {
+                            // if (objectRef->recID == 99943 || objectRef->recID == 1661475) {
                             //     logger::log_task("assigned node rank:", assignedNodeRank, "Added object ", objectRef->recID, "to partition", partitionID, "with class", CLASS_B);
                             // }
                         } else if (fineX != originalMinX && fineY == originalMinY) {
                             // Class C
                             partionClasses.push_back(CLASS_C);
-                            // if (objectRef->recID == 101911 || objectRef->recID == 1691538) {
+                            // if (objectRef->recID == 99943 || objectRef->recID == 1661475) {
                             //     logger::log_task("assigned node rank:", assignedNodeRank, "Added object ", objectRef->recID, "to partition", partitionID, "with class", CLASS_C);
                             // }
                         }  else {
                             // Class D
                             partionClasses.push_back(CLASS_D);
-                            // if (objectRef->recID == 101911 || objectRef->recID == 1691538) {
+                            // if (objectRef->recID == 99943 || objectRef->recID == 1661475) {
                             //     logger::log_task("assigned node rank:", assignedNodeRank, "Added object ", objectRef->recID, "to partition", partitionID, "with class", CLASS_D);
                             // }
                         }
@@ -715,9 +721,9 @@ DB_STATUS TwoLayerIndex::addObject(Shape *objectRef) {
         PartitionBase* partition = this->getOrCreatePartition(partitionIDs[i]);
         partition->addObject(objectRef, partitionClasses[i]);
         // logger::log_task("Adding object to partition", partitionIDs[i], "with class", partitionClasses[i]);
-        // if (objectRef->recID == 101911 || objectRef->recID == 1691538) {
+        // if (objectRef->recID == 129032 || objectRef->recID == 2292762) {
         //     logger::log_task("Adding object ", objectRef->recID, "to partition", partitionIDs[i], "with class", partitionClasses[i]);
-        //     // objectRef->printGeometry();
+        //     objectRef->printGeometry();
         // }
     }
     
