@@ -148,68 +148,69 @@ namespace comm
          * @param[out] continueListening If the message is empty (0 objects aster serialization), then it signals the end of the partitioning for the dataset.
         */
         static DB_STATUS deserializeBatchMessageAndHandle(char *buffer, int bufferSize, FILE* partitionFile, FILE* aprilFile, Dataset *dataset, int &continueListening) {
-            DB_STATUS ret = DBERR_OK;
-            Batch batch;
-            // deserialize the batch
-            batch.deserialize(buffer, bufferSize);
-            // logger::log_success("Received batch with", batch.objectCount, "objects");
-            if (batch.objectCount > 0) {
-                // calculate two layer classes for each object, in each partition
-                ret = partitioning::calculateTwoLayerClasses(batch);
-                if (ret != DBERR_OK) {
-                    logger::log_error(ret, "Calculating two layer index classes failed for batch.");
-                    return ret;
-                }
-                // append to partition file
-                ret = storage::writer::partitionFile::appendBatchToPartitionFile(partitionFile, &batch, dataset);
-                if (ret != DBERR_OK) {
-                    logger::log_error(DBERR_DISK_WRITE_FAILED, "Failed when writing batch to partition file");
-                    return DBERR_DISK_WRITE_FAILED;
-                }
+            // DB_STATUS ret = DBERR_OK;
+            // Batch batch;
+            // // deserialize the batch
+            // batch.deserialize(buffer, bufferSize);
+            // // logger::log_success("Received batch with", batch.objectCount, "objects");
+            // if (batch.objectCount > 0) {
+            //     // calculate two layer classes for each object, in each partition
+            //     ret = partitioning::calculateTwoLayerClasses(batch);
+            //     if (ret != DBERR_OK) {
+            //         logger::log_error(ret, "Calculating two layer index classes failed for batch.");
+            //         return ret;
+            //     }
+            //     // append to partition file
+            //     ret = storage::writer::partitionFile::appendBatchToPartitionFile(partitionFile, &batch, dataset);
+            //     if (ret != DBERR_OK) {
+            //         logger::log_error(DBERR_DISK_WRITE_FAILED, "Failed when writing batch to partition file");
+            //         return DBERR_DISK_WRITE_FAILED;
+            //     }
                 
-                // if APRIL is enabled, generate it
-                if (g_config.queryMetadata.IntermediateFilter && (dataset->metadata.dataType == DT_POLYGON || dataset->metadata.dataType == DT_LINESTRING)) {
-                    // create APRIL for each object @todo paralellize? have to do a buffered write then
-                    for (int i=0; i<batch.objectCount; i++) {
-                        // generate
-                        AprilData aprilData;
-                        ret = APRIL::generation::memory::createAPRILforObject(&batch.objects[i], dataset->metadata.dataType, dataset->aprilConfig, aprilData);
-                        if (ret != DBERR_OK) {
-                            logger::log_error(ret, "APRIL creation failed for object with id:", batch.objects[i].recID);
-                            return ret;
-                        }
-                        // save to file
-                        /** @todo hardcoded section ID, if we are to implement sections feature for APRIL, this needs to change. */
-                        ret = APRIL::writer::saveAPRIL(aprilFile, batch.objects[i].recID, 0, &aprilData);
-                        if (ret != DBERR_OK) {
-                            logger::log_error(ret, "Saving APRIL for object", batch.objects[i].recID, "failed.");
-                            return ret;
-                        }
-                    }
-                }
-            } else {
-                // empty batch, set flag to stop listening for this dataset
-                continueListening = 0;
-                // update the object count value in the file
-                ret = storage::writer::updateObjectCountInFile(partitionFile, dataset->totalObjects);
-                if (ret != DBERR_OK) {
-                    logger::log_error(DBERR_DISK_WRITE_FAILED, "Failed when updating partition file object count");
-                    return DBERR_DISK_WRITE_FAILED;
-                }
+            //     // if APRIL is enabled, generate it
+            //     if (g_config.queryMetadata.IntermediateFilter && (dataset->metadata.dataType == DT_POLYGON || dataset->metadata.dataType == DT_LINESTRING)) {
+            //         // create APRIL for each object @todo paralellize? have to do a buffered write then
+            //         for (int i=0; i<batch.objectCount; i++) {
+            //             // generate
+            //             AprilData aprilData;
+            //             ret = APRIL::generation::memory::createAPRILforObject(&batch.objects[i], dataset->metadata.dataType, dataset->aprilConfig, aprilData);
+            //             if (ret != DBERR_OK) {
+            //                 logger::log_error(ret, "APRIL creation failed for object with id:", batch.objects[i].recID);
+            //                 return ret;
+            //             }
+            //             // save to file
+            //             /** @todo hardcoded section ID, if we are to implement sections feature for APRIL, this needs to change. */
+            //             ret = APRIL::writer::saveAPRIL(aprilFile, batch.objects[i].recID, 0, &aprilData);
+            //             if (ret != DBERR_OK) {
+            //                 logger::log_error(ret, "Saving APRIL for object", batch.objects[i].recID, "failed.");
+            //                 return ret;
+            //             }
+            //         }
+            //     }
+            // } else {
+            //     // empty batch, set flag to stop listening for this dataset
+            //     continueListening = 0;
+            //     // update the object count value in the file
+            //     ret = storage::writer::updateObjectCountInFile(partitionFile, dataset->totalObjects);
+            //     if (ret != DBERR_OK) {
+            //         logger::log_error(DBERR_DISK_WRITE_FAILED, "Failed when updating partition file object count");
+            //         return DBERR_DISK_WRITE_FAILED;
+            //     }
 
-                // if APRIL is enabled, generate it
-                if (g_config.queryMetadata.IntermediateFilter) {
-                    // update the object count value in the file
-                    ret = storage::writer::updateObjectCountInFile(aprilFile, dataset->totalObjects);
-                    if (ret != DBERR_OK) {
-                        logger::log_error(DBERR_DISK_WRITE_FAILED, "Failed when updating partition file object count");
-                        return DBERR_DISK_WRITE_FAILED;
-                    }
-                    // logger::log_success("Saved", dataset->totalObjects,"total objects.");
-                }
-            }
+            //     // if APRIL is enabled, generate it
+            //     if (g_config.queryMetadata.IntermediateFilter) {
+            //         // update the object count value in the file
+            //         ret = storage::writer::updateObjectCountInFile(aprilFile, dataset->totalObjects);
+            //         if (ret != DBERR_OK) {
+            //             logger::log_error(DBERR_DISK_WRITE_FAILED, "Failed when updating partition file object count");
+            //             return DBERR_DISK_WRITE_FAILED;
+            //         }
+            //         // logger::log_success("Saved", dataset->totalObjects,"total objects.");
+            //     }
+            // }
 
-            return ret;
+            // return ret;
+            return DBERR_FEATURE_UNSUPPORTED;
         }
 
         static DB_STATUS deserializeBatchMessageAndHandle(char *buffer, int bufferSize, Dataset *dataset, int &continueListening) {
@@ -383,7 +384,7 @@ namespace comm
                 // init rasterization environment
                 ret = APRIL::generation::setRasterBounds(g_config.datasetOptions.dataspaceMetadata);
                 if (ret != DBERR_OK) {
-                    return DBERR_INVALID_PARAMETER;
+                    return ret;
                 }
 
                 // open april file for writing
@@ -487,7 +488,6 @@ STOP_LISTENING:
             if (ret != DBERR_OK) {
                 return ret;
             }
-            // printf("Partitioning metadata set: Type %d, dPPD %d, pPPD %d\n", g_config.partitioningMethod->getResultType(), g_config.partitioningMethod->getDistributionPPD(), g_config.partitioningMethod->getPartitioningPPD());
             // verify local directories
             ret = configurer::verifySystemDirectories();
             if (ret != DBERR_OK) {
@@ -587,6 +587,14 @@ STOP_LISTENING:
             Dataset* dataset = g_config.datasetOptions.getDatasetByIdx(tempDataset.metadata.internalID);
             dataset->totalObjects = tempDataset.totalObjects;
             dataset->metadata.dataspaceMetadata = tempDataset.metadata.dataspaceMetadata;
+            g_config.datasetOptions.updateDataspace();
+            g_config.partitioningMethod->setDistGridDataspace(g_config.datasetOptions.dataspaceMetadata);
+            g_config.partitioningMethod->setPartGridDataspace(g_config.datasetOptions.dataspaceMetadata);
+            // printf("Partitioning metadata set: (%f,%f),(%f,%f)\n", g_config.partitioningMethod->distGridDataspaceMetadata.xMinGlobal, g_config.partitioningMethod->distGridDataspaceMetadata.yMinGlobal, g_config.partitioningMethod->distGridDataspaceMetadata.xMaxGlobal, g_config.partitioningMethod->distGridDataspaceMetadata.yMaxGlobal);
+            // printf("Partitioning metadata set: gPPD %d, dPPD %d, pPPD %d\n", g_config.partitioningMethod->getGlobalPPD(), g_config.partitioningMethod->getDistributionPPD(), g_config.partitioningMethod->getPartitioningPPD());
+            // printf("distExtents %f,%f, partitionExtents %f,%f\n", g_config.partitioningMethod->getDistPartionExtentX(), g_config.partitioningMethod->getDistPartionExtentY(), g_config.partitioningMethod->getPartPartionExtentX(), g_config.partitioningMethod->getPartPartionExtentY());
+           
+
 
             return ret;
         }
@@ -644,6 +652,55 @@ STOP_LISTENING:
             }
 
             // send ACK back that all data for this dataset has been received and processed successfully
+            ret = send::sendResponse(PARENT_RANK, MSG_ACK, g_agent_comm);
+            if (ret != DBERR_OK) {
+                logger::log_error(ret, "Send ACK failed.");
+            }
+
+            return ret;
+        }
+
+        static DB_STATUS handleBuildIndexMessage(MPI_Status &status) {
+            SerializedMsg<int> msg(MPI_INT);
+            // receive the message
+            DB_STATUS ret = recv::receiveMessage(status, msg.type, g_agent_comm, msg);
+            if (ret != DBERR_OK) {
+                return ret;
+            }
+            // unpack
+            std::vector<int> messageContents;
+            ret = unpack::unpackIntegers(msg, messageContents);
+            if (ret != DBERR_OK) {
+                logger::log_error(ret, "Failed to unpack build index contents.");
+                return ret;
+            }
+            
+            // free message memory
+            free(msg.data);
+
+            // first number is the build index
+            hec::IndexType indexType = (hec::IndexType) messageContents[0];
+            /** @todo parallelize for two datasets? */
+            for (int i=1; i<messageContents.size(); i++) {
+                // get dataset to index
+                Dataset *dataset = g_config.datasetOptions.getDatasetByIdx(messageContents[i]);
+                // build index
+                ret = dataset->buildIndex(indexType);
+                if (ret != DBERR_OK) {
+                    logger::log_error(ret, "Failed to build index");
+                    return ret;
+                }
+                if (g_config.queryMetadata.IntermediateFilter) {
+                    // generate APRIL
+                    ret = dataset->buildAPRIL();
+                    if (ret != DBERR_OK) {
+                        logger::log_error(ret, "Failed to create APRIL");
+                        return ret;
+                    }
+                }
+            }
+
+            // send ACK back that the datasets has been loaded successfully
             ret = send::sendResponse(PARENT_RANK, MSG_ACK, g_agent_comm);
             if (ret != DBERR_OK) {
                 logger::log_error(ret, "Send ACK failed.");
@@ -819,6 +876,14 @@ STOP_LISTENING:
                     // logger::log_success("MSG_LOAD_DATASET");
                     ret = handleLoadDatasetMessage(status);
                     if (ret != DBERR_OK) {
+                        return ret;
+                    }
+                    break;
+                case MSG_BUILD_INDEX:
+                    /** initiate index building */
+                    ret = handleBuildIndexMessage(status);
+                    if (ret != DBERR_OK) {
+                        logger::log_error(ret, "Failed while handling load dataset message.");
                         return ret;
                     }
                     break;
@@ -1228,6 +1293,31 @@ STOP_LISTENING:
             return ret;
         }
 
+        static DB_STATUS handleBuildIndexMessage(MPI_Status &status) {
+            SerializedMsg<int> msg(MPI_INT);
+            // receive the message
+            DB_STATUS ret = recv::receiveMessage(status, msg.type, g_controller_comm, msg);
+            if (ret != DBERR_OK) {
+                return ret;
+            }
+            // forward to local agent
+            ret = send::sendMessage(msg, AGENT_RANK, status.MPI_TAG, g_agent_comm);
+            if (ret != DBERR_OK) {
+                logger::log_error(ret, "Failed forwarding message to agent");
+                return ret;
+            }
+            // free message memory
+            free(msg.data);
+
+            // wait for response by agent and forward it to the host controller when it arrives
+            ret = waitForResponse();
+            if (ret != DBERR_OK) {
+                logger::log_error(ret, "Build index failed.");
+                return ret;
+            }
+            return ret;
+        }
+
         static DB_STATUS handleLoadDatasetMessage(MPI_Status &status) {
             SerializedMsg<int> msg(MPI_INT);
             // receive the message
@@ -1342,6 +1432,14 @@ STOP_LISTENING:
                     break;
                 case MSG_LOAD_DATASET:
                     ret = handleLoadDatasetMessage(status);
+                    if (ret != DBERR_OK) {
+                        logger::log_error(ret, "Failed while handling load dataset message.");
+                        return ret;
+                    }
+                    break;
+                case MSG_BUILD_INDEX:
+                    /** initiate index building */
+                    ret = handleBuildIndexMessage(status);
                     if (ret != DBERR_OK) {
                         logger::log_error(ret, "Failed while handling load dataset message.");
                         return ret;
@@ -1627,6 +1725,10 @@ STOP_LISTENING:
             // update the grids' dataspace metadata in the partitioning object 
             g_config.partitioningMethod->setDistGridDataspace(g_config.datasetOptions.dataspaceMetadata);
             g_config.partitioningMethod->setPartGridDataspace(g_config.datasetOptions.dataspaceMetadata);
+            // printf("Partitioning metadata set: (%f,%f),(%f,%f)\n", g_config.partitioningMethod->distGridDataspaceMetadata.xMinGlobal, g_config.partitioningMethod->distGridDataspaceMetadata.yMinGlobal, g_config.partitioningMethod->distGridDataspaceMetadata.xMaxGlobal, g_config.partitioningMethod->distGridDataspaceMetadata.yMaxGlobal);
+            // printf("Partitioning metadata set: gPPD %d, dPPD %d, pPPD %d\n", g_config.partitioningMethod->getGlobalPPD(), g_config.partitioningMethod->getDistributionPPD(), g_config.partitioningMethod->getPartitioningPPD());
+            // printf("distExtents %f,%f, partitionExtents %f,%f\n", g_config.partitioningMethod->getDistPartionExtentX(), g_config.partitioningMethod->getDistPartionExtentY(), g_config.partitioningMethod->getPartPartionExtentX(), g_config.partitioningMethod->getPartPartionExtentY());
+           
 
             // perform the partitioning for each dataset in the message
             for (auto &index : datasetIndexes) {
@@ -1659,6 +1761,7 @@ STOP_LISTENING:
                 }
                 
                 // partition the data
+                // logger::log_task("Partitioning dataset", dataset->metadata.internalID);
                 ret = partitioning::partitionDataset(dataset);
                 if (ret != DBERR_OK) {
                     logger::log_error(ret, "Failed while partitioning dataset with index", index);
@@ -1678,7 +1781,37 @@ STOP_LISTENING:
             // send ACK to the driver
             ret = comm::send::sendResponse(DRIVER_GLOBAL_RANK, MSG_ACK, g_global_intra_comm);
             if (ret != DBERR_OK) {
-                logger::log_error(ret, "Failed sending indexes message to driver.");
+                logger::log_error(ret, "Failed sending ACK to driver.");
+                return ret;
+            }
+            return ret;
+        }
+
+        static DB_STATUS handleBuildIndexMessage(MPI_Status &status) {
+            SerializedMsg<int> msg(MPI_INT);
+            // receive the message
+            DB_STATUS ret = recv::receiveMessage(status, msg.type, g_global_intra_comm, msg);
+            if (ret != DBERR_OK) {
+                return ret;
+            }
+
+            // broadcast it
+            ret = broadcast::broadcastMessage(msg, status.MPI_TAG);
+            if (ret != DBERR_OK) {
+                return ret;
+            }
+
+            // wait for ACK from everyone
+            ret = gatherResponses();
+            if (ret != DBERR_OK) {
+                logger::log_error(ret, "Not all nodes finished successfully.");
+                return ret;
+            }
+            
+            // send ACK to the driver
+            ret = comm::send::sendResponse(DRIVER_GLOBAL_RANK, MSG_ACK, g_global_intra_comm);
+            if (ret != DBERR_OK) {
+                logger::log_error(ret, "Failed sending ACK message to driver.");
                 return ret;
             }
             return ret;
@@ -1758,7 +1891,7 @@ STOP_LISTENING:
             // send ACK to the driver
             ret = comm::send::sendResponse(DRIVER_GLOBAL_RANK, MSG_ACK, g_global_intra_comm);
             if (ret != DBERR_OK) {
-                logger::log_error(ret, "Failed sending indexes message to driver.");
+                logger::log_error(ret, "Failed sending ACK to driver.");
                 return ret;
             }
             return ret;
@@ -1949,6 +2082,14 @@ STOP_LISTENING:
                     /** initiate dataset loading */
                     // logger::log_success("MSG_LOAD_DATASET");
                     ret = handleLoadDatasetMessage(status);
+                    if (ret != DBERR_OK) {
+                        logger::log_error(ret, "Failed while handling load dataset message.");
+                        return ret;
+                    }
+                    break;
+                case MSG_BUILD_INDEX:
+                    /** initiate index building */
+                    ret = handleBuildIndexMessage(status);
                     if (ret != DBERR_OK) {
                         logger::log_error(ret, "Failed while handling load dataset message.");
                         return ret;

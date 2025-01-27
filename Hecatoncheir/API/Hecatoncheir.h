@@ -59,6 +59,9 @@ namespace hec {
     /** @brief Run queries in batches. */
     std::vector<size_t> query(std::vector<Query> &queryBatch);
 
+    /** @brief Build index of indexType for the given datasets. */
+    int buildIndex(std::vector<DatasetID> datasetIndexes, IndexType indexType);
+
 }
 
 

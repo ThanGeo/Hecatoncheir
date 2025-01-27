@@ -507,16 +507,16 @@ namespace APRIL
                 return ret;
             }
             
-            DB_STATUS MBREqualJoinAPRIL(Shape* objR, Shape* objS, AprilData *aprilR, AprilData *aprilS, int &relation) {
+            DB_STATUS MBREqualJoinAPRIL(Shape* objR, Shape* objS, int &relation) {
                 DB_STATUS ret = DBERR_OK;
                 // AA join to look for exact relationship between the lists
-                int AAresult = joinIntervalListsSymmetricalOptimizedTrueHitIntersect(aprilR->intervalsALL, aprilR->numIntervalsALL, aprilS->intervalsALL, aprilS->numIntervalsALL);
+                int AAresult = joinIntervalListsSymmetricalOptimizedTrueHitIntersect(objR->aprilData.intervalsALL, objR->aprilData.numIntervalsALL, objS->aprilData.intervalsALL, objS->aprilData.numIntervalsALL);
                 if (AAresult == IL_MATCH) {
                     // refine for equal, covered by, covers and true hit intersect
                     relation = REFINE_EQUAL_COVERS_COVEREDBY_TRUEHIT_INTERSECT;
                     return ret;
                 } else if (AAresult == IL_R_INSIDE_S) {
-                    int AFresult = joinIntervalsHybrid(aprilR->intervalsALL, aprilR->numIntervalsALL, aprilS->intervalsFULL, aprilS->numIntervalsFULL);
+                    int AFresult = joinIntervalsHybrid(objR->aprilData.intervalsALL, objR->aprilData.numIntervalsALL, objS->aprilData.intervalsFULL, objS->aprilData.numIntervalsFULL);
                     if (AFresult == IL_R_INSIDE_S) {
                         // true hit covered by (return inside because reasons)
                         relation = TR_INSIDE;
@@ -526,7 +526,7 @@ namespace APRIL
                     relation = REFINE_COVEREDBY_TRUEHIT_INTERSECT;
                     return ret;
                 } else if(AAresult == IL_S_INSIDE_R) {
-                    int FAresult = joinIntervalsHybrid(aprilS->intervalsALL, aprilS->numIntervalsALL, aprilR->intervalsFULL, aprilR->numIntervalsFULL);
+                    int FAresult = joinIntervalsHybrid(objS->aprilData.intervalsALL, objS->aprilData.numIntervalsALL, objR->aprilData.intervalsFULL, objR->aprilData.numIntervalsFULL);
                     // in this case R is S because joinIntervalsHybrid handles the first list as R and the second as S
                     // and only checks for assymetrical containment R in S
                     if (FAresult == IL_R_INSIDE_S) {

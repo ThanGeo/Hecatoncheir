@@ -369,6 +369,34 @@ namespace hec {
         return 0;
     }
 
+    int buildIndex(std::vector<DatasetID> datasetIndexes, IndexType indexType) {
+        SerializedMsg<int> msg(MPI_INT);
+        std::vector<int> indexTypeAndDatasets = {indexType};
+        indexTypeAndDatasets.insert(indexTypeAndDatasets.end(), datasetIndexes.begin(), datasetIndexes.end());
+
+        DB_STATUS ret = pack::packIntegers(msg, indexTypeAndDatasets);
+        if (ret != DBERR_OK) {
+            logger::log_error(ret, "Packing build index info failed.");
+            return -1;
+        }
+        // send message to Host Controller to initiate the partitioning for the datasets indexes contained in the message
+        ret = comm::send::sendMessage(msg, HOST_CONTROLLER, MSG_BUILD_INDEX, g_global_intra_comm);
+        if (ret != DBERR_OK) {
+            logger::log_error(ret, "Sending build index message failed.");
+            return -1;
+        }
+
+        // wait for ACK
+        MPI_Status status;
+        ret = waitForResponse();
+        if (ret != DBERR_OK) {
+            logger::log_error(ret, "Building index finished with errors.");
+            return -1;
+        }        
+        logger::log_success("Built index.");
+        return 0;
+    }
+
     int load(std::vector<DatasetID> datasetIndexes) {
         SerializedMsg<int> msg(MPI_INT);
         DB_STATUS ret = pack::packIntegers(msg, datasetIndexes);
@@ -437,7 +465,7 @@ namespace hec {
                 logger::log_error(DBERR_QUERY_INVALID_TYPE, "Invalid query name:", query->getQueryType());
                 return finalResults;
         }
-
+        logger::log_success("Evaluated query!");
         return finalResults;
     }
 }

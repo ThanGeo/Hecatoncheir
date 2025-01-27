@@ -5,7 +5,7 @@
 
 namespace hec
 {
-    SupportedQueries spatialQueries;
+    SpatialQueries spatialQueries;
     SupportedQueryResultTypes queryResultTypes;
 
     JoinQuery::JoinQuery(DatasetID Rid, DatasetID Sid, int id, std::string predicateStr) {

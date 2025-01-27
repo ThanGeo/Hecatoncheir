@@ -986,11 +986,8 @@ public:
     size_t recID;
     /** @brief the object's MBR. */
     MBR mbr;
-    /** @brief The object's partition index, containing metadata about the partitions that this object intersects with
-     * and its two-layer index class in each of them.
-     * @param key Partition ID.
-     * @param value The two-layer index class of the object in that partition.
-     */
+    /** @brief APRIL */
+    AprilData aprilData;
 
     /** @brief Default empty Shape constructor. */
     Shape() {}
@@ -1366,62 +1363,157 @@ struct DataspaceMetadata {
     DB_STATUS deserialize(const double *buffer, int bufferSize);
 };
 
-/** @brief Holds all necessary partition information. 
- * @param partitionID The partition's ID in the grid.
- * @param classIndex Fixed 4 position vector, one for each two-layer index class.
- */
-struct Partition {
+struct PartitionBase {
     int partitionID;
-    /** @brief Contains the list of objects (Shape) of each class for this partition */
-    std::vector<std::vector<Shape*>> classIndex;
-    /**
-    @brief Default constructor that defines the 4-position vector. Two-layer index classes: A, B, C, D
+    virtual ~PartitionBase() = default;
+
+    /** 
+     * @brief Returns a reference to the partition's contents for the given class type. 
+     *        This method is virtual because subclasses implement it differently.
+     * @param classType Either A, B, C, or D (if applicable). May be ignored by some implementations.
      */
-    Partition(int id){
+    virtual std::vector<Shape*>* getContents(TwoLayerClass classType = CLASS_A) = 0;
+
+    /** 
+     * @brief Adds an object to the partition. 
+     *        This method is virtual because subclasses implement it differently.
+     * @param objectRef Pointer to the shape to be added.
+     * @param classType Either A, B, C, or D (if applicable). May be ignored by some implementations.
+     */
+    virtual void addObject(Shape* objectRef, TwoLayerClass classType = CLASS_A) = 0;
+};
+
+
+struct PartitionTwoLayer : public PartitionBase {
+    /** @brief Contains the list of objects (Shape) of each class for this partition. */
+    std::vector<Shape*> classIndex[4];
+
+    /**
+     * @brief Constructor that initializes the partition ID and the 4 class containers.
+     */
+    PartitionTwoLayer(int id) {
         partitionID = id;
-        classIndex.resize(4);
-        for (auto &it : classIndex) {
-            it.resize(0, nullptr);
+        for (auto& it : classIndex) {
+            it.clear();
         }
     }
-    /** @brief Returns a reference to the partition's contents for the given class type. @param classType Either A, B, C or D. */
-    std::vector<Shape*>* getContainerClassContents(TwoLayerClass classType);
 
-    void addObjectOfClass(Shape *objectRef, TwoLayerClass classType);
+    /** 
+     * @brief Returns a reference to the partition's contents for the given class type.
+     *        Throws an exception if the class type is invalid.
+     */
+    std::vector<Shape*>* getContents(TwoLayerClass classType) override;
+
+    /** 
+     * @brief Adds an object to the partition for the specified class type.
+     */
+    void addObject(Shape* objectRef, TwoLayerClass classType) override;
+};
+
+
+struct PartitionUniformGrid : public PartitionBase {
+    /** @brief Contains the list of all objects (Shape) in this partition. */
+    std::vector<Shape*> classIndex;
+
+    /**
+     * @brief Constructor that initializes the partition ID.
+     */
+    PartitionUniformGrid(int id) {
+        partitionID = id;
+    }
+
+    /** 
+     * @brief Returns a reference to the partition's contents.
+     *        Ignores the class type since UniformGridIndex doesn't use it.
+     */
+    std::vector<Shape*>* getContents(TwoLayerClass classType = CLASS_A) override;
+
+    /** 
+     * @brief Adds an object to the partition. Ignores the class type.
+     */
+    void addObject(Shape* objectRef, TwoLayerClass classType = CLASS_A) override;
+};
+
+
+/** @brief Abstract base class for all index structures. */
+class BaseIndex {
+protected:
+    std::vector<PartitionBase*> partitions;
+    std::unordered_map<int, size_t> partitionMap;
+public:
+    virtual ~BaseIndex() = default;
+
+    virtual DB_STATUS addObject(Shape *objectRef) = 0;
+
+    /** @brief Sorts all objects in the index along the Y-axis. */
+    virtual void sortPartitionsOnY() = 0;
+
+    std::vector<PartitionBase*>* getPartitions() {
+        return &partitions;
+    }
+
+    virtual PartitionBase* getOrCreatePartition(int partitionID) = 0;
+
+    PartitionBase* getPartition(int partitionID) {
+        auto it = partitionMap.find(partitionID);
+        if (it != partitionMap.end()) {
+            return partitions[it->second];
+        }
+        return nullptr;
+    }
+
 };
 
 /** @brief Holds all two-layer related index information.
  * @param partitions A vector containing each individual non-empty partition.
  * @param partitionMap A map that holds the positions of each partition (by ID) in the 'partitions' vector.
  */
-struct TwoLayerIndex {
-    std::vector<Partition> partitions;
-    std::unordered_map<int, size_t> partitionMap;
+struct TwoLayerIndex : public BaseIndex {
+private:
+    /** @brief Compares to Shapes by MBR bottom-left point y. */
+    static bool compareByY(const Shape* a, const Shape* b) {
+        return a->mbr.pMin.y < b->mbr.pMin.y;
+    }
+    static DB_STATUS getPartitionsForMBR(Shape* objectRef, std::vector<int> &partitionIDs, std::vector<TwoLayerClass> &partionClasses);
+public:
+    TwoLayerIndex(){};
+    
+    DB_STATUS addObject(Shape *objectRef) override;
+
+    PartitionBase* getOrCreatePartition(int partitionID) override;
+
+    /**
+    @brief Sorts all objects in all partitions on the Y axis
+     */
+    void sortPartitionsOnY() override;
+
+
+};
+
+/** @brief Holds all two-layer related index information.
+ * @param partitions A vector containing each individual non-empty partition.
+ * @param partitionMap A map that holds the positions of each partition (by ID) in the 'partitions' vector.
+ */
+struct UniformGridIndex : public BaseIndex {
+    
 private:
     /** @brief Compares to Shapes by MBR bottom-left point y. */
     static bool compareByY(const Shape* a, const Shape* b) {
         return a->mbr.pMin.y < b->mbr.pMin.y;
     }
 public:
-    /** @brief Returns or creates a new partition with the given ID. */
-    Partition* getOrCreatePartition(int partitionID);
-    /** 
-    @brief Adds an object to a partition with partitionID, with the specified classType 
-     * and returns a pointer to it.
-     * @param[in] partitionID The partition's ID to add the object to.
-     * @param[in] classType The class of the object in that partition.
-     * @param[out] objectRef The returned object reference.
-     */
-    void addObject(int partitionID, TwoLayerClass classType, Shape* objectRef);
-    /**
-    @brief Returns the partition reference to this partition ID
-     */
-    Partition* getPartition(int partitionID);
+
+    DB_STATUS addObject(Shape *objectRef) override;
+
+    PartitionBase* getOrCreatePartition(int partitionID) override;
+
     /**
     @brief Sorts all objects in all partitions on the Y axis
      */
-    void sortPartitionsOnY();
+    void sortPartitionsOnY() override;
+
 };
+
 
 struct DatasetMetadata
 {
@@ -1460,9 +1552,12 @@ struct Dataset{
     // map of object id-position in the objects vector
     std::unordered_map<size_t,size_t> objectPosMap;
     // the two layer index
-    TwoLayerIndex twoLayerIndex;
+    // TwoLayerIndex twoLayerIndex;
+    BaseIndex* index;
+    // approximations (only april is supported)
     ApproximationType approxType = AT_APRIL;
     AprilConfig aprilConfig;
+    /** @deprecated dont use sections any more*/
     /** Section mapping. key,value = sectionID,(unordered map of key,value = recID,aprilData) @warning only sectionID = 0 is supported currently.*/
     std::unordered_map<uint, Section> sectionMap;
     /** map: key,value = recID,vector<sectionID>: maps recs to sections */
@@ -1492,6 +1587,12 @@ struct Dataset{
     /** @brief Returns a reference to the object with the given ID. */
     Shape* getObject(size_t recID);
 
+    /** @brief Indexes the dataset using the specified index type. Requires data to be already loaded within the dataset. */
+    DB_STATUS buildIndex(hec::IndexType indexType);
+
+    /** @brief Builds APRIL for the stored objects. */
+    DB_STATUS buildAPRIL();
+
     /** @brief Calculate the size needed for the dataset serialization. */
     int calculateBufferSize();
     /** @brief Serializes the dataset object (only the important stuff). */
@@ -1509,10 +1610,6 @@ struct Dataset{
     AprilData* getAprilDataBySectionAndObjectID(uint sectionID, size_t recID);
     /** @brief Sets the april data in the dataset for the given object ID and section ID */
     DB_STATUS setAprilDataForSectionAndObjectID(uint sectionID, size_t recID, AprilData &aprilData);
-
-    void printObjectsGeometries();
-    void printObjectsPartitions();
-    void printPartitions();
 };
 
 /** @brief Holds all system-related directory paths.
@@ -1562,10 +1659,7 @@ struct PartitioningMethod {
     }
 
     /** @brief Abstract method. Returns the partition ID in the distribution grid for the given indices, as defined by the derived partitioning method. */
-    virtual int getDistributionGridPartitionID(int i, int j) = 0;
-
-    /** @brief Abstract method. Returns the partition ID in the partitioning grid for the given indices, as defined by the derived partitioning method. */
-    virtual int getPartitioningGridPartitionID(int distI, int distJ, int partI, int partJ) = 0;
+    virtual int getPartitionID(int i, int j, int ppd) = 0;
 
     /** @brief Returns the node's rank that's responsible for this partition. 
      * @warning Should only be called by the host controller and the input partitionID should be of the outermost (distribution) grid. */
@@ -1634,10 +1728,7 @@ public:
     }
 
     /** @brief Get the distribution grid's partition ID (from parent) for the given indices. */
-    int getDistributionGridPartitionID(int i, int j) override;
-
-    /** @brief Get the partitioning grid's partition ID (from parent) for the given distribution grid AND partitioning grid indices. */
-    int getPartitioningGridPartitionID(int distI, int distJ, int partI, int partJ) override;
+    int getPartitionID(int i, int j, int ppd) override;
 
     /** @brief Returns the distribution (coarse) grid's partitions per dimension number. */
     int getDistributionPPD() override;
@@ -1666,10 +1757,7 @@ public:
     RoundRobinPartitioning(PartitioningType type, int batchSize, int partitionsPerDim) : PartitioningMethod(type, batchSize, partitionsPerDim) {}
 
     /** @brief Get the grid's partition ID (from parent). */
-    int getDistributionGridPartitionID(int i, int j) override;
-
-    /** @brief Get the grid's partition ID (from parent). */
-    int getPartitioningGridPartitionID(int distI, int distJ, int partI, int partJ) override;
+    int getPartitionID(int i, int j, int ppd) override;
 
     /** @brief Returns the distribution (coarse) grid's partitions per dimension number. */
     int getDistributionPPD() override;

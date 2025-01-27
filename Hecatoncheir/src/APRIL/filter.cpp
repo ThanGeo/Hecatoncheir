@@ -17,29 +17,21 @@ namespace APRIL
         static DB_STATUS specializedTopologyRinSContainment(Shape* objR, Shape* objS, hec::QueryResult &queryResult) {
             DB_STATUS ret = DBERR_OK;
             int iFilterResult = INCONCLUSIVE;
-            // get common sections
-            std::vector<int> commonSections = getCommonSectionIDsOfObjects(g_config.datasetOptions.getDatasetR(), g_config.datasetOptions.getDatasetS(), objR->recID, objS->recID);
-            // for each common section
-            for (auto &sectionID : commonSections) {
-                // fetch the APRIL of R and S for this section
-                AprilData* aprilR = g_config.datasetOptions.getDatasetR()->getAprilDataBySectionAndObjectID(sectionID, objR->recID);
-                AprilData* aprilS = g_config.datasetOptions.getDatasetS()->getAprilDataBySectionAndObjectID(sectionID, objS->recID);
-                // use APRIL intermediate filter
-                ret = uncompressed::topology::MBRRinSContainmentJoinAPRIL(aprilR, aprilS, iFilterResult);
-                if (ret != DBERR_OK) {
-                    logger::log_error(ret, "R in S containment APRIL filter failed.");
+            // use APRIL intermediate filter
+            ret = uncompressed::topology::MBRRinSContainmentJoinAPRIL(&objR->aprilData, &objS->aprilData, iFilterResult);
+            if (ret != DBERR_OK) {
+                logger::log_error(ret, "R in S containment APRIL filter failed.");
+                return ret;
+            }
+            // switch based on result
+            switch(iFilterResult) {
+                // true hits, count and return
+                case TR_INSIDE:
+                case TR_DISJOINT:
+                case TR_INTERSECT:
+                    // result
+                    queryResult.countTopologyRelationResult(iFilterResult, objR->recID, objS->recID);
                     return ret;
-                }
-                // switch based on result
-                switch(iFilterResult) {
-                    // true hits, count and return
-                    case TR_INSIDE:
-                    case TR_DISJOINT:
-                    case TR_INTERSECT:
-                        // result
-                        queryResult.countTopologyRelationResult(iFilterResult, objR->recID, objS->recID);
-                        return ret;
-                }
             }
             // count refinement candidate
             int relation = -1;
@@ -70,29 +62,21 @@ namespace APRIL
         static DB_STATUS specializedTopologySinRContainment(Shape* objR, Shape* objS, hec::QueryResult &queryResult) {
             DB_STATUS ret = DBERR_OK;
             int iFilterResult = INCONCLUSIVE;
-            // get common sections
-            std::vector<int> commonSections = getCommonSectionIDsOfObjects(g_config.datasetOptions.getDatasetR(), g_config.datasetOptions.getDatasetS(), objR->recID, objS->recID);
-            // for each common section
-            for (auto &sectionID : commonSections) {
-                // fetch the APRIL of R and S for this section
-                AprilData* aprilR = g_config.datasetOptions.getDatasetR()->getAprilDataBySectionAndObjectID(sectionID, objR->recID);
-                AprilData* aprilS = g_config.datasetOptions.getDatasetS()->getAprilDataBySectionAndObjectID(sectionID, objS->recID);
-                // use APRIL intermediate filter
-                ret = uncompressed::topology::MBRSinRContainmentJoinAPRIL(aprilR, aprilS, iFilterResult);
-                if (ret != DBERR_OK) {
-                    logger::log_error(ret, "S in R containment APRIL filter failed.");
+            // use APRIL intermediate filter
+            ret = uncompressed::topology::MBRSinRContainmentJoinAPRIL(&objR->aprilData, &objS->aprilData, iFilterResult);
+            if (ret != DBERR_OK) {
+                logger::log_error(ret, "S in R containment APRIL filter failed.");
+                return ret;
+            }
+            // switch based on result
+            switch(iFilterResult) {
+                // true hits, count and return
+                case TR_CONTAINS:
+                case TR_DISJOINT:
+                case TR_INTERSECT:
+                    // result
+                    queryResult.countTopologyRelationResult(iFilterResult, objR->recID, objS->recID);
                     return ret;
-                }
-                // switch based on result
-                switch(iFilterResult) {
-                    // true hits, count and return
-                    case TR_CONTAINS:
-                    case TR_DISJOINT:
-                    case TR_INTERSECT:
-                        // result
-                        queryResult.countTopologyRelationResult(iFilterResult, objR->recID, objS->recID);
-                        return ret;
-                }
             }
             // count refinement candidate
             int relation = -1;
@@ -124,31 +108,23 @@ namespace APRIL
         static DB_STATUS specializedTopologyEqual(Shape* objR, Shape* objS, hec::QueryResult &queryResult) {
             DB_STATUS ret = DBERR_OK;
             int iFilterResult = INCONCLUSIVE;
-            // get common sections
-            std::vector<int> commonSections = getCommonSectionIDsOfObjects(g_config.datasetOptions.getDatasetR(), g_config.datasetOptions.getDatasetS(), objR->recID, objS->recID);
-            // for each common section
-            for (auto &sectionID : commonSections) {
-                // fetch the APRIL of R and S for this section
-                AprilData* aprilR = g_config.datasetOptions.getDatasetR()->getAprilDataBySectionAndObjectID(sectionID, objR->recID);
-                AprilData* aprilS = g_config.datasetOptions.getDatasetS()->getAprilDataBySectionAndObjectID(sectionID, objS->recID);
-                // use APRIL intermediate filter
-                ret = uncompressed::topology::MBREqualJoinAPRIL(objR, objS, aprilR, aprilS, iFilterResult);
-                if (ret != DBERR_OK) {
-                    logger::log_error(ret, "S in R containment APRIL filter failed.");
+            // use APRIL intermediate filter
+            ret = uncompressed::topology::MBREqualJoinAPRIL(objR, objS, iFilterResult);
+            if (ret != DBERR_OK) {
+                logger::log_error(ret, "S in R containment APRIL filter failed.");
+                return ret;
+            }
+            // switch based on result
+            switch(iFilterResult) {
+                // true hits, count and return
+                case TR_DISJOINT:
+                case TR_COVERED_BY:
+                case TR_COVERS:
+                case TR_INTERSECT:
+                case TR_MEET:
+                    // result
+                    queryResult.countTopologyRelationResult(iFilterResult, objR->recID, objS->recID);
                     return ret;
-                }
-                // switch based on result
-                switch(iFilterResult) {
-                    // true hits, count and return
-                    case TR_DISJOINT:
-                    case TR_COVERED_BY:
-                    case TR_COVERS:
-                    case TR_INTERSECT:
-                    case TR_MEET:
-                        // result
-                        queryResult.countTopologyRelationResult(iFilterResult, objR->recID, objS->recID);
-                        return ret;
-                }
             }
             // count refinement candidate
             int relation = -1;
@@ -185,28 +161,20 @@ namespace APRIL
         static DB_STATUS specializedTopologyIntersection(Shape* objR, Shape* objS, hec::QueryResult &queryResult) {
             DB_STATUS ret = DBERR_OK;
             int iFilterResult = INCONCLUSIVE;
-            // get common sections
-            std::vector<int> commonSections = getCommonSectionIDsOfObjects(g_config.datasetOptions.getDatasetR(), g_config.datasetOptions.getDatasetS(), objR->recID, objS->recID);
-            // for each common section
-            for (auto &sectionID : commonSections) {
-                // fetch the APRIL of R and S for this section
-                AprilData* aprilR = g_config.datasetOptions.getDatasetR()->getAprilDataBySectionAndObjectID(sectionID, objR->recID);
-                AprilData* aprilS = g_config.datasetOptions.getDatasetS()->getAprilDataBySectionAndObjectID(sectionID, objS->recID);
-                // use APRIL intermediate filter
-                ret = uncompressed::topology::MBRIntersectionJoinAPRIL(aprilR, aprilS, iFilterResult);
-                if (ret != DBERR_OK) {
-                    logger::log_error(ret, "S in R containment APRIL filter failed.");
+            // use APRIL intermediate filter
+            ret = uncompressed::topology::MBRIntersectionJoinAPRIL(&objR->aprilData, &objS->aprilData, iFilterResult);
+            if (ret != DBERR_OK) {
+                logger::log_error(ret, "S in R containment APRIL filter failed.");
+                return ret;
+            }
+            // switch based on result
+            switch(iFilterResult) {
+                // true hits, count and return
+                case TR_DISJOINT:
+                case TR_INTERSECT:
+                    // result
+                    queryResult.countTopologyRelationResult(iFilterResult, objR->recID, objS->recID);
                     return ret;
-                }
-                // switch based on result
-                switch(iFilterResult) {
-                    // true hits, count and return
-                    case TR_DISJOINT:
-                    case TR_INTERSECT:
-                        // result
-                        queryResult.countTopologyRelationResult(iFilterResult, objR->recID, objS->recID);
-                        return ret;
-                }
             }
             // count refinement candidate
             // refine
@@ -259,75 +227,68 @@ namespace APRIL
         
         DB_STATUS IntermediateFilterEntrypoint(Shape* objR, Shape* objS, hec::QueryResult &queryResult) {
             DB_STATUS ret = DBERR_OK;
-            // get common sections
-            std::vector<int> commonSections = getCommonSectionIDsOfObjects(g_config.datasetOptions.getDatasetR(), g_config.datasetOptions.getDatasetS(), objR->recID, objS->recID);
-            // for each common section
-            for (auto &sectionID : commonSections) {
-                // fetch the APRIL of R and S for this section
-                AprilData* aprilR = g_config.datasetOptions.getDatasetR()->getAprilDataBySectionAndObjectID(sectionID, objR->recID);
-                AprilData* aprilS = g_config.datasetOptions.getDatasetS()->getAprilDataBySectionAndObjectID(sectionID, objS->recID);
-                int iFilterResult = INCONCLUSIVE;
-                // use appropriate query function
-                switch (g_config.queryMetadata.queryType) {
-                    case hec::Q_RANGE:
-                        return DBERR_FEATURE_UNSUPPORTED;
-                    case hec::Q_INTERSECTION_JOIN:
-                        ret = uncompressed::standard::intersectionJoinAPRIL(aprilR, aprilS, iFilterResult);
-                        if (ret != DBERR_OK) {
-                            logger::log_error(ret, "APRIL intersection join failed for pair", objR->recID, "and", objS->recID);
-                            return ret;
-                        }
-                        break;
-                    case hec::Q_COVERED_BY_JOIN:   
-                    case hec::Q_INSIDE_JOIN:
-                        ret = uncompressed::standard::insideCoveredByJoinAPRIL(aprilR, aprilS, iFilterResult);
-                        if (ret != DBERR_OK) {
-                            logger::log_error(ret, "APRIL inside/covered by join failed for pair", objR->recID, "and", objS->recID);
-                            return ret;
-                        }
-                        break;
-                    case hec::Q_DISJOINT_JOIN:
-                        ret = uncompressed::standard::disjointJoinAPRIL(aprilR, aprilS, iFilterResult);
-                        if (ret != DBERR_OK) {
-                            logger::log_error(ret, "APRIL disjoint join failed for pair", objR->recID, "and", objS->recID);
-                            return ret;
-                        }
-                        break;
-                    case hec::Q_EQUAL_JOIN:
-                        ret = uncompressed::standard::equalJoinAPRIL(aprilR, aprilS, iFilterResult);
-                        if (ret != DBERR_OK) {
-                            logger::log_error(ret, "APRIL equality join failed for pair", objR->recID, "and", objS->recID);
-                            return ret;
-                        }
-                        break;
-                    case hec::Q_MEET_JOIN:
-                        ret = uncompressed::standard::meetJoinAPRIL(aprilR, aprilS, iFilterResult);
-                        if (ret != DBERR_OK) {
-                            logger::log_error(ret, "APRIL meet join failed for pair", objR->recID, "and", objS->recID);
-                            return ret;
-                        }
-                        break;
-                    case hec::Q_CONTAINS_JOIN:
-                    case hec::Q_COVERS_JOIN:
-                        ret = uncompressed::standard::containsCoversJoinAPRIL(aprilR, aprilS, iFilterResult);
-                        if (ret != DBERR_OK) {
-                            logger::log_error(ret, "APRIL contains/covers join failed for pair", objR->recID, "and", objS->recID);
-                            return ret;
-                        }
-                        break;
-                    default:
-                        // not supported/unknown
-                        logger::log_error(DBERR_QUERY_INVALID_TYPE, "Unsupported query for standard APRIL intermediate filter. Query type:", mapping::queryTypeIntToStr(g_config.queryMetadata.queryType));
-                        return DBERR_QUERY_INVALID_TYPE;
-                }
-                // if true negative or true hit, return
-                if (iFilterResult != INCONCLUSIVE) {
-                    // count APRIL result
-                    if (iFilterResult == TRUE_HIT) {
-                        queryResult.countResult(objR->recID, objS->recID);
+            // fetch the APRIL of R and S for this section
+            int iFilterResult = INCONCLUSIVE;
+            // use appropriate query function
+            switch (g_config.queryMetadata.queryType) {
+                case hec::Q_RANGE:
+                    return DBERR_FEATURE_UNSUPPORTED;
+                case hec::Q_INTERSECTION_JOIN:
+                    ret = uncompressed::standard::intersectionJoinAPRIL(&objR->aprilData, &objS->aprilData, iFilterResult);
+                    if (ret != DBERR_OK) {
+                        logger::log_error(ret, "APRIL intersection join failed for pair", objR->recID, "and", objS->recID);
+                        return ret;
                     }
-                    return ret;
+                    break;
+                case hec::Q_COVERED_BY_JOIN:   
+                case hec::Q_INSIDE_JOIN:
+                    ret = uncompressed::standard::insideCoveredByJoinAPRIL(&objR->aprilData, &objS->aprilData, iFilterResult);
+                    if (ret != DBERR_OK) {
+                        logger::log_error(ret, "APRIL inside/covered by join failed for pair", objR->recID, "and", objS->recID);
+                        return ret;
+                    }
+                    break;
+                case hec::Q_DISJOINT_JOIN:
+                    ret = uncompressed::standard::disjointJoinAPRIL(&objR->aprilData, &objS->aprilData, iFilterResult);
+                    if (ret != DBERR_OK) {
+                        logger::log_error(ret, "APRIL disjoint join failed for pair", objR->recID, "and", objS->recID);
+                        return ret;
+                    }
+                    break;
+                case hec::Q_EQUAL_JOIN:
+                    ret = uncompressed::standard::equalJoinAPRIL(&objR->aprilData, &objS->aprilData, iFilterResult);
+                    if (ret != DBERR_OK) {
+                        logger::log_error(ret, "APRIL equality join failed for pair", objR->recID, "and", objS->recID);
+                        return ret;
+                    }
+                    break;
+                case hec::Q_MEET_JOIN:
+                    ret = uncompressed::standard::meetJoinAPRIL(&objR->aprilData, &objS->aprilData, iFilterResult);
+                    if (ret != DBERR_OK) {
+                        logger::log_error(ret, "APRIL meet join failed for pair", objR->recID, "and", objS->recID);
+                        return ret;
+                    }
+                    break;
+                case hec::Q_CONTAINS_JOIN:
+                case hec::Q_COVERS_JOIN:
+                    ret = uncompressed::standard::containsCoversJoinAPRIL(&objR->aprilData, &objS->aprilData, iFilterResult);
+                    if (ret != DBERR_OK) {
+                        logger::log_error(ret, "APRIL contains/covers join failed for pair", objR->recID, "and", objS->recID);
+                        return ret;
+                    }
+                    break;
+                default:
+                    // not supported/unknown
+                    logger::log_error(DBERR_QUERY_INVALID_TYPE, "Unsupported query for standard APRIL intermediate filter. Query type:", mapping::queryTypeIntToStr(g_config.queryMetadata.queryType));
+                    return DBERR_QUERY_INVALID_TYPE;
+            }
+            // if true negative or true hit, return
+            if (iFilterResult != INCONCLUSIVE) {
+                // count APRIL result
+                if (iFilterResult == TRUE_HIT) {
+                    queryResult.countResult(objR->recID, objS->recID);
                 }
+                return ret;
             }
             // refine based on query type
             switch (g_config.queryMetadata.queryType) {

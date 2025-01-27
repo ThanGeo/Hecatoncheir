@@ -451,49 +451,52 @@ namespace storage
             }
 
             DB_STATUS loadDatasetComplete(Dataset *dataset) {
-                DB_STATUS ret = DBERR_OK;
-                int length = 0;
-                // open partition file
-                FILE* pFile = fopen(dataset->metadata.path.c_str(), "rb");
-                if (pFile == NULL) {
-                    logger::log_error(DBERR_MISSING_FILE, "Could not open partitioned dataset file from path:", dataset->metadata.path);
-                    return DBERR_MISSING_FILE;
-                }
-                // dataset metadata
-                ret = loadDatasetMetadata(pFile, dataset);
-                if (ret != DBERR_OK) {
-                    logger::log_error(ret, "Failed to load dataset metadata");
-                    goto CLOSE_AND_EXIT;
-                }
-                // dataset contents based on type
-                switch (dataset->metadata.dataType) {
-                    case DT_POLYGON:
-                        ret = loadPolygonDatasetContents(pFile, dataset);
-                        break;
-                    case DT_LINESTRING:
-                        ret = loadLinestringDatasetContents(pFile, dataset);
-                        break;
-                    case DT_POINT:
-                        ret = loadPointDatasetContents(pFile, dataset);
-                        break;
-                    case DT_RECTANGLE:
-                        ret = loadRectangleDatasetContents(pFile, dataset);
-                        break;
-                    default:
-                        logger::log_error(DBERR_INVALID_DATATYPE, "Invalid datatype on load dataset");
-                        ret = DBERR_INVALID_DATATYPE;
-                        goto CLOSE_AND_EXIT; 
-                }
-                if (ret != DBERR_OK) {
-                    logger::log_error(ret, "Failed to load dataset contents");
-                    goto CLOSE_AND_EXIT;
-                }
-                // sort two layer
-                dataset->twoLayerIndex.sortPartitionsOnY();
-                // logger::log_success("Loaded", dataset.totalObjects, "objects");
-CLOSE_AND_EXIT:
-                fclose(pFile);
-                return ret;
+//                 DB_STATUS ret = DBERR_OK;
+//                 int length = 0;
+//                 // open partition file
+//                 FILE* pFile = fopen(dataset->metadata.path.c_str(), "rb");
+//                 if (pFile == NULL) {
+//                     logger::log_error(DBERR_MISSING_FILE, "Could not open partitioned dataset file from path:", dataset->metadata.path);
+//                     return DBERR_MISSING_FILE;
+//                 }
+//                 // dataset metadata
+//                 ret = loadDatasetMetadata(pFile, dataset);
+//                 if (ret != DBERR_OK) {
+//                     logger::log_error(ret, "Failed to load dataset metadata");
+//                     goto CLOSE_AND_EXIT;
+//                 }
+//                 // dataset contents based on type
+//                 switch (dataset->metadata.dataType) {
+//                     case DT_POLYGON:
+//                         ret = loadPolygonDatasetContents(pFile, dataset);
+//                         break;
+//                     case DT_LINESTRING:
+//                         ret = loadLinestringDatasetContents(pFile, dataset);
+//                         break;
+//                     case DT_POINT:
+//                         ret = loadPointDatasetContents(pFile, dataset);
+//                         break;
+//                     case DT_RECTANGLE:
+//                         ret = loadRectangleDatasetContents(pFile, dataset);
+//                         break;
+//                     default:
+//                         logger::log_error(DBERR_INVALID_DATATYPE, "Invalid datatype on load dataset");
+//                         ret = DBERR_INVALID_DATATYPE;
+//                         goto CLOSE_AND_EXIT; 
+//                 }
+//                 if (ret != DBERR_OK) {
+//                     logger::log_error(ret, "Failed to load dataset contents");
+//                     goto CLOSE_AND_EXIT;
+//                 }
+//                 // sort two layer
+//                 dataset->twoLayerIndex.sortPartitionsOnY();
+//                 // logger::log_success("Loaded", dataset.totalObjects, "objects");
+// CLOSE_AND_EXIT:
+//                 fclose(pFile);
+//                 return ret;
+                    
+                return DBERR_FEATURE_UNSUPPORTED;
+
             }
         }
 

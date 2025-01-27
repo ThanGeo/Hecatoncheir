@@ -1,5 +1,7 @@
 #include "containers.h"
 
+#include "APRIL/generate.h"
+
 Config g_config;
 
 DB_STATUS queryResultReductionFunc(hec::QueryResult &in, hec::QueryResult &out) {
@@ -50,7 +52,7 @@ int AprilConfig::getCellsPerDim() {
     return cellsPerDim;
 }
 
-std::vector<Shape*>* Partition::getContainerClassContents(TwoLayerClass classType) {
+std::vector<Shape*>* PartitionTwoLayer::getContents(TwoLayerClass classType) {
     if (classType < CLASS_A || classType > CLASS_D) {
         logger::log_error(DBERR_OUT_OF_BOUNDS, "class type index out of bounds");
         return nullptr;
@@ -58,7 +60,7 @@ std::vector<Shape*>* Partition::getContainerClassContents(TwoLayerClass classTyp
     return &classIndex[classType];
 }
 
-void Partition::addObjectOfClass(Shape *objectRef, TwoLayerClass classType) {
+void PartitionTwoLayer::addObject(Shape *objectRef, TwoLayerClass classType) {
     classIndex[classType].push_back(objectRef);
     // if (this->partitionID == 289605) {
     //     printf("partition %d class %s new size after insertion of %ld: %ld\n", this->partitionID, mapping::twoLayerClassIntToStr(classType).c_str(), objectRef->recID, classIndex[classType].size());
@@ -196,23 +198,94 @@ DB_STATUS Dataset::storeObject(Shape &object) {
 }
 
 DB_STATUS Dataset::addObject(Shape &object) {
-    // add object to the objects map
-    objects[object.recID] = object;
-    // get object reference
-    Shape* objectRef = this->getObject(object.recID);
-    if (objectRef == nullptr) {
-        logger::log_error(DBERR_INVALID_KEY, "Object with id", object.recID, "does not exist in the object map.");
-        return DBERR_INVALID_KEY;
+    // // add object to the objects map
+    // objects[object.recID] = object;
+    // // get object reference
+    // Shape* objectRef = this->getObject(object.recID);
+    // if (objectRef == nullptr) {
+    //     logger::log_error(DBERR_INVALID_KEY, "Object with id", object.recID, "does not exist in the object map.");
+    //     return DBERR_INVALID_KEY;
+    // }
+    // // insert reference to partition index
+    // for (int i=0; i<object.getPartitionCount(); i++) {
+    //     this->twoLayerIndex.addObject(object.getPartitionID(i), object.getPartitionClass(i), objectRef);
+    // }
+    // if (g_config.queryMetadata.IntermediateFilter && (object.getSpatialType() != DT_POINT)) {
+    //     /** add object to section map (section 0) @warning do not remove, will break the parallel in-memory APRIL generation */
+    //     this->addObjectToSectionMap(0, object.recID);
+    // }
+    // return DBERR_OK;
+    return DBERR_FEATURE_UNSUPPORTED;
+}
+
+DB_STATUS Dataset::buildIndex(hec::IndexType indexType) {
+    DB_STATUS ret = DBERR_OK;
+
+    // logger::log_task("Building index for dataset", this->metadata.datasetName);
+    // logger::log_success("Global dataspace:", g_config.datasetOptions.dataspaceMetadata.xMinGlobal, g_config.datasetOptions.dataspaceMetadata.yMinGlobal, g_config.datasetOptions.dataspaceMetadata.xMaxGlobal, g_config.datasetOptions.dataspaceMetadata.yMaxGlobal);
+    // logger::log_success("Extents:", g_config.datasetOptions.dataspaceMetadata.xExtent, g_config.datasetOptions.dataspaceMetadata.yExtent);
+
+    switch (indexType) {
+        case hec::IT_TWO_LAYER:
+            /** non-point geometries - april */
+            this->index = new TwoLayerIndex();
+            // add objects to index
+            for(auto &object : this->objects) {
+                ret = index->addObject(&object);
+                if (ret != DBERR_OK) {
+                    logger::log_error(ret, "Failed to add object", object.recID, "to index.");
+                    return ret;
+                }
+            }
+            // sort
+            this->index->sortPartitionsOnY();
+            break;
+        case hec::IT_UNIFORM_GRID:
+            /** point geometries - no april */
+            return DBERR_FEATURE_UNSUPPORTED;
+            this->index = new UniformGridIndex();
+            break;
+        default:
+            logger::log_error(DBERR_INVALID_INDEX_TYPE, "Invalid index type for build index.");
+            return DBERR_INVALID_INDEX_TYPE;
     }
-    // insert reference to partition index
-    for (int i=0; i<object.getPartitionCount(); i++) {
-        this->twoLayerIndex.addObject(object.getPartitionID(i), object.getPartitionClass(i), objectRef);
+    return ret;
+}
+
+DB_STATUS Dataset::buildAPRIL() {
+    DB_STATUS ret = DBERR_OK;
+    if (this->metadata.dataType == DT_POINT) {
+        logger::log_warning("APRIL does not support points.");
+        return DBERR_OK;
     }
-    if (g_config.queryMetadata.IntermediateFilter && (object.getSpatialType() != DT_POINT)) {
-        /** add object to section map (section 0) @warning do not remove, will break the parallel in-memory APRIL generation */
-        this->addObjectToSectionMap(0, object.recID);
+    // logger::log_task("Building APRIL:");
+
+    // init rasterization environment
+    ret = APRIL::generation::setRasterBounds(this->metadata.dataspaceMetadata);
+    if (ret != DBERR_OK) {
+        return ret;
     }
-    return DBERR_OK;
+
+    #pragma omp parallel
+    {
+        DB_STATUS local_ret = DBERR_OK;
+        #pragma omp for
+        for (int i=0; i<this->objects.size(); i++) {
+            // generate april
+            local_ret = APRIL::generation::memory::createAPRILforObject(&this->objects[i], this->metadata.dataType, this->aprilConfig, this->objects[i].aprilData);
+            if (local_ret != DBERR_OK) {
+                #pragma omp cancel for
+                logger::log_error(ret, "Failed to create APRIL for object", this->objects[i].recID);
+            }
+        }
+
+        if (local_ret != DBERR_OK) {
+            #pragma omp cancel parallel
+            ret = local_ret;
+        }
+    }
+
+    return ret;
 }
 
 int Dataset::calculateBufferSize() {
@@ -397,27 +470,6 @@ DB_STATUS Dataset::setAprilDataForSectionAndObjectID(uint sectionID, size_t recI
 //     }
 // }
 
-void Dataset::printPartitions() {
-    for (auto it : this->twoLayerIndex.partitions) {
-        printf("Partition %d\n", it.partitionID);
-        for (int c=CLASS_A; c<=CLASS_D; c++) {
-            printf("Class %s:\n", mapping::twoLayerClassIntToStr((TwoLayerClass) c).c_str());
-            std::vector<Shape*>* container = it.getContainerClassContents((TwoLayerClass) c);
-            if (container == nullptr) {
-                printf("    nullptr\n");
-            } else {
-                printf("    size %ld, content ids:\n", container->size());
-                printf("        ");
-                for (auto contIT : *container) {
-                    printf("%ld,", contIT->recID);
-                    // printf("%ld (%s),", contIT->recID, contIT->getShapeType().c_str());
-                }
-                printf("\n");
-            }
-        }
-    }
-}
-
 Dataset* DatasetOptions::getDatasetByIdx(int index) {
     auto it = datasets.find((DatasetIndex) index);
     if (it == datasets.end()) {
@@ -530,62 +582,185 @@ DB_STATUS DataspaceMetadata::deserialize(const double *buffer, int bufferSize) {
     return DBERR_OK;
 }
 
-Partition* TwoLayerIndex::getOrCreatePartition(int partitionID) {
-    // return &it->second;
-    auto it = partitionMap.find(partitionID);
-    if (it == partitionMap.end()) {
-        // new partition
-        Partition partition(partitionID);
-        partitions.push_back(partition);
-        size_t newIndex = partitions.size() - 1;
-        partitionMap[partitionID] = newIndex;
-        return &partitions[newIndex];
+DB_STATUS TwoLayerIndex::getPartitionsForMBR(Shape* objectRef, std::vector<int> &partitionIDs, std::vector<TwoLayerClass> &partionClasses){
+    DataspaceMetadata* dataspace = &g_config.datasetOptions.dataspaceMetadata;
+    PartitioningMethod* partitioning = g_config.partitioningMethod;
+    const int fineCellsPerCoarseCell = partitioning->getGlobalPPD() / partitioning->getDistributionPPD();
+    
+    // Calculate bounds of the MBR in fine grid coordinates
+    int fineMinX = std::floor((objectRef->mbr.pMin.x - dataspace->xMinGlobal) / partitioning->getPartPartionExtentX());
+    int fineMinY = std::floor((objectRef->mbr.pMin.y - dataspace->yMinGlobal) / partitioning->getPartPartionExtentY());
+    int fineMaxX = std::floor((objectRef->mbr.pMax.x - dataspace->xMinGlobal) / partitioning->getPartPartionExtentX());
+    int fineMaxY = std::floor((objectRef->mbr.pMax.y - dataspace->yMinGlobal) / partitioning->getPartPartionExtentY());
+    // Ensure the MBR is within bounds of the fine grid
+    if (fineMinX < 0 || fineMinY < 0 || fineMaxX >= partitioning->getGlobalPPD() || fineMaxY >= partitioning->getGlobalPPD()) {
+        logger::log_error(DBERR_OUT_OF_BOUNDS, "Fine grid indices out of bounds:", fineMinX, fineMinY, fineMaxX, fineMaxY);
+        return DBERR_OUT_OF_BOUNDS;
     }
-    // existing partition
-    return &partitions[it->second];
+    // Calculate the coarse grid cell bounds
+    int coarseMinX = std::floor((objectRef->mbr.pMin.x - dataspace->xMinGlobal) / partitioning->getDistPartionExtentX());
+    int coarseMinY = std::floor((objectRef->mbr.pMin.y - dataspace->yMinGlobal) / partitioning->getDistPartionExtentY());
+    int coarseMaxX = std::floor((objectRef->mbr.pMax.x - dataspace->xMinGlobal) / partitioning->getDistPartionExtentX());
+    int coarseMaxY = std::floor((objectRef->mbr.pMax.y - dataspace->yMinGlobal) / partitioning->getDistPartionExtentY());
+
+    // Consolidated bounds check for the coarse grid
+    if (coarseMinX < 0 || coarseMinY < 0 || coarseMaxX >= partitioning->getDistributionPPD() || coarseMaxY >= partitioning->getDistributionPPD()) {
+        logger::log_error(DBERR_OUT_OF_BOUNDS, "Coarse grid indices out of bounds:", coarseMinX, coarseMinY, coarseMaxX, coarseMaxY);
+        return DBERR_OUT_OF_BOUNDS;
+    }
+
+    int originalMinX = std::max(fineMinX, coarseMinX * fineCellsPerCoarseCell);
+    int originalMinY = std::max(fineMinY, coarseMinY * fineCellsPerCoarseCell);
+    // if (objectRef->recID == 101911 || objectRef->recID == 1691538) {
+    //     logger::log_task("original x,y:", originalMinX, originalMinY);
+    // }
+
+    // Iterate over the coarse grid cells overlapping the MBR
+    for (int coarseX = coarseMinX; coarseX <= coarseMaxX; ++coarseX) {
+        for (int coarseY = coarseMinY; coarseY <= coarseMaxY; ++coarseY) {
+            // Get the partition ID and node rank
+            int distPartitionID = partitioning->getPartitionID(coarseX, coarseY, partitioning->getDistributionPPD());
+            int assignedNodeRank = partitioning->getNodeRankForPartitionID(distPartitionID);
+            // if (objectRef->recID == 101911 || objectRef->recID == 1691538) {
+            //     logger::log_task("coarse x,y:", coarseX, coarseY, "id:", distPartitionID, "belongs to node", assignedNodeRank, "/", g_world_size);
+            // }
+            // If this rank is responsible for the coarse grid cell
+            if (assignedNodeRank == g_parent_original_rank) {
+                // Calculate the bounds of this coarse grid cell in fine grid coordinates
+                int coarseFineMinX = coarseX * fineCellsPerCoarseCell;
+                int coarseFineMinY = coarseY * fineCellsPerCoarseCell;
+                int coarseFineMaxX = (coarseX + 1) * fineCellsPerCoarseCell - 1;
+                int coarseFineMaxY = (coarseY + 1) * fineCellsPerCoarseCell - 1;
+
+                int startMinX = std::max(fineMinX, coarseFineMinX);
+                int startMinY = std::max(fineMinY, coarseFineMinY);
+                int endMinX = std::min(fineMaxX, coarseFineMaxX);
+                int endMinY = std::min(fineMaxY, coarseFineMaxY);
+                // if (objectRef->recID == 101911 || objectRef->recID == 1691538) {
+                //     logger::log_task("Coarse grid mins:", coarseMinX, coarseMinY);
+                //     logger::log_task("Fine grid start min/max:", startMinX, startMinY, endMinX, endMinY);
+                // }
+
+                // Iterate over overlapping fine grid cells within the coarse grid bounds
+                for (int fineX = startMinX; fineX <= endMinX; fineX++) {
+                    for (int fineY = startMinY; fineY <= endMinY; fineY++) {
+                        // if (objectRef->recID == 101911 || objectRef->recID == 1691538) {
+                        //     logger::log_task("indexes:", fineX, fineY, "id:", partitioning->getPartitionID(fineX, fineY, partitioning->getGlobalPPD()));
+                        // }
+
+                        // Store the fine grid cell
+                        int partitionID = partitioning->getPartitionID(fineX, fineY, partitioning->getGlobalPPD());
+                        partitionIDs.emplace_back(partitionID);
+                        if (fineX == originalMinX && fineY == originalMinY) {
+                            // Class A
+                            partionClasses.push_back(CLASS_A);
+                            // if (objectRef->recID == 101911 || objectRef->recID == 1691538) {
+                            //     logger::log_task("assigned node rank:", assignedNodeRank, "Added object ", objectRef->recID, "to partition", partitionID, "with class", CLASS_A);
+                            // }
+                        } else if (fineX == originalMinX && fineY != originalMinY) {
+                            // Class B
+                            partionClasses.push_back(CLASS_B);
+                            // if (objectRef->recID == 101911 || objectRef->recID == 1691538) {
+                            //     logger::log_task("assigned node rank:", assignedNodeRank, "Added object ", objectRef->recID, "to partition", partitionID, "with class", CLASS_B);
+                            // }
+                        } else if (fineX != originalMinX && fineY == originalMinY) {
+                            // Class C
+                            partionClasses.push_back(CLASS_C);
+                            // if (objectRef->recID == 101911 || objectRef->recID == 1691538) {
+                            //     logger::log_task("assigned node rank:", assignedNodeRank, "Added object ", objectRef->recID, "to partition", partitionID, "with class", CLASS_C);
+                            // }
+                        }  else {
+                            // Class D
+                            partionClasses.push_back(CLASS_D);
+                            // if (objectRef->recID == 101911 || objectRef->recID == 1691538) {
+                            //     logger::log_task("assigned node rank:", assignedNodeRank, "Added object ", objectRef->recID, "to partition", partitionID, "with class", CLASS_D);
+                            // }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    return DBERR_OK;
 }
 
-void TwoLayerIndex::addObject(int partitionID, TwoLayerClass classType, Shape* objectRef) {
+PartitionBase* TwoLayerIndex::getOrCreatePartition(int partitionID) {
     auto it = partitionMap.find(partitionID);
-    if (it == partitionMap.end()) {
-        // new partition
-        Partition partition(partitionID);
-        // add object reference
-        partition.addObjectOfClass(objectRef, classType);
-        // save partition
-        partitions.push_back(partition);
-        int newIndex = partitions.size() - 1;
-        partitionMap[partitionID] = newIndex;
-    } else {
-        // existing partition
-        partitions[it->second].addObjectOfClass(objectRef, classType);
+    if (it != partitionMap.end()) {
+        // exists
+        return partitions[it->second];
     }
+    // create new partition
+    partitionMap[partitionID] = partitions.size();
+    partitions.push_back(new PartitionTwoLayer(partitionID));
+    return partitions[partitionMap[partitionID]];
 }
 
-Partition* TwoLayerIndex::getPartition(int partitionID) {
-    auto it = partitionMap.find(partitionID);
-    if (it == partitionMap.end()) {
-        // does not exist
-        return nullptr;
-    } 
-    // exists
-    return &partitions[it->second];
+
+DB_STATUS TwoLayerIndex::addObject(Shape *objectRef) {
+    // find partitions and clases
+    std::vector<int> partitionIDs;
+    std::vector<TwoLayerClass> partitionClasses;
+    DB_STATUS ret = getPartitionsForMBR(objectRef, partitionIDs, partitionClasses);
+    if (ret != DBERR_OK) {
+        return ret;
+    }
+
+    if (partitionIDs.size() != partitionClasses.size()) {
+        logger::log_error(DBERR_INVALID_PARAMETER, "Partition IDs and classes should match in number.");
+        return DBERR_INVALID_PARAMETER;
+    }
+
+    for (int i=0; i<partitionIDs.size(); i++) {
+        PartitionBase* partition = this->getOrCreatePartition(partitionIDs[i]);
+        partition->addObject(objectRef, partitionClasses[i]);
+        // logger::log_task("Adding object to partition", partitionIDs[i], "with class", partitionClasses[i]);
+        // if (objectRef->recID == 101911 || objectRef->recID == 1691538) {
+        //     logger::log_task("Adding object ", objectRef->recID, "to partition", partitionIDs[i], "with class", partitionClasses[i]);
+        //     // objectRef->printGeometry();
+        // }
+    }
+    
+    return ret;
 }
 
 void TwoLayerIndex::sortPartitionsOnY() {
-    for (auto &it: partitions) {
+    std::vector<PartitionBase*>* partitions = this->getPartitions();
+    for(int i=0; i<partitions->size(); i++) {
         // sort A
-        std::vector<Shape*>* objectsA = it.getContainerClassContents(CLASS_A);
-        if (objectsA != nullptr) {
-            std::sort(objectsA->begin(), objectsA->end(), compareByY);
-        }
+        std::vector<Shape*>* contentsA = partitions->at(i)->getContents(CLASS_A);
+        std::sort(contentsA->begin(), contentsA->end(), compareByY);
+
         // sort C
-        std::vector<Shape*>* objectsC = it.getContainerClassContents(CLASS_C);
-        if (objectsC != nullptr) {
-            std::sort(objectsC->begin(), objectsC->end(), compareByY);
-        }
+        std::vector<Shape*>* contentsC = partitions->at(i)->getContents(CLASS_C);
+        std::sort(contentsC->begin(), contentsC->end(), compareByY);
     }
 }
+
+PartitionBase* UniformGridIndex::getOrCreatePartition(int partitionID) {
+
+    return nullptr;
+}
+
+DB_STATUS UniformGridIndex::addObject(Shape *objectRef) {
+    DB_STATUS ret = DBERR_OK;
+
+    return DBERR_FEATURE_UNSUPPORTED;
+    return ret;
+
+}
+
+void UniformGridIndex::sortPartitionsOnY() {
+    std::vector<PartitionBase*>* partitions = this->getPartitions();
+    for(int i=0; i<partitions->size(); i++) {
+        std::vector<Shape*>* contents = partitions->at(i)->getContents();
+        std::sort(contents->begin(), contents->end(), compareByY);
+    }
+}
+
+
+
+
 
 int DatasetOptions::getNumberOfDatasets() {
     return numberOfDatasets;
@@ -883,15 +1058,8 @@ DB_STATUS Batch::deserialize(const char *buffer, int bufferSize) {
     return ret;
 }
 
-int TwoGridPartitioning::getDistributionGridPartitionID(int i, int j) {
-    return (i + (j * distPartitionsPerDim));
-}
-
-int TwoGridPartitioning::getPartitioningGridPartitionID(int distI, int distJ, int partI, int partJ) {
-    int globalI = (distI * partPartitionsPerDim) + partI;
-    int globalJ = (distJ * partPartitionsPerDim) + partJ;
-    // printf("Getting ID for coarse indices (%d,%d) and fine indices (%d,%d), with coarse cellsPerDim %d, fine cellsPerDim %d and global cellsPerDim %d. ID: %d\n", distI, distJ, partI, partJ, distPartitionsPerDim, partPartitionsPerDim, globalPartitionsPerDim, (globalI + (globalJ * globalPartitionsPerDim)));
-    return (globalI + (globalJ * globalPartitionsPerDim));
+int TwoGridPartitioning::getPartitionID(int i, int j, int ppd) {
+    return (i + (j * ppd));
 }
 
 int TwoGridPartitioning::getDistributionPPD() {
@@ -908,12 +1076,14 @@ int TwoGridPartitioning::getGlobalPPD() {
 
 void TwoGridPartitioning::setPartGridDataspace(double xMin, double yMin, double xMax, double yMax) {
     partGridDataspaceMetadata.set(xMin, yMin, xMax, yMax);
-    partPartitionExtentX = partGridDataspaceMetadata.xExtent / partPartitionsPerDim;
-    partPartitionExtentY = partGridDataspaceMetadata.yExtent / partPartitionsPerDim;
+    partPartitionExtentX = partGridDataspaceMetadata.xExtent / globalPartitionsPerDim;
+    partPartitionExtentY = partGridDataspaceMetadata.yExtent / globalPartitionsPerDim;
 }
 
 void TwoGridPartitioning::setPartGridDataspace(DataspaceMetadata &otherDataspaceMetadata) {
     partGridDataspaceMetadata = otherDataspaceMetadata;
+    partPartitionExtentX = partGridDataspaceMetadata.xExtent / globalPartitionsPerDim;
+    partPartitionExtentY = partGridDataspaceMetadata.yExtent / globalPartitionsPerDim;
 }
 
 double TwoGridPartitioning::getPartPartionExtentX() {
@@ -925,17 +1095,8 @@ double TwoGridPartitioning::getPartPartionExtentY() {
 }
 
 /** @brief Get the grid's partition ID (from parent). */
-int RoundRobinPartitioning::getDistributionGridPartitionID(int i, int j) {
-    return (i + (j * distPartitionsPerDim));
-}
-
-/** @brief Get the grid's partition ID (from parent). */
-int RoundRobinPartitioning::getPartitioningGridPartitionID(int distI, int distJ, int partI, int partJ) {
-    if (distI != partI || distJ != partJ) {
-        logger::log_error(DBERR_INVALID_PARAMETER, "For Round Robin partitioning, distribution and partitioning partition indices must match. Dist:", distI, distJ, "Part:", partI, partJ);
-        return -1;
-    }
-    return (distI + (distJ * distPartitionsPerDim));
+int RoundRobinPartitioning::getPartitionID(int i, int j, int ppd) {
+    return (i + (j * ppd));
 }
 
 /** @brief Returns the distribution (coarse) grid's partitions per dimension number. */

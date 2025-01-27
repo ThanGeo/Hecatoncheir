@@ -9,7 +9,7 @@
 
 namespace hec
 {
-    struct SupportedQueries {
+    struct SpatialQueries {
     private:
         std::string range = "range";
         std::string intersects = "intersect";
@@ -34,7 +34,13 @@ namespace hec
         std::string FIND_RELATION() {return find_relation;}
     };
 
-    extern SupportedQueries spatialQueries;
+    extern SpatialQueries spatialQueries;
+
+    /** @brief Index types for spatial data */
+    enum IndexType {
+        IT_UNIFORM_GRID,
+        IT_TWO_LAYER,
+    };
 
     struct SupportedQueryResultTypes {
     private:

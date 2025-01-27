@@ -438,74 +438,74 @@ namespace twolayer
             {
                 DB_STATUS local_ret = DBERR_OK;
                 hec::QueryResult threadQueryResults(queryResult.getID(), queryResult.getQueryType(), queryResult.getResultType());
-                // loop common partitions (todo: optimize to start from the dataset that has the fewer ones)
+                // loop common partitions (@todo: optimize to start from the dataset that has the fewer ones)
+                std::vector<PartitionBase *>* partitions = R->index->getPartitions();
                 #pragma omp for
-                for (int i=0; i<R->twoLayerIndex.partitions.size(); i++) {
+                for (int i=0; i<partitions->size(); i++) {
                     // get partition ID and S container
-                    int partitionID = R->twoLayerIndex.partitions[i].partitionID;
-                    Partition* tlContainerS = S->twoLayerIndex.getPartition(partitionID);
+                    PartitionBase* partitionR = partitions->at(i);
+                    PartitionBase* partitionS = S->index->getPartition(partitions->at(i)->partitionID);
                     // if relation S has any objects for this partition (non-empty container)
-                    if (tlContainerS != nullptr) {
+                    if (partitionS != nullptr) {
                         // common partition found
-                        Partition* tlContainerR = &R->twoLayerIndex.partitions[i];
                         // R_A - S_A
-                        local_ret = sweepRollY_1(tlContainerR->getContainerClassContents(CLASS_A), tlContainerS->getContainerClassContents(CLASS_A), threadQueryResults);
+                        local_ret = sweepRollY_1(partitionR->getContents(CLASS_A), partitionS->getContents(CLASS_A), threadQueryResults);
                         if (local_ret != DBERR_OK) {
                             logger::log_error(ret, "R_A - S_A sweep roll failed");
                             #pragma omp cancel for
                             ret = local_ret;
                         }
                         // S_B - R_A
-                        local_ret = sweepRollY_2(tlContainerS->getContainerClassContents(CLASS_B), tlContainerR->getContainerClassContents(CLASS_A), 1, threadQueryResults);
+                        local_ret = sweepRollY_2(partitionS->getContents(CLASS_B), partitionR->getContents(CLASS_A), 1, threadQueryResults);
                         if (local_ret != DBERR_OK) {
                             logger::log_error(ret, "S_B - R_A sweep roll failed");
                             #pragma omp cancel for
                             ret = local_ret;
                         }
                         // R_A - S_C
-                        local_ret = sweepRollY_3(tlContainerR->getContainerClassContents(CLASS_A), tlContainerS->getContainerClassContents(CLASS_C), 0, threadQueryResults);
+                        local_ret = sweepRollY_3(partitionR->getContents(CLASS_A), partitionS->getContents(CLASS_C), 0, threadQueryResults);
                         if (local_ret != DBERR_OK) {
                             logger::log_error(ret, "R_A - S_C sweep roll failed");
                             #pragma omp cancel for
                             ret = local_ret;
                         }
                         // S_D - R_A
-                        local_ret = sweepRollY_5(tlContainerS->getContainerClassContents(CLASS_D), tlContainerR->getContainerClassContents(CLASS_A), 1, threadQueryResults);
+                        local_ret = sweepRollY_5(partitionS->getContents(CLASS_D), partitionR->getContents(CLASS_A), 1, threadQueryResults);
                         if (local_ret != DBERR_OK) {
                             logger::log_error(ret, "S_D - R_A sweep roll failed");
                             #pragma omp cancel for
                             ret = local_ret;
                         }
                         // R_B - S_A
-                        local_ret = sweepRollY_2(tlContainerR->getContainerClassContents(CLASS_B), tlContainerS->getContainerClassContents(CLASS_A), 0, threadQueryResults);
+                        local_ret = sweepRollY_2(partitionR->getContents(CLASS_B), partitionS->getContents(CLASS_A), 0, threadQueryResults);
                         if (local_ret != DBERR_OK) {
                             logger::log_error(ret, "R_B - S_A sweep roll failed");
                             #pragma omp cancel for
                             ret = local_ret;
                         }
                         // R_B - S_C
-                        local_ret = sweepRollY_4(tlContainerR->getContainerClassContents(CLASS_B), tlContainerS->getContainerClassContents(CLASS_C), 0, threadQueryResults);
+                        local_ret = sweepRollY_4(partitionR->getContents(CLASS_B), partitionS->getContents(CLASS_C), 0, threadQueryResults);
                         if (local_ret != DBERR_OK) {
                             logger::log_error(ret, "R_B - S_C sweep roll failed");
                             #pragma omp cancel for
                             ret = local_ret;
                         }
                         // S_A - R_C
-                        local_ret = sweepRollY_3(tlContainerS->getContainerClassContents(CLASS_A), tlContainerR->getContainerClassContents(CLASS_C), 1, threadQueryResults);
+                        local_ret = sweepRollY_3(partitionS->getContents(CLASS_A), partitionR->getContents(CLASS_C), 1, threadQueryResults);
                         if (local_ret != DBERR_OK) {
                             logger::log_error(ret, "S_A - R_C sweep roll failed");
                             #pragma omp cancel for
                             ret = local_ret;
                         }
                         // S_B - R_C
-                        local_ret = sweepRollY_4(tlContainerS->getContainerClassContents(CLASS_B), tlContainerR->getContainerClassContents(CLASS_C), 1, threadQueryResults);
+                        local_ret = sweepRollY_4(partitionS->getContents(CLASS_B), partitionR->getContents(CLASS_C), 1, threadQueryResults);
                         if (local_ret != DBERR_OK) {
                             logger::log_error(ret, "S_B - R_C sweep roll failed");
                             #pragma omp cancel for
                             ret = local_ret;
                         }
                         // R_D - S_A
-                        local_ret = sweepRollY_5(tlContainerR->getContainerClassContents(CLASS_D), tlContainerS->getContainerClassContents(CLASS_A), 0, threadQueryResults);
+                        local_ret = sweepRollY_5(partitionR->getContents(CLASS_D), partitionS->getContents(CLASS_A), 0, threadQueryResults);
                         if (local_ret != DBERR_OK) {
                             logger::log_error(ret, "R_D - S_A sweep roll failed");
                             #pragma omp cancel for
@@ -865,19 +865,25 @@ namespace twolayer
                 DB_STATUS local_ret = DBERR_OK;
                 hec::QueryResult threadQueryResults(queryResult.getID(), queryResult.getQueryType(), queryResult.getResultType());
                 // loop common partitions (todo: optimize to start from the dataset that has the fewer ones)
+                std::vector<PartitionBase *>* partitions = R->index->getPartitions();
                 #pragma omp for
-                for (int i=0; i<R->twoLayerIndex.partitions.size(); i++) {
+                for (int i=0; i<partitions->size(); i++) {
                     // get partition ID and S container
-                    int partitionID = R->twoLayerIndex.partitions[i].partitionID;
-                    Partition* tlContainerS = S->twoLayerIndex.getPartition(partitionID);
-                    // if relation S has any objects for this partition (non-empty container)
-                    if (tlContainerS != nullptr) {
+                    PartitionBase* partitionR = partitions->at(i);
+                    PartitionBase* partitionS = S->index->getPartition(partitions->at(i)->partitionID);
+                    if (partitionS != nullptr) {
                         // common partition found
-                        Partition* tlContainerR = &R->twoLayerIndex.partitions[i];
-                        // printf("Comparing partitions %ld and %ld \n", tlContainerR->partitionID, tlContainerS->partitionID);
+                        // printf("Comparing partitions %ld and %ld \n", partitionR->partitionID, partitionS->partitionID);
+                        // if (partitionR->partitionID == 651299 || partitionR->partitionID == 651300) {
+                        //     logger::log_task("Comparing partition", partitionR->partitionID);
+                        // }
+
                         // R_A - S_A
-                        // printf("RA-SA\n");
-                        local_ret = sweepRollY_1(tlContainerR->getContainerClassContents(CLASS_A), tlContainerS->getContainerClassContents(CLASS_A), threadQueryResults);
+                        // if (partitionR->partitionID == 651299 || partitionR->partitionID == 651300) {
+                        //     logger::log_task("RA-SA");
+                        // }
+                         // printf("RA-SA\n");
+                        local_ret = sweepRollY_1(partitionR->getContents(CLASS_A), partitionS->getContents(CLASS_A), threadQueryResults);
                         if (local_ret != DBERR_OK) {
                             logger::log_error(ret, "R_A - S_A sweep roll failed");
                             #pragma omp cancel for
@@ -885,7 +891,10 @@ namespace twolayer
                         }
                         // S_B - R_A
                         // printf("SB-RA\n");
-                        local_ret = sweepRollY_2(tlContainerS->getContainerClassContents(CLASS_B), tlContainerR->getContainerClassContents(CLASS_A), 1, threadQueryResults);
+                        // if (partitionR->partitionID == 651299 || partitionR->partitionID == 651300) {
+                        //     logger::log_task("RA-SB");
+                        // }
+                        local_ret = sweepRollY_2(partitionS->getContents(CLASS_B), partitionR->getContents(CLASS_A), 1, threadQueryResults);
                         if (local_ret != DBERR_OK) {
                             logger::log_error(ret, "S_B - R_A sweep roll failed");
                             #pragma omp cancel for
@@ -893,55 +902,76 @@ namespace twolayer
                         }
                         // R_A - S_C
                         // printf("RA-SC\n");
-                        local_ret = sweepRollY_3(tlContainerR->getContainerClassContents(CLASS_A), tlContainerS->getContainerClassContents(CLASS_C), 0, threadQueryResults);
+                        // if (partitionR->partitionID == 651299 || partitionR->partitionID == 651300) {
+                        //     logger::log_task("RA-SC");
+                        // }
+                        local_ret = sweepRollY_3(partitionR->getContents(CLASS_A), partitionS->getContents(CLASS_C), 0, threadQueryResults);
                         if (local_ret != DBERR_OK) {
                             logger::log_error(ret, "R_A - S_C sweep roll failed");
                             #pragma omp cancel for
                             ret = local_ret;
                         }
                         // S_D - R_A
+                        // if (partitionR->partitionID == 651299 || partitionR->partitionID == 651300) {
+                        //     logger::log_task("RA-SD");
+                        // }
                         // printf("SD-RA\n");
-                        local_ret = sweepRollY_5(tlContainerS->getContainerClassContents(CLASS_D), tlContainerR->getContainerClassContents(CLASS_A), 1, threadQueryResults);
+                        local_ret = sweepRollY_5(partitionS->getContents(CLASS_D), partitionR->getContents(CLASS_A), 1, threadQueryResults);
                         if (local_ret != DBERR_OK) {
                             logger::log_error(ret, "S_D - R_A sweep roll failed");
                             #pragma omp cancel for
                             ret = local_ret;
                         }
                         // R_B - S_A
+                        // if (partitionR->partitionID == 651299 || partitionR->partitionID == 651300) {
+                        //     logger::log_task("RB-SA");
+                        // }
                         // printf("RA-SA\n");
-                        local_ret = sweepRollY_2(tlContainerR->getContainerClassContents(CLASS_B), tlContainerS->getContainerClassContents(CLASS_A), 0, threadQueryResults);
+                        local_ret = sweepRollY_2(partitionR->getContents(CLASS_B), partitionS->getContents(CLASS_A), 0, threadQueryResults);
                         if (local_ret != DBERR_OK) {
                             logger::log_error(ret, "R_B - S_A sweep roll failed");
                             #pragma omp cancel for
                             ret = local_ret;
                         }
                         // R_B - S_C
+                        // if (partitionR->partitionID == 651299 || partitionR->partitionID == 651300) {
+                        //     logger::log_task("RB-SC");
+                        // }
                         // printf("RB-SC\n");
-                        local_ret = sweepRollY_4(tlContainerR->getContainerClassContents(CLASS_B), tlContainerS->getContainerClassContents(CLASS_C), 0, threadQueryResults);
+                        local_ret = sweepRollY_4(partitionR->getContents(CLASS_B), partitionS->getContents(CLASS_C), 0, threadQueryResults);
                         if (local_ret != DBERR_OK) {
                             logger::log_error(ret, "R_B - S_C sweep roll failed");
                             #pragma omp cancel for
                             ret = local_ret;
                         }
                         // S_A - R_C
+                        // if (partitionR->partitionID == 651299 || partitionR->partitionID == 651300) {
+                        //     logger::log_task("RC-SA");
+                        // }
                         // printf("SA-RC\n");
-                        local_ret = sweepRollY_3(tlContainerS->getContainerClassContents(CLASS_A), tlContainerR->getContainerClassContents(CLASS_C), 1, threadQueryResults);
+                        local_ret = sweepRollY_3(partitionS->getContents(CLASS_A), partitionR->getContents(CLASS_C), 1, threadQueryResults);
                         if (local_ret != DBERR_OK) {
                             logger::log_error(ret, "S_A - R_C sweep roll failed");
                             #pragma omp cancel for
                             ret = local_ret;
                         }
                         // S_B - R_C
+                        // if (partitionR->partitionID == 651299 || partitionR->partitionID == 651300) {
+                        //     logger::log_task("RC-SB");
+                        // }
                         // printf("SB-RC\n");
-                        local_ret = sweepRollY_4(tlContainerS->getContainerClassContents(CLASS_B), tlContainerR->getContainerClassContents(CLASS_C), 1, threadQueryResults);
+                        local_ret = sweepRollY_4(partitionS->getContents(CLASS_B), partitionR->getContents(CLASS_C), 1, threadQueryResults);
                         if (local_ret != DBERR_OK) {
                             logger::log_error(ret, "S_B - R_C sweep roll failed");
                             #pragma omp cancel for
                             ret = local_ret;
                         }
                         // R_D - S_A
+                        // if (partitionR->partitionID == 651299 || partitionR->partitionID == 651300) {
+                        //     logger::log_task("RD-SA");
+                        // }
                         // printf("RD-SA\n");
-                        local_ret = sweepRollY_5(tlContainerR->getContainerClassContents(CLASS_D), tlContainerS->getContainerClassContents(CLASS_A), 0, threadQueryResults);
+                        local_ret = sweepRollY_5(partitionR->getContents(CLASS_D), partitionS->getContents(CLASS_A), 0, threadQueryResults);
                         if (local_ret != DBERR_OK) {
                             logger::log_error(ret, "R_D - S_A sweep roll failed");
                             #pragma omp cancel for

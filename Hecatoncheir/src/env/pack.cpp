@@ -48,6 +48,7 @@ namespace pack
     DB_STATUS packSystemMetadata(SerializedMsg<char> &sysMetadataMsg) {
         sysMetadataMsg.count = 0;
         sysMetadataMsg.count += sizeof(SystemSetupType);      // cluster or local
+        sysMetadataMsg.count += sizeof(int);                    // world size
         sysMetadataMsg.count += 2*sizeof(int);                  // dist + part partitions per dimension
         sysMetadataMsg.count += sizeof(int);                  // partitioning type
         sysMetadataMsg.count += sizeof(int) + g_config.dirPaths.dataPath.length() * sizeof(char);   // data directory path length + string
@@ -66,6 +67,9 @@ namespace pack
         // put objects in buffer
         *reinterpret_cast<SystemSetupType*>(localBuffer) = g_config.options.setupType;
         localBuffer += sizeof(SystemSetupType);
+
+        *reinterpret_cast<int*>(localBuffer) = g_world_size;
+        localBuffer += sizeof(int);
 
         *reinterpret_cast<int*>(localBuffer) = g_config.partitioningMethod->getDistributionPPD();
         localBuffer += sizeof(int);
@@ -245,6 +249,8 @@ namespace unpack
         // get system setup type
         g_config.options.setupType = *reinterpret_cast<const SystemSetupType*>(localBuffer);
         localBuffer += sizeof(SystemSetupType);
+        g_world_size = *reinterpret_cast<const int*>(localBuffer);
+        localBuffer += sizeof(int);
         // get dist+part partitions per dimension
         distPartitionsPerDim = *reinterpret_cast<const int*>(localBuffer);
         localBuffer += sizeof(int);

@@ -3,14 +3,14 @@
 
 namespace partitioning
 {
-    void printPartitionAssignment() {
-        for (int j=0; j<g_config.partitioningMethod->getDistributionPPD(); j++) {
-            for (int i=0; i<g_config.partitioningMethod->getDistributionPPD(); i++) {
-                printf("%d ", g_config.partitioningMethod->getNodeRankForPartitionID(g_config.partitioningMethod->getDistributionGridPartitionID(i,j)));
-            }
-            printf("\n");
-        }
-    }
+    // void printPartitionAssignment() {
+    //     for (int j=0; j<g_config.partitioningMethod->getDistributionPPD(); j++) {
+    //         for (int i=0; i<g_config.partitioningMethod->getDistributionPPD(); i++) {
+    //             printf("%d ", g_config.partitioningMethod->getNodeRankForPartitionID(g_config.partitioningMethod->getDistributionGridPartitionID(i,j)));
+    //         }
+    //         printf("\n");
+    //     }
+    // }
     
     /**
     @brief Calculates the intersecting partitions in the distribution grid for the given MBR.
@@ -19,13 +19,13 @@ namespace partitioning
      * @param[out] twoLayerClasses The MBR's two-layer index classification for each individual intersecting partition.
      */
     static DB_STATUS getPartitionsForMBR(MBR &mbr, std::vector<int> &partitionIDs){
-        int minPartitionX = (mbr.pMin.x - g_config.datasetOptions.dataspaceMetadata.xMinGlobal) / (g_config.datasetOptions.dataspaceMetadata.xExtent / g_config.partitioningMethod->getDistributionPPD());
-        int minPartitionY = (mbr.pMin.y - g_config.datasetOptions.dataspaceMetadata.yMinGlobal) / (g_config.datasetOptions.dataspaceMetadata.yExtent / g_config.partitioningMethod->getDistributionPPD());
-        int maxPartitionX = (mbr.pMax.x - g_config.datasetOptions.dataspaceMetadata.xMinGlobal) / (g_config.datasetOptions.dataspaceMetadata.xExtent / g_config.partitioningMethod->getDistributionPPD());
-        int maxPartitionY = (mbr.pMax.y - g_config.datasetOptions.dataspaceMetadata.yMinGlobal) / (g_config.datasetOptions.dataspaceMetadata.yExtent / g_config.partitioningMethod->getDistributionPPD());
+        int minPartitionX = (mbr.pMin.x - g_config.datasetOptions.dataspaceMetadata.xMinGlobal) / g_config.partitioningMethod->getDistPartionExtentX();
+        int minPartitionY = (mbr.pMin.y - g_config.datasetOptions.dataspaceMetadata.yMinGlobal) / g_config.partitioningMethod->getDistPartionExtentY();
+        int maxPartitionX = (mbr.pMax.x - g_config.datasetOptions.dataspaceMetadata.xMinGlobal) / g_config.partitioningMethod->getDistPartionExtentX();
+        int maxPartitionY = (mbr.pMax.y - g_config.datasetOptions.dataspaceMetadata.yMinGlobal) / g_config.partitioningMethod->getDistPartionExtentY();
         
-        int startPartitionID = g_config.partitioningMethod->getDistributionGridPartitionID(minPartitionX, minPartitionY);
-        int lastPartitionID = g_config.partitioningMethod->getDistributionGridPartitionID(maxPartitionX, maxPartitionY);
+        int startPartitionID = g_config.partitioningMethod->getPartitionID(minPartitionX, minPartitionY, g_config.partitioningMethod->getDistributionPPD());
+        int lastPartitionID = g_config.partitioningMethod->getPartitionID(maxPartitionX, maxPartitionY, g_config.partitioningMethod->getDistributionPPD());
         if (startPartitionID < 0 || startPartitionID > g_config.partitioningMethod->getDistributionPPD() * g_config.partitioningMethod->getDistributionPPD() -1) {
             logger::log_error(DBERR_INVALID_PARTITION, "Start partition ID calculated wrong");
             return DBERR_INVALID_PARTITION;
@@ -37,7 +37,7 @@ namespace partitioning
         // create the distribution grid partition list for the object
         for (int i=minPartitionX; i<=maxPartitionX; i++) {
             for (int j=minPartitionY; j<=maxPartitionY; j++) {
-                int partitionID = g_config.partitioningMethod->getDistributionGridPartitionID(i, j);
+                int partitionID = g_config.partitioningMethod->getPartitionID(i, j, g_config.partitioningMethod->getDistributionPPD());
                 partitionIDs.emplace_back(partitionID);
             }
         }
@@ -86,14 +86,6 @@ namespace partitioning
         if (ret != DBERR_OK) {
             return ret;
         }
-        // if (object.recID == 129173) {
-        //     logger::log_task("partitions for object ", object.recID, ":");
-        //     for (auto &it: partitionIDs) {
-        //         logger::log_task("  ", it);
-        //     }
-        // }
-        // set partitions to object
-        object.initPartitions(partitionIDs);
         // find which nodes need to receive this geometry
         std::vector<bool> bitVector(g_world_size, false);
         // get receiving worker ranks
@@ -113,29 +105,15 @@ namespace partitioning
                     return DBERR_INVALID_PARAMETER;
                 }
                 Batch *batch = &it->second;
-                // make a copy of the geometry, to adjust the partitions specifically for this node
-                // remove any partitions that are irrelevant to this noderank
-                Shape objectCopy = object;
-                std::vector<int> partitionsCopy = objectCopy.getPartitions();
-                for (auto it = partitionsCopy.begin(); it != partitionsCopy.end();) {
-                    int assignedNodeRank = g_config.partitioningMethod->getNodeRankForPartitionID(*it);
-                    if (assignedNodeRank != nodeRank) {
-                        it = partitionsCopy.erase(it);
-                        it = partitionsCopy.erase(it);
-                    } else {
-                        it += 2;
-                    }
-                }
-
-                // set new partitions to the copy
-                objectCopy.setPartitions(partitionsCopy, partitionsCopy.size() / 2);
-
-                // printf("Object %ld has %d partitions:\n ", object.recID, object.getPartitionCount());
-                // std::vector<int>* partitionRef = object.getPartitionsRef();
-                // for (int i=0; i<object.getPartitionCount(); i++) {
-                //     printf("(%d,%s),", object.getPartitionID(i), mapping::twoLayerClassIntToStr(object.getPartitionClass(i)).c_str());
+                // if (object.recID == 101911 || object.recID == 1691538) {
+                //     logger::log_task("object", object.recID, "partitions:");
+                //     for (auto &it: partitionIDs) {
+                //         logger::log_task("  ", it);
+                //     }
+                //     logger::log_task("Will be sent to node", nodeRank);
                 // }
-                // printf("\n");
+                // make a copy of the geometry
+                Shape objectCopy = object;
 
                 // add moddified geometry to this batch
                 // logger::log_task("Added geometry", objectCopy.recID, " to batch");
@@ -538,7 +516,6 @@ namespace partitioning
                     currentLine++;
                 }
 
-
                 // create empty object based on data type
                 Shape object;
                 local_ret = shape_factory::createEmpty(dataset->metadata.dataType, object);
@@ -703,245 +680,245 @@ namespace partitioning
          *  and sets the geometry's class in each partition. 
          * @todo: revisit this method. Too many extra computations? why compute the mbr again?
          * */
-        static DB_STATUS setPartitionClassesForObject(Shape &object){
-            // vector for the new partitions
-            std::vector<int> newPartitions;
-            // for each distribution partition
-            for (int i=0; i < object.getPartitionCount(); i++) {
-                // get the partition ID, no two layer class set yet
-                int distPartitionID = object.getPartitionID(i);
-                // get the partition's indices
-                int distPartitionIndexX, distPartitionIndexY;
-                g_config.partitioningMethod->getDistributionGridPartitionIndices(distPartitionID, distPartitionIndexX, distPartitionIndexY);
-                // get the global partition's extents
-                // printf("Distribution grid partition ID: %d (%d,%d)\n", distPartitionID, distPartitionIndexX, distPartitionIndexY);
-                // calculate the partition's bounds in the distribution grid
-                double distPartitionXmin = g_config.partitioningMethod->distGridDataspaceMetadata.xMinGlobal + (distPartitionIndexX * g_config.partitioningMethod->getDistPartionExtentX());
-                double distPartitionYmin = g_config.partitioningMethod->distGridDataspaceMetadata.yMinGlobal + (distPartitionIndexY * g_config.partitioningMethod->getDistPartionExtentY());
-                double distPartitionXmax = g_config.partitioningMethod->distGridDataspaceMetadata.xMinGlobal + ((distPartitionIndexX+1) * g_config.partitioningMethod->getDistPartionExtentX());
-                double distPartitionYmax = g_config.partitioningMethod->distGridDataspaceMetadata.yMinGlobal + ((distPartitionIndexY+1) * g_config.partitioningMethod->getDistPartionExtentY());
-                // printf("Distribution grid partition bounds: (%f,%f),(%f,%f),(%f,%f),(%f,%f)\n", distPartitionXmin, distPartitionYmin, distPartitionXmax, distPartitionYmin, distPartitionXmax, distPartitionYmax, distPartitionXmin, distPartitionYmax);
-                TwoLayerClass objectClassInDistributionPartition = getTwoLayerClassForMBRandPartition(object.mbr.pMin.x, object.mbr.pMin.y, distPartitionXmin, distPartitionYmin);
-                // printf("Object class in parent partition: %s\n", mapping::twoLayerClassIntToStr(objectClassInDistributionPartition).c_str());
-                // get the indices of the start/end part partitions
-                int localPartitionXstart = (object.mbr.pMin.x - distPartitionXmin) / (g_config.partitioningMethod->getDistPartionExtentX() / g_config.partitioningMethod->getPartitioningPPD());
-                int localPartitionYstart = (object.mbr.pMin.y - distPartitionYmin) / (g_config.partitioningMethod->getDistPartionExtentY() / g_config.partitioningMethod->getPartitioningPPD());
-                int localPartitionXend = (object.mbr.pMax.x - distPartitionXmin) / (g_config.partitioningMethod->getDistPartionExtentX() / g_config.partitioningMethod->getPartitioningPPD());
-                int localPartitionYend = (object.mbr.pMax.y - distPartitionYmin) / (g_config.partitioningMethod->getDistPartionExtentY() / g_config.partitioningMethod->getPartitioningPPD());
+        // static DB_STATUS setPartitionClassesForObject(Shape &object){
+        //     // vector for the new partitions
+        //     std::vector<int> newPartitions;
+        //     // for each distribution partition
+        //     for (int i=0; i < object.getPartitionCount(); i++) {
+        //         // get the partition ID, no two layer class set yet
+        //         int distPartitionID = object.getPartitionID(i);
+        //         // get the partition's indices
+        //         int distPartitionIndexX, distPartitionIndexY;
+        //         g_config.partitioningMethod->getDistributionGridPartitionIndices(distPartitionID, distPartitionIndexX, distPartitionIndexY);
+        //         // get the global partition's extents
+        //         // printf("Distribution grid partition ID: %d (%d,%d)\n", distPartitionID, distPartitionIndexX, distPartitionIndexY);
+        //         // calculate the partition's bounds in the distribution grid
+        //         double distPartitionXmin = g_config.partitioningMethod->distGridDataspaceMetadata.xMinGlobal + (distPartitionIndexX * g_config.partitioningMethod->getDistPartionExtentX());
+        //         double distPartitionYmin = g_config.partitioningMethod->distGridDataspaceMetadata.yMinGlobal + (distPartitionIndexY * g_config.partitioningMethod->getDistPartionExtentY());
+        //         double distPartitionXmax = g_config.partitioningMethod->distGridDataspaceMetadata.xMinGlobal + ((distPartitionIndexX+1) * g_config.partitioningMethod->getDistPartionExtentX());
+        //         double distPartitionYmax = g_config.partitioningMethod->distGridDataspaceMetadata.yMinGlobal + ((distPartitionIndexY+1) * g_config.partitioningMethod->getDistPartionExtentY());
+        //         // printf("Distribution grid partition bounds: (%f,%f),(%f,%f),(%f,%f),(%f,%f)\n", distPartitionXmin, distPartitionYmin, distPartitionXmax, distPartitionYmin, distPartitionXmax, distPartitionYmax, distPartitionXmin, distPartitionYmax);
+        //         TwoLayerClass objectClassInDistributionPartition = getTwoLayerClassForMBRandPartition(object.mbr.pMin.x, object.mbr.pMin.y, distPartitionXmin, distPartitionYmin);
+        //         // printf("Object class in parent partition: %s\n", mapping::twoLayerClassIntToStr(objectClassInDistributionPartition).c_str());
+        //         // get the indices of the start/end part partitions
+        //         int localPartitionXstart = (object.mbr.pMin.x - distPartitionXmin) / (g_config.partitioningMethod->getDistPartionExtentX() / g_config.partitioningMethod->getPartitioningPPD());
+        //         int localPartitionYstart = (object.mbr.pMin.y - distPartitionYmin) / (g_config.partitioningMethod->getDistPartionExtentY() / g_config.partitioningMethod->getPartitioningPPD());
+        //         int localPartitionXend = (object.mbr.pMax.x - distPartitionXmin) / (g_config.partitioningMethod->getDistPartionExtentX() / g_config.partitioningMethod->getPartitioningPPD());
+        //         int localPartitionYend = (object.mbr.pMax.y - distPartitionYmin) / (g_config.partitioningMethod->getDistPartionExtentY() / g_config.partitioningMethod->getPartitioningPPD());
                 
-                // printf("Local partition start/end: (%d,%d),(%d,%d)\n", localPartitionXstart, localPartitionYstart, localPartitionXend, localPartitionYend);
-                // adjust (todo: check whether any of these happen, discard the rest)
-                if (localPartitionXstart < 0) {
-                    localPartitionXstart = 0;
-                }
-                else if (localPartitionXstart > g_config.partitioningMethod->getPartitioningPPD()-1) {
-                    localPartitionXstart = g_config.partitioningMethod->getPartitioningPPD()-1;
-                }
-                if (localPartitionYstart < 0) {
-                    localPartitionYstart = 0;
-                }
-                else if (localPartitionYstart > g_config.partitioningMethod->getPartitioningPPD()-1) {
-                    localPartitionYstart = g_config.partitioningMethod->getPartitioningPPD()-1;
-                }
-                if (localPartitionXend < 0) {
-                    localPartitionXend = 0;
-                }
-                else if (localPartitionXend > g_config.partitioningMethod->getPartitioningPPD()-1) {
-                    localPartitionXend = g_config.partitioningMethod->getPartitioningPPD()-1;
-                }
-                if (localPartitionYend < 0) {
-                    localPartitionYend = 0;
-                }
-                else if (localPartitionYend > g_config.partitioningMethod->getPartitioningPPD()-1) {
-                    localPartitionYend = g_config.partitioningMethod->getPartitioningPPD()-1;
-                }
+        //         // printf("Local partition start/end: (%d,%d),(%d,%d)\n", localPartitionXstart, localPartitionYstart, localPartitionXend, localPartitionYend);
+        //         // adjust (todo: check whether any of these happen, discard the rest)
+        //         if (localPartitionXstart < 0) {
+        //             localPartitionXstart = 0;
+        //         }
+        //         else if (localPartitionXstart > g_config.partitioningMethod->getPartitioningPPD()-1) {
+        //             localPartitionXstart = g_config.partitioningMethod->getPartitioningPPD()-1;
+        //         }
+        //         if (localPartitionYstart < 0) {
+        //             localPartitionYstart = 0;
+        //         }
+        //         else if (localPartitionYstart > g_config.partitioningMethod->getPartitioningPPD()-1) {
+        //             localPartitionYstart = g_config.partitioningMethod->getPartitioningPPD()-1;
+        //         }
+        //         if (localPartitionXend < 0) {
+        //             localPartitionXend = 0;
+        //         }
+        //         else if (localPartitionXend > g_config.partitioningMethod->getPartitioningPPD()-1) {
+        //             localPartitionXend = g_config.partitioningMethod->getPartitioningPPD()-1;
+        //         }
+        //         if (localPartitionYend < 0) {
+        //             localPartitionYend = 0;
+        //         }
+        //         else if (localPartitionYend > g_config.partitioningMethod->getPartitioningPPD()-1) {
+        //             localPartitionYend = g_config.partitioningMethod->getPartitioningPPD()-1;
+        //         }
 
-                int totalNewPartitions = (localPartitionXend - localPartitionXstart + 1) * (localPartitionYend - localPartitionYstart + 1);
-                // vector for the new partitions
-                newPartitions.reserve(newPartitions.size() + totalNewPartitions*2);
-                // first partition inherits the class of the parent partition
-                int partitionID = g_config.partitioningMethod->getPartitioningGridPartitionID(distPartitionIndexX, distPartitionIndexY, localPartitionXstart, localPartitionYstart);
-                newPartitions.emplace_back(partitionID);
-                newPartitions.emplace_back(objectClassInDistributionPartition);
-                // for each local partition, get the object's class
-                for (int indexI=localPartitionXstart; indexI <= localPartitionXend; indexI++) {
-                    if (indexI != localPartitionXstart) {
-                        // next partitions on X axis
-                        // add partition ID
-                        int partitionID = g_config.partitioningMethod->getPartitioningGridPartitionID(distPartitionIndexX, distPartitionIndexY, indexI, localPartitionYstart);
-                        newPartitions.emplace_back(partitionID);
-                        if (objectClassInDistributionPartition == CLASS_A || objectClassInDistributionPartition == CLASS_C) {
-                            // if in parent partition it is A or C 
-                            // then in the next partition on the X axis would be C as well
-                            newPartitions.emplace_back(CLASS_C);
-                        } else {
-                            // if in parent partition it is B or D 
-                            // then in the next partition on the X axis would be D 
-                            newPartitions.emplace_back(CLASS_D);
-                        }
-                    }
-                    for (int indexJ=localPartitionYstart+1; indexJ <= localPartitionYend; indexJ++) {
-                        // next partitions on Y axis
-                        // add partition ID
-                        int partitionID = g_config.partitioningMethod->getPartitioningGridPartitionID(distPartitionIndexX, distPartitionIndexY, indexI, indexJ);
-                        newPartitions.emplace_back(partitionID);
-                        if (indexI == localPartitionXstart) {
-                            if (objectClassInDistributionPartition == CLASS_B || objectClassInDistributionPartition == CLASS_A) {
-                                // if it is the first column and the object is class A or B in the dist grid
-                                // then this is class B as well
-                                newPartitions.emplace_back(CLASS_B);
-                            } else {
-                                // otherwise it is D
-                                newPartitions.emplace_back(CLASS_D);
-                            }
-                        } else {
-                            // D always
-                            newPartitions.emplace_back(CLASS_D);
-                        }
-                    }
-                }
-            }
-            // replace into object
-            object.setPartitions(newPartitions, newPartitions.size() / 2);
-            return DBERR_OK;
-        }
+        //         int totalNewPartitions = (localPartitionXend - localPartitionXstart + 1) * (localPartitionYend - localPartitionYstart + 1);
+        //         // vector for the new partitions
+        //         newPartitions.reserve(newPartitions.size() + totalNewPartitions*2);
+        //         // first partition inherits the class of the parent partition
+        //         int partitionID = g_config.partitioningMethod->getPartitioningGridPartitionID(distPartitionIndexX, distPartitionIndexY, localPartitionXstart, localPartitionYstart);
+        //         newPartitions.emplace_back(partitionID);
+        //         newPartitions.emplace_back(objectClassInDistributionPartition);
+        //         // for each local partition, get the object's class
+        //         for (int indexI=localPartitionXstart; indexI <= localPartitionXend; indexI++) {
+        //             if (indexI != localPartitionXstart) {
+        //                 // next partitions on X axis
+        //                 // add partition ID
+        //                 int partitionID = g_config.partitioningMethod->getPartitioningGridPartitionID(distPartitionIndexX, distPartitionIndexY, indexI, localPartitionYstart);
+        //                 newPartitions.emplace_back(partitionID);
+        //                 if (objectClassInDistributionPartition == CLASS_A || objectClassInDistributionPartition == CLASS_C) {
+        //                     // if in parent partition it is A or C 
+        //                     // then in the next partition on the X axis would be C as well
+        //                     newPartitions.emplace_back(CLASS_C);
+        //                 } else {
+        //                     // if in parent partition it is B or D 
+        //                     // then in the next partition on the X axis would be D 
+        //                     newPartitions.emplace_back(CLASS_D);
+        //                 }
+        //             }
+        //             for (int indexJ=localPartitionYstart+1; indexJ <= localPartitionYend; indexJ++) {
+        //                 // next partitions on Y axis
+        //                 // add partition ID
+        //                 int partitionID = g_config.partitioningMethod->getPartitioningGridPartitionID(distPartitionIndexX, distPartitionIndexY, indexI, indexJ);
+        //                 newPartitions.emplace_back(partitionID);
+        //                 if (indexI == localPartitionXstart) {
+        //                     if (objectClassInDistributionPartition == CLASS_B || objectClassInDistributionPartition == CLASS_A) {
+        //                         // if it is the first column and the object is class A or B in the dist grid
+        //                         // then this is class B as well
+        //                         newPartitions.emplace_back(CLASS_B);
+        //                     } else {
+        //                         // otherwise it is D
+        //                         newPartitions.emplace_back(CLASS_D);
+        //                     }
+        //                 } else {
+        //                     // D always
+        //                     newPartitions.emplace_back(CLASS_D);
+        //                 }
+        //             }
+        //         }
+        //     }
+        //     // replace into object
+        //     object.setPartitions(newPartitions, newPartitions.size() / 2);
+        //     return DBERR_OK;
+        // }
     }
 
     namespace round_robin
     {
         /** @brief The agent sets the geometry's class in its partitions, as set by the round robin partitioning. */
-        static DB_STATUS setPartitionClassesForObject(Shape &object){
-            // calculate the object's MBR
-            const std::vector<bg_point_xy>* pointsRef = object.getReferenceToPoints();
-            double xMin = std::numeric_limits<int>::max();
-            double yMin = std::numeric_limits<int>::max();
-            double xMax = -std::numeric_limits<int>::max();
-            double yMax = -std::numeric_limits<int>::max();
-            for (auto &it: *pointsRef) {
-                xMin = std::min(xMin, it.x());
-                yMin = std::min(yMin, it.y());
-                xMax = std::max(xMax, it.x());
-                yMax = std::max(yMax, it.y());
-            }          
-            // for each distribution partition
-            for (int i=0; i < object.getPartitionCount(); i++) {
-                // get the partition ID, no two layer class set yet
-                int distPartitionID = object.getPartitionID(i);
-                // get the partition's indices
-                int distPartitionIndexX, distPartitionIndexY;
-                g_config.partitioningMethod->getDistributionGridPartitionIndices(distPartitionID, distPartitionIndexX, distPartitionIndexY);
-                    // calculate the partition's bottom left point coordinates in the distribution grid to get the object's class
-                double distPartitionXmin = g_config.partitioningMethod->distGridDataspaceMetadata.xMinGlobal + (distPartitionIndexX * g_config.partitioningMethod->getDistPartionExtentX());
-                double distPartitionYmin = g_config.partitioningMethod->distGridDataspaceMetadata.yMinGlobal + (distPartitionIndexY * g_config.partitioningMethod->getDistPartionExtentY());
-                // get the object's class
-                TwoLayerClass objectClass = getTwoLayerClassForMBRandPartition(xMin, yMin, distPartitionXmin, distPartitionYmin);
-                // fill in the partition's two layer class data
-                object.setPartitionClass(i, objectClass);
-            }
-            return DBERR_OK;
-        }
+        // static DB_STATUS setPartitionClassesForObject(Shape &object){
+        //     // calculate the object's MBR
+        //     const std::vector<bg_point_xy>* pointsRef = object.getReferenceToPoints();
+        //     double xMin = std::numeric_limits<int>::max();
+        //     double yMin = std::numeric_limits<int>::max();
+        //     double xMax = -std::numeric_limits<int>::max();
+        //     double yMax = -std::numeric_limits<int>::max();
+        //     for (auto &it: *pointsRef) {
+        //         xMin = std::min(xMin, it.x());
+        //         yMin = std::min(yMin, it.y());
+        //         xMax = std::max(xMax, it.x());
+        //         yMax = std::max(yMax, it.y());
+        //     }          
+        //     // for each distribution partition
+        //     for (int i=0; i < object.getPartitionCount(); i++) {
+        //         // get the partition ID, no two layer class set yet
+        //         int distPartitionID = object.getPartitionID(i);
+        //         // get the partition's indices
+        //         int distPartitionIndexX, distPartitionIndexY;
+        //         g_config.partitioningMethod->getDistributionGridPartitionIndices(distPartitionID, distPartitionIndexX, distPartitionIndexY);
+        //             // calculate the partition's bottom left point coordinates in the distribution grid to get the object's class
+        //         double distPartitionXmin = g_config.partitioningMethod->distGridDataspaceMetadata.xMinGlobal + (distPartitionIndexX * g_config.partitioningMethod->getDistPartionExtentX());
+        //         double distPartitionYmin = g_config.partitioningMethod->distGridDataspaceMetadata.yMinGlobal + (distPartitionIndexY * g_config.partitioningMethod->getDistPartionExtentY());
+        //         // get the object's class
+        //         TwoLayerClass objectClass = getTwoLayerClassForMBRandPartition(xMin, yMin, distPartitionXmin, distPartitionYmin);
+        //         // fill in the partition's two layer class data
+        //         object.setPartitionClass(i, objectClass);
+        //     }
+        //     return DBERR_OK;
+        // }
     }
 
-    DB_STATUS calculateTwoLayerClasses(Batch &batch) {
-        DB_STATUS ret = DBERR_OK;
-        // classify based on partitioning method
-        switch (g_config.partitioningMethod->type) {
-            case PARTITIONING_ROUND_ROBIN:
-                #pragma omp parallel
-                {
-                    int tid = omp_get_thread_num();
-                    DB_STATUS local_ret = DBERR_OK;
-                    #pragma omp for
-                    for (int i=0; i<batch.objectCount; i++) {
-                        // determine the two layer classes for each partition of the object in the fine grid
-                        local_ret = round_robin::setPartitionClassesForObject(batch.objects[i]);
-                        if (local_ret != DBERR_OK) {
-                            logger::log_error(ret, "Setting partition classes for object with ID", batch.objects[i].recID, "failed.");
-                            #pragma omp cancel for
-                            ret = local_ret;
-                        }
-                    }
-                }
-                break;
-            case PARTITIONING_TWO_GRID:
-                #pragma omp parallel
-                {
-                    int tid = omp_get_thread_num();
-                    DB_STATUS local_ret = DBERR_OK;
-                    #pragma omp for
-                    for (int i=0; i<batch.objectCount; i++) {
-                    // for (int i=0; i<batch.objects.size(); i++) {
-                        // determine the two layer classes for each partition of the object in the fine grid
-                        local_ret = two_grid::setPartitionClassesForObject(batch.objects[i]);
-                        if (local_ret != DBERR_OK) {
-                            logger::log_error(ret, "Setting partition classes for object with ID", batch.objects[i].recID, "failed.");
-                            #pragma omp cancel for
-                            ret = local_ret;
-                        }
-                    }
-                }
-                break;
-            default:
-                logger::log_error(DBERR_INVALID_PARAMETER, "Unknown partitioning method type:", g_config.partitioningMethod->type);
-                return DBERR_INVALID_PARAMETER;
-        }
+    // DB_STATUS calculateTwoLayerClasses(Batch &batch) {
+    //     DB_STATUS ret = DBERR_OK;
+    //     // classify based on partitioning method
+    //     switch (g_config.partitioningMethod->type) {
+    //         case PARTITIONING_ROUND_ROBIN:
+    //             #pragma omp parallel
+    //             {
+    //                 int tid = omp_get_thread_num();
+    //                 DB_STATUS local_ret = DBERR_OK;
+    //                 #pragma omp for
+    //                 for (int i=0; i<batch.objectCount; i++) {
+    //                     // determine the two layer classes for each partition of the object in the fine grid
+    //                     local_ret = round_robin::setPartitionClassesForObject(batch.objects[i]);
+    //                     if (local_ret != DBERR_OK) {
+    //                         logger::log_error(ret, "Setting partition classes for object with ID", batch.objects[i].recID, "failed.");
+    //                         #pragma omp cancel for
+    //                         ret = local_ret;
+    //                     }
+    //                 }
+    //             }
+    //             break;
+    //         case PARTITIONING_TWO_GRID:
+    //             #pragma omp parallel
+    //             {
+    //                 int tid = omp_get_thread_num();
+    //                 DB_STATUS local_ret = DBERR_OK;
+    //                 #pragma omp for
+    //                 for (int i=0; i<batch.objectCount; i++) {
+    //                 // for (int i=0; i<batch.objects.size(); i++) {
+    //                     // determine the two layer classes for each partition of the object in the fine grid
+    //                     local_ret = two_grid::setPartitionClassesForObject(batch.objects[i]);
+    //                     if (local_ret != DBERR_OK) {
+    //                         logger::log_error(ret, "Setting partition classes for object with ID", batch.objects[i].recID, "failed.");
+    //                         #pragma omp cancel for
+    //                         ret = local_ret;
+    //                     }
+    //                 }
+    //             }
+    //             break;
+    //         default:
+    //             logger::log_error(DBERR_INVALID_PARAMETER, "Unknown partitioning method type:", g_config.partitioningMethod->type);
+    //             return DBERR_INVALID_PARAMETER;
+    //     }
 
-        // check if parallel classification compleleted successfully
-        if (ret != DBERR_OK) {
-            logger::log_error(ret, "Two layer classification for batch failed.");
-        }
-        return ret;
-    }
+    //     // check if parallel classification compleleted successfully
+    //     if (ret != DBERR_OK) {
+    //         logger::log_error(ret, "Two layer classification for batch failed.");
+    //     }
+    //     return ret;
+    // }
 
-    DB_STATUS addBatchToTwoLayerIndex(Dataset* dataset, Batch &batch) {
-        DB_STATUS ret = DBERR_OK;
-        // classify based on partitioning method
-        switch (g_config.partitioningMethod->type) {
-            case PARTITIONING_TWO_GRID:
-                // loop objects in batch
-                for (int i=0; i<batch.objectCount; i++) {
-                    // determine the two layer classes for each partition of the object in the fine grid
-                    ret = two_grid::setPartitionClassesForObject(batch.objects[i]);
-                    if (ret != DBERR_OK) {
-                        logger::log_error(ret, "Setting partition classes for object with ID", batch.objects[i].recID, "failed.");
-                        return ret;
-                    }
+    // DB_STATUS addBatchToTwoLayerIndex(Dataset* dataset, Batch &batch) {
+    //     DB_STATUS ret = DBERR_OK;
+    //     // classify based on partitioning method
+    //     switch (g_config.partitioningMethod->type) {
+    //         case PARTITIONING_TWO_GRID:
+    //             // loop objects in batch
+    //             for (int i=0; i<batch.objectCount; i++) {
+    //                 // determine the two layer classes for each partition of the object in the fine grid
+    //                 ret = two_grid::setPartitionClassesForObject(batch.objects[i]);
+    //                 if (ret != DBERR_OK) {
+    //                     logger::log_error(ret, "Setting partition classes for object with ID", batch.objects[i].recID, "failed.");
+    //                     return ret;
+    //                 }
 
-                    // add to dataset
-                    ret = dataset->addObject(batch.objects[i]);
-                    if (ret != DBERR_OK) {
-                        return ret;
-                    }
+    //                 // add to dataset
+    //                 ret = dataset->addObject(batch.objects[i]);
+    //                 if (ret != DBERR_OK) {
+    //                     return ret;
+    //                 }
                     
-                    // if APRIL is enabled
-                    if (g_config.queryMetadata.IntermediateFilter && (dataset->metadata.dataType == DT_POLYGON || dataset->metadata.dataType == DT_LINESTRING)) {
-                        // create APRIL for the object 
-                        AprilData aprilData;
-                        ret = APRIL::generation::memory::createAPRILforObject(&batch.objects[i], dataset->metadata.dataType, dataset->aprilConfig, aprilData);
-                        if (ret != DBERR_OK) {
-                            logger::log_error(ret, "APRIL creation failed for object with id:", batch.objects[i].recID);
-                            return ret;
-                        }
-                        // store APRIL in the object
-                        // logger::log_task("Generated april for object:", batch.objects[i].recID , ":", aprilData.numIntervalsALL, aprilData.numIntervalsFULL);
-                        // dataset->addAprilData(0, batch.objects[i].recID, aprilData);
-                        ret = dataset->setAprilDataForSectionAndObjectID(0, batch.objects[i].recID, aprilData);
-                        if (ret != DBERR_OK) {
-                            return ret;
-                        }
-                    }
+    //                 // if APRIL is enabled
+    //                 if (g_config.queryMetadata.IntermediateFilter && (dataset->metadata.dataType == DT_POLYGON || dataset->metadata.dataType == DT_LINESTRING)) {
+    //                     // create APRIL for the object 
+    //                     AprilData aprilData;
+    //                     ret = APRIL::generation::memory::createAPRILforObject(&batch.objects[i], dataset->metadata.dataType, dataset->aprilConfig, aprilData);
+    //                     if (ret != DBERR_OK) {
+    //                         logger::log_error(ret, "APRIL creation failed for object with id:", batch.objects[i].recID);
+    //                         return ret;
+    //                     }
+    //                     // store APRIL in the object
+    //                     // logger::log_task("Generated april for object:", batch.objects[i].recID , ":", aprilData.numIntervalsALL, aprilData.numIntervalsFULL);
+    //                     // dataset->addAprilData(0, batch.objects[i].recID, aprilData);
+    //                     ret = dataset->setAprilDataForSectionAndObjectID(0, batch.objects[i].recID, aprilData);
+    //                     if (ret != DBERR_OK) {
+    //                         return ret;
+    //                     }
+    //                 }
                     
-                }
-                break;
-            default:
-                logger::log_error(DBERR_INVALID_PARAMETER, "Unknown partitioning method type:", g_config.partitioningMethod->type);
-                return DBERR_INVALID_PARAMETER;
-        }
+    //             }
+    //             break;
+    //         default:
+    //             logger::log_error(DBERR_INVALID_PARAMETER, "Unknown partitioning method type:", g_config.partitioningMethod->type);
+    //             return DBERR_INVALID_PARAMETER;
+    //     }
 
-        // check if parallel classification compleleted successfully
-        if (ret != DBERR_OK) {
-            logger::log_error(ret, "Two layer classification for batch failed.");
-        }
-        return ret;
-    }
+    //     // check if parallel classification compleleted successfully
+    //     if (ret != DBERR_OK) {
+    //         logger::log_error(ret, "Two layer classification for batch failed.");
+    //     }
+    //     return ret;
+    // }
 }
