@@ -428,10 +428,6 @@ namespace hec {
         SerializedMsg<char> msg(MPI_CHAR);
         switch (query->getQueryType()) {
             case Q_RANGE:
-                // range queries are accompanied by a specified window
-                logger::log_error(DBERR_FEATURE_UNSUPPORTED, "FEATURE UNSUPPORTED");
-                return finalResults;
-                break;
             case Q_INTERSECTION_JOIN:
             case Q_INSIDE_JOIN:
             case Q_DISJOINT_JOIN:

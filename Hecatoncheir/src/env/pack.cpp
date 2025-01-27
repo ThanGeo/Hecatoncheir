@@ -144,10 +144,9 @@ namespace pack
         msg.count += sizeof(hec::QueryType);         // query type
         msg.count += sizeof(hec::QueryResultType);   // result type
         msg.count += sizeof(hec::DatasetID);    // dataset id
-        std::vector<double> coords = query->getCoords();
-        msg.count += sizeof(int);               // number of coord values
-        msg.count += coords.size() * sizeof(double);    // coord values
-        
+        msg.count += sizeof(int);               // wkt text length
+        msg.count += query->getWKT().length() * sizeof(char);    // wkt string
+
         // allocate space
         msg.data = (char*) malloc(msg.count * sizeof(char));
         if (msg.data == nullptr) {
@@ -167,12 +166,12 @@ namespace pack
         localBuffer += sizeof(hec::QueryResultType);
         *reinterpret_cast<int*>(localBuffer) = (int) query->getDatasetID();
         localBuffer += sizeof(int);
-        *reinterpret_cast<int*>(localBuffer) = (int) coords.size();
+        
+        *reinterpret_cast<int*>(localBuffer) = query->getWKT().length();
         localBuffer += sizeof(int);
-        for (auto &val : coords) {
-            *reinterpret_cast<double*>(localBuffer) = val;
-            localBuffer += sizeof(double);
-        }
+        std::memcpy(localBuffer, query->getWKT().data(), query->getWKT().length() * sizeof(char));
+        localBuffer += g_config.dirPaths.dataPath.length() * sizeof(char);
+
         return DBERR_OK;
     }
 
@@ -370,15 +369,15 @@ namespace unpack
                     // unpack the rest of the info
                     hec::DatasetID datasetID = (hec::DatasetID) *reinterpret_cast<const hec::DatasetID*>(localBuffer);
                     localBuffer += sizeof(hec::DatasetID);
-                    int coordsSize = (int) *reinterpret_cast<const int*>(localBuffer);
+                    // wkt text length + string
+                    int length;
+                    length = *reinterpret_cast<const int*>(localBuffer);
                     localBuffer += sizeof(int);
-                    std::vector<double> coords(coordsSize);
-                    for (int i=0; i<coordsSize; i++) {
-                        coords[i] = (double) *reinterpret_cast<const double*>(localBuffer);
-                        localBuffer += sizeof(double);
-                    }
+                    std::string wktText(localBuffer, localBuffer + length);
+                    localBuffer += length * sizeof(char);
+                    
                     // the caller is responsible for freeing this memory
-                    hec::RangeQuery* rangeQuery = new hec::RangeQuery(datasetID, id, coords, queryResultType);
+                    hec::RangeQuery* rangeQuery = new hec::RangeQuery(datasetID, id, wktText, queryResultType);
                     (*queryPtr) = rangeQuery;
                 }
                 break;

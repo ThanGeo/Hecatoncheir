@@ -148,7 +148,7 @@ public:
         return empty;
     }
 
-    DB_STATUS setFromWKT(std::string &wktText) {
+    DB_STATUS setFromWKT(std::string wktText) {
         logger::log_error(DBERR_INVALID_OPERATION, "Geometry wrapper can be accessed directly for operation: setFromWKT");
         return DBERR_INVALID_OPERATION;
     }
@@ -282,7 +282,7 @@ public:
         boost::geometry::clear(geometry);
     }
 
-    DB_STATUS setFromWKT(std::string &wktText) {
+    DB_STATUS setFromWKT(std::string wktText) {
         // check if it is correct
         if (wktText.find("POINT") == std::string::npos) {
             // it is not a polygon WKT, ignore
@@ -435,7 +435,7 @@ public:
         envelope = geometry;
     }
 
-    DB_STATUS setFromWKT(std::string &wktText) {
+    DB_STATUS setFromWKT(std::string wktText) {
         // check if it is correct
         if (wktText.find("BOX") == std::string::npos) {
             // it is not a rectangle WKT, ignore
@@ -600,7 +600,7 @@ public:
         return false;
     }
 
-    DB_STATUS setFromWKT(std::string &wktText) {
+    DB_STATUS setFromWKT(std::string wktText) {
         // check if it is correct
         if (wktText.find("LINESTRING") == std::string::npos) {
             // it is not a polygon WKT, ignore
@@ -760,7 +760,7 @@ public:
         boost::geometry::envelope(geometry, envelope);
     }
 
-    DB_STATUS setFromWKT(std::string &wktText) {
+    DB_STATUS setFromWKT(std::string wktText) {
         // check if it is correct
         if (wktText.find("POLYGON") == std::string::npos) {
             // it is not a polygon WKT, ignore
@@ -1136,7 +1136,7 @@ public:
         correctGeometry();
     }
 
-    DB_STATUS setFromWKT(std::string &wktText) {
+    DB_STATUS setFromWKT(std::string wktText) {
         return std::visit([&wktText](auto&& arg) {
             return arg.setFromWKT(wktText);
         }, shape);
@@ -1435,88 +1435,6 @@ struct PartitionUniformGrid : public PartitionBase {
 };
 
 
-/** @brief Abstract base class for all index structures. */
-class BaseIndex {
-protected:
-    std::vector<PartitionBase*> partitions;
-    std::unordered_map<int, size_t> partitionMap;
-public:
-    virtual ~BaseIndex() = default;
-
-    virtual DB_STATUS addObject(Shape *objectRef) = 0;
-
-    /** @brief Sorts all objects in the index along the Y-axis. */
-    virtual void sortPartitionsOnY() = 0;
-
-    std::vector<PartitionBase*>* getPartitions() {
-        return &partitions;
-    }
-
-    virtual PartitionBase* getOrCreatePartition(int partitionID) = 0;
-
-    PartitionBase* getPartition(int partitionID) {
-        auto it = partitionMap.find(partitionID);
-        if (it != partitionMap.end()) {
-            return partitions[it->second];
-        }
-        return nullptr;
-    }
-
-};
-
-/** @brief Holds all two-layer related index information.
- * @param partitions A vector containing each individual non-empty partition.
- * @param partitionMap A map that holds the positions of each partition (by ID) in the 'partitions' vector.
- */
-struct TwoLayerIndex : public BaseIndex {
-private:
-    /** @brief Compares to Shapes by MBR bottom-left point y. */
-    static bool compareByY(const Shape* a, const Shape* b) {
-        return a->mbr.pMin.y < b->mbr.pMin.y;
-    }
-    static DB_STATUS getPartitionsForMBR(Shape* objectRef, std::vector<int> &partitionIDs, std::vector<TwoLayerClass> &partionClasses);
-public:
-    TwoLayerIndex(){};
-    
-    DB_STATUS addObject(Shape *objectRef) override;
-
-    PartitionBase* getOrCreatePartition(int partitionID) override;
-
-    /**
-    @brief Sorts all objects in all partitions on the Y axis
-     */
-    void sortPartitionsOnY() override;
-
-
-};
-
-/** @brief Holds all two-layer related index information.
- * @param partitions A vector containing each individual non-empty partition.
- * @param partitionMap A map that holds the positions of each partition (by ID) in the 'partitions' vector.
- */
-struct UniformGridIndex : public BaseIndex {
-    
-private:
-    /** @brief Compares to Shapes by MBR bottom-left point y. */
-    static bool compareByY(const Shape* a, const Shape* b) {
-        return a->mbr.pMin.y < b->mbr.pMin.y;
-    }
-    static DB_STATUS getPartitionsForMBR(Shape* objectRef, std::vector<int> &partitionIDs);
-public:
-    UniformGridIndex(){};
-
-    DB_STATUS addObject(Shape *objectRef) override;
-
-    PartitionBase* getOrCreatePartition(int partitionID) override;
-
-    /**
-    @brief Sorts all objects in all partitions on the Y axis
-     */
-    void sortPartitionsOnY() override;
-
-};
-
-
 struct DatasetMetadata
 {
 private:
@@ -1539,79 +1457,6 @@ public:
      * @warning Caller is responsible for the validity of the input buffer. 
     */
     DB_STATUS deserialize(const char *buffer, int bufferSize);
-};
-
-/**
- * @brief All dataset related information.
- */
-struct Dataset{
-    // all of the dataset's metadata
-    DatasetMetadata metadata;
-    // unique object count
-    size_t totalObjects = 0;
-    // vector of objects
-    std::vector<Shape> objects;
-    // map of object id-position in the objects vector
-    std::unordered_map<size_t,size_t> objectPosMap;
-    // the two layer index
-    // TwoLayerIndex twoLayerIndex;
-    BaseIndex* index;
-    // approximations (only april is supported)
-    ApproximationType approxType = AT_APRIL;
-    AprilConfig aprilConfig;
-    /** @deprecated dont use sections any more*/
-    /** Section mapping. key,value = sectionID,(unordered map of key,value = recID,aprilData) @warning only sectionID = 0 is supported currently.*/
-    std::unordered_map<uint, Section> sectionMap;
-    /** map: key,value = recID,vector<sectionID>: maps recs to sections */
-    std::unordered_map<size_t,std::vector<uint>> recToSectionIdMap;
-
-    Dataset(){
-        this->totalObjects = 0;
-    }
-    Dataset(DatasetMetadata &metadata) {
-        if (metadata.dataspaceMetadata.boundsSet) {
-            metadata.dataspaceMetadata.xExtent = metadata.dataspaceMetadata.xMaxGlobal - metadata.dataspaceMetadata.xMinGlobal;
-            metadata.dataspaceMetadata.yExtent = metadata.dataspaceMetadata.yMaxGlobal - metadata.dataspaceMetadata.yMinGlobal;
-            metadata.dataspaceMetadata.maxExtent = std::max(metadata.dataspaceMetadata.xExtent, metadata.dataspaceMetadata.yExtent);
-        }
-        metadata.datasetName = getFileNameFromPath(metadata.path);
-        this->metadata = metadata;
-        this->totalObjects = 0;
-    }
-
-    /** @brief Adds a Shape object into the two layer index and the reference map. 
-     * @note Calculates the partitions and the object's classes in them. */
-    DB_STATUS addObject(Shape &object);
-
-    /** @brief Adds a Shape object to the dataset. No indexing will take place with this method. */
-    DB_STATUS storeObject(Shape &object);
-
-    /** @brief Returns a reference to the object with the given ID. */
-    Shape* getObject(size_t recID);
-
-    /** @brief Indexes the dataset using the specified index type. Requires data to be already loaded within the dataset. */
-    DB_STATUS buildIndex(hec::IndexType indexType);
-
-    /** @brief Builds APRIL for the stored objects. */
-    DB_STATUS buildAPRIL();
-
-    /** @brief Calculate the size needed for the dataset serialization. */
-    int calculateBufferSize();
-    /** @brief Serializes the dataset object (only the important stuff). */
-    DB_STATUS serialize(char **buffer, int &bufferSize);
-    /** @brief Deserializes the given serialized buffer of the specified size into this Dataset object. @warning Caller is responsible for the validity of the input buffer. */
-    DB_STATUS deserialize(const char *buffer, int bufferSize);
-    /** @brief Adds the given object ID to the specified section ID. @warning UNSUPPORTED for sections IDs different than 0 (1 partition) */
-    void addObjectToSectionMap(const uint sectionID, const size_t recID);
-    /** @brief Adds the given intervals into the given object with recID in the given section with section ID.
-     * @param ALL Specfies whether the input intervals represent the A-list or not (F-list otherwise).
-     */
-    DB_STATUS addIntervalsToAprilData(const uint sectionID, const size_t recID, const int numIntervals, const std::vector<uint32_t> &intervals, const bool ALL);
-    void addAprilData(const uint sectionID, const size_t recID, const AprilData &aprilData);
-    /** @brief Returns a reference to the April Data of the given object's ID in section ID */
-    AprilData* getAprilDataBySectionAndObjectID(uint sectionID, size_t recID);
-    /** @brief Sets the april data in the dataset for the given object ID and section ID */
-    DB_STATUS setAprilDataForSectionAndObjectID(uint sectionID, size_t recID, AprilData &aprilData);
 };
 
 /** @brief Holds all system-related directory paths.
@@ -1793,6 +1638,242 @@ struct Action {
     }
 };
 
+/** @brief Holds all approximation related metadata.
+ */
+struct ApproximationMetadata {
+    ApproximationType type;   // sets which of the following fields will be used
+    AprilConfig aprilConfig;  
+    ApproximationMetadata() {
+        this->type = AT_NONE;
+    }
+    ApproximationMetadata(ApproximationType type) {
+        this->type = type;
+    }
+};
+
+/** @brief Holds all the query related metadata in the configuration.
+ */
+struct QueryMetadata {
+    hec::QueryType queryType;
+    int MBRFilter = 1;
+    int IntermediateFilter = 1;
+    int Refinement = 1;
+};
+
+/** @brief Holds all the system related metadata in the configuration.
+ */
+struct SystemOptions {
+    SystemSetupType setupType;
+    std::string nodefilePath;
+    uint nodeCount;
+};
+
+/**
+ * @brief A batch containing multiple objects for the batch partitioning/broadcasting.
+ */
+struct Batch {
+    DataType dataType;
+    // serializable
+    size_t objectCount = 0;
+    std::vector<Shape> objects;
+    // unserializable/unclearable (todo: make const?)
+    int destRank = -1;   // destination node rank
+    size_t maxObjectCount; 
+    MPI_Comm* comm; // communicator that the batch will be send through
+    int tag = -1;        // MPI tag = indicates spatial data type
+
+    Batch();
+
+    bool isValid();
+    void addObjectToBatch(Shape &object);
+    void setDestNodeRank(int destRank);
+
+    // calculate the size needed for the serialization buffer
+    int calculateBufferSize();
+
+    void clear();
+
+    /**
+    @brief serializes the geometry batch into the buffer. This method also allocates the buffer's memory.
+     * Caller is responsible to free.
+     */
+    DB_STATUS serialize(char **buffer, int &bufferSize);
+
+    /**
+    @brief fills the struct with data from the input serialized buffer
+     * The caller must free the buffer memory
+     */
+    DB_STATUS deserialize(const char *buffer, int bufferSize);
+
+};
+
+
+/** @brief Abstract base class for all index structures. */
+class BaseIndex {
+protected:
+    std::vector<PartitionBase*> partitions;
+    std::unordered_map<int, size_t> partitionMap;
+public:
+    virtual ~BaseIndex() = default;
+
+    virtual DB_STATUS addObject(Shape *objectRef) = 0;
+
+    /** @brief Sorts all objects in the index along the Y-axis. */
+    virtual void sortPartitionsOnY() = 0;
+
+    std::vector<PartitionBase*>* getPartitions() {
+        return &partitions;
+    }
+
+    virtual PartitionBase* getOrCreatePartition(int partitionID) = 0;
+
+    PartitionBase* getPartition(int partitionID) {
+        auto it = partitionMap.find(partitionID);
+        if (it != partitionMap.end()) {
+            return partitions[it->second];
+        }
+        return nullptr;
+    }
+
+    PartitionBase* getPartition(double x, double y, DataspaceMetadata* dataspaceMetadata, PartitioningMethod* partitioningMethod) {
+        int fineMinX = std::floor((x - dataspaceMetadata->xMinGlobal) / partitioningMethod->getPartPartionExtentX());
+        int fineMinY = std::floor((y - dataspaceMetadata->yMinGlobal) / partitioningMethod->getPartPartionExtentY());
+        int partitionID = partitioningMethod->getPartitionID(fineMinX, fineMinY, partitioningMethod->getGlobalPPD());
+        auto it = partitionMap.find(partitionID);
+        if (it != partitionMap.end()) {
+            return partitions[it->second];
+        }
+        return nullptr;
+    }
+
+};
+
+/** @brief Holds all two-layer related index information.
+ * @param partitions A vector containing each individual non-empty partition.
+ * @param partitionMap A map that holds the positions of each partition (by ID) in the 'partitions' vector.
+ */
+struct TwoLayerIndex : public BaseIndex {
+private:
+    /** @brief Compares to Shapes by MBR bottom-left point y. */
+    static bool compareByY(const Shape* a, const Shape* b) {
+        return a->mbr.pMin.y < b->mbr.pMin.y;
+    }
+    static DB_STATUS getPartitionsForMBR(Shape* objectRef, std::vector<int> &partitionIDs, std::vector<TwoLayerClass> &partionClasses);
+public:
+    TwoLayerIndex(){};
+    
+    DB_STATUS addObject(Shape *objectRef) override;
+
+    PartitionBase* getOrCreatePartition(int partitionID) override;
+
+    /**
+    @brief Sorts all objects in all partitions on the Y axis
+     */
+    void sortPartitionsOnY() override;
+
+
+};
+
+/** @brief Holds all two-layer related index information.
+ * @param partitions A vector containing each individual non-empty partition.
+ * @param partitionMap A map that holds the positions of each partition (by ID) in the 'partitions' vector.
+ */
+struct UniformGridIndex : public BaseIndex {
+    
+private:
+    /** @brief Compares to Shapes by MBR bottom-left point y. */
+    static bool compareByY(const Shape* a, const Shape* b) {
+        return a->mbr.pMin.y < b->mbr.pMin.y;
+    }
+    static DB_STATUS getPartitionsForMBR(Shape* objectRef, std::vector<int> &partitionIDs);
+public:
+    UniformGridIndex(){};
+
+    DB_STATUS addObject(Shape *objectRef) override;
+
+    PartitionBase* getOrCreatePartition(int partitionID) override;
+
+    /**
+    @brief Sorts all objects in all partitions on the Y axis
+     */
+    void sortPartitionsOnY() override;
+
+};
+
+/**
+ * @brief All dataset related information.
+ */
+struct Dataset{
+    // all of the dataset's metadata
+    DatasetMetadata metadata;
+    // unique object count
+    size_t totalObjects = 0;
+    // vector of objects
+    std::vector<Shape> objects;
+    // map of object id-position in the objects vector
+    std::unordered_map<size_t,size_t> objectPosMap;
+    // the two layer index
+    // TwoLayerIndex twoLayerIndex;
+    BaseIndex* index;
+    // approximations (only april is supported)
+    ApproximationType approxType = AT_APRIL;
+    AprilConfig aprilConfig;
+    /** @deprecated dont use sections any more*/
+    /** Section mapping. key,value = sectionID,(unordered map of key,value = recID,aprilData) @warning only sectionID = 0 is supported currently.*/
+    std::unordered_map<uint, Section> sectionMap;
+    /** map: key,value = recID,vector<sectionID>: maps recs to sections */
+    std::unordered_map<size_t,std::vector<uint>> recToSectionIdMap;
+
+    Dataset(){
+        this->totalObjects = 0;
+    }
+    Dataset(DatasetMetadata &metadata) {
+        if (metadata.dataspaceMetadata.boundsSet) {
+            metadata.dataspaceMetadata.xExtent = metadata.dataspaceMetadata.xMaxGlobal - metadata.dataspaceMetadata.xMinGlobal;
+            metadata.dataspaceMetadata.yExtent = metadata.dataspaceMetadata.yMaxGlobal - metadata.dataspaceMetadata.yMinGlobal;
+            metadata.dataspaceMetadata.maxExtent = std::max(metadata.dataspaceMetadata.xExtent, metadata.dataspaceMetadata.yExtent);
+        }
+        metadata.datasetName = getFileNameFromPath(metadata.path);
+        this->metadata = metadata;
+        this->totalObjects = 0;
+    }
+
+    /** @brief Adds a Shape object into the two layer index and the reference map. 
+     * @note Calculates the partitions and the object's classes in them. */
+    DB_STATUS addObject(Shape &object);
+
+    /** @brief Adds a Shape object to the dataset. No indexing will take place with this method. */
+    DB_STATUS storeObject(Shape &object);
+
+    /** @brief Returns a reference to the object with the given ID. */
+    Shape* getObject(size_t recID);
+
+    /** @brief Indexes the dataset using the specified index type. Requires data to be already loaded within the dataset. */
+    DB_STATUS buildIndex(hec::IndexType indexType);
+
+    /** @brief Builds APRIL for the stored objects. */
+    DB_STATUS buildAPRIL();
+
+    /** @brief Calculate the size needed for the dataset serialization. */
+    int calculateBufferSize();
+    /** @brief Serializes the dataset object (only the important stuff). */
+    DB_STATUS serialize(char **buffer, int &bufferSize);
+    /** @brief Deserializes the given serialized buffer of the specified size into this Dataset object. @warning Caller is responsible for the validity of the input buffer. */
+    DB_STATUS deserialize(const char *buffer, int bufferSize);
+    /** @brief Adds the given object ID to the specified section ID. @warning UNSUPPORTED for sections IDs different than 0 (1 partition) */
+    void addObjectToSectionMap(const uint sectionID, const size_t recID);
+    /** @brief Adds the given intervals into the given object with recID in the given section with section ID.
+     * @param ALL Specfies whether the input intervals represent the A-list or not (F-list otherwise).
+     */
+    DB_STATUS addIntervalsToAprilData(const uint sectionID, const size_t recID, const int numIntervals, const std::vector<uint32_t> &intervals, const bool ALL);
+    void addAprilData(const uint sectionID, const size_t recID, const AprilData &aprilData);
+    /** @brief Returns a reference to the April Data of the given object's ID in section ID */
+    AprilData* getAprilDataBySectionAndObjectID(uint sectionID, size_t recID);
+    /** @brief Sets the april data in the dataset for the given object ID and section ID */
+    DB_STATUS setAprilDataForSectionAndObjectID(uint sectionID, size_t recID, AprilData &aprilData);
+};
+
+
 /** @brief Holds the dataset(s) related metadata in the configuration.
  */
 struct DatasetOptions {
@@ -1835,35 +1916,6 @@ public:
     void updateDatasetDataspaceToGlobal();
 };
 
-/** @brief Holds all approximation related metadata.
- */
-struct ApproximationMetadata {
-    ApproximationType type;   // sets which of the following fields will be used
-    AprilConfig aprilConfig;  
-    ApproximationMetadata() {
-        this->type = AT_NONE;
-    }
-    ApproximationMetadata(ApproximationType type) {
-        this->type = type;
-    }
-};
-
-/** @brief Holds all the query related metadata in the configuration.
- */
-struct QueryMetadata {
-    hec::QueryType queryType;
-    int MBRFilter = 1;
-    int IntermediateFilter = 1;
-    int Refinement = 1;
-};
-
-/** @brief Holds all the system related metadata in the configuration.
- */
-struct SystemOptions {
-    SystemSetupType setupType;
-    std::string nodefilePath;
-    uint nodeCount;
-};
 
 /** @brief The main configuration struct. Holds all necessary configuration options.
  */
@@ -1877,44 +1929,6 @@ struct Config {
     QueryMetadata queryMetadata;    // rename to query pipeline
 };
 
-/**
- * @brief A batch containing multiple objects for the batch partitioning/broadcasting.
- */
-struct Batch {
-    DataType dataType;
-    // serializable
-    size_t objectCount = 0;
-    std::vector<Shape> objects;
-    // unserializable/unclearable (todo: make const?)
-    int destRank = -1;   // destination node rank
-    size_t maxObjectCount; 
-    MPI_Comm* comm; // communicator that the batch will be send through
-    int tag = -1;        // MPI tag = indicates spatial data type
-
-    Batch();
-
-    bool isValid();
-    void addObjectToBatch(Shape &object);
-    void setDestNodeRank(int destRank);
-
-    // calculate the size needed for the serialization buffer
-    int calculateBufferSize();
-
-    void clear();
-
-    /**
-    @brief serializes the geometry batch into the buffer. This method also allocates the buffer's memory.
-     * Caller is responsible to free.
-     */
-    DB_STATUS serialize(char **buffer, int &bufferSize);
-
-    /**
-    @brief fills the struct with data from the input serialized buffer
-     * The caller must free the buffer memory
-     */
-    DB_STATUS deserialize(const char *buffer, int bufferSize);
-
-};
 
 /**
 @brief The main global configuration variable.

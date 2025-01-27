@@ -128,15 +128,17 @@ namespace hec
     struct RangeQuery : public Query {
     private:
         DatasetID datasetID;
-        std::vector<double> coords;
+        // std::vector<double> coords;
+        // double xMin, yMin, xMax, yMax;
+        std::string wktText;
     public:
-        RangeQuery(DatasetID datasetID, int queryID, std::vector<double> &coords);
-        RangeQuery(DatasetID datasetID, int queryID, std::vector<double> &coords, std::string resultType);
-        RangeQuery(DatasetID datasetID, int queryID, std::vector<double> &coords, QueryResultType resultType);
-        std::vector<double> getCoords();
+        RangeQuery(DatasetID datasetID, int queryID, std::string queryWKT);
+        RangeQuery(DatasetID datasetID, int queryID, std::string queryWKT, std::string resultType);
+        RangeQuery(DatasetID datasetID, int queryID, std::string queryWKT, QueryResultType resultType);
         DatasetID getDatasetID() {
             return datasetID;
         }
+        std::string getWKT();
     };
 
     struct JoinQuery : public Query {

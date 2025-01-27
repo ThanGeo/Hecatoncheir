@@ -2,6 +2,7 @@
 
 #include "def.h"
 #include "utils.h"
+#include "../include/containers.h"
 
 namespace hec
 {
@@ -47,27 +48,65 @@ namespace hec
         logger::log_error(DBERR_QUERY_INVALID_TYPE, "Invalid predicate for a join query:", predicate);
     }
 
-    RangeQuery::RangeQuery(DatasetID datasetID, int id, std::vector<double> &coords) {
-        if (coords.size() < 6) {
-            logger::log_error(DBERR_INVALID_PARAMETER, "Invalid coord size for range query:", coords.size(), "values instead of at least 6 (i.e. 3 pairs of (x,y)).");
+    RangeQuery::RangeQuery(DatasetID datasetID, int id, std::string queryWKT) {
+        if (queryWKT == "") {
+            logger::log_error(DBERR_INVALID_PARAMETER, "Invalid (empty) wkt for range query.");
             return;
         }
         this->datasetID = datasetID;
         this->queryID = id;
         this->queryType = Q_RANGE;
         this->resultType = QR_COUNT;
-        this->coords = coords;
+        this->wktText = queryWKT;
+        // Shape window;
+        // DB_STATUS ret = window.setFromWKT(queryWKT);
+        // if (ret != DBERR_OK) {
+        //     logger::log_error(ret, "Invalid wkt geometry for window:", queryWKT);
+        //     return;
+        // }
+        // window.setMBR();
+        // this->coords = coords;
+        // this->xMin = std::numeric_limits<int>::max();
+        // this->yMin = std::numeric_limits<int>::max();
+        // this->xMax = -std::numeric_limits<int>::max();
+        // this->yMax = -std::numeric_limits<int>::max();
+
+        // for (int i=0; i<coords.size(); i+=2) {
+        //     this->xMin = std::min(this->xMin, coords[i]);
+        //     this->yMin = std::min(this->yMin, coords[i+1]);
+        //     this->xMax = std::max(this->xMax, coords[i]);
+        //     this->yMax = std::max(this->yMax, coords[i+1]);
+        // }
     }
 
-    RangeQuery::RangeQuery(DatasetID datasetID, int id, std::vector<double> &coords, std::string resultTypeStr) {
-        if (coords.size() < 6) {
-            logger::log_error(DBERR_INVALID_PARAMETER, "Invalid coord size for polygonal range query:", coords.size(), "values instead of at least 6 (i.e. 3 pairs of (x,y)).");
+    RangeQuery::RangeQuery(DatasetID datasetID, int id, std::string queryWKT, std::string resultTypeStr) {
+        if (queryWKT == "") {
+            logger::log_error(DBERR_INVALID_PARAMETER, "Invalid (empty) wkt for range query.");
             return;
         }
         this->datasetID = datasetID;
         this->queryID = id;
         this->queryType = Q_RANGE;
-        this->coords = coords;
+        this->wktText = queryWKT;
+        // Shape window;
+        // DB_STATUS ret = window.setFromWKT(queryWKT);
+        // if (ret != DBERR_OK) {
+        //     logger::log_error(ret, "Invalid wkt geometry for window:", queryWKT);
+        //     return;
+        // }
+        // window.setMBR();
+        // this->coords = coords;
+        // this->xMin = std::numeric_limits<int>::max();
+        // this->yMin = std::numeric_limits<int>::max();
+        // this->xMax = -std::numeric_limits<int>::max();
+        // this->yMax = -std::numeric_limits<int>::max();
+
+        // for (int i=0; i<coords.size(); i+=2) {
+        //     this->xMin = std::min(this->xMin, coords[i]);
+        //     this->yMin = std::min(this->yMin, coords[i+1]);
+        //     this->xMax = std::max(this->xMax, coords[i]);
+        //     this->yMax = std::max(this->yMax, coords[i+1]);
+        // }
         QueryResultType resultType = mapping::queryResultTypeStrToInt(resultTypeStr);
         if (resultType != QR_COUNT && resultType != QR_COLLECT) {
             logger::log_error(DBERR_INVALID_PARAMETER, "Invalid result type parameter:", resultType);
@@ -76,15 +115,34 @@ namespace hec
         this->resultType = resultType;
     }
 
-    RangeQuery::RangeQuery(DatasetID datasetID, int id, std::vector<double> &coords, QueryResultType resultType) {
-        if (coords.size() < 6) {
-            logger::log_error(DBERR_INVALID_PARAMETER, "Invalid coord size for polygonal range query:", coords.size(), "values instead of at least 6 (i.e. 3 pairs of (x,y)).");
+    RangeQuery::RangeQuery(DatasetID datasetID, int id, std::string queryWKT, QueryResultType resultType) {
+        if (queryWKT == "") {
+            logger::log_error(DBERR_INVALID_PARAMETER, "Invalid (empty) wkt for range query.");
             return;
         }
         this->datasetID = datasetID;
         this->queryID = id;
         this->queryType = Q_RANGE;
-        this->coords = coords;
+        this->wktText = queryWKT;
+        // Shape window;
+        // DB_STATUS ret = window.setFromWKT(queryWKT);
+        // if (ret != DBERR_OK) {
+        //     logger::log_error(ret, "Invalid wkt geometry for window:", queryWKT);
+        //     return;
+        // }
+        // window.setMBR();
+        // this->coords = coords;
+        // this->xMin = std::numeric_limits<int>::max();
+        // this->yMin = std::numeric_limits<int>::max();
+        // this->xMax = -std::numeric_limits<int>::max();
+        // this->yMax = -std::numeric_limits<int>::max();
+
+        // for (int i=0; i<coords.size(); i+=2) {
+        //     this->xMin = std::min(this->xMin, coords[i]);
+        //     this->yMin = std::min(this->yMin, coords[i+1]);
+        //     this->xMax = std::max(this->xMax, coords[i]);
+        //     this->yMax = std::max(this->yMax, coords[i+1]);
+        // }
         if (resultType != QR_COUNT && resultType != QR_COLLECT) {
             logger::log_error(DBERR_INVALID_PARAMETER, "Invalid result type parameter:", resultType);
             return;
@@ -92,9 +150,20 @@ namespace hec
         this->resultType = resultType;
     }
 
-    std::vector<double> RangeQuery::getCoords() {
-        return this->coords;
+    std::string RangeQuery::getWKT() {
+        return this->wktText;
     }
+
+    // std::vector<double>* RangeQuery::getCoords() {
+    //     return &this->coords;
+    // }
+
+    // void RangeQuery::getMBR(double &xMin, double &yMin, double &xMax, double &yMax) {
+    //     xMin = this->xMin;
+    //     yMin = this->yMin;
+    //     xMax = this->xMax;
+    //     yMax = this->yMax;
+    // }
 
     QueryResult::QueryResult(int queryID, QueryType queryType, QueryResultType queryResultType) {
         this->reset();

@@ -87,8 +87,8 @@ void runRange() {
     duration = end - start;
     std::cout << "Index building time: " << duration.count() << " seconds" << std::endl;
 
-    std::vector<double> coords = {-80.8467,43.8295,-80.6066,43.8295,-80.6066,44.0407,-80.8467,44.0407,-80.8467,43.8295};
-    hec::RangeQuery rangeQuery(datasetRID, 0, coords, hec::queryResultTypes.COUNT());
+    std::string queryWKT = "POLYGON ((-80.8467 43.8295), (-80.6066 43.8295), (-80.6066 44.0407), (-80.8467 44.0407), (-80.8467 43.8295))";
+    hec::RangeQuery rangeQuery(datasetRID, 0, queryWKT, hec::queryResultTypes.COUNT());
     start = std::chrono::high_resolution_clock::now();
     hec::QueryResult result =  hec::query(&rangeQuery);
     end = std::chrono::high_resolution_clock::now();

@@ -53,10 +53,6 @@ int AprilConfig::getCellsPerDim() {
 }
 
 std::vector<Shape*>* PartitionTwoLayer::getContents(TwoLayerClass classType) {
-    if (classType < CLASS_A || classType > CLASS_D) {
-        logger::log_error(DBERR_OUT_OF_BOUNDS, "class type index out of bounds");
-        return nullptr;
-    }
     return &classIndex[classType];
 }
 
