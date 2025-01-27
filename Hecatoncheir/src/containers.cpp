@@ -68,6 +68,18 @@ void PartitionTwoLayer::addObject(Shape *objectRef, TwoLayerClass classType) {
     // printf("Adding object of type %s and class %s in partition %ld\n", objectRef->getShapeType().c_str(), mapping::twoLayerClassIntToStr(classType).c_str(), this->partitionID);
 }
 
+std::vector<Shape*>* PartitionUniformGrid::getContents(TwoLayerClass classType) {
+    return &classIndex;
+}
+
+void PartitionUniformGrid::addObject(Shape *objectRef, TwoLayerClass classType) {
+    classIndex.push_back(objectRef);
+    // if (this->partitionID == 289605) {
+    //     printf("partition %d class %s new size after insertion of %ld: %ld\n", this->partitionID, mapping::twoLayerClassIntToStr(classType).c_str(), objectRef->recID, classIndex[classType].size());
+    // }
+    // printf("Adding object of type %s and class %s in partition %ld\n", objectRef->getShapeType().c_str(), mapping::twoLayerClassIntToStr(classType).c_str(), this->partitionID);
+}
+
 int DatasetMetadata::calculateBufferSize() {
     int size = 0;
     // persistence
@@ -242,8 +254,18 @@ DB_STATUS Dataset::buildIndex(hec::IndexType indexType) {
             break;
         case hec::IT_UNIFORM_GRID:
             /** point geometries - no april */
-            return DBERR_FEATURE_UNSUPPORTED;
             this->index = new UniformGridIndex();
+            // add objects to index
+            for(auto &object : this->objects) {
+                ret = index->addObject(&object);
+                if (ret != DBERR_OK) {
+                    logger::log_error(ret, "Failed to add object", object.recID, "to index.");
+                    return ret;
+                }
+            }
+            // sort
+            this->index->sortPartitionsOnY();
+
             break;
         default:
             logger::log_error(DBERR_INVALID_INDEX_TYPE, "Invalid index type for build index.");
@@ -255,7 +277,7 @@ DB_STATUS Dataset::buildIndex(hec::IndexType indexType) {
 DB_STATUS Dataset::buildAPRIL() {
     DB_STATUS ret = DBERR_OK;
     if (this->metadata.dataType == DT_POINT) {
-        logger::log_warning("APRIL does not support points.");
+        // logger::log_warning("APRIL does not support points.");
         return DBERR_OK;
     }
     // logger::log_task("Building APRIL:");
@@ -744,14 +766,97 @@ void TwoLayerIndex::sortPartitionsOnY() {
 }
 
 PartitionBase* UniformGridIndex::getOrCreatePartition(int partitionID) {
+    auto it = partitionMap.find(partitionID);
+    if (it != partitionMap.end()) {
+        // exists
+        return partitions[it->second];
+    }
+    // create new partition
+    partitionMap[partitionID] = partitions.size();
+    partitions.push_back(new PartitionUniformGrid(partitionID));
+    return partitions[partitionMap[partitionID]];
+}
 
-    return nullptr;
+DB_STATUS UniformGridIndex::getPartitionsForMBR(Shape* objectRef, std::vector<int> &partitionIDs){
+    DataspaceMetadata* dataspace = &g_config.datasetOptions.dataspaceMetadata;
+    PartitioningMethod* partitioning = g_config.partitioningMethod;
+    const int fineCellsPerCoarseCell = partitioning->getGlobalPPD() / partitioning->getDistributionPPD();
+    
+    // Calculate bounds of the MBR in fine grid coordinates
+    int fineMinX = std::floor((objectRef->mbr.pMin.x - dataspace->xMinGlobal) / partitioning->getPartPartionExtentX());
+    int fineMinY = std::floor((objectRef->mbr.pMin.y - dataspace->yMinGlobal) / partitioning->getPartPartionExtentY());
+    int fineMaxX = std::floor((objectRef->mbr.pMax.x - dataspace->xMinGlobal) / partitioning->getPartPartionExtentX());
+    int fineMaxY = std::floor((objectRef->mbr.pMax.y - dataspace->yMinGlobal) / partitioning->getPartPartionExtentY());
+    // Ensure the MBR is within bounds of the fine grid
+    if (fineMinX < 0 || fineMinY < 0 || fineMaxX >= partitioning->getGlobalPPD() || fineMaxY >= partitioning->getGlobalPPD()) {
+        logger::log_error(DBERR_OUT_OF_BOUNDS, "Fine grid indices out of bounds:", fineMinX, fineMinY, fineMaxX, fineMaxY);
+        return DBERR_OUT_OF_BOUNDS;
+    }
+    // Calculate the coarse grid cell bounds
+    int coarseMinX = std::floor((objectRef->mbr.pMin.x - dataspace->xMinGlobal) / partitioning->getDistPartionExtentX());
+    int coarseMinY = std::floor((objectRef->mbr.pMin.y - dataspace->yMinGlobal) / partitioning->getDistPartionExtentY());
+    int coarseMaxX = std::floor((objectRef->mbr.pMax.x - dataspace->xMinGlobal) / partitioning->getDistPartionExtentX());
+    int coarseMaxY = std::floor((objectRef->mbr.pMax.y - dataspace->yMinGlobal) / partitioning->getDistPartionExtentY());
+
+    // Consolidated bounds check for the coarse grid
+    if (coarseMinX < 0 || coarseMinY < 0 || coarseMaxX >= partitioning->getDistributionPPD() || coarseMaxY >= partitioning->getDistributionPPD()) {
+        logger::log_error(DBERR_OUT_OF_BOUNDS, "Coarse grid indices out of bounds:", coarseMinX, coarseMinY, coarseMaxX, coarseMaxY);
+        return DBERR_OUT_OF_BOUNDS;
+    }
+
+    // Iterate over the coarse grid cells overlapping the MBR
+    for (int coarseX = coarseMinX; coarseX <= coarseMaxX; ++coarseX) {
+        for (int coarseY = coarseMinY; coarseY <= coarseMaxY; ++coarseY) {
+            // Get the partition ID and node rank
+            int distPartitionID = partitioning->getPartitionID(coarseX, coarseY, partitioning->getDistributionPPD());
+            int assignedNodeRank = partitioning->getNodeRankForPartitionID(distPartitionID);
+            // If this rank is responsible for the coarse grid cell
+            if (assignedNodeRank == g_parent_original_rank) {
+                // Calculate the bounds of this coarse grid cell in fine grid coordinates
+                int coarseFineMinX = coarseX * fineCellsPerCoarseCell;
+                int coarseFineMinY = coarseY * fineCellsPerCoarseCell;
+                int coarseFineMaxX = (coarseX + 1) * fineCellsPerCoarseCell - 1;
+                int coarseFineMaxY = (coarseY + 1) * fineCellsPerCoarseCell - 1;
+
+                int startMinX = std::max(fineMinX, coarseFineMinX);
+                int startMinY = std::max(fineMinY, coarseFineMinY);
+                int endMinX = std::min(fineMaxX, coarseFineMaxX);
+                int endMinY = std::min(fineMaxY, coarseFineMaxY);
+
+                // Iterate over overlapping fine grid cells within the coarse grid bounds
+                for (int fineX = startMinX; fineX <= endMinX; fineX++) {
+                    for (int fineY = startMinY; fineY <= endMinY; fineY++) {
+                        // Store the fine grid cell
+                        int partitionID = partitioning->getPartitionID(fineX, fineY, partitioning->getGlobalPPD());
+                        partitionIDs.emplace_back(partitionID);
+                    }
+                }
+            }
+        }
+    }
+    return DBERR_OK;
 }
 
 DB_STATUS UniformGridIndex::addObject(Shape *objectRef) {
     DB_STATUS ret = DBERR_OK;
+    
+    // find partitions and clases
+    std::vector<int> partitionIDs;
+    ret = getPartitionsForMBR(objectRef, partitionIDs);
+    if (ret != DBERR_OK) {
+        return ret;
+    }
 
-    return DBERR_FEATURE_UNSUPPORTED;
+    for (int i=0; i<partitionIDs.size(); i++) {
+        PartitionBase* partition = this->getOrCreatePartition(partitionIDs[i]);
+        partition->addObject(objectRef);
+        // logger::log_task("Adding object to partition", partitionIDs[i], "with class", partitionClasses[i]);
+        // if (objectRef->recID == 129032 || objectRef->recID == 2292762) {
+        //     logger::log_task("Adding object ", objectRef->recID, "to partition", partitionIDs[i], "with class", partitionClasses[i]);
+        //     objectRef->printGeometry();
+        // }
+    }
+
     return ret;
 
 }

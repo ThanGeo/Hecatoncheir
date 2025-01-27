@@ -230,6 +230,7 @@ namespace comm
                 // update total object count and capacity
                 dataset->totalObjects = dataset->objects.size();
                 dataset->objects.shrink_to_fit();
+                // logger::log_success("Received", dataset->totalObjects, "objects");
             }
 
             return ret;

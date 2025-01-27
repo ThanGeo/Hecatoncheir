@@ -1501,7 +1501,9 @@ private:
     static bool compareByY(const Shape* a, const Shape* b) {
         return a->mbr.pMin.y < b->mbr.pMin.y;
     }
+    static DB_STATUS getPartitionsForMBR(Shape* objectRef, std::vector<int> &partitionIDs);
 public:
+    UniformGridIndex(){};
 
     DB_STATUS addObject(Shape *objectRef) override;
 

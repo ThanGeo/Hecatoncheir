@@ -80,18 +80,21 @@ void runRange() {
     std::chrono::duration<double> duration = end - start;
     std::cout << "Partitioning time: " << duration.count() << " seconds" << std::endl;
 
-    // load datasets
-    // hec::load({datasetRID});
+    // build index
+    start = std::chrono::high_resolution_clock::now();
+    hec::buildIndex({datasetRID}, hec::IT_TWO_LAYER);
+    end = std::chrono::high_resolution_clock::now();
+    duration = end - start;
+    std::cout << "Index building time: " << duration.count() << " seconds" << std::endl;
 
-
-
-    // hec::RangeQuery rangeQuery(datasetRID, 0, );
-    // start = std::chrono::high_resolution_clock::now();
-    // hec::QueryResult result =  hec::query(&findRelationJoinQuery);
-    // end = std::chrono::high_resolution_clock::now();
-    // duration = end - start;
-    // std::cout << "Query Evaluation time: " << duration.count() << " seconds" << std::endl;
-    // result.print();
+    std::vector<double> coords = {-80.8467,43.8295,-80.6066,43.8295,-80.6066,44.0407,-80.8467,44.0407,-80.8467,43.8295};
+    hec::RangeQuery rangeQuery(datasetRID, 0, coords, hec::queryResultTypes.COUNT());
+    start = std::chrono::high_resolution_clock::now();
+    hec::QueryResult result =  hec::query(&rangeQuery);
+    end = std::chrono::high_resolution_clock::now();
+    duration = end - start;
+    std::cout << "Query Evaluation time: " << duration.count() << " seconds" << std::endl;
+    result.print();
 }
 
 int main(int argc, char* argv[]) {
@@ -99,12 +102,12 @@ int main(int argc, char* argv[]) {
     // std::string datasetFullPathS = "/home/hec/thanasis/Hecatoncheir/Hecatoncheir/datasets/T8.wkt";
     // std::vector<std::string> hosts = {"node1:1", "node2:1", "node3:1", "node4:1", "node5:1"};
     // std::vector<std::string> hosts = {"node1:1"};
-    std::vector<std::string> hosts = {"node1:1", "node2:1", "node3:1"};
+    std::vector<std::string> hosts = {"node1:1"};
 
     // Initialize Hecatoncheir. Must use this method before any other calls to the framework.
     hec::init(hosts.size(), hosts);
 
-    if (true) {
+    if (false) {
         // join queries
         runJoins();
     } else {
