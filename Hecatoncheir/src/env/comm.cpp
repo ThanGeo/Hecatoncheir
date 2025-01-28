@@ -1574,41 +1574,42 @@ STOP_LISTENING:
                 DB_STATUS local_ret = DBERR_OK;
                 int messageFound = 0;
                 MPI_Status status;
-                int tid = omp_get_thread_num();
-
-                // probe for responses
-                if (tid == 0) {
-                    // wait for agent's response
-                    local_ret = probe(AGENT_RANK, MPI_ANY_TAG, g_agent_comm, status);
-                    if (local_ret != DBERR_OK) {
-                        #pragma omp cancel parallel
-                        ret = local_ret;
+                #pragma omp for
+                for (int i=0; i<g_world_size; i++) {
+                    // probe for responses
+                    if (i == 0) {
+                        // wait for agent's response
+                        local_ret = probe(AGENT_RANK, MPI_ANY_TAG, g_agent_comm, status);
+                        if (local_ret != DBERR_OK) {
+                            #pragma omp cancel for
+                            ret = local_ret;
+                        }
+                        // receive response
+                        local_ret = recv::receiveResponse(status.MPI_SOURCE, status.MPI_TAG, g_agent_comm, status);
+                        if (local_ret != DBERR_OK) {
+                            #pragma omp cancel for
+                            ret = local_ret;
+                        }
+                    } else {
+                        // wait for workers' responses (each thread with id X receives from worker with rank X)
+                        local_ret = probe(i, MPI_ANY_TAG, g_controller_comm, status);
+                        if (local_ret != DBERR_OK) {
+                            #pragma omp cancel for
+                            ret = local_ret;
+                        }
+                        // receive response
+                        local_ret = recv::receiveResponse(status.MPI_SOURCE, status.MPI_TAG, g_controller_comm, status);
+                        if (local_ret != DBERR_OK) {
+                            #pragma omp cancel for
+                            ret = local_ret;
+                        }
                     }
-                    // receive response
-                    local_ret = recv::receiveResponse(status.MPI_SOURCE, status.MPI_TAG, g_agent_comm, status);
-                    if (local_ret != DBERR_OK) {
-                        #pragma omp cancel parallel
-                        ret = local_ret;
+                    // check response
+                    if (status.MPI_TAG != MSG_ACK) {
+                        #pragma omp cancel for
+                        logger::log_error(DBERR_OPERATION_FAILED, "Node", status.MPI_SOURCE, "finished with error");
+                        ret = DBERR_OPERATION_FAILED;
                     }
-                } else {
-                    // wait for workers' responses (each thread with id X receives from worker with rank X)
-                    local_ret = probe(tid, MPI_ANY_TAG, g_controller_comm, status);
-                    if (local_ret != DBERR_OK) {
-                        #pragma omp cancel parallel
-                        ret = local_ret;
-                    }
-                    // receive response
-                    local_ret = recv::receiveResponse(status.MPI_SOURCE, status.MPI_TAG, g_controller_comm, status);
-                    if (local_ret != DBERR_OK) {
-                        #pragma omp cancel parallel
-                        ret = local_ret;
-                    }
-                }
-                // check response
-                if (status.MPI_TAG != MSG_ACK) {
-                    #pragma omp cancel parallel
-                    logger::log_error(DBERR_OPERATION_FAILED, "Node", status.MPI_SOURCE, "finished with error");
-                    ret = DBERR_OPERATION_FAILED;
                 }
             }
 
@@ -1897,7 +1898,7 @@ STOP_LISTENING:
             }
             return ret;
         }
-
+        // @bug
         static DB_STATUS gatherResults(hec::QueryResult &totalResults) {
             DB_STATUS ret = DBERR_OK;
             // use threads to parallelize gathering of responses
@@ -1905,77 +1906,83 @@ STOP_LISTENING:
             #pragma omp parallel num_threads(threadsToSpawn) reduction(query_output_reduction:totalResults)
             {
                 DB_STATUS local_ret = DBERR_OK;
-                int messageFound = 0;
                 MPI_Status status;
-                int tid = omp_get_thread_num();
 
-                // probe for responses
-                if (tid == 0) {
-                    // wait for agent's response
-                    local_ret = probe(AGENT_RANK, MPI_ANY_TAG, g_agent_comm, status);
-                    if (local_ret != DBERR_OK) {
-                        #pragma omp cancel parallel
-                        ret = local_ret;
-                    }
-                    // check tag
-                    if (status.MPI_TAG == MSG_NACK) {
-                        // something failed during query evaluation
-                        local_ret = recv::receiveResponse(status.MPI_SOURCE, status.MPI_TAG, g_agent_comm, status);
+                #pragma omp for
+                for (int i=0; i<g_world_size; i++) {
+                    // probe for responses
+                    if (i == 0) {
+                        // wait for agent's response
+                        local_ret = probe(AGENT_RANK, MPI_ANY_TAG, g_agent_comm, status);
                         if (local_ret != DBERR_OK) {
-                            #pragma omp cancel parallel
-                            ret = DBERR_COMM_RECEIVED_NACK;
-                            logger::log_error(ret, "Received NACK from agent.");
+                            #pragma omp cancel for
+                            ret = local_ret;
+                        }
+                        // check tag
+                        if (status.MPI_TAG == MSG_NACK) {
+                            // something failed during query evaluation
+                            local_ret = recv::receiveResponse(status.MPI_SOURCE, status.MPI_TAG, g_agent_comm, status);
+                            if (local_ret != DBERR_OK) {
+                                #pragma omp cancel for
+                                ret = DBERR_COMM_RECEIVED_NACK;
+                                logger::log_error(ret, "Received NACK from agent.");
+                            }
+                        } else {
+                            // receive result message
+                            SerializedMsg<char> msg(MPI_CHAR);
+                            local_ret = recv::receiveMessage(status, msg.type, g_agent_comm, msg);
+                            if (local_ret != DBERR_OK) {
+                                #pragma omp cancel for
+                                ret = DBERR_COMM_RECEIVED_NACK;
+                                logger::log_error(ret, "Received NACK from agent.");
+                            }
+                            // unpack
+                            hec::QueryResult localResult(totalResults.getID(), totalResults.getQueryType(), totalResults.getResultType());
+                            localResult.deserialize(msg.data, msg.count);
+                            // add results
+                            totalResults.mergeResults(localResult);
                         }
                     } else {
-                        // receive result message
-                        SerializedMsg<char> msg(MPI_CHAR);
-                        local_ret = recv::receiveMessage(status, msg.type, g_agent_comm, msg);
+                        // wait for workers' responses (each thread with id X receives from worker with rank X)
+                        local_ret = probe(i, MPI_ANY_TAG, g_controller_comm, status);
                         if (local_ret != DBERR_OK) {
-                            #pragma omp cancel parallel
-                            ret = DBERR_COMM_RECEIVED_NACK;
-                            logger::log_error(ret, "Received NACK from agent.");
+                            #pragma omp cancel for
+                            ret = local_ret;
                         }
-                        // unpack
-                        hec::QueryResult localResult(totalResults.getID(), totalResults.getQueryType(), totalResults.getResultType());
-                        localResult.deserialize(msg.data, msg.count);
-                        // add results
-                        totalResults.mergeResults(localResult);
-                    }
-                } else {
-                    // wait for workers' responses (each thread with id X receives from worker with rank X)
-                    local_ret = probe(tid, MPI_ANY_TAG, g_controller_comm, status);
-                    if (local_ret != DBERR_OK) {
-                        #pragma omp cancel parallel
-                        ret = local_ret;
-                    }
-                    // check tag
-                    if (status.MPI_TAG == MSG_NACK) {
-                        // something failed during query evaluation
-                        local_ret = recv::receiveResponse(status.MPI_SOURCE, status.MPI_TAG, g_controller_comm, status);
-                        if (local_ret != DBERR_OK) {
-                            #pragma omp cancel parallel
-                            ret = DBERR_COMM_RECEIVED_NACK;
-                            logger::log_error(ret, "Received NACK from controller", tid);
+                        // check tag
+                        if (status.MPI_TAG == MSG_NACK) {
+                            // something failed during query evaluation
+                            local_ret = recv::receiveResponse(status.MPI_SOURCE, status.MPI_TAG, g_controller_comm, status);
+                            if (local_ret != DBERR_OK) {
+                                #pragma omp cancel for
+                                ret = DBERR_COMM_RECEIVED_NACK;
+                                logger::log_error(ret, "Received NACK from controller", i);
+                            }
+                        } else {
+                            // receive result
+                            SerializedMsg<char> msg(MPI_CHAR);
+                            local_ret = recv::receiveMessage(status, msg.type, g_controller_comm, msg);
+                            if (local_ret != DBERR_OK) {
+                                #pragma omp cancel for
+                                ret = DBERR_COMM_RECEIVED_NACK;
+                                logger::log_error(ret, "Received NACK from agent.");
+                            }
+                            // unpack
+                            hec::QueryResult localResult(totalResults.getID(), totalResults.getQueryType(), totalResults.getResultType());
+                            localResult.deserialize(msg.data, msg.count);
+                            // add results
+                            totalResults.mergeResults(localResult);
+                            
                         }
-                    } else {
-                        // receive result
-                        SerializedMsg<char> msg(MPI_CHAR);
-                        local_ret = recv::receiveMessage(status, msg.type, g_controller_comm, msg);
-                        if (local_ret != DBERR_OK) {
-                            #pragma omp cancel parallel
-                            ret = DBERR_COMM_RECEIVED_NACK;
-                            logger::log_error(ret, "Received NACK from agent.");
-                        }
-                        // unpack
-                        hec::QueryResult localResult(totalResults.getID(), totalResults.getQueryType(), totalResults.getResultType());
-                        localResult.deserialize(msg.data, msg.count);
-                        // add results
-                        totalResults.mergeResults(localResult);
-                        
                     }
                 }
-                
             }
+            return ret;
+        }
+
+        static DB_STATUS distributeRangeQuery(hec::RangeQuery* query) {
+            DB_STATUS ret = DBERR_OK;
+            
             return ret;
         }
 
@@ -1986,44 +1993,42 @@ STOP_LISTENING:
             if (ret != DBERR_OK) {
                 return ret;
             }
-            // send to workers
-            int threadsToSpawn = std::min(g_world_size, MAX_THREADS);
-            #pragma omp parallel num_threads(threadsToSpawn)
-            {
-                DB_STATUS local_ret = DBERR_OK;
-                #pragma omp for
-                for (int i=0; i<g_world_size; i++) {
-                    // send to controllers
-                    if (i != HOST_LOCAL_RANK) {
-                        // send to controllers
-                        local_ret = send::sendMessage(msg, i, MSG_QUERY, g_controller_comm);
-                        if (local_ret != DBERR_OK) {
-                            #pragma omp cancel for
-                            logger::log_error(DBERR_COMM_SEND, "Failed forwarding query message to controller", i);
-                            ret = local_ret;
-                        }
-                    } else {
-                        // send to agent
-                        local_ret = send::sendMessage(msg, AGENT_RANK, MSG_QUERY, g_agent_comm);
-                        if (local_ret != DBERR_OK) {
-                            #pragma omp cancel for
-                            ret = local_ret;
-                            logger::log_error(ret, "Failed forwarding query message to agent.");
-                        }
-                    }
-                }
-            }
-            if (ret != DBERR_OK) {
-                // parallel region failed
-                return ret;
-            }
 
-            // unpack query to know how to collect
+            // unpack query
             hec::Query* query;
             ret = unpack::unpackQuery(msg, &query);
             if (ret != DBERR_OK) {
                 return ret;
             }
+            
+            switch (query->getQueryType()) {
+                case hec::Q_RANGE:
+                {
+                    // send query only to the responsible nodes
+                    hec::RangeQuery* rangeQuery = dynamic_cast<hec::RangeQuery*>(query);
+                }
+                    
+                    break;
+                case hec::Q_INTERSECTION_JOIN:
+                case hec::Q_INSIDE_JOIN:
+                case hec::Q_DISJOINT_JOIN:
+                case hec::Q_EQUAL_JOIN:
+                case hec::Q_MEET_JOIN:
+                case hec::Q_CONTAINS_JOIN:
+                case hec::Q_COVERS_JOIN:
+                case hec::Q_COVERED_BY_JOIN:
+                case hec::Q_FIND_RELATION_JOIN:
+                    // broadcast join query to every worker
+                   ret = broadcast::broadcastMessage(msg, status.MPI_TAG);
+                    if (ret != DBERR_OK) {
+                        return ret;
+                    }
+                    break;
+                default:
+                    logger::log_error(DBERR_QUERY_INVALID_TYPE, "Invalid query type:", query->getQueryType());
+                    return DBERR_QUERY_INVALID_TYPE;
+            }
+
             // free memory
             free(msg.data);
 
@@ -2045,6 +2050,12 @@ STOP_LISTENING:
                 return ret;
             }
             return ret;
+        }
+
+        static DB_STATUS handleQueryBatchMessage(MPI_Status &status) {
+            
+            
+            return DBERR_FEATURE_UNSUPPORTED;
         }
 
         static DB_STATUS pullIncoming(MPI_Status status) {
@@ -2090,6 +2101,7 @@ STOP_LISTENING:
                     break;
                 case MSG_BUILD_INDEX:
                     /** initiate index building */
+                    // logger::log_success("MSG_BUILD_INDEX");
                     ret = handleBuildIndexMessage(status);
                     if (ret != DBERR_OK) {
                         logger::log_error(ret, "Failed while handling load dataset message.");
@@ -2100,6 +2112,15 @@ STOP_LISTENING:
                     /** Initiate query */
                     // logger::log_success("MSG_QUERY");
                     ret = handleQueryMessage(status);
+                    if (ret != DBERR_OK) {
+                        logger::log_error(ret, "Failed while handling query message.");
+                        return ret;
+                    }
+                    break;
+                case MSG_QUERY_BATCH:
+                    /** Initiate query */
+                    // logger::log_success("MSG_QUERY_BATCH");
+                    ret = handleQueryBatchMessage(status);
                     if (ret != DBERR_OK) {
                         logger::log_error(ret, "Failed while handling query message.");
                         return ret;

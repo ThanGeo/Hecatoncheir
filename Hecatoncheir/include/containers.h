@@ -773,8 +773,41 @@ public:
             // logger::log_warning("WKT text passed into set polygon from WKT is a multipolygon:", wktText);
             return DBERR_INVALID_GEOMETRY;
         }
-        // load
+        // load 
+        /** @bug: gamietai h mana tou */
         boost::geometry::read_wkt(wktText, geometry);
+
+
+
+        /** @brief FROM CHAT GPT: WKT PARSING (IT HAS BUGS) */
+        // size_t start = wktText.find("(("); // Find the start of the coordinate list
+        // size_t end = wktText.find("))");   // Find the end of the coordinate list
+
+        // if (start == std::string::npos || end == std::string::npos) {
+        //     throw std::invalid_argument("Invalid WKT format");
+        // }
+
+        // // Extract the coordinate substring
+        // std::string coordinates = wktText.substr(start + 2, end - (start + 2));
+
+        // // Split the coordinates by commas
+        // std::istringstream coordStream(coordinates);
+        // std::string coordPair;
+        // while (std::getline(coordStream, coordPair, ',')) {
+        //     std::istringstream pointStream(coordPair);
+        //     double x, y;
+
+        //     // Split each coordinate pair by space
+        //     if (!(pointStream >> x >> y)) {
+        //         throw std::invalid_argument("Invalid coordinate format in WKT");
+        //     }
+
+        //     geometry.outer().emplace_back(x, y);
+        //     // printf("%f,%f\n", x,y);
+        // }
+        // // return DBERR_FEATURE_UNSUPPORTED;
+
+
         // correct
         correctGeometry();
         // check if valid
@@ -785,6 +818,7 @@ public:
             // logger::log_warning("Polygon geometry is invalid:", wktText, "Reason:", reason);
             return DBERR_INVALID_GEOMETRY;
         }
+        // return DBERR_INVALID_GEOMETRY;
         return DBERR_OK;
     }
 
@@ -979,8 +1013,8 @@ private:
      * @warning Direct access is not encouraged. See the member method definitions for more.
      */
     ShapeVariant shape;
-    std::vector<int> partitions;
-    int partitionCount;
+    std::vector<int> partitions;    /** @deprecated */
+    int partitionCount;              /** @deprecated */
 public:
     /** @brief the object's ID, as read by the data file. */
     size_t recID;

@@ -98,6 +98,9 @@ namespace pack
     /** @brief Packs the query metadata into a serialized message. */
     DB_STATUS packQuery(hec::Query *query, SerializedMsg<char> &msg);
 
+    /** @brief Packs a batch of queries into a serialized message */
+    DB_STATUS packQueryBatch(std::vector<hec::Query> *batch, SerializedMsg<char> &batchMsg);
+
 }
 
 /** @brief Methos that unpack serialized messages and extract their contents, based on message type. */

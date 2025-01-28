@@ -154,16 +154,9 @@ namespace hec
         return this->wktText;
     }
 
-    // std::vector<double>* RangeQuery::getCoords() {
-    //     return &this->coords;
-    // }
-
-    // void RangeQuery::getMBR(double &xMin, double &yMin, double &xMax, double &yMax) {
-    //     xMin = this->xMin;
-    //     yMin = this->yMin;
-    //     xMax = this->xMax;
-    //     yMax = this->yMax;
-    // }
+    QueryResult::QueryResult() {
+        reset();
+    }
 
     QueryResult::QueryResult(int queryID, QueryType queryType, QueryResultType queryResultType) {
         this->reset();
@@ -474,12 +467,13 @@ namespace hec
                 case hec::Q_COVERS_JOIN: 
                 case hec::Q_CONTAINS_JOIN: 
                 case hec::Q_MEET_JOIN: 
-                    printf("Total Results: %lu\n", this->resultCount);
+                    printf("Query %d total Results: %lu\n", this->getID(), this->resultCount);
                     break;
                 case hec::Q_FIND_RELATION_JOIN: 
+                    printf("Query %d: \n", this->getID());
                     for (int i=0; i<8; i++) {
                         std::string relationName = mapping::relationIntToStr(i);
-                        printf("Relation %s: %lu\n", relationName.c_str(), this->countRelationMap[i]);
+                        printf("    Relation %s: %lu\n", relationName.c_str(), this->countRelationMap[i]);
                     }
                     break;
                 case hec::Q_NONE: 

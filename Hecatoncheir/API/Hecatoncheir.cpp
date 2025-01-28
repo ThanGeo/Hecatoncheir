@@ -47,6 +47,20 @@ static DB_STATUS receiveResult(int sourceRank, int sourceTag, MPI_Comm &comm, MP
     return DBERR_OK;
 }
 
+static DB_STATUS receiveResultBatch(int sourceRank, int sourceTag, MPI_Comm &comm, MPI_Status &status, std::vector<hec::QueryResult> &finalResults) {
+    SerializedMsg<char> msg(MPI_CHAR);
+    // receive message
+    DB_STATUS ret = comm::recv::receiveMessage(status, msg.type, g_global_intra_comm, msg);
+    if (ret != DBERR_OK) {
+        return ret;
+    }
+    // unpack
+    // finalResults.deserialize(msg.data, msg.count);
+    return DBERR_FEATURE_UNSUPPORTED;
+
+    return DBERR_OK;
+}
+
 static DB_STATUS waitForResponse() {
     MPI_Status status;
     // wait for response by the host controller
@@ -86,6 +100,36 @@ static DB_STATUS waitForResult(hec::QueryResult &finalResults) {
         case MSG_QUERY_RESULT:
             // receive result
             ret = receiveResult(HOST_CONTROLLER, status.MPI_TAG, g_global_intra_comm, status, finalResults);
+            if (ret != DBERR_OK) {
+                return ret;
+            }
+            break;
+        default:
+            break;
+    }
+    
+    return ret;
+}
+
+static DB_STATUS waitForResult(std::vector<hec::QueryResult> &finalResults) {
+    MPI_Status status;
+    // wait for response by the host controller
+    DB_STATUS ret = probeBlocking(1, MPI_ANY_TAG, g_global_intra_comm, status);
+    if (ret != DBERR_OK) {
+        return ret;
+    }
+    switch (status.MPI_TAG) {
+        case MSG_NACK:
+            // receive response
+            ret = receiveResponse(HOST_CONTROLLER, status.MPI_TAG, g_global_intra_comm, status);
+            if (ret != DBERR_OK) {
+                return ret;
+            }
+            logger::log_error(DBERR_COMM_RECEIVED_NACK, "Query failed.");
+            return DBERR_COMM_RECEIVED_NACK;
+        case MSG_QUERY_BATCH_RESULT:
+            // receive result
+            ret = receiveResultBatch(HOST_CONTROLLER, status.MPI_TAG, g_global_intra_comm, status, finalResults);
             if (ret != DBERR_OK) {
                 return ret;
             }
@@ -460,6 +504,36 @@ namespace hec {
                 // error
                 logger::log_error(DBERR_QUERY_INVALID_TYPE, "Invalid query name:", query->getQueryType());
                 return finalResults;
+        }
+        logger::log_success("Evaluated query!");
+        return finalResults;
+    }
+
+    std::vector<hec::QueryResult> query(std::vector<Query> queryBatch) {
+        DB_STATUS ret = DBERR_OK;
+        std::vector<hec::QueryResult> finalResults(queryBatch.size());
+        for (int i=0; i<queryBatch.size(); i++) {
+            finalResults.emplace_back(queryBatch[i].getQueryID(), queryBatch[i].getQueryType(), (hec::QueryResultType) queryBatch[i].getResultType());
+        }
+
+        SerializedMsg<char> msg(MPI_CHAR);
+        // pack query info
+        ret = pack::packQueryBatch(&queryBatch, msg);
+        if (ret != DBERR_OK) {
+            logger::log_error(ret, "Failed to pack query.");
+            return finalResults;
+        }
+        // send the query to Host Controller
+        ret = comm::send::sendMessage(msg, HOST_CONTROLLER, MSG_QUERY_BATCH, g_global_intra_comm);
+        if (ret != DBERR_OK) {
+            logger::log_error(ret, "Sending dataset load message failed.");
+            return finalResults;
+        }
+        // wait for result
+        ret = waitForResult(finalResults);
+        if (ret != DBERR_OK) {
+            logger::log_error(ret, "Receiving query results failed.");
+            return finalResults;
         }
         logger::log_success("Evaluated query!");
         return finalResults;

@@ -74,6 +74,7 @@ namespace hec
         // for COLLECT topology relations results (8 relations)
         std::vector<std::pair<size_t,size_t>> collectRelationMap[8];
     public:
+        QueryResult();
         QueryResult(int id, QueryType queryType, QueryResultType queryResultType);
         void reset();
         int getID() {return queryID;}

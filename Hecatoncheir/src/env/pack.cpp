@@ -229,6 +229,76 @@ namespace pack
         }
         return ret;
     }
+
+    DB_STATUS packQueryBatch(std::vector<hec::Query> *batch, SerializedMsg<char> &batchMsg) {
+        DB_STATUS ret = DBERR_OK;
+
+        // count total size
+        batchMsg.count = 0;
+        for (int i=0; i<batch->size(); i++) {
+            if (auto rangeQuery = dynamic_cast<hec::RangeQuery*>(&batch->at(i))){
+                batchMsg.count += sizeof(int);                                        // query id
+                batchMsg.count += sizeof(hec::QueryType);                             // query type
+                batchMsg.count += sizeof(hec::QueryResultType);                       // result type
+                batchMsg.count += sizeof(hec::DatasetID);                             // dataset id
+                batchMsg.count += sizeof(int);                                        // wkt text length
+                batchMsg.count += rangeQuery->getWKT().length() * sizeof(char);       // wkt string
+            } else if (auto joinQuery = dynamic_cast<hec::JoinQuery*>(&batch->at(i))) {
+                batchMsg.count += sizeof(int);                                       // query id
+                batchMsg.count += sizeof(hec::QueryType);                            // query type
+                batchMsg.count += sizeof(hec::QueryResultType);                      // result type
+                batchMsg.count += 2 * sizeof(hec::DatasetID);                        // dataset R and S ids
+            } else {
+                logger::log_error(DBERR_INVALID_DATATYPE, "Invalid query type");
+                return DBERR_INVALID_DATATYPE;
+            }
+        }
+        
+        // allocate space
+        batchMsg.data = (char*) malloc(batchMsg.count * sizeof(char));
+        if (batchMsg.data == nullptr) {
+            // malloc failed
+            logger::log_error(DBERR_MALLOC_FAILED, "Malloc for pack system metadata failed");
+            return DBERR_MALLOC_FAILED;
+        }
+
+        char* localBuffer = batchMsg.data;
+
+        // put objects in buffer
+        for (int i=0; i<batch->size(); i++) {
+            if (auto rangeQuery = dynamic_cast<hec::RangeQuery*>(&batch->at(i))){
+                *reinterpret_cast<int*>(localBuffer) = (int) rangeQuery->getQueryID();
+                localBuffer += sizeof(int);
+                *reinterpret_cast<hec::QueryType*>(localBuffer) = (hec::QueryType) rangeQuery->getQueryType();
+                localBuffer += sizeof(hec::QueryType);
+                *reinterpret_cast<hec::QueryResultType*>(localBuffer) = rangeQuery->getResultType();
+                localBuffer += sizeof(hec::QueryResultType);
+                *reinterpret_cast<int*>(localBuffer) = (int) rangeQuery->getDatasetID();
+                localBuffer += sizeof(int); 
+                *reinterpret_cast<int*>(localBuffer) = rangeQuery->getWKT().length();
+                localBuffer += sizeof(int);
+                std::memcpy(localBuffer, rangeQuery->getWKT().data(), rangeQuery->getWKT().length() * sizeof(char));
+                localBuffer += g_config.dirPaths.dataPath.length() * sizeof(char);
+            } else if (auto joinQuery = dynamic_cast<hec::JoinQuery*>(&batch->at(i))) {
+                *reinterpret_cast<int*>(localBuffer) = (int) joinQuery->getQueryID();
+                localBuffer += sizeof(int);
+                *reinterpret_cast<hec::QueryType*>(localBuffer) = (hec::QueryType) joinQuery->getQueryType();
+                localBuffer += sizeof(hec::QueryType);
+                *reinterpret_cast<hec::QueryResultType*>(localBuffer) = joinQuery->getResultType();
+                localBuffer += sizeof(hec::QueryResultType);
+                *reinterpret_cast<hec::DatasetID*>(localBuffer) = (hec::DatasetID) joinQuery->getDatasetRid();
+                localBuffer += sizeof(hec::DatasetID);
+                *reinterpret_cast<hec::DatasetID*>(localBuffer) = (hec::DatasetID) joinQuery->getDatasetSid();
+                localBuffer += sizeof(hec::DatasetID);
+            } else {
+                logger::log_error(DBERR_INVALID_DATATYPE, "Invalid query type");
+                return DBERR_INVALID_DATATYPE;
+            }
+        }
+        
+        
+        return ret;
+    }
 }
 
 namespace unpack

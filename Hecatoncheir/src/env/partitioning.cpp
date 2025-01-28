@@ -107,17 +107,7 @@ namespace partitioning
                 Batch *batch = &it->second;
                 // make a copy of the geometry
                 Shape objectCopy = object;
-                // if (objectCopy.recID == 99943 || objectCopy.recID == 1661475) {
-                //     logger::log_task("object", objectCopy.recID, "partitions:");
-                //     for (auto &it: partitionIDs) {
-                //         logger::log_task("  ", it);
-                //     }
-                //     logger::log_task("Will be sent to node", nodeRank);
-                //     logger::log_task("MBR:", objectCopy.mbr.pMin.x, objectCopy.mbr.pMin.y, objectCopy.mbr.pMax.x, objectCopy.mbr.pMax.y);
-                // }
-
                 // add moddified geometry to this batch
-                // logger::log_task("Added geometry", objectCopy.recID, " to batch");
                 batch->addObjectToBatch(objectCopy);
 
                 // if batch is full, send and reset
@@ -474,6 +464,7 @@ namespace partitioning
         static DB_STATUS loadDatasetAndPartition(Dataset* dataset) {
             DB_STATUS ret = DBERR_OK;
             // initialize batches
+            // std::unordered_map<int,Batch> batchMap;
             std::unordered_map<int,Batch> batchMap;
             ret = initializeBatchMap(batchMap, dataset->metadata.dataType);
             if (ret != DBERR_OK) {
@@ -614,10 +605,120 @@ namespace partitioning
             return ret;
         }
 
-        
-    }
+        static DB_STATUS loadDatasetAndPartitionTEST(Dataset* dataset) {
+            DB_STATUS ret = DBERR_OK;
+            // initialize batches
+            // open file
+            std::ifstream fin(dataset->metadata.path);
+            if (!fin.is_open()) {
+                logger::log_error(DBERR_MISSING_FILE, "Failed to open dataset path:", dataset->metadata.path);
+                return DBERR_MISSING_FILE;
+            }
+            std::string line;
+            // get total objects (lines)
+            size_t totalObjects = dataset->totalObjects;
+            size_t totalValidObjects = 0;
+            // count how many batches have been sent in total
+            int batchesSent = 0;
+            #pragma omp parallel firstprivate(line, totalObjects) reduction(+:batchesSent) reduction(+:totalValidObjects)
+            {
+                int partitionID;
+                double x,y;
+                double xMin, yMin, xMax, yMax;
+                DB_STATUS local_ret = DBERR_OK;
+                int tid = omp_get_thread_num();
+                // calculate which lines this thread will handle
+                size_t linesPerThread = (totalObjects + MAX_THREADS - 1) / MAX_THREADS;
+                size_t fromLine = (tid * linesPerThread);
+                size_t toLine = std::min(fromLine + linesPerThread, totalObjects);
+                // logger::log_task("will handle lines", fromLine, "to", toLine);
+                // open file
+                std::ifstream fin(dataset->metadata.path);
+                if (!fin.is_open()) {
+                    logger::log_error(DBERR_MISSING_FILE, "Failed to open dataset path:", dataset->metadata.path);
+                    #pragma omp cancel parallel
+                    ret = DBERR_MISSING_FILE;
+                }
+                // jump to start line
+                std::string token;
+                size_t currentLine = 0;
+                while (currentLine < fromLine && std::getline(fin, line)) {
+                    currentLine++;
+                }
 
+                // create empty object based on data type
+                Shape object;
+                local_ret = shape_factory::createEmpty(dataset->metadata.dataType, object);
+                if (local_ret != DBERR_OK) {
+                    // error creating shape
+                    #pragma omp cancel parallel
+                    ret = local_ret;
+                } else {
+                    // shape created
+                    // loop
+                    while (true) {
+                        // reset shape object
+                        object.reset();
+                        // next object
+                        std::getline(fin, line);
+                        // parse line to get only the first column (wkt geometry)
+                        std::stringstream ss(line);
+                        std::getline(ss, token, '\t');
+                        // set rec ID
+                        object.recID = currentLine;
+                        // set object from the WKT
+                        local_ret = object.setFromWKT(token);
+                        if (local_ret == DBERR_INVALID_GEOMETRY) {
+                            // this line is not the appropriate geometry type, so just ignore
+                        } else if (local_ret != DBERR_OK) {
+                            // some other error occured, interrupt
+                            #pragma omp cancel parallel
+                            ret = local_ret;
+                        } else {
+                            // valid object
+                            totalValidObjects += 1;
+                            // set the MBR
+                            object.setMBR();
+                        }
+
+                        currentLine += 1;
+                        if (currentLine >= toLine) {
+                            // the last line for this thread has been read
+                            break;
+                        }
+                    }
+                    // close file
+                    fin.close();
+                } // end of loop
+            } // end of parallel region
+            // check if operation finished successfully
+            if (ret != DBERR_OK) {
+                return ret;
+            }
+            // logger::log_success("Partitioned", totalValidObjects, "valid objects");
+            // send an empty pack to each worker to signal the end of the partitioning for this dataset
+            for (int i=0; i<g_world_size; i++) {
+                Batch batch;
+                batch.destRank = i;
+                if (i > 0) {
+                    batch.comm = &g_controller_comm;
+                } else {
+                    batch.comm = &g_agent_comm;
+                }
+                batch.tag = MSG_BATCH_POLYGON;
+                batch.dataType = DT_POLYGON;
+                ret = comm::controller::serializeAndSendGeometryBatch(&batch);
+                if (ret != DBERR_OK) {
+                    return ret;
+                }
+            }
+            // logger::log_success("Sent", batchesSent, "non-empty batches.");
+            return ret;
+        }
+        
+    } // wkt namespace
     
+
 
     DB_STATUS partitionDataset(Dataset *dataset) {
         if (dataset == nullptr) {
@@ -638,7 +739,8 @@ namespace partitioning
                 break;
             case hec::FT_WKT:
                 // wkt dataset
-                ret = wkt::loadDatasetAndPartition(dataset);
+                // ret = wkt::loadDatasetAndPartition(dataset);
+                ret = wkt::loadDatasetAndPartitionTEST(dataset);
                 if (ret != DBERR_OK) {
                     logger::log_error(DBERR_PARTITIONING_FAILED, "Partitioning failed for dataset", dataset->metadata.internalID);
                     return ret;
