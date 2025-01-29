@@ -296,7 +296,36 @@ public:
             return DBERR_INVALID_GEOMETRY;
         }
         // load
-        boost::geometry::read_wkt(wktText, geometry);
+        // boost::geometry::read_wkt(wktText, geometry);
+
+        /** Manually parse WKT. Works for "POINT (x y)". 
+         * @warning UNTESTED
+        */
+        const char* c = wktText.c_str();
+        c = strchr(c, '(');
+        c++;
+        const char* end = strchr(c, ')');
+        if (!end) return DBERR_INVALID_GEOMETRY;
+        // Skip spaces but ensure we don't skip over negative signs
+        while (*c && *c != ')' && (isspace(*c))) c++;
+
+        // Ensure we have a valid number
+        if (*c == ')' || *c == '\0') return DBERR_INVALID_GEOMETRY;  
+
+        double x = std::atof(c);
+        const char* next = c;
+        
+        // Move forward to find the space separating x and y
+        while (*next && *next != ')' && !isspace(*next)) next++;
+        while (*next && isspace(*next)) next++;  // Skip whitespace before y
+
+        if (!next || next >= end || *next == ')' || *next == '\0') return DBERR_INVALID_GEOMETRY;
+
+        double y = std::atof(next);
+        this->geometry = bg_point_xy(x, y);
+
+        
+
         // correct
         correctGeometry();
         // check if valid
@@ -614,7 +643,44 @@ public:
             return DBERR_INVALID_GEOMETRY;
         }
         // load
-        boost::geometry::read_wkt(wktText, geometry);
+        // boost::geometry::read_wkt(wktText, geometry);
+
+        /** Manually parse WKT. Works for "LIENSTRING (x y,x y)"". */
+        const char* c = wktText.c_str();
+        c = strchr(c, '(');
+        c++;
+        const char* end = strchr(c, ')');
+        if (!end) return DBERR_INVALID_GEOMETRY;
+
+        while (true) {
+            // Skip spaces but ensure we don't skip over negative signs
+            while (*c && *c != ')' && (isspace(*c))) c++;
+
+            // Ensure we have a valid number
+            if (*c == ')' || *c == '\0') break;  
+
+            double x = std::atof(c);
+            const char* next = c;
+            
+            // Move forward to find the space separating x and y
+            while (*next && *next != ')' && !isspace(*next)) next++;
+            while (*next && isspace(*next)) next++;  // Skip whitespace before y
+
+            if (!next || next >= end || *next == ')' || *next == '\0') return DBERR_INVALID_GEOMETRY;
+
+            double y = std::atof(next);
+            this->geometry.emplace_back(x, y);
+
+            // Find next comma to move to the next coordinate pair
+            auto n = strchr(next, ',');
+            if (!n || n > end) break;
+            c = n + 1;
+        }
+
+
+
+
+
         // correct
         correctGeometry();
         // check if valid
@@ -774,39 +840,41 @@ public:
             return DBERR_INVALID_GEOMETRY;
         }
         // load 
-        /** @bug: gamietai h mana tou */
-        boost::geometry::read_wkt(wktText, geometry);
+        /** @warning: this parsing method kills performance. Better to manually parse wkt */
+        // boost::geometry::read_wkt(wktText, geometry);
 
+        /** Manually parse WKT. Works for "POLYGON ((x y,x y))"". */
+        const char* c = wktText.c_str();
+        c = strchr(c, '(');
+        c++;
+        c++;
+        const char* end = strchr(c, ')');
+        if (!end) return DBERR_INVALID_GEOMETRY;
 
+        while (true) {
+            // Skip spaces but ensure we don't skip over negative signs
+            while (*c && *c != ')' && (isspace(*c))) c++;
 
-        /** @brief FROM CHAT GPT: WKT PARSING (IT HAS BUGS) */
-        // size_t start = wktText.find("(("); // Find the start of the coordinate list
-        // size_t end = wktText.find("))");   // Find the end of the coordinate list
+            // Ensure we have a valid number
+            if (*c == ')' || *c == '\0') break;  
 
-        // if (start == std::string::npos || end == std::string::npos) {
-        //     throw std::invalid_argument("Invalid WKT format");
-        // }
+            double x = std::atof(c);
+            const char* next = c;
+            
+            // Move forward to find the space separating x and y
+            while (*next && *next != ')' && !isspace(*next)) next++;
+            while (*next && isspace(*next)) next++;  // Skip whitespace before y
 
-        // // Extract the coordinate substring
-        // std::string coordinates = wktText.substr(start + 2, end - (start + 2));
+            if (!next || next >= end || *next == ')' || *next == '\0') return DBERR_INVALID_GEOMETRY;
 
-        // // Split the coordinates by commas
-        // std::istringstream coordStream(coordinates);
-        // std::string coordPair;
-        // while (std::getline(coordStream, coordPair, ',')) {
-        //     std::istringstream pointStream(coordPair);
-        //     double x, y;
+            double y = std::atof(next);
+            this->geometry.outer().emplace_back(x, y);
 
-        //     // Split each coordinate pair by space
-        //     if (!(pointStream >> x >> y)) {
-        //         throw std::invalid_argument("Invalid coordinate format in WKT");
-        //     }
-
-        //     geometry.outer().emplace_back(x, y);
-        //     // printf("%f,%f\n", x,y);
-        // }
-        // // return DBERR_FEATURE_UNSUPPORTED;
-
+            // Find next comma to move to the next coordinate pair
+            auto n = strchr(next, ',');
+            if (!n || n > end) break;
+            c = n + 1;
+        }
 
         // correct
         correctGeometry();
@@ -818,6 +886,7 @@ public:
             // logger::log_warning("Polygon geometry is invalid:", wktText, "Reason:", reason);
             return DBERR_INVALID_GEOMETRY;
         }
+
         // return DBERR_INVALID_GEOMETRY;
         return DBERR_OK;
     }

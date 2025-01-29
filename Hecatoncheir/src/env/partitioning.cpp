@@ -537,6 +537,7 @@ namespace partitioning
                             // some other error occured, interrupt
                             #pragma omp cancel parallel
                             ret = local_ret;
+                            break;
                         } else {
                             // valid object
                             totalValidObjects += 1;

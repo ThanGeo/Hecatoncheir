@@ -1780,7 +1780,7 @@ STOP_LISTENING:
                 }
                 
                 // partition the data
-                logger::log_task("Partitioning dataset", dataset->metadata.internalID);
+                // logger::log_task("Partitioning dataset", dataset->metadata.internalID);
                 ret = partitioning::partitionDataset(dataset);
                 if (ret != DBERR_OK) {
                     logger::log_error(ret, "Failed while partitioning dataset with index", index);
