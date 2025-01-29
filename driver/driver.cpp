@@ -31,8 +31,8 @@ void runJoins() {
     std::string datasetFullPathS = "/home/hec/datasets/T2.tsv";
     // std::string datasetFullPathS = "/home/hec/datasets/T4.tsv";
     // prepare datasets
-    hec::DatasetID datasetRID = hec::prepareDataset(datasetFullPathR, "WKT", "POLYGON", false);
-    hec::DatasetID datasetSID = hec::prepareDataset(datasetFullPathS, "WKT", "POLYGON", false);
+    hec::DatasetID datasetRID = hec::prepareDataset(datasetFullPathR, "WKT", "POLYGON", -180.0, -15.0, 180.0, 72.0, false);
+    hec::DatasetID datasetSID = hec::prepareDataset(datasetFullPathS, "WKT", "POLYGON", -180.0, -15.0, 180.0, 72.0, false);
     // printf("Dataset ids: %d and %d\n", datasetRID, datasetSID);
 
     // partition datasets
@@ -165,8 +165,8 @@ void runRangePolygonsBatch() {
 }
 
 int main(int argc, char* argv[]) {
-    // std::vector<std::string> hosts = {"vm1:1", "vm2:1", "vm3:1", "vm4:1", "vm5:1", "vm6:1", "vm7:1", "vm8:1", "vm9:1", "vm10:1"};
-    std::vector<std::string> hosts = {"vm1:1"};
+    std::vector<std::string> hosts = {"vm1:1", "vm2:1", "vm3:1", "vm4:1", "vm5:1", "vm6:1", "vm7:1", "vm8:1", "vm9:1", "vm10:1"};
+    // std::vector<std::string> hosts = {"vm1:1"};
 
     // Initialize Hecatoncheir. Must use this method before any other calls to the framework.
     hec::init(hosts.size(), hosts);

@@ -39,7 +39,7 @@ namespace hec {
      * @return Assigned dataset id.
      * @details Internally, generates and assigns a Dataset object to Hecatoncheir's configuration.
      */
-    DatasetID prepareDataset(std::string &filePath, std::string fileTypeStr, std::string dataTypeStr, double xMin, double yMin, double xMax, double yMax);
+    DatasetID prepareDataset(std::string &filePath, std::string fileTypeStr, std::string dataTypeStr, double xMin, double yMin, double xMax, double yMax, bool persist);
 
 
     /**

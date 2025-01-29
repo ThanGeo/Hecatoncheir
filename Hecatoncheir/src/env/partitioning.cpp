@@ -526,6 +526,7 @@ namespace partitioning
                         // parse line to get only the first column (wkt geometry)
                         std::stringstream ss(line);
                         std::getline(ss, token, '\t');
+
                         // set rec ID
                         object.recID = currentLine;
                         // set object from the WKT
@@ -739,8 +740,8 @@ namespace partitioning
                 break;
             case hec::FT_WKT:
                 // wkt dataset
-                // ret = wkt::loadDatasetAndPartition(dataset);
-                ret = wkt::loadDatasetAndPartitionTEST(dataset);
+                ret = wkt::loadDatasetAndPartition(dataset);
+                // ret = wkt::loadDatasetAndPartitionTEST(dataset);
                 if (ret != DBERR_OK) {
                     logger::log_error(DBERR_PARTITIONING_FAILED, "Partitioning failed for dataset", dataset->metadata.internalID);
                     return ret;

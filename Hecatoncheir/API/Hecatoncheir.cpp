@@ -311,7 +311,7 @@ namespace hec {
         return indexes[0];
     }
 
-    DatasetID prepareDataset(std::string &filePath, std::string fileTypeStr, std::string dataTypeStr, double xMin, double yMin, double xMax, double yMax) {
+    DatasetID prepareDataset(std::string &filePath, std::string fileTypeStr, std::string dataTypeStr, double xMin, double yMin, double xMax, double yMax, bool persist) {
         if (filePath == "") {
             // empty path, empty dataset
             return -1;
@@ -336,6 +336,7 @@ namespace hec {
         // set metadata and serialize
         SerializedMsg<char> msg(MPI_CHAR);
         DatasetMetadata metadata;
+        metadata.persist = persist;
         metadata.internalID = (DatasetIndex) -1;
         metadata.path = filePath;
         metadata.fileType = mapping::fileTypeTextToInt(fileTypeStr);

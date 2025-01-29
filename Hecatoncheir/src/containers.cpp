@@ -179,15 +179,15 @@ DB_STATUS DatasetMetadata::deserialize(const char *buffer, int bufferSize) {
         position += sizeof(double);
         memcpy(&yMax, buffer + position, sizeof(double));
         position += sizeof(double);
+        // set
+        dataspaceMetadata.set(xMin, yMin, xMax, yMax);
+        if (position != bufferSize) {
+            logger::log_error(DBERR_DESERIALIZE_FAILED, "Dataset Metadata desereialization failed.");
+            return DBERR_DESERIALIZE_FAILED;
+        }
     } else {
         // for validity check issues
         position += 4*sizeof(double);
-    }
-    // set
-    dataspaceMetadata.set(xMin, yMin, xMax, yMax);
-    if (position != bufferSize) {
-        logger::log_error(DBERR_DESERIALIZE_FAILED, "Dataset Metadata desereialization failed.");
-        return DBERR_DESERIALIZE_FAILED;
     }
     return DBERR_OK;
 }
@@ -967,6 +967,7 @@ void DatasetOptions::updateDataspace() {
     dataspaceMetadata.xExtent = dataspaceMetadata.xMaxGlobal - dataspaceMetadata.xMinGlobal;
     dataspaceMetadata.yExtent = dataspaceMetadata.yMaxGlobal - dataspaceMetadata.yMinGlobal;
     dataspaceMetadata.maxExtent = std::max(dataspaceMetadata.xExtent, dataspaceMetadata.yExtent);
+    dataspaceMetadata.boundsSet = true;
     // set as both datasets' bounds
     for (auto &it: datasets) {
         it.second.metadata.dataspaceMetadata = dataspaceMetadata;

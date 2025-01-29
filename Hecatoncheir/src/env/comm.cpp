@@ -1714,15 +1714,32 @@ STOP_LISTENING:
             // free memory
             free(msg.data);
 
-            // first, get the global dataspace from the datasets
-            for (auto &index: datasetIndexes) {
-                ret = storage::reader::calculateDatasetMetadata(g_config.datasetOptions.getDatasetByIdx(index));
-                if (ret != DBERR_OK) {
-                    return ret;
+            if (g_config.datasetOptions.dataspaceMetadata.boundsSet == false) {
+                // first, get the global dataspace from the datasets
+                for (auto &index: datasetIndexes) {
+                    Dataset* dataset = g_config.datasetOptions.getDatasetByIdx(index);
+                    if (!dataset->metadata.dataspaceMetadata.boundsSet) {
+                        ret = storage::reader::calculateDatasetMetadata(g_config.datasetOptions.getDatasetByIdx(index));
+                        if (ret != DBERR_OK) {
+                            return ret;
+                        }
+                    }
+                }
+                // update dataspace
+                g_config.datasetOptions.updateDataspace();
+                g_config.datasetOptions.dataspaceMetadata.boundsSet = true;
+            } else {
+                // dataspace is set, count lines in files to parallelize reading 
+                for (auto &index: datasetIndexes) {
+                    Dataset* dataset = g_config.datasetOptions.getDatasetByIdx(index);
+                    size_t totalObjects = 0;
+                    ret = storage::reader::getDatasetLineCount(dataset, totalObjects);
+                    if (ret != DBERR_OK) {
+                        return ret;
+                    }
+                    dataset->totalObjects = totalObjects;
                 }
             }
-            // update dataspace
-            g_config.datasetOptions.updateDataspace();
 
             // update the grids' dataspace metadata in the partitioning object 
             g_config.partitioningMethod->setDistGridDataspace(g_config.datasetOptions.dataspaceMetadata);
@@ -1763,7 +1780,7 @@ STOP_LISTENING:
                 }
                 
                 // partition the data
-                // logger::log_task("Partitioning dataset", dataset->metadata.internalID);
+                logger::log_task("Partitioning dataset", dataset->metadata.internalID);
                 ret = partitioning::partitionDataset(dataset);
                 if (ret != DBERR_OK) {
                     logger::log_error(ret, "Failed while partitioning dataset with index", index);
