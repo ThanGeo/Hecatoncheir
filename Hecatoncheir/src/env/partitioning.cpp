@@ -375,7 +375,7 @@ namespace partitioning
             std::string line;
             // count total objects (lines)
             size_t totalObjects = 0;
-            ret = storage::reader::getDatasetLineCount(dataset, totalObjects);
+            ret = storage::reader::getDatasetLineCountWithSystemCall(dataset, totalObjects);
             if (ret != DBERR_OK) {
                 return ret;
             }

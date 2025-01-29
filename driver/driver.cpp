@@ -26,14 +26,18 @@ static std::vector<std::string> read_hostfile(const std::string& hostfile) {
 }
 
 void runJoins() {
+    // TIGER
     std::string datasetFullPathR = "/home/hec/datasets/T1.tsv";
-    // std::string datasetFullPathR = "/home/hec/datasets/T1.tsv";
     std::string datasetFullPathS = "/home/hec/datasets/T2.tsv";
-    // std::string datasetFullPathS = "/home/hec/datasets/T4.tsv";
-    // prepare datasets
     hec::DatasetID datasetRID = hec::prepareDataset(datasetFullPathR, "WKT", "POLYGON", -180.0, -15.0, 180.0, 72.0, false);
     hec::DatasetID datasetSID = hec::prepareDataset(datasetFullPathS, "WKT", "POLYGON", -180.0, -15.0, 180.0, 72.0, false);
-    // printf("Dataset ids: %d and %d\n", datasetRID, datasetSID);
+
+    // OSM
+    // std::string datasetFullPathR = "/home/hec/datasets/OSM/O5_lakes.tsv";
+    // std::string datasetFullPathS = "/home/hec/datasets/OSM/O6_parks.tsv";
+    // hec::DatasetID datasetRID = hec::prepareDataset(datasetFullPathR, "WKT", "POLYGON", -180.0, -180.0, 180.0, 180.0, false);
+    // hec::DatasetID datasetSID = hec::prepareDataset(datasetFullPathS, "WKT", "POLYGON", -180.0, -180.0, 180.0, 180.0, false);
+
 
     // partition datasets
     auto start = std::chrono::high_resolution_clock::now();
@@ -42,24 +46,24 @@ void runJoins() {
     std::chrono::duration<double> duration = end - start;
     std::cout << "Partitioning time: " << duration.count() << " seconds" << std::endl;
 
-    // build index
-    start = std::chrono::high_resolution_clock::now();
-    hec::buildIndex({datasetRID, datasetSID}, hec::IT_TWO_LAYER);
-    end = std::chrono::high_resolution_clock::now();
-    duration = end - start;
-    std::cout << "Index building time: " << duration.count() << " seconds" << std::endl;
+    // // build index
+    // start = std::chrono::high_resolution_clock::now();
+    // hec::buildIndex({datasetRID, datasetSID}, hec::IT_TWO_LAYER);
+    // end = std::chrono::high_resolution_clock::now();
+    // duration = end - start;
+    // std::cout << "Index building time: " << duration.count() << " seconds" << std::endl;
 
 
-    // load datasets
-    // hec::load({datasetRID, datasetSID});
+    // // load datasets
+    // // hec::load({datasetRID, datasetSID});
     
-    hec::JoinQuery intersectionJoinQuery(datasetRID, datasetSID, 0, hec::spatialQueries.INTERSECTS(), hec::queryResultTypes.COUNT());
-    start = std::chrono::high_resolution_clock::now();
-    hec::QueryResult result =  hec::query(&intersectionJoinQuery);
-    end = std::chrono::high_resolution_clock::now();
-    duration = end - start;
-    std::cout << "Query Evaluation time: " << duration.count() << " seconds" << std::endl;
-    printf("Total results: %lu\n", result.getResultCount());
+    // hec::JoinQuery intersectionJoinQuery(datasetRID, datasetSID, 0, hec::spatialQueries.INTERSECTS(), hec::queryResultTypes.COUNT());
+    // start = std::chrono::high_resolution_clock::now();
+    // hec::QueryResult result =  hec::query(&intersectionJoinQuery);
+    // end = std::chrono::high_resolution_clock::now();
+    // duration = end - start;
+    // std::cout << "Query Evaluation time: " << duration.count() << " seconds" << std::endl;
+    // printf("Total results: %lu\n", result.getResultCount());
 
     // hec::JoinQuery findRelationJoinQuery(datasetRID, datasetSID, 0, hec::spatialQueries.FIND_RELATION(), hec::queryResultTypes.COUNT());
     // start = std::chrono::high_resolution_clock::now();
@@ -165,8 +169,8 @@ void runRangePolygonsBatch() {
 }
 
 int main(int argc, char* argv[]) {
-    std::vector<std::string> hosts = {"vm1:1", "vm2:1", "vm3:1", "vm4:1", "vm5:1", "vm6:1", "vm7:1", "vm8:1", "vm9:1", "vm10:1"};
-    // std::vector<std::string> hosts = {"vm1:1"};
+    std::vector<std::string> hosts = {"vm1:1", "vm2:1", "vm3:1", "vm4:1", "vm5:1", "vm6:1", "vm7:1", "vm8:1", "vm9:1"};
+    // std::vector<std::string> hosts = {"vm1:1", "vm2:1"};
 
     // Initialize Hecatoncheir. Must use this method before any other calls to the framework.
     hec::init(hosts.size(), hosts);

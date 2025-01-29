@@ -324,7 +324,7 @@ public:
         double y = std::atof(next);
         this->geometry = bg_point_xy(x, y);
 
-        
+
 
         // correct
         correctGeometry();
@@ -831,6 +831,14 @@ public:
         if (wktText.find("POLYGON") == std::string::npos) {
             // it is not a polygon WKT, ignore
             // logger::log_warning("WKT text passed into set point from WKT is not a polygon:", wktText);
+            return DBERR_INVALID_GEOMETRY;
+        }
+        if (wktText.find("GEOMETRYCOLLECTION") != std::string::npos) {
+            // it is a geometry collection wkt, ignore
+            // logger::log_warning("WKT text passed into set point from WKT is not a polygon:", wktText);
+            return DBERR_INVALID_GEOMETRY;
+        }
+        if (wktText.find("EMPTY") != std::string::npos) {
             return DBERR_INVALID_GEOMETRY;
         }
         // special case, it might be multipolygon
@@ -1570,7 +1578,7 @@ struct DirectoryPaths {
     std::string resourceDirPath = "Hecatoncheir/resources/"; 
     std::string configFilePath = resourceDirPath + std::string("config_cluster.ini");
     const std::string datasetsConfigPath = resourceDirPath + std::string("datasets.ini");
-    std::string dataPath = PROJECT_BINARY_DIR + std::string("/Hecatoncheir/data/");
+    std::string dataPath = PROJECT_SOURCE_DIR + std::string("/data/");
     std::string partitionsPath = dataPath + std::string("partitions/");
     std::string approximationPath = dataPath + std::string("approximations/");
 };

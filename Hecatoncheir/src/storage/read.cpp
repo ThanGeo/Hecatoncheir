@@ -109,7 +109,7 @@ namespace storage
                 std::string line;
                 // count total objects (lines)
                 size_t totalObjects = 0;
-                ret = storage::reader::getDatasetLineCount(dataset, totalObjects);
+                ret = storage::reader::getDatasetLineCountWithSystemCall(dataset, totalObjects);
                 if (ret != DBERR_OK) {
                     return ret;
                 }
@@ -198,6 +198,29 @@ namespace storage
                 return ret;
             } 
         } // wkt 
+
+        DB_STATUS getDatasetLineCountWithSystemCall(Dataset* dataset, size_t &totalLines) {
+            std::string command = "wc -l < " + dataset->metadata.path;
+            char buffer[128];
+            std::string result = "";
+            FILE* fp = popen(command.c_str(), "r");
+
+            if (fp == nullptr) {
+                logger::log_error(DBERR_DISK_READ_FAILED, "Error opening command for line count.");
+                return DBERR_DISK_READ_FAILED;
+            }
+
+            while (fgets(buffer, sizeof(buffer), fp) != nullptr) {
+                result += buffer;
+            }
+
+            fclose(fp);
+
+            totalLines = std::stoi(result); 
+
+            return DBERR_OK; 
+        }
+
 
         DB_STATUS getDatasetLineCount(Dataset* dataset, size_t &totalLines) {
             int fd = open(dataset->metadata.path.c_str(), O_RDONLY);

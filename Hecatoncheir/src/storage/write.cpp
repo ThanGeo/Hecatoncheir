@@ -7,6 +7,8 @@ namespace storage
         namespace partitionFile
         {
             DB_STATUS appendDatasetMetadataToPartitionFile(FILE* outFile, Dataset* dataset) {
+                // replace with "size_t result = fwrite(&metadata, sizeof(DataspaceMetadata), 1, file);"
+                
                 // datatype
                 fwrite(&dataset->metadata.dataType, sizeof(DataType), 1, outFile);
                 // dataspace MBR

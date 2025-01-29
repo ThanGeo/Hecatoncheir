@@ -147,70 +147,32 @@ namespace comm
          * @param[in] dataset The dataset getting partitioned
          * @param[out] continueListening If the message is empty (0 objects aster serialization), then it signals the end of the partitioning for the dataset.
         */
-        static DB_STATUS deserializeBatchMessageAndHandle(char *buffer, int bufferSize, FILE* partitionFile, FILE* aprilFile, Dataset *dataset, int &continueListening) {
-            // DB_STATUS ret = DBERR_OK;
-            // Batch batch;
-            // // deserialize the batch
-            // batch.deserialize(buffer, bufferSize);
-            // // logger::log_success("Received batch with", batch.objectCount, "objects");
-            // if (batch.objectCount > 0) {
-            //     // calculate two layer classes for each object, in each partition
-            //     ret = partitioning::calculateTwoLayerClasses(batch);
-            //     if (ret != DBERR_OK) {
-            //         logger::log_error(ret, "Calculating two layer index classes failed for batch.");
-            //         return ret;
-            //     }
-            //     // append to partition file
-            //     ret = storage::writer::partitionFile::appendBatchToPartitionFile(partitionFile, &batch, dataset);
-            //     if (ret != DBERR_OK) {
-            //         logger::log_error(DBERR_DISK_WRITE_FAILED, "Failed when writing batch to partition file");
-            //         return DBERR_DISK_WRITE_FAILED;
-            //     }
+        static DB_STATUS deserializeBatchMessageAndHandle(char *buffer, int bufferSize, FILE* partitionFile, Dataset *dataset, int &continueListening) {
+            DB_STATUS ret = DBERR_OK;
+            Batch batch;
+            // deserialize the batch
+            batch.deserialize(buffer, bufferSize);
+            // logger::log_success("Received batch with", batch.objectCount, "objects");
+            if (batch.objectCount > 0) {
                 
-            //     // if APRIL is enabled, generate it
-            //     if (g_config.queryMetadata.IntermediateFilter && (dataset->metadata.dataType == DT_POLYGON || dataset->metadata.dataType == DT_LINESTRING)) {
-            //         // create APRIL for each object @todo paralellize? have to do a buffered write then
-            //         for (int i=0; i<batch.objectCount; i++) {
-            //             // generate
-            //             AprilData aprilData;
-            //             ret = APRIL::generation::memory::createAPRILforObject(&batch.objects[i], dataset->metadata.dataType, dataset->aprilConfig, aprilData);
-            //             if (ret != DBERR_OK) {
-            //                 logger::log_error(ret, "APRIL creation failed for object with id:", batch.objects[i].recID);
-            //                 return ret;
-            //             }
-            //             // save to file
-            //             /** @todo hardcoded section ID, if we are to implement sections feature for APRIL, this needs to change. */
-            //             ret = APRIL::writer::saveAPRIL(aprilFile, batch.objects[i].recID, 0, &aprilData);
-            //             if (ret != DBERR_OK) {
-            //                 logger::log_error(ret, "Saving APRIL for object", batch.objects[i].recID, "failed.");
-            //                 return ret;
-            //             }
-            //         }
-            //     }
-            // } else {
-            //     // empty batch, set flag to stop listening for this dataset
-            //     continueListening = 0;
-            //     // update the object count value in the file
-            //     ret = storage::writer::updateObjectCountInFile(partitionFile, dataset->totalObjects);
-            //     if (ret != DBERR_OK) {
-            //         logger::log_error(DBERR_DISK_WRITE_FAILED, "Failed when updating partition file object count");
-            //         return DBERR_DISK_WRITE_FAILED;
-            //     }
-
-            //     // if APRIL is enabled, generate it
-            //     if (g_config.queryMetadata.IntermediateFilter) {
-            //         // update the object count value in the file
-            //         ret = storage::writer::updateObjectCountInFile(aprilFile, dataset->totalObjects);
-            //         if (ret != DBERR_OK) {
-            //             logger::log_error(DBERR_DISK_WRITE_FAILED, "Failed when updating partition file object count");
-            //             return DBERR_DISK_WRITE_FAILED;
-            //         }
-            //         // logger::log_success("Saved", dataset->totalObjects,"total objects.");
-            //     }
-            // }
-
-            // return ret;
-            return DBERR_FEATURE_UNSUPPORTED;
+                // append to partition file
+                ret = storage::writer::partitionFile::appendBatchToPartitionFile(partitionFile, &batch, dataset);
+                if (ret != DBERR_OK) {
+                    logger::log_error(DBERR_DISK_WRITE_FAILED, "Failed when writing batch to partition file");
+                    return DBERR_DISK_WRITE_FAILED;
+                }
+                
+            } else {
+                // empty batch, set flag to stop listening for this dataset
+                continueListening = 0;
+                // update the object count value in the file
+                ret = storage::writer::updateObjectCountInFile(partitionFile, dataset->totalObjects);
+                if (ret != DBERR_OK) {
+                    logger::log_error(DBERR_DISK_WRITE_FAILED, "Failed when updating partition file object count");
+                    return DBERR_DISK_WRITE_FAILED;
+                }
+            }
+            return ret;
         }
 
         static DB_STATUS deserializeBatchMessageAndHandle(char *buffer, int bufferSize, Dataset *dataset, int &continueListening) {
@@ -239,7 +201,7 @@ namespace comm
         /** @brief Pulls a serialized batch message and stores its contents ON DISK (persistence).
          * @warning the objects are not stored in memory.
          */
-        static DB_STATUS pullBatchMessageAndHandle(MPI_Status status, FILE* partitionFile, FILE* aprilFile, Dataset *dataset, int &continueListening) {
+        static DB_STATUS pullBatchMessageAndHandle(MPI_Status status, FILE* partitionFile, Dataset *dataset, int &continueListening) {
             int tag = status.MPI_TAG;
             SerializedMsg<char> msg(MPI_CHAR);
             // receive the message
@@ -254,7 +216,7 @@ namespace comm
                 case MSG_BATCH_POINT:
                 case MSG_BATCH_LINESTRING:
                 case MSG_BATCH_POLYGON:
-                    ret = deserializeBatchMessageAndHandle(msg.data, msg.count, partitionFile, aprilFile, dataset, continueListening);
+                    ret = deserializeBatchMessageAndHandle(msg.data, msg.count, partitionFile, dataset, continueListening);
                     if (ret != DBERR_OK) {
                         return ret;
                     }
@@ -355,7 +317,6 @@ namespace comm
             DB_STATUS ret = DBERR_OK;
             MPI_Status status;
             FILE* partitionFile;
-            FILE* aprilFile;
             int listen = 1;
             size_t dummy = 0;
 
@@ -365,12 +326,8 @@ namespace comm
                 logger::log_error(DBERR_NULL_PTR_EXCEPTION, "Empty dataset object (no metadata). Can not partition.");
                 return DBERR_NULL_PTR_EXCEPTION;
             }
-            // update the grids' dataspace metadata in the partitioning object 
-            g_config.partitioningMethod->setDistGridDataspace(g_config.datasetOptions.dataspaceMetadata);
-            g_config.partitioningMethod->setPartGridDataspace(g_config.datasetOptions.dataspaceMetadata);
             
             // open the partition data file
-            // logger::log_task("Will save the partitioned data at", dataset->metadata.path);
             partitionFile = fopen(dataset->metadata.path.c_str(), "wb+");
             if (partitionFile == NULL) {
                 logger::log_error(DBERR_MISSING_FILE, "Couldnt open dataset file:", dataset->metadata.path);
@@ -379,26 +336,6 @@ namespace comm
             // write a dummy value for the total object count in the very begining of the file
             // it will be corrected when the batches are finished
             fwrite(&dummy, sizeof(size_t), 1, partitionFile);
-
-            // if APRIL is enabled
-            if (g_config.queryMetadata.IntermediateFilter) {
-                // init rasterization environment
-                ret = APRIL::generation::setRasterBounds(g_config.datasetOptions.dataspaceMetadata);
-                if (ret != DBERR_OK) {
-                    return ret;
-                }
-
-                // open april file for writing
-                aprilFile = fopen(dataset->aprilConfig.filepath.c_str(), "wb");
-                if (aprilFile == NULL) {
-                    logger::log_error(DBERR_MISSING_FILE, "Couldnt open APRIL file:", dataset->aprilConfig.filepath);
-                    return DBERR_MISSING_FILE;
-                }
-
-                // write a dummy value for the total object count in the very begining of the file
-                // it will be corrected when the batches are finished
-                fwrite(&dummy, sizeof(size_t), 1, aprilFile);
-            }
 
             // write the dataset metadata to the partition file
             ret = storage::writer::partitionFile::appendDatasetMetadataToPartitionFile(partitionFile, dataset);
@@ -428,7 +365,7 @@ namespace comm
                     case MSG_BATCH_LINESTRING:
                     case MSG_BATCH_POLYGON:
                         /* batch geometry message */
-                        ret = pullBatchMessageAndHandle(status, partitionFile, aprilFile, dataset, listen);
+                        ret = pullBatchMessageAndHandle(status, partitionFile, dataset, listen);
                         if (ret != DBERR_OK) {
                             goto STOP_LISTENING;
                         }  
@@ -444,11 +381,6 @@ STOP_LISTENING:
             // close files
             if (partitionFile == NULL) {
                 fclose(partitionFile);
-            }
-            if (g_config.queryMetadata.IntermediateFilter) {
-                if (aprilFile == NULL) {
-                    fclose(aprilFile);
-                }
             }
             
             return ret;
@@ -621,10 +553,6 @@ STOP_LISTENING:
             for (auto &index : datasetIndexes) {
                 if (g_config.datasetOptions.getDatasetByIdx(index)->metadata.persist) {
                     // if we need persistence (store on disk)
-                    
-                    // @todo revisit later
-                    return DBERR_FEATURE_UNSUPPORTED;
-
                     ret = listenForDatasetPartitioningWithPersistence((DatasetIndex)index);
                     if (ret != DBERR_OK) {
                         // there was an error, send NACK and propagate error code locally
@@ -1142,7 +1070,7 @@ STOP_LISTENING:
                 return DBERR_BATCH_FAILED;
             }
             // logger::log_success("Sending batch of size", batch->objectCount);
-            // serialize (todo: add try/catch for segfauls, mem access etc...)   
+            // serialize (@todo: add try/catch for segfauls, mem access etc...)   
             ret = batch->serialize(&msg.data, msg.count);
             if (ret != DBERR_OK) {
                 logger::log_error(DBERR_BATCH_FAILED, "Batch serialization failed");
@@ -1733,7 +1661,7 @@ STOP_LISTENING:
                 for (auto &index: datasetIndexes) {
                     Dataset* dataset = g_config.datasetOptions.getDatasetByIdx(index);
                     size_t totalObjects = 0;
-                    ret = storage::reader::getDatasetLineCount(dataset, totalObjects);
+                    ret = storage::reader::getDatasetLineCountWithSystemCall(dataset, totalObjects);
                     if (ret != DBERR_OK) {
                         return ret;
                     }
