@@ -8,6 +8,7 @@ namespace proc
         int name_len;
         // Get the hostname of the current controller process
         MPI_Get_processor_name(processor_name, &name_len);
+        // logger::log_task("Processor name:", processor_name);
         // MPI_Info object to specify additional information for process spawning (todo: useful?)
         MPI_Info mpi_info;
         MPI_Info_create(&mpi_info);

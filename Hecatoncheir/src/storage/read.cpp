@@ -278,7 +278,7 @@ namespace storage
                     break;
                 case hec::FT_WKT:
                     // wkt dataset
-                    // logger::log_task("Calculating dataset metadata for dataset", dataset->metadata.datasetName);
+                    logger::log_task("Calculating dataset metadata for dataset", dataset->metadata.datasetName);
                     ret = wkt::calculateDatasetMetadata(dataset);
                     if (ret != DBERR_OK) {
                         logger::log_error(DBERR_OPERATION_FAILED, "Calculating metadata failed for dataset", dataset->metadata.internalID);
@@ -326,32 +326,10 @@ namespace storage
             }
 
             DB_STATUS loadNextObjectComplete(FILE* pFile, Shape &object) {
-                // read recID and partition count
-                int partitionCount;
-                size_t elementsRead = fread(&object.recID, sizeof(size_t), 1, pFile);
-                if (elementsRead != 1) {
-                    logger::log_error(DBERR_DISK_READ_FAILED, "Couldn't read the recID");
-                    return DBERR_DISK_READ_FAILED;
-                }
-                elementsRead = fread(&partitionCount, sizeof(int), 1, pFile);
-                if (elementsRead != 1) {
-                    logger::log_error(DBERR_DISK_READ_FAILED, "Couldn't read the  partitionCount");
-                    return DBERR_DISK_READ_FAILED;
-                }
-                // read partitions data
-                std::vector<int> partitionVector;
-                partitionVector.resize(partitionCount * 2);
-                elementsRead = fread(partitionVector.data(), sizeof(int), partitionCount * 2, pFile);
-                if (elementsRead != partitionCount * 2) {
-                    logger::log_error(DBERR_DISK_READ_FAILED, "Couldn't read the partition IDs");
-                    return DBERR_DISK_READ_FAILED;
-                }
-                // set the partitions in the object
-                object.setPartitions(partitionVector, partitionCount);
 
                 // read vertex count
                 int vertexCount;
-                elementsRead = fread(&vertexCount, sizeof(int), 1, pFile);
+                size_t elementsRead = fread(&vertexCount, sizeof(int), 1, pFile);
                 if (elementsRead != 1) {
                     logger::log_error(DBERR_DISK_READ_FAILED, "Couldn't read the vertex count");
                     return DBERR_DISK_READ_FAILED;
@@ -375,102 +353,98 @@ namespace storage
                     object.addPoint(*it, *(it+1));
                 }
                 // correct
-                object.correctGeometry();
-
-                // printf("Object %ld has %d partitions:\n ", object.recID, object.getPartitionCount());
-                // std::vector<int>* partitionRef = object.getPartitionsRef();
-                // for (int i=0; i<object.getPartitionCount(); i++) {
-                //     printf("(%d,%s),", object.getPartitionID(i), mapping::twoLayerClassIntToStr(object.getPartitionClass(i)).c_str());
-                // }
-                // printf("\n");
-                
+                object.correctGeometry();               
                 return DBERR_OK;
             }
 
 
             static DB_STATUS loadPolygonDatasetContents(FILE *pFile, Dataset *dataset) {
-                DB_STATUS ret = DBERR_OK;
-                // read data (vector and create MBRs as well)
-                for (size_t i=0; i<dataset->totalObjects; i++) {
-                    // read next object
-                    Shape object = shape_factory::createEmptyPolygonShape();
-                    ret = loadNextObjectComplete(pFile, object);
-                    if (ret != DBERR_OK) {
-                        logger::log_error(ret, "Failed to read MBR for object number", i, "of", dataset->totalObjects);
-                        return ret;
-                    }
-                    // store in dataset
-                    ret = dataset->addObject(object);
-                    if (ret != DBERR_OK) {
-                        logger::log_error(ret, "Error when adding object with id", object.recID, "in dataset", dataset->metadata.internalID);
-                        return ret;
-                    }
-                }
+                // DB_STATUS ret = DBERR_OK;
+                // // read data (vector and create MBRs as well)
+                // for (size_t i=0; i<dataset->totalObjects; i++) {
+                //     // read next object
+                //     Shape object = shape_factory::createEmptyPolygonShape();
+                //     ret = loadNextObjectComplete(pFile, object);
+                //     if (ret != DBERR_OK) {
+                //         logger::log_error(ret, "Failed to read MBR for object number", i, "of", dataset->totalObjects);
+                //         return ret;
+                //     }
+                //     // store in dataset
+                //     ret = dataset->addObject(object);
+                //     if (ret != DBERR_OK) {
+                //         logger::log_error(ret, "Error when adding object with id", object.recID, "in dataset", dataset->metadata.internalID);
+                //         return ret;
+                //     }
+                // }
 
-                return ret;
+                // return ret;
+                return DBERR_FEATURE_UNSUPPORTED;
             }
             
             static DB_STATUS loadLinestringDatasetContents(FILE *pFile, Dataset *dataset) {
-                DB_STATUS ret = DBERR_OK;
-                // read data (vector and create MBRs as well)
-                for (size_t i=0; i<dataset->totalObjects; i++) {
-                    // read next object
-                    Shape object = shape_factory::createEmptyLineStringShape();
-                    ret = loadNextObjectComplete(pFile, object);
-                    if (ret != DBERR_OK) {
-                        logger::log_error(ret, "Failed to read MBR for object number", i, "of", dataset->totalObjects);
-                        return ret;
-                    }
-                    // store in dataset
-                    ret = dataset->addObject(object);
-                    if (ret != DBERR_OK) {
-                        logger::log_error(ret, "Error when adding object with id", object.recID, "in dataset", dataset->metadata.internalID);
-                        return ret;
-                    }
-                }
-                return ret;
+                // DB_STATUS ret = DBERR_OK;
+                // // read data (vector and create MBRs as well)
+                // for (size_t i=0; i<dataset->totalObjects; i++) {
+                //     // read next object
+                //     Shape object = shape_factory::createEmptyLineStringShape();
+                //     ret = loadNextObjectComplete(pFile, object);
+                //     if (ret != DBERR_OK) {
+                //         logger::log_error(ret, "Failed to read MBR for object number", i, "of", dataset->totalObjects);
+                //         return ret;
+                //     }
+                //     // store in dataset
+                //     ret = dataset->addObject(object);
+                //     if (ret != DBERR_OK) {
+                //         logger::log_error(ret, "Error when adding object with id", object.recID, "in dataset", dataset->metadata.internalID);
+                //         return ret;
+                //     }
+                // }
+                // return ret;
+                return DBERR_FEATURE_UNSUPPORTED;
             }
 
             static DB_STATUS loadPointDatasetContents(FILE *pFile, Dataset* dataset) {
-                DB_STATUS ret = DBERR_OK;
-                // read data (vector and create MBRs as well)
-                for (size_t i=0; i<dataset->totalObjects; i++) {
-                    // read next object
-                    Shape object = shape_factory::createEmptyPointShape();
-                    ret = loadNextObjectComplete(pFile, object);
-                    if (ret != DBERR_OK) {
-                        logger::log_error(ret, "Failed to read MBR for object number", i, "of", dataset->totalObjects);
-                        return ret;
-                    }
-                    // store in dataset
-                    ret = dataset->addObject(object);
-                    if (ret != DBERR_OK) {
-                        logger::log_error(ret, "Error when adding object with id", object.recID, "in dataset", dataset->metadata.internalID);
-                        return ret;
-                    }
-                }
-                return ret;
+                // DB_STATUS ret = DBERR_OK;
+                // // read data (vector and create MBRs as well)
+                // for (size_t i=0; i<dataset->totalObjects; i++) {
+                //     // read next object
+                //     Shape object = shape_factory::createEmptyPointShape();
+                //     ret = loadNextObjectComplete(pFile, object);
+                //     if (ret != DBERR_OK) {
+                //         logger::log_error(ret, "Failed to read MBR for object number", i, "of", dataset->totalObjects);
+                //         return ret;
+                //     }
+                //     // store in dataset
+                //     ret = dataset->addObject(object);
+                //     if (ret != DBERR_OK) {
+                //         logger::log_error(ret, "Error when adding object with id", object.recID, "in dataset", dataset->metadata.internalID);
+                //         return ret;
+                //     }
+                // }
+                // return ret;
+                return DBERR_FEATURE_UNSUPPORTED;
             }
 
             static DB_STATUS loadRectangleDatasetContents(FILE *pFile, Dataset* dataset) {
-                DB_STATUS ret = DBERR_OK;
-                // read data (vector and create MBRs as well)
-                for (size_t i=0; i<dataset->totalObjects; i++) {
-                    // read next object
-                    Shape object = shape_factory::createEmptyRectangleShape();
-                    ret = loadNextObjectComplete(pFile, object);
-                    if (ret != DBERR_OK) {
-                        logger::log_error(ret, "Failed to read MBR for object number", i, "of", dataset->totalObjects);
-                        return ret;
-                    }
-                    // store in dataset
-                    ret = dataset->addObject(object);
-                    if (ret != DBERR_OK) {
-                        logger::log_error(ret, "Error when adding object with id", object.recID, "in dataset", dataset->metadata.internalID);
-                        return ret;
-                    }
-                }
-                return ret;
+                // DB_STATUS ret = DBERR_OK;
+                // // read data (vector and create MBRs as well)
+                // for (size_t i=0; i<dataset->totalObjects; i++) {
+                //     // read next object
+                //     Shape object = shape_factory::createEmptyRectangleShape();
+                //     ret = loadNextObjectComplete(pFile, object);
+                //     if (ret != DBERR_OK) {
+                //         logger::log_error(ret, "Failed to read MBR for object number", i, "of", dataset->totalObjects);
+                //         return ret;
+                //     }
+                //     // store in dataset
+                //     ret = dataset->addObject(object);
+                //     if (ret != DBERR_OK) {
+                //         logger::log_error(ret, "Error when adding object with id", object.recID, "in dataset", dataset->metadata.internalID);
+                //         return ret;
+                //     }
+                // }
+                // return ret;
+                return DBERR_FEATURE_UNSUPPORTED;
             }
 
             DB_STATUS loadDatasetComplete(Dataset *dataset) {

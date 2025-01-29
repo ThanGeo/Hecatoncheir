@@ -19,6 +19,13 @@ namespace partitioning
      * @param[out] twoLayerClasses The MBR's two-layer index classification for each individual intersecting partition.
      */
     static DB_STATUS getPartitionsForMBR(MBR &mbr, std::vector<int> &partitionIDs){
+        // logger::log_task("Calculating partition for MBR", mbr.pMin.x, mbr.pMin.y, mbr.pMax.x, mbr.pMax.y);
+        // g_config.datasetOptions.dataspaceMetadata.print();
+        // logger::log_task("DistpartitionExtentX:", g_config.partitioningMethod->getDistPartionExtentX());
+        // logger::log_task("DistpartitionExtentY:", g_config.partitioningMethod->getDistPartionExtentY());
+        // logger::log_task("DistributionPPD:", g_config.partitioningMethod->getDistributionPPD());
+        // return DBERR_NULL_PTR_EXCEPTION;
+
         int minPartitionX = (mbr.pMin.x - g_config.datasetOptions.dataspaceMetadata.xMinGlobal) / g_config.partitioningMethod->getDistPartionExtentX();
         int minPartitionY = (mbr.pMin.y - g_config.datasetOptions.dataspaceMetadata.yMinGlobal) / g_config.partitioningMethod->getDistPartionExtentY();
         int maxPartitionX = (mbr.pMax.x - g_config.datasetOptions.dataspaceMetadata.xMinGlobal) / g_config.partitioningMethod->getDistPartionExtentX();
@@ -104,20 +111,17 @@ namespace partitioning
                     logger::log_error(DBERR_INVALID_PARAMETER, "Error fetching batch for node", nodeRank);
                     return DBERR_INVALID_PARAMETER;
                 }
-                Batch *batch = &it->second;
-                // make a copy of the geometry
-                Shape objectCopy = object;
                 // add moddified geometry to this batch
-                batch->addObjectToBatch(objectCopy);
+                it->second.addObjectToBatch(object);
 
                 // if batch is full, send and reset
-                if (batch->objectCount >= batch->maxObjectCount) {
-                    ret = comm::controller::serializeAndSendGeometryBatch(batch);
+                if (it->second.objectCount >= it->second.maxObjectCount) {
+                    ret = comm::controller::serializeAndSendGeometryBatch(&it->second);
                     if (ret != DBERR_OK) {
                         return ret;
                     }
                     // reset
-                    batch->clear();
+                    it->second.clear();
                     // count batch 
                     batchesSent += 1;
                 }
@@ -482,6 +486,7 @@ namespace partitioning
             size_t totalValidObjects = 0;
             // count how many batches have been sent in total
             int batchesSent = 0;
+            // logger::log_task("Spawning", MAX_THREADS, "threads that each will store", g_world_size, "batches of", g_config.partitioningMethod->batchSize, "objects of arbitrary size");
             #pragma omp parallel firstprivate(batchMap, line, totalObjects) reduction(+:batchesSent) reduction(+:totalValidObjects)
             {
                 int partitionID;
@@ -607,9 +612,8 @@ namespace partitioning
             return ret;
         }
 
-        static DB_STATUS loadDatasetAndPartitionTEST(Dataset* dataset) {
+        static DB_STATUS loadDatasetAndPartitionNoBatches(Dataset* dataset) {
             DB_STATUS ret = DBERR_OK;
-            // initialize batches
             // open file
             std::ifstream fin(dataset->metadata.path);
             if (!fin.is_open()) {
@@ -621,8 +625,7 @@ namespace partitioning
             size_t totalObjects = dataset->totalObjects;
             size_t totalValidObjects = 0;
             // count how many batches have been sent in total
-            int batchesSent = 0;
-            #pragma omp parallel firstprivate(line, totalObjects) reduction(+:batchesSent) reduction(+:totalValidObjects)
+            #pragma omp parallel firstprivate(line, totalObjects) reduction(+:totalValidObjects)
             {
                 int partitionID;
                 double x,y;
@@ -666,6 +669,7 @@ namespace partitioning
                         // parse line to get only the first column (wkt geometry)
                         std::stringstream ss(line);
                         std::getline(ss, token, '\t');
+
                         // set rec ID
                         object.recID = currentLine;
                         // set object from the WKT
@@ -676,13 +680,53 @@ namespace partitioning
                             // some other error occured, interrupt
                             #pragma omp cancel parallel
                             ret = local_ret;
+                            break;
                         } else {
                             // valid object
                             totalValidObjects += 1;
                             // set the MBR
                             object.setMBR();
-                        }
+                            
+                            // find partitions
+                            std::vector<int> partitionIDs;
+                            local_ret = partitioning::getPartitionsForMBR(object.mbr, partitionIDs);
+                            if (local_ret != DBERR_OK) {
+                                #pragma omp cancel parallel
+                                ret = local_ret;
+                                break;
+                            }
 
+                            // find which nodes need to receive this geometry
+                            std::vector<bool> bitVector(g_world_size, false);
+                            // get receiving worker ranks
+                            for (auto partitionIT = partitionIDs.begin(); partitionIT != partitionIDs.end(); partitionIT++) {
+                                // get node rank from distribution grid
+                                int nodeRank = g_config.partitioningMethod->getNodeRankForPartitionID(*partitionIT);
+                                bitVector[nodeRank] = true;
+                            }
+                            // to AGENT
+                            if (bitVector.at(AGENT_RANK)) {
+                                // if it has been marked, serialize and send
+                                local_ret = comm::controller::serializeAndSendGeometry(&object, AGENT_RANK, g_agent_comm);
+                                if (local_ret != DBERR_OK) {
+                                    #pragma omp cancel parallel
+                                    ret = local_ret;
+                                    break;
+                                }
+                            }
+                            // to WORKERS
+                            for (int nodeRank=1; nodeRank<bitVector.size(); nodeRank++) {
+                                if (bitVector.at(nodeRank)) {
+                                    // if it has been marked, serialize and send
+                                    local_ret = comm::controller::serializeAndSendGeometry(&object, nodeRank, g_controller_comm);
+                                    if (local_ret != DBERR_OK) {
+                                        #pragma omp cancel parallel
+                                        ret = local_ret;
+                                        break;
+                                    }
+                                }
+                            }
+                        }
                         currentLine += 1;
                         if (currentLine >= toLine) {
                             // the last line for this thread has been read
@@ -698,18 +742,14 @@ namespace partitioning
                 return ret;
             }
             // logger::log_success("Partitioned", totalValidObjects, "valid objects");
-            // send an empty pack to each worker to signal the end of the partitioning for this dataset
-            for (int i=0; i<g_world_size; i++) {
-                Batch batch;
-                batch.destRank = i;
-                if (i > 0) {
-                    batch.comm = &g_controller_comm;
-                } else {
-                    batch.comm = &g_agent_comm;
-                }
-                batch.tag = MSG_BATCH_POLYGON;
-                batch.dataType = DT_POLYGON;
-                ret = comm::controller::serializeAndSendGeometryBatch(&batch);
+            // send an empty shape to each worker to signal the end of the partitioning for this dataset
+            
+            ret = comm::controller::serializeAndSendGeometry(nullptr, AGENT_RANK, g_agent_comm);
+            if (ret != DBERR_OK) {
+                return ret;
+            }
+            for (int i=1; i<g_world_size; i++) {
+                ret = comm::controller::serializeAndSendGeometry(nullptr, i, g_controller_comm);
                 if (ret != DBERR_OK) {
                     return ret;
                 }
@@ -717,7 +757,7 @@ namespace partitioning
             // logger::log_success("Sent", batchesSent, "non-empty batches.");
             return ret;
         }
-        
+
     } // wkt namespace
     
 
@@ -742,7 +782,7 @@ namespace partitioning
             case hec::FT_WKT:
                 // wkt dataset
                 ret = wkt::loadDatasetAndPartition(dataset);
-                // ret = wkt::loadDatasetAndPartitionTEST(dataset);
+                // ret = wkt::loadDatasetAndPartitionNoBatches(dataset);
                 if (ret != DBERR_OK) {
                     logger::log_error(DBERR_PARTITIONING_FAILED, "Partitioning failed for dataset", dataset->metadata.internalID);
                     return ret;

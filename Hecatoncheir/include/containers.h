@@ -31,16 +31,12 @@
  * 
  */
 struct AprilData {
-    /** @brief A-list size */
-    uint numIntervalsALL = 0;
     /** 
     @brief A-list contents
      * 
      * All of the object's intervals regardless of cell type (Partial and Full)
      */
     std::vector<uint32_t> intervalsALL;
-    /** @brief F-list size */
-    uint numIntervalsFULL = 0;
     /** 
     @brief F-list contents
      * 
@@ -441,7 +437,6 @@ template<>
 struct GeometryWrapper<bg_rectangle> {
 public:
     bg_rectangle geometry;
-    std::vector<bg_point_xy> vertices;
     GeometryWrapper(){}
     GeometryWrapper(const bg_rectangle &geom) : geometry(geom) {}
 
@@ -457,7 +452,6 @@ public:
             // both points already exist, error
             logger::log_error(DBERR_INVALID_OPERATION, "Cannot add more than two points to a rectangle");
         }
-        vertices.emplace_back(point);
     }
 
     void getBoostEnvelope(bg_rectangle &envelope) {
@@ -522,7 +516,6 @@ public:
 
     void reset() {
         boost::geometry::clear(geometry);
-        vertices.clear();
     }
 
     void printGeometry() {
@@ -540,11 +533,10 @@ public:
         } else {
             logger::log_error(DBERR_OUT_OF_BOUNDS, "Rectangle point index out of bounds for modifyBoostPointByIndex:", index);
         }
-        vertices[index] = bg_point_xy(x, y);
     }
 
     const std::vector<bg_point_xy>* getReferenceToPoints() const {
-        return &vertices;
+        return nullptr;
     }
 
     int getVertexCount() const {
@@ -1090,8 +1082,6 @@ private:
      * @warning Direct access is not encouraged. See the member method definitions for more.
      */
     ShapeVariant shape;
-    std::vector<int> partitions;    /** @deprecated */
-    int partitionCount;              /** @deprecated */
 public:
     /** @brief the object's ID, as read by the data file. */
     size_t recID;
@@ -1123,55 +1113,6 @@ public:
             else
                 return "Unknown type";
         }, shape);
-    }
-
-    /** @brief Returns the partition ID for partition number 'partitionIndex' in the partitions list.
-     * @param partitionIndex indicates the offset (index) of the requested partition from [0, partitionCount-1].
-     */
-    inline int getPartitionID(int partitionIndex) {
-        return partitions[partitionIndex * 2];
-    }
-    /** @brief Returns the partition class for partition number 'partitionIndex' in the partitions list.
-     * @param partitionIndex indicates the offset (index) of the requested partition from [0, partitionCount-1].
-     */
-    inline TwoLayerClass getPartitionClass(int partitionIndex) {
-        return (TwoLayerClass) partitions[partitionIndex * 2 + 1];
-    }
-
-    inline void setPartitionClass(int partitionIndex, TwoLayerClass classType) {
-        partitions[partitionIndex * 2 + 1] = classType;
-    }
-
-    /** @brief Sets the object's partitions (partitionCount in total) to the given list of partitions.
-     * @param newPartitions Contains consecutive double values that represent pairs <partitionID, classType>. 
-     * Has size partitionCount * 2.
-     * @param partitionCount The total number of partitions represented by the list.
-     */
-    inline void setPartitions(std::vector<int> &newPartitions, int partitionCount) {
-        this->partitionCount = partitionCount;
-        this->partitions = newPartitions;
-    }
-
-    /** @brief Initializes the list of partitions based on the input partition ids. All classes are set to the invalid (empty) class. */
-    inline void initPartitions(std::vector<int> &partitionIDs) {
-        partitionCount = partitionIDs.size();
-        partitions.reserve(partitionCount * 2);
-        for (auto &it: partitionIDs) {
-            partitions.push_back(it);
-            partitions.push_back(CLASS_NONE);
-        }
-    }
-
-    inline int getPartitionCount() {
-        return partitionCount;
-    }
-
-    inline std::vector<int> getPartitions() {
-        return partitions;
-    }
-
-    inline std::vector<int>* getPartitionsRef() {
-        return &partitions;
     }
 
     /** @brief Sets the shape's mbr. If the max values are larger than the min values, it fixes this by swapping them. */
@@ -1213,8 +1154,6 @@ public:
     void reset() {
         recID = 0;
         resetMBR();
-        partitions.clear();
-        partitionCount = 0;
         resetPoints();
     }
 
@@ -1948,10 +1887,6 @@ struct Dataset{
         this->metadata = metadata;
         this->totalObjects = 0;
     }
-
-    /** @brief Adds a Shape object into the two layer index and the reference map. 
-     * @note Calculates the partitions and the object's classes in them. */
-    DB_STATUS addObject(Shape &object);
 
     /** @brief Adds a Shape object to the dataset. No indexing will take place with this method. */
     DB_STATUS storeObject(Shape &object);

@@ -6,7 +6,7 @@ namespace APRIL
     @brief returns 1 if the two interval lists have at least one overlap, otherwise zero
      * if any of them is empty, they can not overlap
      */
-    static inline int intersectionJoinIntervalLists(std::vector<uint32_t> &ar1, uint &numintervals1, std::vector<uint32_t> &ar2, uint &numintervals2){
+    static inline int intersectionJoinIntervalLists(std::vector<uint32_t> &ar1, uint numintervals1, std::vector<uint32_t> &ar2, uint numintervals2){
         // printf("%u and %u intervals\n", numintervals1, numintervals2);
         //they may not have any intervals of this type
         if(numintervals1 == 0 || numintervals2 == 0){
@@ -53,7 +53,7 @@ namespace APRIL
     @brief returns 1 if the intervals of the first list (ar1) are completely inside the intervals of the second list (ar2)
      * otherwise 0
      */
-    static inline int insideJoinIntervalLists(std::vector<uint32_t> &ar1, uint &numintervals1, std::vector<uint32_t> &ar2, uint &numintervals2){
+    static inline int insideJoinIntervalLists(std::vector<uint32_t> &ar1, uint numintervals1, std::vector<uint32_t> &ar2, uint numintervals2){
         //they may not have any intervals of this type
         if(numintervals1 == 0 || numintervals2 == 0){
             return 0;
@@ -100,7 +100,7 @@ namespace APRIL
     @brief returns 1 if the two interval lists match 100%
      * otherwise 0
      */
-    static inline int joinIntervalsForMatch(std::vector<uint32_t> &ar1, uint &numintervals1, std::vector<uint32_t> &ar2, uint &numintervals2){
+    static inline int joinIntervalsForMatch(std::vector<uint32_t> &ar1, uint numintervals1, std::vector<uint32_t> &ar2, uint numintervals2){
         // if interval lists have different sizes (or both are 0) then they cannot match
         if(numintervals1 != numintervals2){
             return 0;
@@ -143,7 +143,7 @@ namespace APRIL
     @brief returns a value to indicate the relationship between the two interval lists
      * could be that ar1 is inside ar2, the reverse, that they intersect or that they are disjoint
      */
-    static inline int joinIntervalsHybrid(std::vector<uint32_t> &ar1, uint &numintervals1, std::vector<uint32_t> &ar2, uint &numintervals2){
+    static inline int joinIntervalsHybrid(std::vector<uint32_t> &ar1, uint numintervals1, std::vector<uint32_t> &ar2, uint numintervals2){
         bool intersect = false;
         //they may not have any intervals of this type
         if(numintervals1 == 0 || numintervals2 == 0){
@@ -239,7 +239,7 @@ namespace APRIL
     /**
     @brief compares two lists for whether ar1 is inside ar2, the reverse, they match, they intersect or they are disjoint
      */
-    static inline int joinIntervalListsSymmetricalOptimizedTrueHitIntersect(std::vector<uint32_t> &ar1, uint &numintervals1, std::vector<uint32_t> &ar2, uint &numintervals2) {
+    static inline int joinIntervalListsSymmetricalOptimizedTrueHitIntersect(std::vector<uint32_t> &ar1, uint numintervals1, std::vector<uint32_t> &ar2, uint numintervals2) {
         // a list might be empty (disjoint)
         if(numintervals1 == 0 || numintervals2 == 0){
             return IL_DISJOINT;
@@ -277,21 +277,21 @@ namespace APRIL
                 DB_STATUS ret = DBERR_OK;
                 // check ALL - ALL
                 // printf("AA\n");
-                if(!intersectionJoinIntervalLists(aprilR->intervalsALL, aprilR->numIntervalsALL, aprilS->intervalsALL, aprilS->numIntervalsALL)){
+                if(!intersectionJoinIntervalLists(aprilR->intervalsALL, aprilR->intervalsALL.size()/2, aprilS->intervalsALL, aprilS->intervalsALL.size()/2)){
                     //guaranteed not hit
                     result = TRUE_NEGATIVE;
                     return ret;
                 }
                 //check ALL - FULL
                 // printf("AF\n");
-                if(intersectionJoinIntervalLists(aprilR->intervalsALL, aprilR->numIntervalsALL, aprilS->intervalsFULL, aprilS->numIntervalsFULL)){
+                if(intersectionJoinIntervalLists(aprilR->intervalsALL, aprilR->intervalsALL.size()/2, aprilS->intervalsFULL, aprilS->intervalsFULL.size()/2)){
                     //hit
                     result = TRUE_HIT;
                     return ret;
                 }
                 //check FULL - ALL
                 // printf("FA\n");
-                if(intersectionJoinIntervalLists(aprilR->intervalsFULL, aprilR->numIntervalsFULL, aprilS->intervalsALL, aprilS->numIntervalsALL)){
+                if(intersectionJoinIntervalLists(aprilR->intervalsFULL, aprilR->intervalsFULL.size()/2, aprilS->intervalsALL, aprilS->intervalsALL.size()/2)){
                     //hit
                     result = TRUE_HIT;
                     return ret;
@@ -304,13 +304,13 @@ namespace APRIL
             DB_STATUS insideCoveredByJoinAPRIL(AprilData *aprilR, AprilData *aprilS, int &result){
                 DB_STATUS ret = DBERR_OK;
                 // check ALL - ALL
-                if(!insideJoinIntervalLists(aprilR->intervalsALL, aprilR->numIntervalsALL, aprilS->intervalsFULL, aprilS->numIntervalsFULL)){
+                if(!insideJoinIntervalLists(aprilR->intervalsALL, aprilR->intervalsALL.size()/2, aprilS->intervalsFULL, aprilS->intervalsFULL.size()/2)){
                     //guaranteed not hit
                     result = TRUE_NEGATIVE;
                     return ret;
                 }
                 //check ALL - FULL (todo: maybe check the opposite: find at least one interlval NOT inside, maybe its faster)
-                if(insideJoinIntervalLists(aprilR->intervalsALL, aprilR->numIntervalsALL, aprilS->intervalsFULL, aprilS->numIntervalsFULL)){
+                if(insideJoinIntervalLists(aprilR->intervalsALL, aprilR->intervalsALL.size()/2, aprilS->intervalsFULL, aprilS->intervalsFULL.size()/2)){
                     //hit
                     result = TRUE_HIT;
                     return ret;
@@ -323,19 +323,19 @@ namespace APRIL
             DB_STATUS disjointJoinAPRIL(AprilData *aprilR, AprilData *aprilS, int &result){
                 DB_STATUS ret = DBERR_OK;
                 // check ALL - ALL
-                if(!intersectionJoinIntervalLists(aprilR->intervalsALL, aprilR->numIntervalsALL, aprilS->intervalsALL, aprilS->numIntervalsALL)){
+                if(!intersectionJoinIntervalLists(aprilR->intervalsALL, aprilR->intervalsALL.size()/2, aprilS->intervalsALL, aprilS->intervalsALL.size()/2)){
                     //guaranteed not hit
                     result = TRUE_HIT;
                     return ret;
                 }
                 //check ALL - FULL
-                if(intersectionJoinIntervalLists(aprilR->intervalsALL, aprilR->numIntervalsALL, aprilS->intervalsFULL, aprilS->numIntervalsFULL)){
+                if(intersectionJoinIntervalLists(aprilR->intervalsALL, aprilR->intervalsALL.size()/2, aprilS->intervalsFULL, aprilS->intervalsFULL.size()/2)){
                     //hit
                     result = TRUE_NEGATIVE;
                     return ret;
                 }
                 //check FULL - ALL
-                if(intersectionJoinIntervalLists(aprilR->intervalsFULL, aprilR->numIntervalsFULL, aprilS->intervalsALL, aprilS->numIntervalsALL)){
+                if(intersectionJoinIntervalLists(aprilR->intervalsFULL, aprilR->intervalsFULL.size()/2, aprilS->intervalsALL, aprilS->intervalsALL.size()/2)){
                     //hit
                     result = TRUE_NEGATIVE;
                     return ret;
@@ -348,13 +348,13 @@ namespace APRIL
             DB_STATUS equalJoinAPRIL(AprilData *aprilR, AprilData *aprilS, int &result){
                 DB_STATUS ret = DBERR_OK;
                 // check ALL - ALL
-                if(!joinIntervalsForMatch(aprilR->intervalsALL, aprilR->numIntervalsALL, aprilS->intervalsALL, aprilS->numIntervalsALL)){
+                if(!joinIntervalsForMatch(aprilR->intervalsALL, aprilR->intervalsALL.size()/2, aprilS->intervalsALL, aprilS->intervalsALL.size()/2)){
                     //guaranteed not hit
                     result = TRUE_NEGATIVE;
                     return ret;
                 }
                 //check FULL - FULL
-                if(intersectionJoinIntervalLists(aprilR->intervalsFULL, aprilR->numIntervalsFULL, aprilS->intervalsFULL, aprilS->numIntervalsFULL)){
+                if(intersectionJoinIntervalLists(aprilR->intervalsFULL, aprilR->intervalsFULL.size()/2, aprilS->intervalsFULL, aprilS->intervalsFULL.size()/2)){
                     //hit
                     result = TRUE_NEGATIVE;
                     return ret;
@@ -367,19 +367,19 @@ namespace APRIL
             DB_STATUS meetJoinAPRIL(AprilData *aprilR, AprilData *aprilS, int &result){
                 DB_STATUS ret = DBERR_OK;
                 // check ALL - ALL
-                if(!intersectionJoinIntervalLists(aprilR->intervalsALL, aprilR->numIntervalsALL, aprilS->intervalsALL, aprilS->numIntervalsALL)){
+                if(!intersectionJoinIntervalLists(aprilR->intervalsALL, aprilR->intervalsALL.size()/2, aprilS->intervalsALL, aprilS->intervalsALL.size()/2)){
                     //guaranteed not hit
                     result = TRUE_NEGATIVE;
                     return ret;
                 }
                 //check ALL - FULL
-                if(intersectionJoinIntervalLists(aprilR->intervalsALL, aprilR->numIntervalsALL, aprilS->intervalsFULL, aprilS->numIntervalsFULL)){
+                if(intersectionJoinIntervalLists(aprilR->intervalsALL, aprilR->intervalsALL.size()/2, aprilS->intervalsFULL, aprilS->intervalsFULL.size()/2)){
                     //hit
                     result = TRUE_NEGATIVE;
                     return ret;
                 }
                 //check FULL - ALL
-                if(intersectionJoinIntervalLists(aprilR->intervalsFULL, aprilR->numIntervalsFULL, aprilS->intervalsALL, aprilS->numIntervalsALL)){
+                if(intersectionJoinIntervalLists(aprilR->intervalsFULL, aprilR->intervalsFULL.size()/2, aprilS->intervalsALL, aprilS->intervalsALL.size()/2)){
                     //hit
                     result = TRUE_NEGATIVE;
                     return ret;
@@ -392,14 +392,14 @@ namespace APRIL
             DB_STATUS containsCoversJoinAPRIL(AprilData *aprilR, AprilData *aprilS, int &result){
                 DB_STATUS ret = DBERR_OK;
                 // check ALL - ALL
-                if(!insideJoinIntervalLists(aprilS->intervalsALL, aprilS->numIntervalsALL, aprilR->intervalsALL, aprilR->numIntervalsALL)){
+                if(!insideJoinIntervalLists(aprilS->intervalsALL, aprilS->intervalsALL.size()/2, aprilR->intervalsALL, aprilR->intervalsALL.size()/2)){
                     //guaranteed not hit
                     result = TRUE_NEGATIVE;
                     return ret;
                 }
 
                 // check FULL - ALL (todo: maybe check the opposite: find at least one interlval NOT inside, maybe its faster)
-                if(insideJoinIntervalLists(aprilS->intervalsALL, aprilS->numIntervalsALL, aprilR->intervalsFULL, aprilR->numIntervalsFULL)){
+                if(insideJoinIntervalLists(aprilS->intervalsALL, aprilS->intervalsALL.size()/2, aprilR->intervalsFULL, aprilR->intervalsFULL.size()/2)){
                     //guaranteed hit
                     result = TRUE_HIT;
                     return ret;
@@ -416,7 +416,7 @@ namespace APRIL
             DB_STATUS MBRRinSContainmentJoinAPRIL(AprilData *aprilR, AprilData *aprilS, int &relation) {
                 DB_STATUS ret = DBERR_OK;
                 // join AA for containment, intersection or disjoint
-                int AAresult = joinIntervalsHybrid(aprilR->intervalsALL, aprilR->numIntervalsALL, aprilS->intervalsALL, aprilS->numIntervalsALL);
+                int AAresult = joinIntervalsHybrid(aprilR->intervalsALL, aprilR->intervalsALL.size()/2, aprilS->intervalsALL, aprilS->intervalsALL.size()/2);
                 // printf("AA: %d\n", AAresult);
                 if (AAresult == IL_DISJOINT) {
                     // true negative
@@ -424,9 +424,9 @@ namespace APRIL
                     return ret;
                 } else if(AAresult == IL_R_INSIDE_S) {
                     // all R_A intervals are inside S_A 
-                    if (aprilS->numIntervalsFULL) {
+                    if (aprilS->intervalsFULL.size()/2) {
                         // join AF for containment, intersection or disjoint
-                        int AFresult = joinIntervalsHybrid(aprilR->intervalsALL, aprilR->numIntervalsALL, aprilS->intervalsFULL, aprilS->numIntervalsFULL);
+                        int AFresult = joinIntervalsHybrid(aprilR->intervalsALL, aprilR->intervalsALL.size()/2, aprilS->intervalsFULL, aprilS->intervalsFULL.size()/2);
                         if (AFresult == IL_R_INSIDE_S) {
                             // AF containment
                             relation = TR_INSIDE;
@@ -437,7 +437,7 @@ namespace APRIL
                             return ret;
                         }
                     } else {
-                        if(intersectionJoinIntervalLists(aprilR->intervalsFULL, aprilR->numIntervalsFULL, aprilS->intervalsALL, aprilS->numIntervalsALL)) {
+                        if(intersectionJoinIntervalLists(aprilR->intervalsFULL, aprilR->intervalsFULL.size()/2, aprilS->intervalsALL, aprilS->intervalsALL.size()/2)) {
                             // intersection
                             relation = TR_INTERSECT;
                             return ret;
@@ -445,11 +445,11 @@ namespace APRIL
                     }
                 } else {
                     // intersection
-                    if(intersectionJoinIntervalLists(aprilR->intervalsALL, aprilR->numIntervalsALL, aprilS->intervalsFULL, aprilS->numIntervalsFULL)){
+                    if(intersectionJoinIntervalLists(aprilR->intervalsALL, aprilR->intervalsALL.size()/2, aprilS->intervalsFULL, aprilS->intervalsFULL.size()/2)){
                         // intersection
                         relation = TR_INTERSECT;
                         return ret;
-                    } else if(intersectionJoinIntervalLists(aprilR->intervalsFULL, aprilR->numIntervalsFULL, aprilS->intervalsALL, aprilS->numIntervalsALL)) {
+                    } else if(intersectionJoinIntervalLists(aprilR->intervalsFULL, aprilR->intervalsFULL.size()/2, aprilS->intervalsALL, aprilS->intervalsALL.size()/2)) {
                         // intersection
                         relation = TR_INTERSECT;
                         return ret;
@@ -464,16 +464,16 @@ namespace APRIL
             DB_STATUS MBRSinRContainmentJoinAPRIL(AprilData *aprilR, AprilData *aprilS, int &relation) {
                 DB_STATUS ret = DBERR_OK;
                 // join AA for containment, intersection or disjoint
-                int AAresult = joinIntervalsHybrid(aprilS->intervalsALL, aprilS->numIntervalsALL, aprilR->intervalsALL, aprilR->numIntervalsALL);
+                int AAresult = joinIntervalsHybrid(aprilS->intervalsALL, aprilS->intervalsALL.size()/2, aprilR->intervalsALL, aprilR->intervalsALL.size()/2);
                 if (AAresult == IL_DISJOINT) {
                     // true negative
                     relation = TR_DISJOINT;
                     return ret;
                 } else if(AAresult == IL_R_INSIDE_S) {
                     // all S_A intervals are inside R_A 
-                    if (aprilR->numIntervalsFULL) {
+                    if (aprilR->intervalsFULL.size()/2) {
                         // join AF for containment, intersection or disjoint
-                        int AFresult = joinIntervalsHybrid(aprilS->intervalsALL, aprilS->numIntervalsALL, aprilR->intervalsFULL, aprilR->numIntervalsFULL);
+                        int AFresult = joinIntervalsHybrid(aprilS->intervalsALL, aprilS->intervalsALL.size()/2, aprilR->intervalsFULL, aprilR->intervalsFULL.size()/2);
                         if (AFresult == IL_R_INSIDE_S) {
                             // AF containment (dont confuse IL_R_INSIDE_S, it is based on how you pass arguments to the hybrid function)
                             relation = TR_CONTAINS;
@@ -484,7 +484,7 @@ namespace APRIL
                             return ret;
                         }
                     } else {
-                        if(intersectionJoinIntervalLists(aprilR->intervalsALL, aprilR->numIntervalsALL, aprilS->intervalsFULL, aprilS->numIntervalsFULL)) {
+                        if(intersectionJoinIntervalLists(aprilR->intervalsALL, aprilR->intervalsALL.size()/2, aprilS->intervalsFULL, aprilS->intervalsFULL.size()/2)) {
                             // check AF intersection
                             relation = TR_INTERSECT;
                             return ret;
@@ -492,11 +492,11 @@ namespace APRIL
                     }
                 } else {
                     // intersection
-                    if(intersectionJoinIntervalLists(aprilR->intervalsALL, aprilR->numIntervalsALL, aprilS->intervalsFULL, aprilS->numIntervalsFULL)){
+                    if(intersectionJoinIntervalLists(aprilR->intervalsALL, aprilR->intervalsALL.size()/2, aprilS->intervalsFULL, aprilS->intervalsFULL.size()/2)){
                         // intersection
                         relation = TR_INTERSECT;
                         return ret;
-                    } else if(intersectionJoinIntervalLists(aprilR->intervalsFULL, aprilR->numIntervalsFULL, aprilS->intervalsALL, aprilS->numIntervalsALL)) {
+                    } else if(intersectionJoinIntervalLists(aprilR->intervalsFULL, aprilR->intervalsFULL.size()/2, aprilS->intervalsALL, aprilS->intervalsALL.size()/2)) {
                         // intersection
                         relation = TR_INTERSECT;
                         return ret;
@@ -510,13 +510,13 @@ namespace APRIL
             DB_STATUS MBREqualJoinAPRIL(Shape* objR, Shape* objS, int &relation) {
                 DB_STATUS ret = DBERR_OK;
                 // AA join to look for exact relationship between the lists
-                int AAresult = joinIntervalListsSymmetricalOptimizedTrueHitIntersect(objR->aprilData.intervalsALL, objR->aprilData.numIntervalsALL, objS->aprilData.intervalsALL, objS->aprilData.numIntervalsALL);
+                int AAresult = joinIntervalListsSymmetricalOptimizedTrueHitIntersect(objR->aprilData.intervalsALL, objR->aprilData.intervalsALL.size()/2, objS->aprilData.intervalsALL, objS->aprilData.intervalsALL.size()/2);
                 if (AAresult == IL_MATCH) {
                     // refine for equal, covered by, covers and true hit intersect
                     relation = REFINE_EQUAL_COVERS_COVEREDBY_TRUEHIT_INTERSECT;
                     return ret;
                 } else if (AAresult == IL_R_INSIDE_S) {
-                    int AFresult = joinIntervalsHybrid(objR->aprilData.intervalsALL, objR->aprilData.numIntervalsALL, objS->aprilData.intervalsFULL, objS->aprilData.numIntervalsFULL);
+                    int AFresult = joinIntervalsHybrid(objR->aprilData.intervalsALL, objR->aprilData.intervalsALL.size()/2, objS->aprilData.intervalsFULL, objS->aprilData.intervalsFULL.size()/2);
                     if (AFresult == IL_R_INSIDE_S) {
                         // true hit covered by (return inside because reasons)
                         relation = TR_INSIDE;
@@ -526,7 +526,7 @@ namespace APRIL
                     relation = REFINE_COVEREDBY_TRUEHIT_INTERSECT;
                     return ret;
                 } else if(AAresult == IL_S_INSIDE_R) {
-                    int FAresult = joinIntervalsHybrid(objS->aprilData.intervalsALL, objS->aprilData.numIntervalsALL, objR->aprilData.intervalsFULL, objR->aprilData.numIntervalsFULL);
+                    int FAresult = joinIntervalsHybrid(objS->aprilData.intervalsALL, objS->aprilData.intervalsALL.size()/2, objR->aprilData.intervalsFULL, objR->aprilData.intervalsFULL.size()/2);
                     // in this case R is S because joinIntervalsHybrid handles the first list as R and the second as S
                     // and only checks for assymetrical containment R in S
                     if (FAresult == IL_R_INSIDE_S) {

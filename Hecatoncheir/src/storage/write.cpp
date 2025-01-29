@@ -30,17 +30,6 @@ namespace storage
                         logger::log_error(DBERR_DISK_WRITE_FAILED, "Wrote", elementsWritten, "instead of 1 element for recID.");
                         return DBERR_DISK_WRITE_FAILED;
                     }
-                    int partitionCount = it.getPartitionCount();
-                    elementsWritten = fwrite(&partitionCount, sizeof(int), 1, outFile);
-                    if (elementsWritten != 1) {
-                        logger::log_error(DBERR_DISK_WRITE_FAILED, "Wrote", elementsWritten, "instead of 1 element for partitionCount.");
-                        return DBERR_DISK_WRITE_FAILED;
-                    }
-                    elementsWritten = fwrite(it.getPartitionsRef()->data(), sizeof(int), partitionCount * 2, outFile);
-                    if (elementsWritten != partitionCount * 2) {
-                        logger::log_error(DBERR_DISK_WRITE_FAILED, "Wrote", elementsWritten, "instead of", partitionCount * 2, " elements for partitions.");
-                        return DBERR_DISK_WRITE_FAILED;
-                    }
                     int vertexCount = it.getVertexCount();
                     elementsWritten = fwrite(&vertexCount, sizeof(int), 1, outFile);
                     if (elementsWritten != 1) {

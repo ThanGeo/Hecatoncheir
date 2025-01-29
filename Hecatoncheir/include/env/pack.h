@@ -77,20 +77,10 @@ namespace pack
     /** @brief Packs a vector of dataset indexes into a single message */
     DB_STATUS packDatasetIndexes(std::vector<int> indexes, SerializedMsg<int> &msg);
 
+    DB_STATUS packShape(Shape *shape, SerializedMsg<char> &msg);
 
     /** @brief Packs the april configuration metadata into a serialized message. */
     DB_STATUS packAPRILMetadata(AprilConfig &aprilConfig, SerializedMsg<int> &aprilMetadataMsg);
-
-    /** @brief Packs the query metadata into a serialized message. 
-     * @deprecated no longer being used. Use packQuery instead.
-     * 
-    */
-    DB_STATUS packQueryMetadata(QueryMetadata &queryMetadata, SerializedMsg<int> &queryMetadataMsg);
-
-    /** @brief Packs the loaded dataset nicknames (both R and S, or only R if there's no S)
-     * @note The datasets must be already loaded in the configuration.
-     */
-    DB_STATUS packDatasetsNicknames(SerializedMsg<char> &msg);
 
     /** @brief Packs the 'load dataset' message information for the given dataset and index (R or S) */
     DB_STATUS packDatasetLoadMsg(Dataset *dataset, DatasetIndex datasetIndex, SerializedMsg<char> &msg);
@@ -131,6 +121,9 @@ namespace unpack
      * The caller is responsible to call delete for the queryPtr after they are done with it.
     */
     DB_STATUS unpackQuery(SerializedMsg<char> &msg, hec::Query** queryPtr);
+
+    DB_STATUS unpackShape(SerializedMsg<char> &msg, Shape &shape);
+
 }
 
 #endif 

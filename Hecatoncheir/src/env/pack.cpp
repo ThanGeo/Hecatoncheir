@@ -45,6 +45,55 @@ namespace pack
         return DBERR_OK;
     }
 
+    DB_STATUS packShape(Shape *shape, SerializedMsg<char> &msg) {
+        DB_STATUS ret = DBERR_OK;
+        // calculate size
+        msg.count = 0;
+        msg.count += sizeof(size_t);                // ID
+        msg.count += sizeof(DataType);              // DataType
+        msg.count += 4 * sizeof(double);            // MBR
+        msg.count += sizeof(int);                   // vertex count
+        msg.count += shape->getVertexCount() * sizeof(double) * 2;  // vertices
+
+        // allocate space
+        msg.data = (char*) malloc(msg.count * sizeof(char));
+        if (msg.data == NULL) {
+            // malloc failed
+            return DBERR_MALLOC_FAILED;
+        }
+        char* localBuffer = msg.data;
+
+        // add data type
+        *reinterpret_cast<DataType*>(localBuffer) = shape->getSpatialType();
+        localBuffer += sizeof(DataType);
+        // id
+        *reinterpret_cast<size_t*>(localBuffer) = shape->recID;
+        localBuffer += sizeof(size_t);
+        // mbr
+        *reinterpret_cast<double*>(localBuffer) = shape->mbr.pMin.x;
+        localBuffer += sizeof(double);
+        *reinterpret_cast<double*>(localBuffer) = shape->mbr.pMin.y;
+        localBuffer += sizeof(double);
+        *reinterpret_cast<double*>(localBuffer) = shape->mbr.pMax.x;
+        localBuffer += sizeof(double);
+        *reinterpret_cast<double*>(localBuffer) = shape->mbr.pMax.y;
+        localBuffer += sizeof(double);
+        // vertex count
+        *reinterpret_cast<int*>(localBuffer) = shape->getVertexCount();
+        localBuffer += sizeof(int);
+        // serialize and copy coordinates to buffer
+        double* bufferPtr;
+        int bufferElementCount;
+        ret = shape->serializeCoordinates(&bufferPtr, bufferElementCount);
+        if (ret != DBERR_OK) {
+            logger::log_error(ret, "Serializing coordinates failed.");
+            return ret;
+        }
+        std::memcpy(localBuffer, bufferPtr, bufferElementCount * sizeof(double));
+        localBuffer += bufferElementCount * sizeof(double);
+        return ret;
+    }
+
     DB_STATUS packSystemMetadata(SerializedMsg<char> &sysMetadataMsg) {
         sysMetadataMsg.count = 0;
         sysMetadataMsg.count += sizeof(SystemSetupType);      // cluster or local
@@ -474,6 +523,46 @@ namespace unpack
                 logger::log_error(DBERR_QUERY_INVALID_TYPE, "Invalid query type in message.");
                 return DBERR_QUERY_INVALID_TYPE;
         }
+
+        return ret;
+    }
+
+    DB_STATUS unpackShape(SerializedMsg<char> &msg, Shape &shape) {
+        DB_STATUS ret = DBERR_OK;
+
+        char *localBuffer = msg.data;
+
+        // id
+        shape.recID = (size_t) *reinterpret_cast<const size_t*>(localBuffer);
+        localBuffer += sizeof(size_t);
+        // data type
+        DataType dataType = (DataType) *reinterpret_cast<const DataType*>(localBuffer);
+        localBuffer += sizeof(DataType);
+        // create object
+        ret = shape_factory::createEmpty(dataType, shape);
+        if (ret != DBERR_OK) {
+            return ret;
+        }
+        double xMin, yMin, xMax, yMax;
+        xMin = (double) *reinterpret_cast<const double*>(localBuffer);
+        localBuffer += sizeof(double);
+        yMin = (double) *reinterpret_cast<const double*>(localBuffer);
+        localBuffer += sizeof(double);
+        xMax = (double) *reinterpret_cast<const double*>(localBuffer);
+        localBuffer += sizeof(double);
+        yMax = (double) *reinterpret_cast<const double*>(localBuffer);
+        localBuffer += sizeof(double);
+        shape.setMBR(xMin, yMin, xMax, yMax);
+
+        // vertex count
+        int vertexCount = *reinterpret_cast<const int*>(localBuffer);
+        localBuffer += sizeof(int);
+        // vertices
+        const double* vertexDataPtr = reinterpret_cast<const double*>(localBuffer);
+        for (size_t j = 0; j < vertexCount * 2; j+=2) {
+            shape.addPoint(vertexDataPtr[j], vertexDataPtr[j+1]);
+        }
+        localBuffer += vertexCount * 2 * sizeof(double);
 
         return ret;
     }

@@ -284,8 +284,8 @@ namespace APRIL
 
             // store into the aprilData
             aprilData.intervalsALL = allIntervals;
-            aprilData.numIntervalsALL = allIntervals.size() / 2;
-            aprilData.numIntervalsFULL = 0;
+            // aprilData.numIntervalsALL = allIntervals.size() / 2;
+            // aprilData.numIntervalsFULL = 0;
             return DBERR_OK;
         }
 
@@ -355,9 +355,9 @@ namespace APRIL
 
             // store into the aprilData
             aprilData.intervalsALL = allIntervals;
-            aprilData.numIntervalsALL = allIntervals.size() / 2;
+            // aprilData.numIntervalsALL = allIntervals.size() / 2;
             aprilData.intervalsFULL = fullIntervals;
-            aprilData.numIntervalsFULL = fullIntervals.size() / 2;
+            // aprilData.numIntervalsFULL = fullIntervals.size() / 2;
             return DBERR_OK;
         }
 
@@ -443,7 +443,7 @@ namespace APRIL
                     // generate APRIL
                     AprilData aprilData;
                     ret = intervalizeRegionShape(object, dataset.aprilConfig.getCellsPerDim(), aprilData);
-                    if (ret != DBERR_OK || aprilData.numIntervalsALL == 0) {
+                    if (ret != DBERR_OK || aprilData.intervalsALL.size() == 0) {
                         // at least 1 ALL interval is needed for each object, otherwise there is an error
                         logger::log_error(DBERR_APRIL_CREATE, "Failed to generate APRIL for object with ID", object.recID);
                         return DBERR_APRIL_CREATE;
@@ -476,7 +476,7 @@ namespace APRIL
                     // generate APRIL
                     AprilData aprilData;
                     ret = intervalizeNonRegionShape(object, dataset.aprilConfig.getCellsPerDim(), aprilData);
-                    if (ret != DBERR_OK || aprilData.numIntervalsALL == 0) {
+                    if (ret != DBERR_OK || aprilData.intervalsALL.size() == 0) {
                         // at least 1 ALL interval is needed for each object, otherwise there is an error
                         logger::log_error(DBERR_APRIL_CREATE, "Failed to generate APRIL for object with ID", object.recID);
                         return DBERR_APRIL_CREATE;
@@ -569,7 +569,7 @@ namespace APRIL
                     case DT_POLYGON:
                     case DT_RECTANGLE:
                         ret = intervalizeRegionShape(*shape,  aprilConfig.getCellsPerDim(), aprilData);
-                        if (ret != DBERR_OK || aprilData.numIntervalsALL == 0) {
+                        if (ret != DBERR_OK || aprilData.intervalsALL.size() == 0) {
                             // at least 1 ALL interval is needed for each object, otherwise there is an error
                             logger::log_error(ret, "Failed to generate APRIL for object with ID", shape->recID);
                             return ret;
@@ -578,7 +578,7 @@ namespace APRIL
                     case DT_POINT:
                     case DT_LINESTRING:
                         ret = intervalizeNonRegionShape(*shape,  aprilConfig.getCellsPerDim(), aprilData);
-                        if (ret != DBERR_OK || aprilData.numIntervalsALL == 0) {
+                        if (ret != DBERR_OK || aprilData.intervalsALL.size() == 0) {
                             // at least 1 ALL interval is needed for each object, otherwise there is an error
                             logger::log_error(ret, "Failed to generate APRIL for object with ID", shape->recID);
                             return ret;

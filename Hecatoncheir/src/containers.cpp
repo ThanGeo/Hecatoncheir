@@ -205,27 +205,6 @@ DB_STATUS Dataset::storeObject(Shape &object) {
     return DBERR_OK;
 }
 
-DB_STATUS Dataset::addObject(Shape &object) {
-    // // add object to the objects map
-    // objects[object.recID] = object;
-    // // get object reference
-    // Shape* objectRef = this->getObject(object.recID);
-    // if (objectRef == nullptr) {
-    //     logger::log_error(DBERR_INVALID_KEY, "Object with id", object.recID, "does not exist in the object map.");
-    //     return DBERR_INVALID_KEY;
-    // }
-    // // insert reference to partition index
-    // for (int i=0; i<object.getPartitionCount(); i++) {
-    //     this->twoLayerIndex.addObject(object.getPartitionID(i), object.getPartitionClass(i), objectRef);
-    // }
-    // if (g_config.queryMetadata.IntermediateFilter && (object.getSpatialType() != DT_POINT)) {
-    //     /** add object to section map (section 0) @warning do not remove, will break the parallel in-memory APRIL generation */
-    //     this->addObjectToSectionMap(0, object.recID);
-    // }
-    // return DBERR_OK;
-    return DBERR_FEATURE_UNSUPPORTED;
-}
-
 DB_STATUS Dataset::buildIndex(hec::IndexType indexType) {
     DB_STATUS ret = DBERR_OK;
 
@@ -415,10 +394,8 @@ DB_STATUS Dataset::addIntervalsToAprilData(const uint sectionID, const size_t re
     }
     // replace intervals in april data
     if (ALL) {
-        it->second.numIntervalsALL = numIntervals;
         it->second.intervalsALL = intervals;
     } else {
-        it->second.numIntervalsFULL = numIntervals;
         it->second.intervalsFULL = intervals;
     }
     return DBERR_OK;
@@ -470,23 +447,6 @@ DB_STATUS Dataset::setAprilDataForSectionAndObjectID(uint sectionID, size_t recI
     }
     return DBERR_OK;
 }
-
-// void Dataset::printObjectsGeometries() {
-//     for (auto &it : objectIDs) {
-//         printf("MBR: (%f,%f),(%f,%f)\n", this->objects[it].mbr.pMin.x, this->objects[it].mbr.pMin.y, this->objects[it].mbr.pMax.x, this->objects[it].mbr.pMax.y);
-//         this->objects[it].printGeometry();
-//     }
-// }
-
-// void Dataset::printObjectsPartitions() {
-//     for (auto &it : objectIDs) {
-//         printf("id: %zu, type %s, Partitions:", it, objects[it].getShapeType().c_str());
-//         for (int i=0; i<objects[it].getPartitionCount(); i++) {
-//             printf("(%d,%s),", objects[it].getPartitionID(i), mapping::twoLayerClassIntToStr((TwoLayerClass) objects[it].getPartitionClass(i)).c_str());
-//         }
-//         printf("\n");
-//     }
-// }
 
 Dataset* DatasetOptions::getDatasetByIdx(int index) {
     auto it = datasets.find((DatasetIndex) index);
@@ -937,7 +897,6 @@ DB_STATUS DatasetOptions::addDataset(Dataset &dataset) {
         // R is being added
         R = &datasets[DATASET_R];
         numberOfDatasets++;
-        this->updateDataspace();
     } else {
         if (this->S == nullptr) {
             // set as S
@@ -946,7 +905,6 @@ DB_STATUS DatasetOptions::addDataset(Dataset &dataset) {
             // S is being added
             S = &datasets[DATASET_S];
             numberOfDatasets++;
-            this->updateDataspace();
         } else {
             // error, R is set but S is not? 
             logger::log_error(DBERR_INVALID_PARAMETER, "Invalid state while adding dataset: R is not set but S is set.");
@@ -967,7 +925,6 @@ void DatasetOptions::updateDataspace() {
     dataspaceMetadata.xExtent = dataspaceMetadata.xMaxGlobal - dataspaceMetadata.xMinGlobal;
     dataspaceMetadata.yExtent = dataspaceMetadata.yMaxGlobal - dataspaceMetadata.yMinGlobal;
     dataspaceMetadata.maxExtent = std::max(dataspaceMetadata.xExtent, dataspaceMetadata.yExtent);
-    dataspaceMetadata.boundsSet = true;
     // set as both datasets' bounds
     for (auto &it: datasets) {
         it.second.metadata.dataspaceMetadata = dataspaceMetadata;
@@ -1011,8 +968,6 @@ int Batch::calculateBufferSize() {
     
     for (auto &it: objects) {
         size += sizeof(size_t); // recID
-        size += sizeof(int);    // partition count
-        size += it.getPartitionCount() * 2 * sizeof(int); // partitions id + class
         size += 4 * sizeof(double);             // mbr
         size += sizeof(it.getVertexCount()); // vertex count
         size += it.getVertexCount() * 2 * sizeof(double);    // vertices
@@ -1049,10 +1004,6 @@ DB_STATUS Batch::serialize(char **buffer, int &bufferSize) {
     for (auto &it : objects) {
         *reinterpret_cast<size_t*>(localBuffer) = it.recID;
         localBuffer += sizeof(size_t);
-        *reinterpret_cast<int*>(localBuffer) = it.getPartitionCount();
-        localBuffer += sizeof(int);
-        std::memcpy(localBuffer, it.getPartitionsRef()->data(), it.getPartitionCount() * 2 * sizeof(int));
-        localBuffer += it.getPartitionCount() * 2 * sizeof(int);
        
         // mbr
         *reinterpret_cast<double*>(localBuffer) = it.mbr.pMin.x;
@@ -1078,14 +1029,8 @@ DB_STATUS Batch::serialize(char **buffer, int &bufferSize) {
         // logger::log_task("Adding object to buffer with", bufferElementCount, "elements");
         std::memcpy(localBuffer, bufferPtr, bufferElementCount * sizeof(double));
         localBuffer += bufferElementCount * sizeof(double);
-
-        // printf("Serialized Object %ld with %d partitions:\n ", it.recID, it.getPartitionCount());
-        // std::vector<int>* partitionRef = it.getPartitionsRef();
-        // for (int i=0; i<it.getPartitionCount(); i++) {
-        //     printf("(%d,%s),", it.getPartitionID(i), mapping::twoLayerClassIntToStr(it.getPartitionClass(i)).c_str());
-        // }
-        // printf("\n");
-        // it.printGeometry();
+        // free 
+        free(bufferPtr);
     }
     bufferSize = bufferSizeRet;
     return ret;
@@ -1098,7 +1043,7 @@ DB_STATUS Batch::serialize(char **buffer, int &bufferSize) {
  */
 DB_STATUS Batch::deserialize(const char *buffer, int bufferSize) {
     DB_STATUS ret = DBERR_OK;
-    int vertexCount, partitionCount;
+    int vertexCount;
     const char *localBuffer = buffer;
 
     // get data type
@@ -1126,16 +1071,6 @@ DB_STATUS Batch::deserialize(const char *buffer, int bufferSize) {
         // rec id
         object.recID = *reinterpret_cast<const size_t*>(localBuffer);
         localBuffer += sizeof(size_t);
-        // partition count + partitions
-        partitionCount = *reinterpret_cast<const int*>(localBuffer);
-        localBuffer += sizeof(int);
-        std::vector<int> partitions(partitionCount * 2);
-        const int* partitionPtr = reinterpret_cast<const int*>(localBuffer);
-        for (size_t j = 0; j < partitionCount*2; j++) {
-            partitions[j] = partitionPtr[j];
-        }
-        localBuffer += partitionCount * 2 * sizeof(int);
-        object.setPartitions(partitions, partitionCount);
         // mbr
         double xMin, yMin, xMax, yMax;
         xMin = *reinterpret_cast<const double*>(localBuffer);

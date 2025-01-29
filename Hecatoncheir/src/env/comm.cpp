@@ -198,6 +198,30 @@ namespace comm
             return ret;
         }
 
+        static DB_STATUS deserializeSingleShapeMessageAndHandle(SerializedMsg<char> &msg, Dataset *dataset, int &continueListening) {
+            DB_STATUS ret = DBERR_OK;
+            Shape object;
+            if (msg.count == 0) {
+                // empty batch, set flag to stop listening for this dataset
+                continueListening = 0;
+                // update total object count and capacity
+                dataset->totalObjects = dataset->objects.size();
+                dataset->objects.shrink_to_fit();
+                logger::log_success("Received", dataset->totalObjects, "objects");
+            } else {
+                // deserialize the shape
+                ret = unpack::unpackShape(msg, object);
+                if (ret != DBERR_OK) {
+                    return ret;
+                }
+                // store into dataset
+                dataset->storeObject(object);
+            }
+            
+            return ret;
+        }
+
+
         /** @brief Pulls a serialized batch message and stores its contents ON DISK (persistence).
          * @warning the objects are not stored in memory.
          */
@@ -220,6 +244,9 @@ namespace comm
                     if (ret != DBERR_OK) {
                         return ret;
                     }
+                    break;
+                case MSG_SINGLE_POLYGON:
+                    return DBERR_FEATURE_UNSUPPORTED;
                     break;
                 default:
                     logger::log_error(DBERR_COMM_INVALID_MSG_TAG, "Invalid message tag");
@@ -251,8 +278,14 @@ namespace comm
                         return ret;
                     }
                     break;
+                case MSG_SINGLE_POLYGON:
+                    ret = deserializeSingleShapeMessageAndHandle(msg, dataset, continueListening);
+                    if (ret != DBERR_OK) {
+                        return ret;
+                    }
+                    break;
                 default:
-                    logger::log_error(DBERR_COMM_INVALID_MSG_TAG, "Invalid message tag");
+                    logger::log_error(DBERR_COMM_INVALID_MSG_TAG, "Invalid message tag:", tag);
                     break;
             }
             // free memory
@@ -296,6 +329,7 @@ namespace comm
                     case MSG_BATCH_POINT:
                     case MSG_BATCH_LINESTRING:
                     case MSG_BATCH_POLYGON:
+                    case MSG_SINGLE_POLYGON:
                         /* batch geometry message */
                         ret = pullBatchMessageAndHandle(status, dataset, listen);
                         if (ret != DBERR_OK) {
@@ -523,6 +557,8 @@ STOP_LISTENING:
             g_config.datasetOptions.updateDataspace();
             g_config.partitioningMethod->setDistGridDataspace(g_config.datasetOptions.dataspaceMetadata);
             g_config.partitioningMethod->setPartGridDataspace(g_config.datasetOptions.dataspaceMetadata);
+            g_config.datasetOptions.dataspaceMetadata.boundsSet = true;
+
             // printf("Partitioning metadata set: (%f,%f),(%f,%f)\n", g_config.partitioningMethod->distGridDataspaceMetadata.xMinGlobal, g_config.partitioningMethod->distGridDataspaceMetadata.yMinGlobal, g_config.partitioningMethod->distGridDataspaceMetadata.xMaxGlobal, g_config.partitioningMethod->distGridDataspaceMetadata.yMaxGlobal);
             // printf("Partitioning metadata set: gPPD %d, dPPD %d, pPPD %d\n", g_config.partitioningMethod->getGlobalPPD(), g_config.partitioningMethod->getDistributionPPD(), g_config.partitioningMethod->getPartitioningPPD());
             // printf("distExtents %f,%f, partitionExtents %f,%f\n", g_config.partitioningMethod->getDistPartionExtentX(), g_config.partitioningMethod->getDistPartionExtentY(), g_config.partitioningMethod->getPartPartionExtentX(), g_config.partitioningMethod->getPartPartionExtentY());
@@ -1082,7 +1118,41 @@ STOP_LISTENING:
                 logger::log_error(ret, "Sending serialized geometry batch failed");
                 return ret;
             }
-            // logger::log_task("sent batch");
+            // free memory
+            free(msg.data);
+            // logger::log_task("Sent batch to node", batch->destRank);
+            return ret;
+        }
+
+        DB_STATUS serializeAndSendGeometry(Shape *shape, int destRank, MPI_Comm &comm) {
+            DB_STATUS ret = DBERR_OK;
+            SerializedMsg<char> msg(MPI_CHAR);
+
+            if (shape == nullptr) {
+                // send empty
+                msg.count = 0;
+                ret = comm::send::sendMessage(msg, destRank, MSG_SINGLE_POLYGON, comm);
+                if (ret != DBERR_OK) {
+                    logger::log_error(ret, "Sending serialized geometry batch failed");
+                    return ret;
+                }
+            } else {
+                // serialize
+                ret = pack::packShape(shape, msg);
+                if (ret != DBERR_OK) {
+                    return ret;
+                }
+
+                // send batch message
+                ret = comm::send::sendMessage(msg, destRank, MSG_SINGLE_POLYGON, comm);
+                if (ret != DBERR_OK) {
+                    logger::log_error(ret, "Sending serialized geometry batch failed");
+                    return ret;
+                }
+                // free memory
+                free(msg.data);
+            }
+            
             return ret;
         }
 
@@ -1129,6 +1199,7 @@ STOP_LISTENING:
                     case MSG_BATCH_POINT:
                     case MSG_BATCH_LINESTRING:
                     case MSG_BATCH_POLYGON:
+                    case MSG_SINGLE_POLYGON:
                         /* batch geometry message */
                         ret = forward::forwardBatchMessage(g_controller_comm, AGENT_RANK, g_agent_comm, status, listen);
                         if (ret != DBERR_OK) {
@@ -1552,34 +1623,8 @@ STOP_LISTENING:
                 return ret;
             }
             
-            // send to controllers
-            int threadsToSpawn = std::min(g_world_size, MAX_THREADS);
-            #pragma omp parallel num_threads(threadsToSpawn)
-            {
-                DB_STATUS local_ret = DBERR_OK;
-                #pragma omp for
-                for (int i=0; i<g_world_size; i++) {
-                    if (i != HOST_LOCAL_RANK) {
-                        // send to controllers
-                        local_ret = send::sendMessage(msg, i, status.MPI_TAG, g_controller_comm);
-                        if (ret != DBERR_OK) {
-                            #pragma omp cancel for
-                            logger::log_error(DBERR_COMM_SEND, "Failed forwarding message to controller", i);
-                            ret = local_ret;
-                        }
-                    } else {
-                        // forward to local agent
-                        local_ret = send::sendMessage(msg, AGENT_RANK, status.MPI_TAG, g_agent_comm);
-                        if (local_ret != DBERR_OK) {
-                            ret = local_ret;
-                            logger::log_error(ret, "Failed forwarding message to agent");
-
-                        }
-                    }
-                }
-            }
+            ret = broadcast::broadcastMessage(msg, status.MPI_TAG);
             if (ret != DBERR_OK) {
-                // parallel region failed
                 return ret;
             }
 
@@ -1642,24 +1687,17 @@ STOP_LISTENING:
             // free memory
             free(msg.data);
 
-            if (g_config.datasetOptions.dataspaceMetadata.boundsSet == false) {
-                // first, get the global dataspace from the datasets
-                for (auto &index: datasetIndexes) {
-                    Dataset* dataset = g_config.datasetOptions.getDatasetByIdx(index);
-                    if (!dataset->metadata.dataspaceMetadata.boundsSet) {
-                        ret = storage::reader::calculateDatasetMetadata(g_config.datasetOptions.getDatasetByIdx(index));
-                        if (ret != DBERR_OK) {
-                            return ret;
-                        }
+            // double check if bounds are set for all datasets
+            for (auto &index: datasetIndexes) {
+                Dataset* dataset = g_config.datasetOptions.getDatasetByIdx(index);
+                if (!dataset->metadata.dataspaceMetadata.boundsSet) {
+                    // calculate all metadata for dataset
+                    ret = storage::reader::calculateDatasetMetadata(g_config.datasetOptions.getDatasetByIdx(index));
+                    if (ret != DBERR_OK) {
+                        return ret;
                     }
-                }
-                // update dataspace
-                g_config.datasetOptions.updateDataspace();
-                g_config.datasetOptions.dataspaceMetadata.boundsSet = true;
-            } else {
-                // dataspace is set, count lines in files to parallelize reading 
-                for (auto &index: datasetIndexes) {
-                    Dataset* dataset = g_config.datasetOptions.getDatasetByIdx(index);
+                } else {
+                    // only count lines
                     size_t totalObjects = 0;
                     ret = storage::reader::getDatasetLineCountWithSystemCall(dataset, totalObjects);
                     if (ret != DBERR_OK) {
@@ -1668,6 +1706,10 @@ STOP_LISTENING:
                     dataset->totalObjects = totalObjects;
                 }
             }
+            // update dataspace
+            g_config.datasetOptions.updateDataspace();
+            g_config.datasetOptions.dataspaceMetadata.boundsSet = true;
+
 
             // update the grids' dataspace metadata in the partitioning object 
             g_config.partitioningMethod->setDistGridDataspace(g_config.datasetOptions.dataspaceMetadata);
@@ -1693,6 +1735,9 @@ STOP_LISTENING:
                 if (ret != DBERR_OK) {
                     return ret;
                 }
+
+                // free message
+                free(datasetInfoMsg.data);
 
                 // signal the begining of the partitioning
                 SerializedMsg<int> signal(MPI_INT);

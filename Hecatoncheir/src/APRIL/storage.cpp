@@ -14,23 +14,23 @@ namespace APRIL
             // buffered write for section id, numIntervalsALL and numIntervalsFull
             int buf[3];
             buf[0] = sectionID;
-            buf[1] = aprilData->numIntervalsALL;
-            buf[2] = aprilData->numIntervalsFULL;
+            buf[1] = aprilData->intervalsALL.size()/2;
+            buf[2] = aprilData->intervalsFULL.size()/2;
             elementsWritten = fwrite(buf, sizeof(int), 3, pFile);
             if (elementsWritten != 3) {
                 logger::log_error(DBERR_DISK_WRITE_FAILED, "Writing sectionID and numIntervalsALL failed for object with ID", recID);
                 return DBERR_DISK_WRITE_FAILED;
             }
             // ALL intervals
-            elementsWritten = fwrite(&aprilData->intervalsALL.data()[0], sizeof(uint32_t), aprilData->numIntervalsALL * 2, pFile);
-            if (elementsWritten != aprilData->numIntervalsALL * 2) {
+            elementsWritten = fwrite(&aprilData->intervalsALL.data()[0], sizeof(uint32_t), aprilData->intervalsALL.size()/2 * 2, pFile);
+            if (elementsWritten != aprilData->intervalsALL.size()/2 * 2) {
                 logger::log_error(DBERR_DISK_WRITE_FAILED, "Writing ALL intervals failed for object with ID", recID);
                 return DBERR_DISK_WRITE_FAILED;
             }
             // FULL intervals (if any)
-            if(aprilData->numIntervalsFULL > 0){
-                elementsWritten = fwrite(&aprilData->intervalsFULL.data()[0], sizeof(uint32_t), aprilData->numIntervalsFULL * 2, pFile);
-                if (elementsWritten != aprilData->numIntervalsFULL * 2) {
+            if(aprilData->intervalsFULL.size()/2 > 0){
+                elementsWritten = fwrite(&aprilData->intervalsFULL.data()[0], sizeof(uint32_t), aprilData->intervalsFULL.size()/2 * 2, pFile);
+                if (elementsWritten != aprilData->intervalsFULL.size()/2 * 2) {
                     logger::log_error(DBERR_DISK_WRITE_FAILED, "Writing FULL intervals failed for object with ID", recID);
                     return DBERR_DISK_WRITE_FAILED;
                 }
@@ -157,10 +157,10 @@ CLOSE_AND_EXIT:
                     goto CLOSE_AND_EXIT;
                 }
                 sectionID = buf[0];
-                aprilData.numIntervalsALL = buf[1];
-                aprilData.numIntervalsFULL = buf[2];
+                int numIntervalsALL = buf[1];
+                int numIntervalsFULL = buf[2];
                 // X intervals are comprised of X*2 values [start,end)
-                totalValuesALL = aprilData.numIntervalsALL*2;
+                totalValuesALL = numIntervalsALL*2;
                 aprilData.intervalsALL.resize(totalValuesALL);
                 // read intervals ALL
                 elementsRead = fread(&aprilData.intervalsALL.data()[0], sizeof(uint32_t), totalValuesALL, pFile);
@@ -171,8 +171,8 @@ CLOSE_AND_EXIT:
 
                 }
                 // FULL intervals
-                if (aprilData.numIntervalsFULL > 0) {
-                    totalValuesFULL = aprilData.numIntervalsFULL*2;
+                if (numIntervalsFULL > 0) {
+                    totalValuesFULL = numIntervalsFULL*2;
                     aprilData.intervalsFULL.resize(totalValuesFULL);
                     // read intervals FULL
                     elementsRead = fread(&aprilData.intervalsFULL.data()[0], sizeof(uint32_t), totalValuesFULL, pFile);

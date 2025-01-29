@@ -54,6 +54,8 @@ namespace comm
          */
         DB_STATUS serializeAndSendGeometryBatch(Batch* batch);
 
+        DB_STATUS serializeAndSendGeometry(Shape *shape, int destRank, MPI_Comm &comm);
+
         /** @brief Broadcasts the configured system options to all participants. */
         DB_STATUS broadcastSysMetadata();
 
