@@ -875,6 +875,7 @@ namespace twolayer
                 #pragma omp for
                 for (int i=0; i<partitions->size(); i++) {
                     // get partition ID and S container
+                    /** @todo optimize: get the partitions with the fewer contents and begin from there, instead of getting R's always */
                     PartitionBase* partitionR = partitions->at(i);
                     PartitionBase* partitionS = S->index->getPartition(partitions->at(i)->partitionID);
                     if (partitionS != nullptr) {

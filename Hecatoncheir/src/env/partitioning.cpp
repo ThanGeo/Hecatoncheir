@@ -35,8 +35,8 @@ namespace partitioning
         
         int startPartitionID = g_config.partitioningMethod->getPartitionID(minPartitionX, minPartitionY, g_config.partitioningMethod->getDistributionPPD());
         int lastPartitionID = g_config.partitioningMethod->getPartitionID(maxPartitionX, maxPartitionY, g_config.partitioningMethod->getDistributionPPD());
-        if (startPartitionID < 0 || startPartitionID > g_config.partitioningMethod->getDistributionPPD() * g_config.partitioningMethod->getDistributionPPD() -1) {
-            logger::log_error(DBERR_INVALID_PARTITION, "Start partition ID calculated wrong");
+        if (startPartitionID < 0 || startPartitionID > (g_config.partitioningMethod->getDistributionPPD() * g_config.partitioningMethod->getDistributionPPD()) -1) {
+            logger::log_error(DBERR_INVALID_PARTITION, "Start partition ID calculated wrong:", startPartitionID);
             return DBERR_INVALID_PARTITION;
         }
         if (lastPartitionID < 0 || lastPartitionID > g_config.partitioningMethod->getDistributionPPD() * g_config.partitioningMethod->getDistributionPPD() -1) {
@@ -95,6 +95,7 @@ namespace partitioning
         if (ret != DBERR_OK) {
             return ret;
         }
+
         // find which nodes need to receive this geometry
         std::vector<bool> bitVector(g_world_size, false);
         // get receiving worker ranks
@@ -650,16 +651,16 @@ namespace partitioning
             close(fd);
 
             // Set chunk size per thread
-            int numThreads = omp_get_max_threads();
-            size_t chunkSize = fileSize / numThreads;
+            size_t chunkSize = fileSize / 1;
             size_t totalValidObjects = 0;
             int batchesSent = 0;
+            size_t lineCounter = 0;
 
-            #pragma omp parallel firstprivate(batchMap) reduction(+:batchesSent) reduction(+:totalValidObjects)
+            #pragma omp parallel num_threads(1) firstprivate(batchMap) reduction(+:batchesSent) reduction(+:totalValidObjects)
             {
                 int threadID = omp_get_thread_num();
                 size_t start = threadID * chunkSize;
-                size_t end = (threadID == numThreads - 1) ? fileSize : (threadID + 1) * chunkSize;
+                size_t end = (threadID == 1 - 1) ? fileSize : (threadID + 1) * chunkSize;
 
                 // Ensure we start at the beginning of a new line
                 while (start > 0 && mappedData[start] != '\n') start++;
@@ -738,6 +739,12 @@ namespace partitioning
                 if (ret != DBERR_OK) {
                     return ret;
                 }
+            }
+
+            // Unmap memory
+            if (munmap(mappedData, fileSize) == -1) {
+                logger::log_error(DBERR_MMAP_FAILED, "munmap failed.");
+                return DBERR_MMAP_FAILED;
             }
 
             return ret;

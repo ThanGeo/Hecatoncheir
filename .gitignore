@@ -1,9 +1,8 @@
 build/
-Hecatoncheir/datasets/
 .vscode/
-hostfile
-run.sh
 *.txt
 *.btr
+*.tsv
+*.csv
+*.wkt
 data/
-Hecatoncheir/TIGER_MBR_centroids/

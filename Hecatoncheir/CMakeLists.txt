@@ -25,7 +25,7 @@ endif()
 
 # find boost
 set(Boost_USE_STATIC_LIBS ON)
-find_package(Boost 1.74 COMPONENTS REQUIRED)
+find_package(Boost 1.71 REQUIRED)
 if(Boost_FOUND)
     add_definitions("-DBOOST_ALLOW_DEPRECATED_HEADERS")
     add_definitions("-DBOOST_BIND_GLOBAL_PLACEHOLDERS")
@@ -99,7 +99,6 @@ target_include_directories(controller PRIVATE
 )
 target_link_libraries(controller ${PROJECT_NAME} ${Boost_LIBRARIES} ${MPI_CXX_LIBRARIES})
 
-
 # resources dir
 set(RESOURCES_DIR "${CMAKE_SOURCE_DIR}/Hecatoncheir/resources")
 # build destination for resources dir
@@ -111,3 +110,6 @@ add_custom_target(copy_resources ALL
 )
 add_dependencies(agent copy_resources)
 add_dependencies(controller copy_resources)
+
+# tests
+add_subdirectory(test)

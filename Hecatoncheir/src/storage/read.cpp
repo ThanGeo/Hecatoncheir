@@ -278,7 +278,6 @@ namespace storage
                     break;
                 case hec::FT_WKT:
                     // wkt dataset
-                    logger::log_task("Calculating dataset metadata for dataset", dataset->metadata.datasetName);
                     ret = wkt::calculateDatasetMetadata(dataset);
                     if (ret != DBERR_OK) {
                         logger::log_error(DBERR_OPERATION_FAILED, "Calculating metadata failed for dataset", dataset->metadata.internalID);
