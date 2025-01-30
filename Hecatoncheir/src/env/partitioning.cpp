@@ -1,5 +1,7 @@
 #include "env/partitioning.h"
 #include <bitset>
+#include <fcntl.h>
+#include <sys/mman.h>
 
 namespace partitioning
 {
@@ -612,6 +614,136 @@ namespace partitioning
             return ret;
         }
 
+        static DB_STATUS loadDatasetAndPartitionMMAP(Dataset* dataset) {
+            DB_STATUS ret = DBERR_OK;
+
+            // Initialize batches
+            std::unordered_map<int, Batch> batchMap;
+            ret = initializeBatchMap(batchMap, dataset->metadata.dataType);
+            if (ret != DBERR_OK) {
+                return ret;
+            }
+
+            // Open the file
+            int fd = open(dataset->metadata.path.c_str(), O_RDONLY);
+            if (fd == -1) {
+                logger::log_error(DBERR_OPEN_FILE_FAILED, "Failed to open dataset path:", dataset->metadata.path);
+                return DBERR_OPEN_FILE_FAILED;
+            }
+
+            // Get file size
+            off_t fileSize = lseek(fd, 0, SEEK_END);
+            if (fileSize == -1) {
+                logger::log_error(DBERR_OPEN_FILE_FAILED, "Failed to determine file size.");
+                return DBERR_DISK_READ_FAILED;
+            }
+
+            // Memory-map the file
+            char* mappedData = (char*) mmap(NULL, fileSize, PROT_READ, MAP_PRIVATE, fd, 0);
+            if (mappedData == MAP_FAILED) {
+                close(fd);
+                logger::log_error(DBERR_MMAP_FAILED, "mmap failed.");
+                return DBERR_MMAP_FAILED;
+            }
+
+            // Close the file descriptor
+            close(fd);
+
+            // Set chunk size per thread
+            int numThreads = omp_get_max_threads();
+            size_t chunkSize = fileSize / numThreads;
+            size_t totalValidObjects = 0;
+            int batchesSent = 0;
+
+            #pragma omp parallel firstprivate(batchMap) reduction(+:batchesSent) reduction(+:totalValidObjects)
+            {
+                int threadID = omp_get_thread_num();
+                size_t start = threadID * chunkSize;
+                size_t end = (threadID == numThreads - 1) ? fileSize : (threadID + 1) * chunkSize;
+
+                // Ensure we start at the beginning of a new line
+                while (start > 0 && mappedData[start] != '\n') start++;
+
+                // Local processing variables
+                DB_STATUS local_ret = DBERR_OK;
+                std::string token;
+                Shape object;
+                local_ret = shape_factory::createEmpty(dataset->metadata.dataType, object);
+                if (local_ret != DBERR_OK) {
+                    #pragma omp cancel parallel
+                    ret = local_ret;
+                }
+
+                // Read & process lines in this chunk
+                while (start < end) {
+                    size_t lineStart = start;
+                    while (start < fileSize && mappedData[start] != '\n') start++;
+
+                    if (start < fileSize) { 
+                        std::string line(mappedData + lineStart, start - lineStart);
+                        start++;  // Move to next line
+
+                        object.reset();
+                        std::stringstream ss(line);
+                        std::getline(ss, token, '\t'); // Extract WKT
+
+                        object.recID = lineStart; // Use file offset as ID
+                        local_ret = object.setFromWKT(token);
+                        if (local_ret == DBERR_OK) {
+                            totalValidObjects++;
+                            object.setMBR();
+                            local_ret = assignObjectToBatches(object, batchMap, batchesSent);
+                            if (local_ret != DBERR_OK) {
+                                #pragma omp cancel parallel
+                            }
+                        }
+                    }
+                }
+
+                // Send remaining non-empty batches
+                for (int i = 0; i < g_world_size; i++) {
+                    auto it = batchMap.find(i);
+                    if (it == batchMap.end()) {
+                        logger::log_error(DBERR_INVALID_PARAMETER, "Error fetching batch for node", i);
+                        #pragma omp cancel parallel
+                        ret = DBERR_INVALID_PARAMETER;
+                    }
+                    Batch* batch = &it->second;
+                    if (batch->objectCount > 0) {
+                        local_ret = comm::controller::serializeAndSendGeometryBatch(batch);
+                        if (local_ret != DBERR_OK) {
+                            #pragma omp cancel parallel
+                            ret = local_ret;
+                            break;
+                        }
+                        batch->clear();
+                        batchesSent++;
+                    }
+                }
+            } // End of parallel region
+
+            if (ret != DBERR_OK) {
+                return ret;
+            }
+
+            // Send termination signal to workers
+            for (int i = 0; i < g_world_size; i++) {
+                auto it = batchMap.find(i);
+                if (it == batchMap.end()) {
+                    logger::log_error(DBERR_INVALID_PARAMETER, "Error fetching batch for node", i);
+                    return DBERR_INVALID_PARAMETER;
+                }
+                Batch* batch = &it->second;
+                ret = comm::controller::serializeAndSendGeometryBatch(batch);
+                if (ret != DBERR_OK) {
+                    return ret;
+                }
+            }
+
+            return ret;
+        }
+
+
         static DB_STATUS loadDatasetAndPartitionNoBatches(Dataset* dataset) {
             DB_STATUS ret = DBERR_OK;
             // open file
@@ -781,8 +913,9 @@ namespace partitioning
                 break;
             case hec::FT_WKT:
                 // wkt dataset
-                ret = wkt::loadDatasetAndPartition(dataset);
+                // ret = wkt::loadDatasetAndPartition(dataset);
                 // ret = wkt::loadDatasetAndPartitionNoBatches(dataset);
+                ret = wkt::loadDatasetAndPartitionMMAP(dataset);
                 if (ret != DBERR_OK) {
                     logger::log_error(DBERR_PARTITIONING_FAILED, "Partitioning failed for dataset", dataset->metadata.internalID);
                     return ret;

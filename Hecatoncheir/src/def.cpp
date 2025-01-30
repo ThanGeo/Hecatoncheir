@@ -7,6 +7,7 @@ int g_parent_original_rank;
 PROCESS_TYPE g_proc_type;
 
 int MAX_THREADS = omp_get_max_threads();
+// int MAX_THREADS = 1;
 
 MPI_Comm g_global_inter_comm;
 MPI_Comm g_global_intra_comm;

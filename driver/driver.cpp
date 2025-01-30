@@ -26,19 +26,25 @@ static std::vector<std::string> read_hostfile(const std::string& hostfile) {
 }
 
 void runJoins() {
-    // TIGER POLYGON-POLYGON
+    // TIGER POLYGON-POLYGON SMALL
+    // std::string datasetFullPathR = "/home/hec/datasets/T1.tsv";
+    // std::string datasetFullPathS = "/home/hec/datasets/T2.tsv";
+    // hec::DatasetID datasetRID = hec::prepareDataset(datasetFullPathR, "WKT", "POLYGON", -180.0, -15.0, 180.0, 72.0, false);
+    //  hec::DatasetID datasetSID = hec::prepareDataset(datasetFullPathS, "WKT", "POLYGON", -180.0, -15.0, 180.0, 72.0, false);
+
+    // TIGER POLYGON-LINESTRING
     // std::string datasetFullPathR = "/home/hec/datasets/T2.tsv";
     // std::string datasetFullPathS = "/home/hec/datasets/T8.tsv";
     // hec::DatasetID datasetRID = hec::prepareDataset(datasetFullPathR, "WKT", "POLYGON", -180.0, -15.0, 180.0, 72.0, false);
     // hec::DatasetID datasetSID = hec::prepareDataset(datasetFullPathS, "WKT", "LINESTRING", -180.0, -15.0, 180.0, 72.0, false);
 
-    // TIGER POLYGON-LINESTRING
-    // std::string datasetFullPathR = "/home/hec/datasets/T2.tsv";
-    // // std::string datasetFullPathS = "/home/hec/datasets/T8_1000.tsv";
+    // TIGER POLYGON-LINESTRING LO-48
+    // std::string datasetFullPathR = "/home/hec/datasets/T2_lo48.tsv";
+    // std::string datasetFullPathS = "/home/hec/datasets/T8_lo48.tsv";
     // hec::DatasetID datasetRID = hec::prepareDataset(datasetFullPathR, "WKT", "POLYGON", -180.0, -15.0, 180.0, 72.0, false);
-    // // hec::DatasetID datasetSID = hec::prepareDataset(datasetFullPathS, "WKT", "LINESTRING", -180.0, -15.0, 180.0, 72.0, false);
+    // hec::DatasetID datasetSID = hec::prepareDataset(datasetFullPathS, "WKT", "LINESTRING", -180.0, -15.0, 180.0, 72.0, false);
 
-    // OSM
+    // OSM POLYGON-POLYGON BIG
     std::string datasetFullPathR = "/home/hec/datasets/OSM/O5_lakes.tsv";
     std::string datasetFullPathS = "/home/hec/datasets/OSM/O6_parks.tsv";
     hec::DatasetID datasetRID = hec::prepareDataset(datasetFullPathR, "WKT", "POLYGON", -180.0, -180.0, 180.0, 180.0, false);
@@ -172,7 +178,13 @@ void runRangePolygonsBatch() {
 
 int main(int argc, char* argv[]) {
     // std::vector<std::string> hosts = {"vm1:1", "vm2:1", "vm3:1", "vm4:1", "vm5:1", "vm6:1", "vm7:1", "vm8:1", "vm9:1", "vm10:1"};
-    std::vector<std::string> hosts = {"vm1:1","vm2:1"};
+   
+    // std::vector<std::string> hosts = {"vm1:1","vm3:1"};
+   // std::vector<std::string> hosts = {"vm1:1","vm3:1","vm5:1","vm7:1"};
+    //std::vector<std::string> hosts = {"vm1:1","vm3:1","vm4:1","vm5:1","vm7:1", "vm9:1"};
+   // std::vector<std::string> hosts = {"vm1:1","vm3:1","vm4:1","vm5:1","vm6:1","vm7:1", "vm8:1","vm9:1"};
+    std::vector<std::string> hosts = {"vm1:1","vm2:1","vm3:1","vm4:1","vm5:1","vm6:1","vm7:1", "vm8:1","vm9:1", "vm10:1"};
+
     // std::vector<std::string> hosts = {"vm1:1"};
 
     // Initialize Hecatoncheir. Must use this method before any other calls to the framework.
