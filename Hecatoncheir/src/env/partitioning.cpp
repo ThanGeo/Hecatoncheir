@@ -651,16 +651,16 @@ namespace partitioning
             close(fd);
 
             // Set chunk size per thread
-            size_t chunkSize = fileSize / 1;
+            size_t chunkSize = fileSize / MAX_THREADS;
             size_t totalValidObjects = 0;
             int batchesSent = 0;
             size_t lineCounter = 0;
 
-            #pragma omp parallel num_threads(1) firstprivate(batchMap) reduction(+:batchesSent) reduction(+:totalValidObjects)
+            #pragma omp parallel firstprivate(batchMap) reduction(+:batchesSent) reduction(+:totalValidObjects)
             {
                 int threadID = omp_get_thread_num();
                 size_t start = threadID * chunkSize;
-                size_t end = (threadID == 1 - 1) ? fileSize : (threadID + 1) * chunkSize;
+                size_t end = (threadID == MAX_THREADS - 1) ? fileSize : (threadID + 1) * chunkSize;
 
                 // Ensure we start at the beginning of a new line
                 while (start > 0 && mappedData[start] != '\n') start++;

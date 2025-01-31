@@ -177,41 +177,51 @@ void runRangePolygonsBatch() {
 }
 
 int main(int argc, char* argv[]) {
-    // std::vector<std::string> hosts = {"vm1:1", "vm2:1", "vm3:1", "vm4:1", "vm5:1", "vm6:1", "vm7:1", "vm8:1", "vm9:1", "vm10:1"};
-   
-    // std::vector<std::string> hosts = {"vm1:1","vm3:1"};
-   // std::vector<std::string> hosts = {"vm1:1","vm3:1","vm5:1","vm7:1"};
-    //std::vector<std::string> hosts = {"vm1:1","vm3:1","vm4:1","vm5:1","vm7:1", "vm9:1"};
-   // std::vector<std::string> hosts = {"vm1:1","vm3:1","vm4:1","vm5:1","vm6:1","vm7:1", "vm8:1","vm9:1"};
-    std::vector<std::string> hosts = {"vm1:1","vm2:1","vm3:1","vm4:1","vm5:1","vm6:1","vm7:1", "vm8:1","vm9:1", "vm10:1"};
+    /** Your hosts list. It is mandatory to define each node as:
+     * <hostname>:1 
+    */
+    std::vector<std::string> hosts = {"vm1:1", "vm2:1", "vm3:1", "vm4:1", "vm5:1", "vm6:1", "vm7:1", "vm8:1", "vm9:1", "vm10:1"};
 
-    // std::vector<std::string> hosts = {"vm1:1"};
-
-    // Initialize Hecatoncheir. Must use this method before any other calls to the framework.
+    /**
+     * INIT
+     * Initialize Hecatoncheir using hec::init()
+     * This method must be used before any other Hecatoncheir calls.
+     */
     hec::init(hosts.size(), hosts);
 
-    switch (0) {
-        case 0:
-            // join queries
-            runJoins();
-            break;
-        case 1:
-            // range polygons
-            runRangePolygons();
-            break;
-        
-        case 2:
-            // range points
-            runRangePoints();
-            break;
-        
-        case 3:
-            // range points
-            runRangePolygonsBatch();
-            break;
-    }
-    
-    // finalize
+
+    /** 
+     * Prepare data
+     * You can prepare your data using hec::prepareDataset()
+     * and then partition it using hec::partition();
+     */
+
+
+
+    /** 
+     * Partition data
+     * 
+     */
+
+
+
+    /** 
+     * Index data
+     * 
+     */
+
+
+
+    /** 
+     * Define a query and evaluate it
+     * 
+     */
+
+
+
+    /**
+     * Don't forget to terminate Hecatoncheir when you are done!
+     */
     hec::finalize();
 
     return 0;
