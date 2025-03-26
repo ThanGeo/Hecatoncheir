@@ -4,3 +4,4 @@ build/
 *.csv
 *.wkt
 data/
+nodes

@@ -219,7 +219,7 @@ namespace pack
         *reinterpret_cast<int*>(localBuffer) = query->getWKT().length();
         localBuffer += sizeof(int);
         std::memcpy(localBuffer, query->getWKT().data(), query->getWKT().length() * sizeof(char));
-        localBuffer += g_config.dirPaths.dataPath.length() * sizeof(char);
+        localBuffer += query->getWKT().length() * sizeof(char);
 
         return DBERR_OK;
     }
@@ -279,20 +279,23 @@ namespace pack
         return ret;
     }
 
-    DB_STATUS packQueryBatch(std::vector<hec::Query> *batch, SerializedMsg<char> &batchMsg) {
+    DB_STATUS packQueryBatch(std::vector<hec::Query*> *batch, SerializedMsg<char> &batchMsg) {
         DB_STATUS ret = DBERR_OK;
-
         // count total size
         batchMsg.count = 0;
+
+        // total queries
+        batchMsg.count += sizeof(int);     
+
         for (int i=0; i<batch->size(); i++) {
-            if (auto rangeQuery = dynamic_cast<hec::RangeQuery*>(&batch->at(i))){
+            if (auto rangeQuery = dynamic_cast<hec::RangeQuery*>(batch->at(i))){
                 batchMsg.count += sizeof(int);                                        // query id
                 batchMsg.count += sizeof(hec::QueryType);                             // query type
                 batchMsg.count += sizeof(hec::QueryResultType);                       // result type
                 batchMsg.count += sizeof(hec::DatasetID);                             // dataset id
                 batchMsg.count += sizeof(int);                                        // wkt text length
                 batchMsg.count += rangeQuery->getWKT().length() * sizeof(char);       // wkt string
-            } else if (auto joinQuery = dynamic_cast<hec::JoinQuery*>(&batch->at(i))) {
+            } else if (auto joinQuery = dynamic_cast<hec::JoinQuery*>(batch->at(i))) {
                 batchMsg.count += sizeof(int);                                       // query id
                 batchMsg.count += sizeof(hec::QueryType);                            // query type
                 batchMsg.count += sizeof(hec::QueryResultType);                      // result type
@@ -313,9 +316,13 @@ namespace pack
 
         char* localBuffer = batchMsg.data;
 
-        // put objects in buffer
+        // put query count in buffer
+        *reinterpret_cast<int*>(localBuffer) = (int) batch->size();
+        localBuffer += sizeof(int);
+
+        // put queries in buffer
         for (int i=0; i<batch->size(); i++) {
-            if (auto rangeQuery = dynamic_cast<hec::RangeQuery*>(&batch->at(i))){
+            if (auto rangeQuery = dynamic_cast<hec::RangeQuery*>(batch->at(i))){
                 *reinterpret_cast<int*>(localBuffer) = (int) rangeQuery->getQueryID();
                 localBuffer += sizeof(int);
                 *reinterpret_cast<hec::QueryType*>(localBuffer) = (hec::QueryType) rangeQuery->getQueryType();
@@ -327,8 +334,8 @@ namespace pack
                 *reinterpret_cast<int*>(localBuffer) = rangeQuery->getWKT().length();
                 localBuffer += sizeof(int);
                 std::memcpy(localBuffer, rangeQuery->getWKT().data(), rangeQuery->getWKT().length() * sizeof(char));
-                localBuffer += g_config.dirPaths.dataPath.length() * sizeof(char);
-            } else if (auto joinQuery = dynamic_cast<hec::JoinQuery*>(&batch->at(i))) {
+                localBuffer += rangeQuery->getWKT().length() * sizeof(char);
+            } else if (auto joinQuery = dynamic_cast<hec::JoinQuery*>(batch->at(i))) {
                 *reinterpret_cast<int*>(localBuffer) = (int) joinQuery->getQueryID();
                 localBuffer += sizeof(int);
                 *reinterpret_cast<hec::QueryType*>(localBuffer) = (hec::QueryType) joinQuery->getQueryType();
@@ -345,6 +352,99 @@ namespace pack
             }
         }
         
+        
+        return ret;
+    }
+
+    DB_STATUS packBatchResults(std::unordered_map<int, hec::QueryResult> *batchResults, SerializedMsg<char> &msg) {
+        DB_STATUS ret = DBERR_OK;
+        // count total size
+        msg.count = 0;
+
+        // total query results in batch
+        msg.count += sizeof(int);     
+
+        for (auto &it : *batchResults) {
+            // calculate size
+            msg.count += it.second.calculateBufferSize();    // optimization: this could be performed only once if every query is the same
+        }
+        // allocate space
+        msg.data = (char*) malloc(msg.count * sizeof(char));
+        if (msg.data == nullptr) {
+            // malloc failed
+            logger::log_error(DBERR_MALLOC_FAILED, "Malloc for pack system metadata failed");
+            return DBERR_MALLOC_FAILED;
+        }
+
+        char* localBuffer = msg.data;
+
+        // add batch size
+        *reinterpret_cast<int*>(localBuffer) = batchResults->size();
+        localBuffer += sizeof(int);
+
+        // logger::log_success("Packed header", batchResults->size(), "queries.");
+
+        
+        for (auto &it : *batchResults) {
+            // add query id
+            *reinterpret_cast<int*>(localBuffer) = it.second.getID();
+            localBuffer += sizeof(int);
+
+            // add query type
+            *reinterpret_cast<hec::QueryType*>(localBuffer) = it.second.getQueryType();
+            localBuffer += sizeof(hec::QueryType);
+
+            // add query result type
+            *reinterpret_cast<hec::QueryResultType*>(localBuffer) = it.second.getResultType();
+            localBuffer += sizeof(hec::QueryResultType);
+
+            if (it.second.getResultType() == hec::QR_COUNT) {
+                // result count
+                *reinterpret_cast<size_t*>(localBuffer) = it.second.getResultCount();
+                localBuffer += sizeof(size_t);
+
+                // relation map relation counts
+                auto relationMap = it.second.getTopologyResultCount();
+                for (int i=0; i<8; i++) {
+                    *reinterpret_cast<size_t*>(localBuffer) = relationMap[i];
+                    localBuffer += sizeof(size_t);
+                }
+            } else if (it.second.getResultType() == hec::QR_COLLECT) {
+                // collect
+                // pairs vector size
+                auto pairs = it.second.getResultPairs();
+                size_t pairsSize = pairs->size();
+                *reinterpret_cast<size_t*>(localBuffer) = pairsSize;
+                localBuffer += sizeof(size_t);
+                // pairs vector
+                for (auto &it : *pairs) {
+                    *reinterpret_cast<size_t*>(localBuffer) = it.first;
+                    localBuffer += sizeof(size_t);
+                    *reinterpret_cast<size_t*>(localBuffer) = it.second;
+                    localBuffer += sizeof(size_t);
+                }
+                // pairs map
+                // for (int i=0; i<8; i++) {
+                //     // relation pairs size
+                //     auto collectRelationMap = queryResult->get
+                //     size_t relationPairsSize = collectRelationMap[i].size();
+                //     *reinterpret_cast<size_t*>(localBuffer) = relationPairsSize;
+                //     localBuffer += sizeof(size_t);
+                //     // relation pairs
+                //     for (auto &pairIT: collectRelationMap[i]) {
+                //         *reinterpret_cast<size_t*>(localBuffer) = pairIT.first;
+                //         localBuffer += sizeof(size_t);
+                //         *reinterpret_cast<size_t*>(localBuffer) = pairIT.second;
+                //         localBuffer += sizeof(size_t);
+                //     }
+                // }
+                return DBERR_FEATURE_UNSUPPORTED;
+            } else {
+                // error, unknown
+                logger::log_error(DBERR_QUERY_RESULT_INVALID_TYPE, "Invalid query result type.");
+                return DBERR_QUERY_RESULT_INVALID_TYPE;
+            }
+        }
         
         return ret;
     }
@@ -471,7 +571,6 @@ namespace unpack
         DB_STATUS ret = DBERR_OK;
 
         char *localBuffer = msg.data;
-        int length;
         // query id
         int id = (int) *reinterpret_cast<const int*>(localBuffer);
         localBuffer += sizeof(int);
@@ -527,6 +626,71 @@ namespace unpack
         return ret;
     }
 
+    DB_STATUS unpackQueryBatch(SerializedMsg<char> &msg, std::vector<hec::Query*>* queryBatchPtr) {
+        DB_STATUS ret = DBERR_OK;
+
+        char *localBuffer = msg.data;
+
+        // total queries
+        int queryCount = (int) *reinterpret_cast<const int*>(localBuffer);
+        localBuffer += sizeof(int);
+
+        for (int i=0; i<queryCount; i++) {
+            // query id
+            int id = (int) *reinterpret_cast<const int*>(localBuffer);
+            localBuffer += sizeof(int);
+            // query type
+            hec::QueryType queryType = (hec::QueryType) *reinterpret_cast<const hec::QueryType*>(localBuffer);
+            localBuffer += sizeof(hec::QueryType);
+            // query result type
+            hec::QueryResultType queryResultType = (hec::QueryResultType) *reinterpret_cast<const hec::QueryResultType*>(localBuffer);
+            localBuffer += sizeof(hec::QueryResultType);
+            
+            switch (queryType) {
+                case hec::Q_RANGE:
+                    {
+                        // unpack the rest of the info
+                        hec::DatasetID datasetID = (hec::DatasetID) *reinterpret_cast<const hec::DatasetID*>(localBuffer);
+                        localBuffer += sizeof(hec::DatasetID);
+                        // wkt text length + string
+                        int length;
+                        length = *reinterpret_cast<const int*>(localBuffer);
+                        localBuffer += sizeof(int);
+                        std::string wktText(localBuffer, localBuffer + length);
+                        localBuffer += length * sizeof(char);
+                        
+                        // the caller is responsible for freeing this memory
+                        hec::RangeQuery* rangeQuery = new hec::RangeQuery(datasetID, id, wktText, queryResultType);
+                        queryBatchPtr->emplace_back(rangeQuery);
+                    }
+                    break;
+                case hec::Q_DISJOINT_JOIN:
+                case hec::Q_INTERSECTION_JOIN:
+                case hec::Q_INSIDE_JOIN:
+                case hec::Q_CONTAINS_JOIN:
+                case hec::Q_COVERS_JOIN:
+                case hec::Q_COVERED_BY_JOIN:
+                case hec::Q_MEET_JOIN:
+                case hec::Q_EQUAL_JOIN:
+                case hec::Q_FIND_RELATION_JOIN:
+                    {
+                        hec::DatasetID datasetRid = (hec::DatasetID) *reinterpret_cast<const hec::DatasetID*>(localBuffer);
+                        localBuffer += sizeof(hec::DatasetID);
+                        hec::DatasetID datasetSid = (hec::DatasetID) *reinterpret_cast<const hec::DatasetID*>(localBuffer);
+                        localBuffer += sizeof(hec::DatasetID);
+                        // the caller is responsible for freeing this memory
+                        hec::JoinQuery* joinQuery = new hec::JoinQuery(datasetRid, datasetSid, id, queryType, queryResultType);
+                        queryBatchPtr->emplace_back(joinQuery);
+                    }
+                    break;
+                default:
+                    logger::log_error(DBERR_QUERY_INVALID_TYPE, "Invalid query type in message.");
+                    return DBERR_QUERY_INVALID_TYPE;
+            }
+        }
+        return ret;
+    }
+
     DB_STATUS unpackShape(SerializedMsg<char> &msg, Shape &shape) {
         DB_STATUS ret = DBERR_OK;
 
@@ -563,6 +727,72 @@ namespace unpack
             shape.addPoint(vertexDataPtr[j], vertexDataPtr[j+1]);
         }
         localBuffer += vertexCount * 2 * sizeof(double);
+
+        return ret;
+    }
+
+    DB_STATUS unpackBatchResults(SerializedMsg<char> &msg, std::unordered_map<int, hec::QueryResult> &batchResults) {
+        DB_STATUS ret = DBERR_OK;
+
+        char *localBuffer = msg.data;
+
+        // batch size
+        int resultCount = (int) *reinterpret_cast<const int*>(localBuffer);
+        localBuffer += sizeof(int);
+
+        // logger::log_success("Unpacked header", resultCount, "queries.");
+
+        for (int i=0; i<resultCount; i++) {
+            // query id
+            int queryID = (int) *reinterpret_cast<const int*>(localBuffer);
+            localBuffer += sizeof(int);
+
+            // query type
+            hec::QueryType queryType = (hec::QueryType) *reinterpret_cast<const hec::QueryType*>(localBuffer);
+            localBuffer += sizeof(hec::QueryType);
+
+            // query result type
+            hec::QueryResultType queryResultType = (hec::QueryResultType) *reinterpret_cast<const hec::QueryResultType*>(localBuffer);
+            localBuffer += sizeof(hec::QueryResultType);
+
+            // create new query result element
+            hec::QueryResult queryResult(queryID, queryType, queryResultType);
+
+            if (queryResultType == hec::QR_COUNT) {
+                // result count
+                size_t resultCount = (size_t) *reinterpret_cast<const size_t*>(localBuffer);
+                localBuffer += sizeof(size_t);
+                queryResult.setResultCount(resultCount);
+
+                // relation map relation counts
+                size_t results;
+                size_t countRelationMap[8];
+                for (int i=0; i<8; i++) {
+                    results = (size_t) *reinterpret_cast<const size_t*>(localBuffer);
+                    localBuffer += sizeof(size_t);
+                    countRelationMap[i] = results;
+                }
+                queryResult.setTopologyResultCount(countRelationMap);
+            } else if (queryResultType == hec::QR_COLLECT) {
+                // result pair vector size
+                logger::log_error(DBERR_FEATURE_UNSUPPORTED, "COLLECT feature unsupported: query unpacking.");
+                return DBERR_FEATURE_UNSUPPORTED;
+            } else {
+                // unknown
+                logger::log_error(DBERR_QUERY_RESULT_INVALID_TYPE, "Invalid query result type.");
+                return DBERR_QUERY_RESULT_INVALID_TYPE;
+            }
+
+            // add to map
+            auto it = batchResults.find(queryResult.getID());
+            if (it != batchResults.end()) {
+                // exists alread, merge
+                it->second.mergeResults(queryResult);
+            } else {
+                // new entry
+                batchResults[queryResult.getID()] = queryResult;
+            }
+        }
 
         return ret;
     }

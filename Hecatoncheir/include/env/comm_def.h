@@ -16,7 +16,7 @@ typedef enum MsgType {
     /* INSTRUCTIONS */
     MSG_INSTR_BEGIN = MSG_BASE + 2000,
     MSG_INSTR_FIN = MSG_INSTR_BEGIN,
-    // MSG_INSTR_PARTITIONING_INIT = MSG_BASE + 2001,
+    MSG_INSTR_BATCH_FINISHED = MSG_BASE + 2001,
     
     MSG_INSTR_END,
 
@@ -92,6 +92,14 @@ struct SerializedMsg {
             this->type = MPI_INT;
         } else {
             printf("Error: unknown serialized msg type");
+        }
+    }
+
+    void clear() {
+        type = -1;
+        count = 0;
+        if (data != nullptr){
+            free(data);
         }
     }
 

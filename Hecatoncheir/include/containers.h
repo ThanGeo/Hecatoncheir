@@ -138,9 +138,9 @@ public:
         geometry = geom;
     }
 
-    bg_rectangle getBoostEnvelope(bg_rectangle &envelope) {
+    bg_box getBoostEnvelope(bg_box &envelope) {
         logger::log_error(DBERR_INVALID_OPERATION, "Geometry wrapper can be accessed directly for operation: getBoostEnvelope");
-        bg_rectangle empty;
+        bg_box empty;
         return empty;
     }
 
@@ -265,9 +265,9 @@ public:
         geometry = bg_point_xy(x, y);
     }
 
-    void getBoostEnvelope(bg_rectangle &envelope) {
+    void getBoostEnvelope(bg_box &envelope) {
         // boost::geometry::envelope(geometry, envelope);
-        envelope = bg_rectangle(geometry, geometry);
+        envelope = bg_box(geometry, geometry);
     }
 
     void correctGeometry() {
@@ -320,8 +320,6 @@ public:
         double y = std::atof(next);
         this->geometry = bg_point_xy(x, y);
 
-
-
         // correct
         correctGeometry();
         // check if valid
@@ -332,6 +330,7 @@ public:
             // logger::log_warning("Point geometry is invalid:", wktText, "Reason:", reason);
             return DBERR_INVALID_GEOMETRY;
         }
+
         return DBERR_OK;
     }
 
@@ -392,7 +391,7 @@ public:
     std::string createMaskCode(const GeometryWrapper<bg_polygon>& other) const;
     std::string createMaskCode(const GeometryWrapper<bg_point_xy>& other) const {return "";}
     std::string createMaskCode(const GeometryWrapper<bg_linestring>& other) const {return "";}
-    std::string createMaskCode(const GeometryWrapper<bg_rectangle>& other) const {return "";}
+    std::string createMaskCode(const GeometryWrapper<bg_box>& other) const {return "";}
 
     template<typename OtherBoostGeometryObj>
     bool intersects(const OtherBoostGeometryObj &other) const {
@@ -406,7 +405,7 @@ public:
 
     bool inside(const GeometryWrapper<bg_polygon>& other) const;
     bool inside(const GeometryWrapper<bg_linestring>& other) const;
-    bool inside(const GeometryWrapper<bg_rectangle>& other) const;
+    bool inside(const GeometryWrapper<bg_box>& other) const;
     bool inside(const GeometryWrapper<bg_point_xy>& other) const {
         return boost::geometry::within(geometry, other.geometry);
     }
@@ -414,31 +413,31 @@ public:
     bool contains(const GeometryWrapper<bg_point_xy>& other) const {return false;}
     bool contains(const GeometryWrapper<bg_polygon>& other) const {return false;}
     bool contains(const GeometryWrapper<bg_linestring>& other) const {return false;}
-    bool contains(const GeometryWrapper<bg_rectangle>& other) const {return false;}
+    bool contains(const GeometryWrapper<bg_box>& other) const {return false;}
 
     bool meets(const GeometryWrapper<bg_polygon>& other) const;
     bool meets(const GeometryWrapper<bg_linestring>& other) const;
-    bool meets(const GeometryWrapper<bg_rectangle>& other) const {return false;}
+    bool meets(const GeometryWrapper<bg_box>& other) const {return false;}
     bool meets(const GeometryWrapper<bg_point_xy>& other) const {
         return boost::geometry::touches(geometry, other.geometry);
     }
 
     bool equals(const GeometryWrapper<bg_linestring>& other) const {return false;}
     bool equals(const GeometryWrapper<bg_polygon>& other) const {return false;}
-    bool equals(const GeometryWrapper<bg_rectangle>& other) const {return false;}
+    bool equals(const GeometryWrapper<bg_box>& other) const {return false;}
     bool equals(const GeometryWrapper<bg_point_xy>& other) const {
         return boost::geometry::equals(geometry, other.geometry);
     }
 };
 
 
-// rectangle
+// box
 template<>
-struct GeometryWrapper<bg_rectangle> {
+struct GeometryWrapper<bg_box> {
 public:
-    bg_rectangle geometry;
+    bg_box geometry;
     GeometryWrapper(){}
-    GeometryWrapper(const bg_rectangle &geom) : geometry(geom) {}
+    GeometryWrapper(const bg_box &geom) : geometry(geom) {}
 
     void addPoint(const double x, const double y) {
         bg_point_xy point(x, y);
@@ -450,19 +449,19 @@ public:
             geometry.max_corner() = point;
         } else {
             // both points already exist, error
-            logger::log_error(DBERR_INVALID_OPERATION, "Cannot add more than two points to a rectangle");
+            logger::log_error(DBERR_INVALID_OPERATION, "Cannot add more than two points to a box");
         }
     }
 
-    void getBoostEnvelope(bg_rectangle &envelope) {
+    void getBoostEnvelope(bg_box &envelope) {
         envelope = geometry;
     }
 
     DB_STATUS setFromWKT(std::string wktText) {
         // check if it is correct
         if (wktText.find("BOX") == std::string::npos) {
-            // it is not a rectangle WKT, ignore
-            // logger::log_warning("WKT text passed into set from WKT is not a rectangle (box):", wktText);
+            // it is not a box WKT, ignore
+            // logger::log_warning("WKT text passed into set from WKT is not a box (box):", wktText);
             return DBERR_INVALID_GEOMETRY;
         }
         // load
@@ -474,7 +473,7 @@ public:
         if (!boost::geometry::is_valid(geometry,reason)) {
             // invalid geometry, reset and return error
             reset();
-            // logger::log_warning("Rectangle geometry is invalid:", wktText, "Reason:", reason);
+            logger::log_warning("Rectangle geometry is invalid:", wktText, "Reason:", reason);
             return DBERR_INVALID_GEOMETRY;
         }
         return DBERR_OK;
@@ -544,7 +543,7 @@ public:
     }
 
     DataType getSpatialType() const {
-        return DT_RECTANGLE;
+        return DT_BOX;
     }
 
     /**
@@ -562,6 +561,16 @@ public:
         return boost::geometry::intersects(geometry, other.geometry);
     }
 
+
+    bool intersects(const GeometryWrapper<bg_point_xy>& point) const {
+        if (point.geometry.x() > this->geometry.max_corner().x() || point.geometry.y() > this->geometry.max_corner().y()
+         || point.geometry.x() < this->geometry.min_corner().x() || point.geometry.y() < this->geometry.min_corner().y()) {
+            return false;
+        }
+        return true;
+    }
+
+
     template<typename OtherBoostGeometryObj>
     bool disjoint(const OtherBoostGeometryObj &other) const {
         return boost::geometry::disjoint(geometry, other.geometry);
@@ -570,13 +579,13 @@ public:
     bool inside(const GeometryWrapper<bg_point_xy> &other) const {return false;}
     bool inside(const GeometryWrapper<bg_linestring> &other) const {return false;}
     bool inside(const GeometryWrapper<bg_polygon> &other) const {return false;}
-    bool inside(const GeometryWrapper<bg_rectangle> &other) const {
+    bool inside(const GeometryWrapper<bg_box> &other) const {
         return boost::geometry::within(geometry, other.geometry);
     }
 
     bool contains(const GeometryWrapper<bg_linestring> &other) const {return false;}
     bool contains(const GeometryWrapper<bg_polygon> &other) const {return false;}
-    bool contains(const GeometryWrapper<bg_rectangle> &other) const {
+    bool contains(const GeometryWrapper<bg_box> &other) const {
         return boost::geometry::within(other.geometry, geometry);
     }
     bool contains(const GeometryWrapper<bg_point_xy> &other) const {
@@ -586,12 +595,12 @@ public:
     bool meets(const GeometryWrapper<bg_point_xy> &other) const {return false;}
     bool meets(const GeometryWrapper<bg_linestring> &other) const {return false;}
     bool meets(const GeometryWrapper<bg_polygon> &other) const {return false;}
-    bool meets(const GeometryWrapper<bg_rectangle> &other) const {return false;}
+    bool meets(const GeometryWrapper<bg_box> &other) const {return false;}
 
     bool equals(const GeometryWrapper<bg_point_xy>& other) const {return false;}
     bool equals(const GeometryWrapper<bg_linestring>& other) const {return false;}
     bool equals(const GeometryWrapper<bg_polygon>& other) const;
-    bool equals(const GeometryWrapper<bg_rectangle>& other) const {
+    bool equals(const GeometryWrapper<bg_box>& other) const {
         return boost::geometry::equals(geometry, other.geometry);
     }
 };
@@ -609,7 +618,7 @@ public:
         geometry.push_back(point);
     }
 
-    void getBoostEnvelope(bg_rectangle &envelope) {
+    void getBoostEnvelope(bg_box &envelope) {
         boost::geometry::envelope(geometry, envelope);
     }
 
@@ -744,7 +753,7 @@ public:
     // declaration
     std::string createMaskCode(const GeometryWrapper<bg_polygon>& other) const;
     std::string createMaskCode(const GeometryWrapper<bg_point_xy>& other) const {return "";}
-    std::string createMaskCode(const GeometryWrapper<bg_rectangle>& other) const {return "";}
+    std::string createMaskCode(const GeometryWrapper<bg_box>& other) const {return "";}
     // definitions
     std::string createMaskCode(const GeometryWrapper<bg_linestring>& other) const {
         boost::geometry::de9im::matrix matrix = boost::geometry::relation(geometry, other.geometry);
@@ -763,18 +772,18 @@ public:
 
     bool inside(const GeometryWrapper<bg_point_xy> &other) const {return false;}
     bool inside(const GeometryWrapper<bg_polygon> &other) const;
-    bool inside(const GeometryWrapper<bg_rectangle> &other) const {return false;}
+    bool inside(const GeometryWrapper<bg_box> &other) const {return false;}
     bool inside(const GeometryWrapper<bg_linestring> &other) const {
         return boost::geometry::within(geometry, other.geometry);
     }
 
     bool contains(const GeometryWrapper<bg_point_xy> &other) const {return false;}
     bool contains(const GeometryWrapper<bg_polygon> &other) const {return false;}
-    bool contains(const GeometryWrapper<bg_rectangle> &other) const {return false;}
+    bool contains(const GeometryWrapper<bg_box> &other) const {return false;}
     bool contains(const GeometryWrapper<bg_linestring> &other) const {return false;}
 
     bool meets(const GeometryWrapper<bg_polygon>& other) const;
-    bool meets(const GeometryWrapper<bg_rectangle>& other) const {return false;}
+    bool meets(const GeometryWrapper<bg_box>& other) const {return false;}
     bool meets(const GeometryWrapper<bg_point_xy>& other) const {
         return boost::geometry::touches(geometry, other.geometry);
     }
@@ -784,7 +793,7 @@ public:
 
     bool equals(const GeometryWrapper<bg_point_xy>& other) const {return false;}
     bool equals(const GeometryWrapper<bg_polygon>& other) const {return false;}
-    bool equals(const GeometryWrapper<bg_rectangle>& other) const {return false;}
+    bool equals(const GeometryWrapper<bg_box>& other) const {return false;}
     bool equals(const GeometryWrapper<bg_linestring>& other) const {
         return boost::geometry::equals(geometry, other.geometry);
     }
@@ -814,7 +823,7 @@ public:
         printf("\n");
     }
 
-    void getBoostEnvelope(bg_rectangle &envelope) {
+    void getBoostEnvelope(bg_box &envelope) {
         boost::geometry::envelope(geometry, envelope);
     }
 
@@ -944,7 +953,7 @@ public:
     }
 
     // topology definitions
-    std::string createMaskCode(const GeometryWrapper<bg_rectangle>& other) const {return "";};
+    std::string createMaskCode(const GeometryWrapper<bg_box>& other) const {return "";};
     std::string createMaskCode(const GeometryWrapper<bg_polygon>& other) const {
         boost::geometry::de9im::matrix matrix = boost::geometry::relation(geometry, other.geometry);
         return matrix.str();
@@ -970,12 +979,12 @@ public:
 
     bool inside(const GeometryWrapper<bg_point_xy>& other) const {return false;}
     bool inside(const GeometryWrapper<bg_linestring>& other) const {return false;}
-    bool inside(const GeometryWrapper<bg_rectangle>& other) const {return false;}
+    bool inside(const GeometryWrapper<bg_box>& other) const {return false;}
     bool inside(const GeometryWrapper<bg_polygon>& other) const {
         return boost::geometry::within(geometry, other.geometry);
     }
 
-    bool contains(const GeometryWrapper<bg_rectangle>& other) const {return false;}
+    bool contains(const GeometryWrapper<bg_box>& other) const {return false;}
     bool contains(const GeometryWrapper<bg_polygon>& other) const {
         return boost::geometry::within(other.geometry, geometry);
     }
@@ -986,7 +995,7 @@ public:
         return boost::geometry::within(other.geometry, geometry);
     }
 
-    bool meets(const GeometryWrapper<bg_rectangle>& other) const {return false;}
+    bool meets(const GeometryWrapper<bg_box>& other) const {return false;}
     bool meets(const GeometryWrapper<bg_polygon>& other) const {
         return boost::geometry::touches(geometry, other.geometry);
     }
@@ -1002,7 +1011,7 @@ public:
     bool equals(const GeometryWrapper<bg_polygon>& other) const {
         return boost::geometry::equals(geometry, other.geometry);
     }
-    bool equals(const GeometryWrapper<bg_rectangle>& other) const {
+    bool equals(const GeometryWrapper<bg_box>& other) const {
         return boost::geometry::equals(geometry, other.geometry);
     }
 };
@@ -1035,7 +1044,7 @@ inline bool GeometryWrapper<bg_point_xy>::inside(const GeometryWrapper<bg_linest
     return boost::geometry::within(geometry, other.geometry);
 }
 /** @brief Overloaded method for the 'inside' relate predicate query for Point-Rectangle cases.*/
-inline bool GeometryWrapper<bg_point_xy>::inside(const GeometryWrapper<bg_rectangle> &other) const {
+inline bool GeometryWrapper<bg_point_xy>::inside(const GeometryWrapper<bg_box> &other) const {
     return boost::geometry::within(geometry, other.geometry);
 }
 /** @brief Overloaded method for the 'inside' relate predicate query for Point-Polygon cases.*/
@@ -1052,7 +1061,7 @@ inline bool GeometryWrapper<bg_point_xy>::meets(const GeometryWrapper<bg_polygon
 }
 
 /** @brief Overloaded method for the 'equals' relate predicate query for Rectangle-Polygon cases.*/
-inline bool GeometryWrapper<bg_rectangle>::equals(const GeometryWrapper<bg_polygon>& other) const {
+inline bool GeometryWrapper<bg_box>::equals(const GeometryWrapper<bg_polygon>& other) const {
     return boost::geometry::equals(geometry, other.geometry);
 }
 
@@ -1062,14 +1071,14 @@ using PointWrapper = GeometryWrapper<bg_point_xy>;
 using PolygonWrapper = GeometryWrapper<bg_polygon>;
 /** @typedef LineStringWrapper @brief type definition for the linestring wrapper*/
 using LineStringWrapper = GeometryWrapper<bg_linestring>;
-/** @typedef RectangleWrapper @brief type definition for the rectangle wrapper*/
-using RectangleWrapper = GeometryWrapper<bg_rectangle>;
+/** @typedef RectangleWrapper @brief type definition for the box wrapper*/
+using RectangleWrapper = GeometryWrapper<bg_box>;
 
 /** @typedef ShapeVariant @brief All the allowed Shape variants (geometry wrappers). */
 using ShapeVariant = std::variant<PointWrapper, PolygonWrapper, LineStringWrapper, RectangleWrapper>;
 
 /**
- * @brief A spatial object. Could be point, linestring, rectangle or polygon, as specified by its 'dataType' field.
+ * @brief A spatial object. Could be point, linestring, box or polygon, as specified by its 'dataType' field.
  * 
  * @details All geometry wrappers are not meant to be visible to the user. Always use this struct for loading, querying or otherwise handling data.
  * Extensions to the struct's methods require explicit definitions for the geometry types in the derived geometry structs.
@@ -1123,9 +1132,11 @@ public:
         mbr.pMax.y = std::max(yMin, yMax);
     }
 
-    /** @brief Sets the MBR from the object's boost geometry envelope. */
+    /** @brief Sets the MBR from the object's boost geometry envelope. 
+     * @todo: move this inside the setFromWKT() to avoid calling it manually after each setFromWKT()
+    */
     inline void setMBR() {
-        bg_rectangle envelope;
+        bg_box envelope;
         // get envelope from boost
         std::visit([&](auto&& arg) {
             arg.getBoostEnvelope(envelope);
@@ -1796,6 +1807,8 @@ public:
         return nullptr;
     }
 
+    virtual DB_STATUS evaluateQuery(hec::Query* query, hec::QueryResult &queryResult) = 0;
+
 };
 
 /** @brief Holds all two-layer related index information.
@@ -1821,6 +1834,8 @@ public:
      */
     void sortPartitionsOnY() override;
 
+    /** @brief Evaluate the given query and store results in the queryResult object. */
+    DB_STATUS evaluateQuery(hec::Query* query, hec::QueryResult &queryResult) override;
 
 };
 
@@ -1848,6 +1863,9 @@ public:
      */
     void sortPartitionsOnY() override;
 
+    /** @brief Evaluate the given query and store results in the queryResult object. */
+    DB_STATUS evaluateQuery(hec::Query* query, hec::QueryResult &queryResult);
+
 };
 
 /**
@@ -1862,8 +1880,7 @@ struct Dataset{
     std::vector<Shape> objects;
     // map of object id-position in the objects vector
     std::unordered_map<size_t,size_t> objectPosMap;
-    // the two layer index
-    // TwoLayerIndex twoLayerIndex;
+    // the index
     BaseIndex* index;
     // approximations (only april is supported)
     ApproximationType approxType = AT_APRIL;
@@ -1976,19 +1993,24 @@ struct Config {
 };
 
 
-/**
-@brief The main global configuration variable.
+/** @brief The main global configuration variable.
 */
 extern Config g_config;
 
-/**
-@brief Based on query type in config, it thread-safely appends new results to the query output in parallel.
+/** @brief Based on query type in config, it thread-safely appends new results to the query output in parallel.
  * Used only in parallel sections for OpenMP.
  */
 DB_STATUS queryResultReductionFunc(hec::QueryResult &in, hec::QueryResult &out);
 
-// Declare the parallel reduction function
+
+/** @brief Merges two batch query result maps into a single one.
+ */
+DB_STATUS mergeBatchResultMaps(std::unordered_map<int, hec::QueryResult>& dest, std::unordered_map<int, hec::QueryResult>& src);
+
+// Declare the parallel reduction function for merging query results into a single query result object
 #pragma omp declare reduction (query_output_reduction: hec::QueryResult: queryResultReductionFunc(omp_in, omp_out)) initializer(omp_priv = hec::QueryResult(omp_orig.getID(), omp_orig.getQueryType(), omp_orig.getResultType()))
 
+// Declare the parallel reduction function for merging batch query result objects into a single map
+#pragma omp declare reduction(merge_batch_results_maps : std::unordered_map<int, hec::QueryResult> : mergeBatchResultMaps(omp_out, omp_in)) initializer(omp_priv = omp_orig)
 
 #endif

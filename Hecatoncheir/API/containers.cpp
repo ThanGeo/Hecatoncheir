@@ -58,25 +58,6 @@ namespace hec
         this->queryType = Q_RANGE;
         this->resultType = QR_COUNT;
         this->wktText = queryWKT;
-        // Shape window;
-        // DB_STATUS ret = window.setFromWKT(queryWKT);
-        // if (ret != DBERR_OK) {
-        //     logger::log_error(ret, "Invalid wkt geometry for window:", queryWKT);
-        //     return;
-        // }
-        // window.setMBR();
-        // this->coords = coords;
-        // this->xMin = std::numeric_limits<int>::max();
-        // this->yMin = std::numeric_limits<int>::max();
-        // this->xMax = -std::numeric_limits<int>::max();
-        // this->yMax = -std::numeric_limits<int>::max();
-
-        // for (int i=0; i<coords.size(); i+=2) {
-        //     this->xMin = std::min(this->xMin, coords[i]);
-        //     this->yMin = std::min(this->yMin, coords[i+1]);
-        //     this->xMax = std::max(this->xMax, coords[i]);
-        //     this->yMax = std::max(this->yMax, coords[i+1]);
-        // }
     }
 
     RangeQuery::RangeQuery(DatasetID datasetID, int id, std::string queryWKT, std::string resultTypeStr) {
@@ -281,12 +262,22 @@ namespace hec
         }
     }
 
+    void QueryResult::setResultCount(size_t newResultCount) {
+        this->resultCount = newResultCount;
+    }
+
     size_t QueryResult::getResultCount() {
         return this->resultCount;
     }
 
     size_t* QueryResult::getTopologyResultCount() {
         return this->countRelationMap;
+    }
+
+    void QueryResult::setTopologyResultCount(size_t* newRelationCountMap) {
+        for (int i=0; i<8; i++) {
+            this->countRelationMap[i] = newRelationCountMap[i];
+        }
     }
 
     int QueryResult::calculateBufferSize() {
@@ -390,7 +381,7 @@ namespace hec
         position += sizeof(int);
 
         // query type
-        memcpy(&this->queryID, buffer + position, sizeof(QueryType));
+        memcpy(&this->queryType, buffer + position, sizeof(QueryType));
         position += sizeof(QueryType);
 
         // query result type

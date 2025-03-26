@@ -47,7 +47,7 @@ static DB_STATUS receiveResult(int sourceRank, int sourceTag, MPI_Comm &comm, MP
     return DBERR_OK;
 }
 
-static DB_STATUS receiveResultBatch(int sourceRank, int sourceTag, MPI_Comm &comm, MPI_Status &status, std::vector<hec::QueryResult> &finalResults) {
+static DB_STATUS receiveResultBatch(int sourceRank, int sourceTag, MPI_Comm &comm, MPI_Status &status, std::unordered_map<int,hec::QueryResult> &finalResults) {
     SerializedMsg<char> msg(MPI_CHAR);
     // receive message
     DB_STATUS ret = comm::recv::receiveMessage(status, msg.type, g_global_intra_comm, msg);
@@ -55,9 +55,11 @@ static DB_STATUS receiveResultBatch(int sourceRank, int sourceTag, MPI_Comm &com
         return ret;
     }
     // unpack
-    // finalResults.deserialize(msg.data, msg.count);
-    return DBERR_FEATURE_UNSUPPORTED;
-
+    ret = unpack::unpackBatchResults(msg, finalResults);
+    if (ret != DBERR_OK) {
+        logger::log_error(ret, "Failed to unpack batch query results.");
+        return ret;
+    }
     return DBERR_OK;
 }
 
@@ -111,7 +113,7 @@ static DB_STATUS waitForResult(hec::QueryResult &finalResults) {
     return ret;
 }
 
-static DB_STATUS waitForResult(std::vector<hec::QueryResult> &finalResults) {
+static DB_STATUS waitForResult(std::unordered_map<int, hec::QueryResult> &finalResults) {
     MPI_Status status;
     // wait for response by the host controller
     DB_STATUS ret = probeBlocking(1, MPI_ANY_TAG, g_global_intra_comm, status);
@@ -510,11 +512,13 @@ namespace hec {
         return finalResults;
     }
 
-    std::vector<hec::QueryResult> query(std::vector<Query> queryBatch) {
+    std::unordered_map<int, hec::QueryResult> query(std::vector<Query*> &queryBatch) {
         DB_STATUS ret = DBERR_OK;
-        std::vector<hec::QueryResult> finalResults(queryBatch.size());
-        for (int i=0; i<queryBatch.size(); i++) {
-            finalResults.emplace_back(queryBatch[i].getQueryID(), queryBatch[i].getQueryType(), (hec::QueryResultType) queryBatch[i].getResultType());
+        std::unordered_map<int, hec::QueryResult> finalResults;
+
+        if (queryBatch.size() == 0) {
+            logger::log_error(DBERR_INVALID_PARAMETER, "Query batch is empty.");
+            return finalResults;
         }
 
         SerializedMsg<char> msg(MPI_CHAR);
@@ -536,8 +540,56 @@ namespace hec {
             logger::log_error(ret, "Receiving query results failed.");
             return finalResults;
         }
-        logger::log_success("Evaluated query!");
+        logger::log_success("Evaluated query batch!");
         return finalResults;
     }
+
+    static int loadQueriesFromWKT(std::string &filePath, int datasetID, hec::QueryResultType resultType, std::vector<hec::Query*> &batchQueries) {
+        std::ifstream fin(filePath);
+        if (!fin.is_open()) {
+            logger::log_error(DBERR_MISSING_FILE, "Failed to open query file from path:", filePath);
+            return -1;
+        }
+        std::string line, token;
+        int queryID = 0;
+
+        while (getline(fin, line)) {
+            // parse line to get only the first column (wkt geometry)
+            std::stringstream ss(line);
+            std::getline(ss, token, '\t');
+
+            hec::RangeQuery* query = new hec::RangeQuery(datasetID, queryID, token, resultType);
+            batchQueries.emplace_back(query);
+
+            queryID++;
+        }
+
+        fin.close();
+
+        return 0;
+    }
+
+    std::vector<hec::Query*> loadQueriesFromFile(std::string &filePath, std::string fileTypeStr, int datasetID, hec::QueryResultType resultType) {
+        std::vector<hec::Query*> batchQueries;
+        int ret = 0;
+        hec::FileType fileType = mapping::fileTypeTextToInt(fileTypeStr);
+        switch (fileType) {
+            case FT_WKT:
+                ret = loadQueriesFromWKT(filePath, datasetID, resultType, batchQueries);
+                if (ret != 0) {
+                    logger::log_error(DBERR_INVALID_FILETYPE, "Failed to parse the given file as WKT.");
+                    return batchQueries;
+                }
+                break;
+            case FT_CSV:
+            default:
+                logger::log_error(DBERR_INVALID_FILETYPE, "Unsupported file type for query file:", fileTypeStr, "Supported query types: WKT");
+                break;
+
+        }
+
+        return batchQueries;
+    }
+
 }
 

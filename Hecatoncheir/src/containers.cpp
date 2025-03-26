@@ -2,6 +2,9 @@
 
 #include "APRIL/generate.h"
 
+#include "TwoLayer/filter.h"
+#include "UniformGrid/filter.h"
+
 Config g_config;
 
 DB_STATUS queryResultReductionFunc(hec::QueryResult &in, hec::QueryResult &out) {
@@ -11,6 +14,22 @@ DB_STATUS queryResultReductionFunc(hec::QueryResult &in, hec::QueryResult &out) 
 
     return ret;
 }
+
+/** @brief Merges two batch query result maps into a single one.
+ */
+DB_STATUS mergeBatchResultMaps(std::unordered_map<int, hec::QueryResult>& dest, std::unordered_map<int, hec::QueryResult>& src) {
+    DB_STATUS ret = DBERR_OK;
+    for (auto& [key, value] : src) {
+        auto it = dest.find(key);
+        if (it == dest.end()) {
+            dest[key] = value;
+        } else {
+            dest[key].mergeResults(value);
+        }
+    }
+    return ret;
+}
+
 
 std::vector<std::pair<size_t,size_t>>* hec::QueryResult::getResultPairs() {
     return &this->pairs;
@@ -721,6 +740,16 @@ void TwoLayerIndex::sortPartitionsOnY() {
     }
 }
 
+DB_STATUS TwoLayerIndex::evaluateQuery(hec::Query* query, hec::QueryResult &queryResult) {
+    DB_STATUS ret = twolayer::processQuery(query, queryResult);
+    if (ret != DBERR_OK) {
+        logger::log_error(ret, "Failed to process query with id:", query->getQueryID());
+        return ret;
+    }
+    return ret;
+}
+
+
 PartitionBase* UniformGridIndex::getOrCreatePartition(int partitionID) {
     auto it = partitionMap.find(partitionID);
     if (it != partitionMap.end()) {
@@ -825,8 +854,14 @@ void UniformGridIndex::sortPartitionsOnY() {
     }
 }
 
-
-
+DB_STATUS UniformGridIndex::evaluateQuery(hec::Query* query, hec::QueryResult &queryResult) {
+    DB_STATUS ret = uniform_grid::processQuery(query, queryResult);
+    if (ret != DBERR_OK) {
+        logger::log_error(ret, "Failed to process query with id:", query->getQueryID());
+        return ret;
+    }
+    return ret;
+}
 
 
 int DatasetOptions::getNumberOfDatasets() {
@@ -1200,7 +1235,7 @@ namespace shape_factory
             case DT_LINESTRING:
                 object = createEmptyLineStringShape();
                 break;
-            case DT_RECTANGLE:
+            case DT_BOX:
                 object = createEmptyRectangleShape();
                 break;
             case DT_POLYGON:

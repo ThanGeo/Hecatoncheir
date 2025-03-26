@@ -252,7 +252,7 @@ namespace mapping
     std::string dataTypeIntToStr(DataType val){
         switch(val) {
             case DT_POLYGON: return "POLYGON";
-            case DT_RECTANGLE: return "RECTANGLE";
+            case DT_BOX: return "BOX";
             case DT_POINT: return "POINT";
             case DT_LINESTRING: return "LINESTRING";
             default: return "";
@@ -261,7 +261,7 @@ namespace mapping
 
     DataType dataTypeTextToInt(std::string str){
         if (str.compare("POLYGON") == 0) return DT_POLYGON;
-        else if (str.compare("RECTANGLE") == 0) return DT_RECTANGLE;
+        else if (str.compare("BOX") == 0) return DT_BOX;
         else if (str.compare("POINT") == 0) return DT_POINT;
         else if (str.compare("LINESTRING") == 0) return DT_LINESTRING;
 

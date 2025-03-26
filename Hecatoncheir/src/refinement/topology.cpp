@@ -433,7 +433,8 @@ namespace refinement
             // switch based on query type
             switch(queryType) {
                 case hec::Q_RANGE:
-                    return DBERR_FEATURE_UNSUPPORTED;
+                    refineIntersectionJoin(objR, objS, queryResult);
+                    break;
                 case hec::Q_INTERSECTION_JOIN:
                     refineIntersectionJoin(objR, objS, queryResult);
                     break;

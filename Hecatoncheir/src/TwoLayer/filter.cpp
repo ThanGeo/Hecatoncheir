@@ -1439,6 +1439,7 @@ namespace twolayer
             hec::QueryResult threadQueryResults(queryResult.getID(), queryResult.getQueryType(), queryResult.getResultType());
             
             // create shape object for window
+            // @todo fix, unitiialized shape object
             Shape window;
             window.setFromWKT(rangeQuery->getWKT());
             window.setMBR();
@@ -1727,7 +1728,7 @@ namespace twolayer
             }
                 break;
             default:
-                logger::log_error(DBERR_FEATURE_UNSUPPORTED, "Query type not supported:", mapping::queryTypeIntToStr((hec::QueryType) query->getQueryType()));
+                logger::log_error(DBERR_FEATURE_UNSUPPORTED, "Query type not supported for Two Layer index:", mapping::queryTypeIntToStr((hec::QueryType) query->getQueryType()));
                 return DBERR_FEATURE_UNSUPPORTED;
         }
 

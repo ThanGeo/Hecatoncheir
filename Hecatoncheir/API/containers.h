@@ -69,9 +69,12 @@ namespace hec
         size_t resultCount = 0;
         // for COUNT topology relations results (8 relations)
         size_t countRelationMap[8];
-        // for COLLECT range and join query results
+        // for COLLECT range query results
+        std::vector<size_t> ids;
+        // for COLLECT join query results
         std::vector<std::pair<size_t,size_t>> pairs;
         // for COLLECT topology relations results (8 relations)
+        /** @todo @bug this is incorrect. it should be std::vector<<std::vector<std::pair<size_t,size_t>>> instead */
         std::vector<std::pair<size_t,size_t>> collectRelationMap[8];
     public:
         QueryResult();
@@ -84,8 +87,10 @@ namespace hec
         void countTopologyRelationResult(int relation, size_t idR, size_t idS);
         void mergeResults(QueryResult &other);
         void mergeTopologyRelationResults(hec::QueryResult &other);
+        void setResultCount(size_t newResultCount);
         size_t getResultCount();
         size_t* getTopologyResultCount();
+        void setTopologyResultCount(size_t* newRelationCountMap);
         std::vector<std::pair<size_t,size_t>>* getResultPairs();
         int calculateBufferSize();
         void serialize(char **buffer, int &bufferSize);

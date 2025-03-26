@@ -425,7 +425,7 @@ namespace APRIL
         namespace disk
         {
             /**
-            @brief load and intervalize shapes like polygon or rectangle that have area
+            @brief load and intervalize shapes like polygon or box that have area
              */
             static DB_STATUS loadAndIntervalizeRegionShape(Dataset &dataset, FILE* pFile,  FILE* pFileAPRIL, Shape object) {
                 DB_STATUS ret = DBERR_OK;
@@ -539,7 +539,7 @@ namespace APRIL
                         object = shape_factory::createEmptyLineStringShape();
                         ret = loadAndIntervalizeNonRegionShape(dataset, pFile, pFileAPRIL, object);
                         break;
-                    case DT_RECTANGLE:
+                    case DT_BOX:
                         object = shape_factory::createEmptyRectangleShape();
                         ret = loadAndIntervalizeRegionShape(dataset, pFile, pFileAPRIL, object);
                         break;
@@ -567,7 +567,7 @@ namespace APRIL
                 switch (dataType) {
                     // intervalize dataset objects
                     case DT_POLYGON:
-                    case DT_RECTANGLE:
+                    case DT_BOX:
                         ret = intervalizeRegionShape(*shape,  aprilConfig.getCellsPerDim(), aprilData);
                         if (ret != DBERR_OK || aprilData.intervalsALL.size() == 0) {
                             // at least 1 ALL interval is needed for each object, otherwise there is an error

@@ -1,7 +1,12 @@
 #include "env/comm.h"
 
+#include <unordered_set>
+
 namespace comm 
 {
+
+    #define QUERY_BATCH_SIZE 1000
+
     /** @brief Returns the object count of a serialized batch message.
      * @details The first value (sizeof(DataType)) indicates the data type of the objects in the message.
      * The second value (sizeof(size_t) is the object count.)
@@ -98,7 +103,7 @@ namespace comm
      * */
     static DB_STATUS waitForResults() {
         MPI_Status status;
-        // wait for response by the agent that all is well for the APRIL creation
+        // probe
         DB_STATUS ret = probe(AGENT_RANK, MPI_ANY_TAG, g_agent_comm, status);
         if (ret != DBERR_OK) {
             return ret;
@@ -436,6 +441,14 @@ STOP_LISTENING:
             switch (status.MPI_TAG) {
                 case MSG_INSTR_FIN:
                     return DB_FIN;
+                case MSG_INSTR_BATCH_FINISHED:
+                    // send ACK
+                    ret = send::sendResponse(PARENT_RANK, MSG_ACK, g_agent_comm);
+                    if (ret != DBERR_OK) {
+                        logger::log_error(ret, "Failed to send ACK for batch finished.");
+                        return ret;
+                    }
+                    break;
                 default:
                     logger::log_error(DBERR_COMM_UNKNOWN_INSTR, "Unknown instruction");
                     return DBERR_COMM_UNKNOWN_INSTR;
@@ -767,9 +780,9 @@ STOP_LISTENING:
 
             // setup query result object
             hec::QueryResult queryResult(queryPtr->getQueryID(), queryPtr->getQueryType(), queryPtr->getResultType());
-            
-            // process query
-            ret = twolayer::processQuery(queryPtr, queryResult);
+
+            // evaluate query based on index (stored in R dataset)
+            ret = g_config.datasetOptions.getDatasetR()->index->evaluateQuery(queryPtr, queryResult);
             if (ret != DBERR_OK) {
                 logger::log_error(ret, "Failed to process query with id:", queryPtr->getQueryID());
                 return ret;
@@ -790,6 +803,88 @@ STOP_LISTENING:
 
             // free query memory
             delete queryPtr;
+
+            return ret;
+        }
+
+        static DB_STATUS handleQueryBatchMessage(MPI_Status &status) {
+            SerializedMsg<char> msg(MPI_CHAR);
+            // receive the message
+            DB_STATUS ret = recv::receiveMessage(status, msg.type, g_agent_comm, msg);
+            if (ret != DBERR_OK) {
+                return ret;
+            }
+            // unpack query batch
+            std::vector<hec::Query*> queryBatch;
+            ret = unpack::unpackQueryBatch(msg, &queryBatch);
+            if (ret != DBERR_OK) {
+                logger::log_error(ret, "Failed to unpack query.");
+                return ret;
+            }
+
+            // logger::log_success("Unpacked", queryBatch.size(), "queries to process.");
+
+            // free message memory
+            free(msg.data);
+            
+            // holds all the final batch results
+            std::unordered_map<int, hec::QueryResult> batchResults;
+
+            #pragma omp parallel reduction(merge_batch_results_maps:batchResults)
+            {
+                DB_STATUS local_ret = DBERR_OK;
+                std::unordered_map<int, hec::QueryResult> localResults;
+                #pragma omp for
+                for (int i=0; i<queryBatch.size(); i++) {
+                    // setup query result object
+                    hec::QueryResult queryResult(queryBatch[i]->getQueryID(), queryBatch[i]->getQueryType(), queryBatch[i]->getResultType());
+                    // evaluate query based on index (stored in R dataset)
+                    local_ret = g_config.datasetOptions.getDatasetR()->index->evaluateQuery(queryBatch[i], queryResult);
+                    if (local_ret != DBERR_OK) {
+                        #pragma omp cancel for
+                        logger::log_error(ret, "Failed to process query with id:", queryBatch[i]->getQueryID());
+                        ret = local_ret;
+                    }
+                    // add to local hash map
+                    localResults[queryBatch[i]->getQueryID()] = queryResult;
+                }
+
+                // reduction of resultss
+                local_ret = mergeBatchResultMaps(batchResults, localResults);
+                if (local_ret != DBERR_OK) {
+                    #pragma omp cancel parallel
+                    logger::log_error(ret, "Merging local thread results to final map failed.");
+                    ret = local_ret;
+                } 
+
+            }   // end of parallel region
+            if (ret != DBERR_OK) {
+                return ret;
+            }
+
+            // pack results to send
+            SerializedMsg<char> batchResultMsg(MPI_CHAR);
+            ret = pack::packBatchResults(&batchResults, batchResultMsg);
+            if (ret != DBERR_OK) {
+                logger::log_error(ret, "Failed to pack batch results.");
+                return ret;
+            }
+
+            // logger::log_success("Packed results for", batchResults.size(), "queries");
+
+            // send results
+            ret = send::sendMessage(batchResultMsg, PARENT_RANK, MSG_QUERY_BATCH_RESULT, g_agent_comm);
+            if (ret != DBERR_OK) {
+                return ret;
+            }
+
+            // free message memory
+            batchResultMsg.clear();
+
+            // delete queries
+            for (auto &it: queryBatch) {
+                delete it;
+            }
 
             return ret;
         }
@@ -863,6 +958,12 @@ STOP_LISTENING:
                 case MSG_QUERY:
                     // logger::log_success("MSG_QUERY");
                     ret = handleQueryMessage(status);
+                    if (ret != DBERR_OK) {
+                        return ret;
+                    }
+                    break;
+                case MSG_QUERY_BATCH:
+                    ret = handleQueryBatchMessage(status);
                     if (ret != DBERR_OK) {
                         return ret;
                     }
@@ -950,6 +1051,30 @@ STOP_LISTENING:
                 ret = send::sendInstructionMessage(destRank, status.MPI_TAG, destComm);
                 if (ret != DBERR_OK) {
                     logger::log_error(DBERR_COMM_SEND, "Failed forwarding instruction");
+                    return DBERR_COMM_SEND;
+                }
+
+                return DBERR_OK;
+            }
+
+            /** @brief receive a response and forward it elsewhere */
+            static DB_STATUS forwardResponse(int sourceRank, int sourceTag, MPI_Comm sourceComm, int destRank, MPI_Comm destComm) {
+                if (sourceTag != MSG_ACK && sourceTag != MSG_NACK) {
+                    logger::log_error(DBERR_COMM_INVALID_MSG_TAG, "Response messages can only be ACK or NACK. Tag:", sourceTag);
+                    return DBERR_COMM_INVALID_MSG_TAG;
+                }
+                
+                MPI_Status status;
+                // receive instruction
+                DB_STATUS ret = recv::receiveResponse(sourceRank, sourceTag, sourceComm, status);
+                if (ret != DBERR_OK) {
+                    logger::log_error(DBERR_COMM_RECV, "Failed forwarding response");
+                    return DBERR_COMM_RECV;
+                }
+                // send it
+                ret = send::sendResponse(destRank, status.MPI_TAG, destComm);
+                if (ret != DBERR_OK) {
+                    logger::log_error(DBERR_COMM_SEND, "Failed forwarding response");
                     return DBERR_COMM_SEND;
                 }
 
@@ -1363,7 +1488,6 @@ STOP_LISTENING:
             return ret;
         }
 
-
         static DB_STATUS handleQueryMessage(MPI_Status &status) {
             SerializedMsg<char> msg(MPI_CHAR);
             // receive the message
@@ -1405,11 +1529,23 @@ STOP_LISTENING:
             switch (status.MPI_TAG) {
                 case MSG_INSTR_FIN:
                     /* terminate */
-                    ret = forward::forwardInstructionMessage(HOST_LOCAL_RANK, status.MPI_TAG,g_controller_comm, AGENT_RANK, g_agent_comm);
+                    ret = forward::forwardInstructionMessage(HOST_LOCAL_RANK, status.MPI_TAG, g_controller_comm, AGENT_RANK, g_agent_comm);
                     if (ret != DBERR_OK) {
                         return ret;
                     }
                     return DB_FIN;
+                case MSG_INSTR_BATCH_FINISHED:
+                    /* batch is finished, forward */
+                    ret = forward::forwardInstructionMessage(HOST_LOCAL_RANK, status.MPI_TAG, g_controller_comm, AGENT_RANK, g_agent_comm);
+                    if (ret != DBERR_OK) {
+                        return ret;
+                    }
+                    /* wait for ACK from agent and forward to host controller*/
+                    ret = forward::forwardResponse(AGENT_RANK, MSG_ACK, g_agent_comm, HOST_LOCAL_RANK, g_controller_comm);
+                    if (ret != DBERR_OK) {
+                        return ret;
+                    }
+                    break;
                 case MSG_PREPARE_DATASET:
                     ret = handlePrepareDatsetMessage(status);
                     if (ret != DBERR_OK) {
@@ -1453,12 +1589,13 @@ STOP_LISTENING:
                     }
                     break;
                 case MSG_QUERY:
+                case MSG_QUERY_BATCH:
                     ret = handleQueryMessage(status);
                     if (ret != DBERR_OK) {
                         logger::log_error(ret, "Failed while handling query message.");
                         return ret;
                     }
-                    break;
+                    break;                    
                 case MSG_SYS_INFO:
                     /* char messages */
                     {
@@ -1888,8 +2025,8 @@ STOP_LISTENING:
             }
             return ret;
         }
-        // @bug
-        static DB_STATUS gatherResults(hec::QueryResult &totalResults) {
+        
+        static DB_STATUS gatherJoinResults(hec::QueryResult &totalResults) {
             DB_STATUS ret = DBERR_OK;
             // use threads to parallelize gathering of responses
             int threadsToSpawn = std::min(g_world_size, MAX_THREADS);
@@ -1923,8 +2060,8 @@ STOP_LISTENING:
                             local_ret = recv::receiveMessage(status, msg.type, g_agent_comm, msg);
                             if (local_ret != DBERR_OK) {
                                 #pragma omp cancel for
-                                ret = DBERR_COMM_RECEIVED_NACK;
-                                logger::log_error(ret, "Received NACK from agent.");
+                                ret = local_ret;
+                                logger::log_error(ret, "Received response from agent.");
                             }
                             // unpack
                             hec::QueryResult localResult(totalResults.getID(), totalResults.getQueryType(), totalResults.getResultType());
@@ -1946,7 +2083,7 @@ STOP_LISTENING:
                             if (local_ret != DBERR_OK) {
                                 #pragma omp cancel for
                                 ret = DBERR_COMM_RECEIVED_NACK;
-                                logger::log_error(ret, "Received NACK from controller", i);
+                                logger::log_error(ret, "Received response from controller", i);
                             }
                         } else {
                             // receive result
@@ -1962,7 +2099,6 @@ STOP_LISTENING:
                             localResult.deserialize(msg.data, msg.count);
                             // add results
                             totalResults.mergeResults(localResult);
-                            
                         }
                     }
                 }
@@ -1970,9 +2106,146 @@ STOP_LISTENING:
             return ret;
         }
 
-        static DB_STATUS distributeRangeQuery(hec::RangeQuery* query) {
+        static DB_STATUS gatherBatchResults(std::unordered_map<int, hec::QueryResult> &batchResultsMap) {
             DB_STATUS ret = DBERR_OK;
-            
+            MPI_Status status;
+            int messageFound;
+            int finishedWorkers = 0;
+
+            while (finishedWorkers != g_world_size) {
+                messageFound = 0;
+                // probe agent comm
+                ret = probe(AGENT_RANK, MPI_ANY_TAG, g_agent_comm, status, messageFound);
+                if (ret != DBERR_OK) {
+                    return ret;
+                }
+                if (messageFound) {
+                    // agent response
+                    // check tag
+                    if (status.MPI_TAG == MSG_NACK) {
+                        // something failed during query evaluation
+                        ret = recv::receiveResponse(status.MPI_SOURCE, status.MPI_TAG, g_agent_comm, status);
+                        if (ret != DBERR_OK) {
+                            logger::log_error(ret, "Failed to receive probed NACK response.");
+                            return ret;
+                        }
+                        logger::log_error(ret, "Received NACK from agent.");
+                        return DBERR_COMM_RECEIVED_NACK;
+                    } else if (status.MPI_TAG == MSG_ACK) {
+                        // received ACK, worker is finished
+                        ret = recv::receiveResponse(status.MPI_SOURCE, status.MPI_TAG, g_agent_comm, status);
+                        if (ret != DBERR_OK) {
+                            logger::log_error(ret, "Failed to receive ACK response.");
+                            return ret;
+                        }
+                        finishedWorkers++;
+                        // logger::log_success("Received ACK from agent. Finished workers:", finishedWorkers);
+                    } else {
+                        // receive result message
+                        SerializedMsg<char> msg(MPI_CHAR);
+                        ret = recv::receiveMessage(status, msg.type, g_agent_comm, msg);
+                        if (ret != DBERR_OK) {
+                            logger::log_error(ret, "Failed to receive result from agent.");
+                            return ret;
+                        }
+                        if (status.MPI_TAG == MSG_QUERY_BATCH_RESULT) {
+                            // batch query result
+                            // unpack
+                            ret = unpack::unpackBatchResults(msg, batchResultsMap);
+                            if (ret != DBERR_OK) {
+                                logger::log_error(ret, "Failed to unpack batch results from message.");
+                                return ret;
+                            }
+                            // logger::log_success("Unpacked results for", batchResultsMap.size(), "queries");
+                        } else if (status.MPI_TAG == MSG_QUERY_RESULT) {
+                            // single query result
+                            // unpack
+                            hec::QueryResult localResult;
+                            localResult.deserialize(msg.data, msg.count);
+                            // add results to appropriate object
+                            if (batchResultsMap.find(localResult.getID()) == batchResultsMap.end()) {
+                                // new entry
+                                batchResultsMap[localResult.getID()] = localResult;
+                            } else {
+                                // merge results
+                                batchResultsMap[localResult.getID()].mergeResults(localResult);
+                            }
+                            // logger::log_task("Received result for query", localResult.getID(), "from agent");
+                        } else {
+                            // wrong message tag
+                            logger::log_error(DBERR_COMM_INVALID_MSG_TAG, "Unexpected message with tag", status.MPI_TAG, "Should have been either", MSG_QUERY_BATCH_RESULT, "or", MSG_QUERY_RESULT);
+                            return DBERR_COMM_INVALID_MSG_TAG;
+                        }
+                    }
+                    messageFound = 0;
+                }
+
+                // probe controller comm
+                ret = probe(MPI_ANY_SOURCE, MPI_ANY_TAG, g_controller_comm, status, messageFound);
+                if (ret != DBERR_OK) {
+                    return ret;
+                }
+                if (messageFound) {
+                    // controller response
+                    // check tag
+                    if (status.MPI_TAG == MSG_NACK) {
+                        // something failed during query evaluation
+                        ret = recv::receiveResponse(status.MPI_SOURCE, status.MPI_TAG, g_controller_comm, status);
+                        if (ret != DBERR_OK) {
+                            logger::log_error(ret, "Failed to receive probed NACK response.");
+                            return ret;
+                        }
+                        logger::log_error(ret, "Received NACK from agent.");
+                        return DBERR_COMM_RECEIVED_NACK;
+                    } else if (status.MPI_TAG == MSG_ACK) {
+                        // received ACK, worker is finished
+                        ret = recv::receiveResponse(status.MPI_SOURCE, status.MPI_TAG, g_controller_comm, status);
+                        if (ret != DBERR_OK) {
+                            logger::log_error(ret, "Failed to receive ACK response.");
+                            return ret;
+                        }
+                        finishedWorkers++;
+                        // logger::log_success("Received ACK from worker", status.MPI_SOURCE,". Finished workers:", finishedWorkers);
+                    } else {
+                        // receive result message
+                        SerializedMsg<char> msg(MPI_CHAR);
+                        ret = recv::receiveMessage(status, msg.type, g_controller_comm, msg);
+                        if (ret != DBERR_OK) {
+                            logger::log_error(ret, "Failed to receive result from worker", status.MPI_SOURCE);
+                            return ret;
+                        }
+                        if (status.MPI_TAG == MSG_QUERY_BATCH_RESULT) {
+                            // batch query result
+                            // unpack
+                            ret = unpack::unpackBatchResults(msg, batchResultsMap);
+                            if (ret != DBERR_OK) {
+                                logger::log_error(ret, "Failed to unpack batch results from message.");
+                                return ret;
+                            }
+                            // logger::log_success("Unpacked results for", batchResultsMap.size(), "queries");
+                        } else if (status.MPI_TAG == MSG_QUERY_RESULT) {
+                            // single query result
+                            // unpack
+                            hec::QueryResult localResult;
+                            localResult.deserialize(msg.data, msg.count);
+                            // add results to appropriate object
+                            if (batchResultsMap.find(localResult.getID()) == batchResultsMap.end()) {
+                                // new entry
+                                batchResultsMap[localResult.getID()] = localResult;
+                            } else {
+                                // merge results
+                                batchResultsMap[localResult.getID()].mergeResults(localResult);
+                            }
+                        } else {
+                            // wrong message tag
+                            logger::log_error(DBERR_COMM_INVALID_MSG_TAG, "Unexpected message with tag", status.MPI_TAG, "Should have been either", MSG_QUERY_BATCH_RESULT, "or", MSG_QUERY_RESULT);
+                            return DBERR_COMM_INVALID_MSG_TAG;
+                        }
+                        
+                    }
+                    messageFound = 0;
+                }
+            }
             return ret;
         }
 
@@ -1996,6 +2269,8 @@ STOP_LISTENING:
                 {
                     // send query only to the responsible nodes
                     hec::RangeQuery* rangeQuery = dynamic_cast<hec::RangeQuery*>(query);
+
+                    return DBERR_FEATURE_UNSUPPORTED;
                 }
                     
                     break;
@@ -2009,7 +2284,7 @@ STOP_LISTENING:
                 case hec::Q_COVERED_BY_JOIN:
                 case hec::Q_FIND_RELATION_JOIN:
                     // broadcast join query to every worker
-                   ret = broadcast::broadcastMessage(msg, status.MPI_TAG);
+                    ret = broadcast::broadcastMessage(msg, status.MPI_TAG);
                     if (ret != DBERR_OK) {
                         return ret;
                     }
@@ -2026,7 +2301,7 @@ STOP_LISTENING:
             hec::QueryResult totalResults(query->getQueryID(), query->getQueryType(), query->getResultType());
 
             // wait for result
-            ret = gatherResults(totalResults);
+            ret = gatherJoinResults(totalResults);
             if (ret != DBERR_OK) {
                 logger::log_error(ret, "Failed while gathering results for query.");
                 return ret;
@@ -2042,10 +2317,161 @@ STOP_LISTENING:
             return ret;
         }
 
-        static DB_STATUS handleQueryBatchMessage(MPI_Status &status) {
+        static DB_STATUS handleQueryBatchMessageSingle(MPI_Status &status) {
+            SerializedMsg<char> msg(MPI_CHAR);
+            // receive the message
+            DB_STATUS ret = recv::receiveMessage(status, msg.type, g_global_intra_comm, msg);
+            if (ret != DBERR_OK) {
+                return ret;
+            }
+
+            // unpack query batch
+            std::vector<hec::Query*> queryBatch;
+            ret = unpack::unpackQueryBatch(msg, &queryBatch);
+            if (ret != DBERR_OK) {
+                logger::log_error(ret, "Failed to unpack query batch message.");
+                return ret;
+            }
+
+            // free msg memory
+            msg.clear();
+
+            // buffer all results
+            std::unordered_map<int, hec::QueryResult> batchResultsMap;
+
+            // send queries one-by-one            
+            for (int i=0; i<queryBatch.size(); i++) {
+                SerializedMsg<char> queryMsg(MPI_CHAR);
+                // pack single query
+                ret = pack::packQuery(queryBatch[i], queryMsg);
+                if (ret != DBERR_OK) {
+                    logger::log_error(ret, "Failed to pack query with id:", queryBatch[i]->getQueryID());
+                    return ret;
+                }
+                // broadcast range query to every worker
+                ret = broadcast::broadcastMessage(queryMsg, MSG_QUERY);
+                if (ret != DBERR_OK) {
+                    return ret;
+                }
+
+                // free query msg memory
+                queryMsg.clear();
+            }
+
+            // send a batch finished message to notify that this was all of the batch's queries
+            ret = broadcast::broadcastInstructionMessage(MSG_INSTR_BATCH_FINISHED);
+            if (ret != DBERR_OK) {
+                return ret;
+            }
             
-            
+            // delete queries
+            for (auto &it: queryBatch) {
+                delete it;
+            }
+
+            // gather batch results
+            ret = gatherBatchResults(batchResultsMap);
+            if (ret != DBERR_OK) {
+                logger::log_error(ret, "Gathering of batch results failed.");
+                return ret;
+            }
+
+
+            // serialize batch results
+            // for (auto &it : batchResultsMap) {
+            //     it.second.print();
+            // }
+
+            // send back to driver
+
             return DBERR_FEATURE_UNSUPPORTED;
+        }
+
+        static DB_STATUS handleQueryBatchMessageParallel(MPI_Status &status) {
+            SerializedMsg<char> msg(MPI_CHAR);
+            // receive the message
+            DB_STATUS ret = recv::receiveMessage(status, msg.type, g_global_intra_comm, msg);
+            if (ret != DBERR_OK) {
+                return ret;
+            }
+
+            // unpack query batch
+            std::vector<hec::Query*> queryBatch;
+            ret = unpack::unpackQueryBatch(msg, &queryBatch);
+            if (ret != DBERR_OK) {
+                logger::log_error(ret, "Failed to unpack query batch message.");
+                return ret;
+            }
+
+            // free msg memory
+            msg.clear();
+
+            // buffer all results
+            std::unordered_map<int, hec::QueryResult> batchResultsMap;
+
+            // evaluate queries in batches
+            for (int i=0; i<queryBatch.size(); i += QUERY_BATCH_SIZE) {
+                SerializedMsg<char> batchMsg(MPI_CHAR);
+                // pack QUERY_BATCH_SIZE queries together
+                int endIndex = std::min(i + QUERY_BATCH_SIZE, static_cast<int>(queryBatch.size()));
+                std::vector<hec::Query*> splitBatch = std::vector<hec::Query*>(queryBatch.begin() + i, queryBatch.begin() + endIndex);
+                ret = pack::packQueryBatch(&splitBatch, batchMsg);
+                if (ret != DBERR_OK) {
+                    logger::log_error(ret, "Failed to pack query with id:", queryBatch[i]->getQueryID());
+                    return ret;
+                }
+                // logger::log_success("Packed", splitBatch.size(), "queries.");
+                
+                // broadcast range query to every worker
+                ret = broadcast::broadcastMessage(batchMsg, MSG_QUERY_BATCH);
+                if (ret != DBERR_OK) {
+                    return ret;
+                }
+
+                // free query msg memory
+                batchMsg.clear();
+
+                // send a batch finished message to notify that this was all of this batch's queries
+                ret = broadcast::broadcastInstructionMessage(MSG_INSTR_BATCH_FINISHED);
+                if (ret != DBERR_OK) {
+                    return ret;
+                }
+                
+                // gather batch results
+                ret = gatherBatchResults(batchResultsMap);
+                if (ret != DBERR_OK) {
+                    return ret;
+                }
+
+                // logger::log_success("I have results for", batchResultsMap.size(), "queries so far");
+            }
+
+            // delete queries
+            for (auto &it: queryBatch) {
+                delete it;
+            }
+
+            // serialize final batch results
+            SerializedMsg<char> finalResultsMsg(MPI_CHAR);
+            ret = pack::packBatchResults(&batchResultsMap, finalResultsMsg);
+            if (ret != DBERR_OK) {
+                logger::log_error(ret, "Failed to pack final results.");
+                return ret;
+            }
+            // logger::log_success("Packed results for", batchResultsMap.size(), "queries.");
+
+
+            // send back to driver
+            ret = send::sendMessage(finalResultsMsg, DRIVER_GLOBAL_RANK, MSG_QUERY_BATCH_RESULT, g_global_intra_comm);
+            if (ret != DBERR_OK) {
+                logger::log_error(ret, "Couldn't send results to Driver.");
+                return ret;
+            }
+
+            // free memory
+            finalResultsMsg.clear();
+
+            return ret;
         }
 
         static DB_STATUS pullIncoming(MPI_Status status) {
@@ -2110,7 +2536,8 @@ STOP_LISTENING:
                 case MSG_QUERY_BATCH:
                     /** Initiate query */
                     // logger::log_success("MSG_QUERY_BATCH");
-                    ret = handleQueryBatchMessage(status);
+                    // ret = handleQueryBatchMessageSingle(status);
+                    ret = handleQueryBatchMessageParallel(status);
                     if (ret != DBERR_OK) {
                         logger::log_error(ret, "Failed while handling query message.");
                         return ret;

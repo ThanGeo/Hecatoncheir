@@ -57,10 +57,13 @@ namespace hec {
     hec::QueryResult query(Query* query);
 
     /** @brief Run queries in batches. */
-    std::vector<hec::QueryResult> query(std::vector<Query> queryBatch);
+    std::unordered_map<int, hec::QueryResult> query(std::vector<Query*> &queryBatch);
 
     /** @brief Build index of indexType for the given datasets. */
     int buildIndex(std::vector<DatasetID> datasetIndexes, IndexType indexType);
+
+    /** @brief Load a batch of queries from the given filepath. */
+    std::vector<hec::Query*> loadQueriesFromFile(std::string &filePath, std::string fileTypeStr, int datasetID, hec::QueryResultType resultType);
 
 }
 

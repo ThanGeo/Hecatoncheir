@@ -88,9 +88,11 @@ namespace pack
     /** @brief Packs the query metadata into a serialized message. */
     DB_STATUS packQuery(hec::Query *query, SerializedMsg<char> &msg);
 
-    /** @brief Packs a batch of queries into a serialized message */
-    DB_STATUS packQueryBatch(std::vector<hec::Query> *batch, SerializedMsg<char> &batchMsg);
+    /** @brief Packs a batch of queries into a serialized message. */
+    DB_STATUS packQueryBatch(std::vector<hec::Query*> *batch, SerializedMsg<char> &batchMsg);
 
+    /** @brief Packs a batch of results into a serialized message. */
+    DB_STATUS packBatchResults(std::unordered_map<int, hec::QueryResult> *batchResults, SerializedMsg<char> &batchMsg);
 }
 
 /** @brief Methos that unpack serialized messages and extract their contents, based on message type. */
@@ -122,8 +124,17 @@ namespace unpack
     */
     DB_STATUS unpackQuery(SerializedMsg<char> &msg, hec::Query** queryPtr);
 
+    /** @brief Unpacks a query batch message. 
+     */
+    DB_STATUS unpackQueryBatch(SerializedMsg<char> &msg, std::vector<hec::Query*>* queryBatchPtr);
+
+    /** @brief unpacks a shape appropriately based on its type. */
     DB_STATUS unpackShape(SerializedMsg<char> &msg, Shape &shape);
 
+
+    /** @brief unpacks a message containg the results of a batch of queries. */
+    DB_STATUS unpackBatchResults(SerializedMsg<char> &msg, std::unordered_map<int, hec::QueryResult> &batchResults);
+    
 }
 
 #endif 

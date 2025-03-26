@@ -14,13 +14,7 @@ namespace partitioning
     //     }
     // }
     
-    /**
-    @brief Calculates the intersecting partitions in the distribution grid for the given MBR.
-     * @param[in] xMin, yMin, xMax, yMax MBR
-     * @param[out] partitionIDs The partition IDs that intersect with the MBR.
-     * @param[out] twoLayerClasses The MBR's two-layer index classification for each individual intersecting partition.
-     */
-    static DB_STATUS getPartitionsForMBR(MBR &mbr, std::vector<int> &partitionIDs){
+    DB_STATUS getPartitionsForMBR(MBR &mbr, std::vector<int> &partitionIDs){
         // logger::log_task("Calculating partition for MBR", mbr.pMin.x, mbr.pMin.y, mbr.pMax.x, mbr.pMax.y);
         // g_config.datasetOptions.dataspaceMetadata.print();
         // logger::log_task("DistpartitionExtentX:", g_config.partitioningMethod->getDistPartionExtentX());
@@ -68,7 +62,7 @@ namespace partitioning
                 case DT_POLYGON:
                     batch.tag = MSG_BATCH_POLYGON;
                     break;
-                case DT_RECTANGLE:
+                case DT_BOX:
                 default:
                     logger::log_error(DBERR_INVALID_DATATYPE, "Invalid datatype for batch:", dataType);
                     return DBERR_INVALID_DATATYPE;

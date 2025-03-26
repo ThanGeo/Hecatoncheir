@@ -64,6 +64,8 @@ set(SrcFiles
     
     src/TwoLayer/filter.cpp
 
+    src/UniformGrid/filter.cpp
+
     src/refinement/topology.cpp
 )
 

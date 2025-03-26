@@ -10,6 +10,13 @@ namespace partitioning
     /** @brief Prints all partitions and their assigned node ranks. */
     void printPartitionAssignment();
 
+    /**
+    @brief Calculates the intersecting partitions in the distribution grid for the given MBR.
+     * @param[in] xMin, yMin, xMax, yMax MBR
+     * @param[out] partitionIDs The partition IDs that intersect with the MBR.
+     */
+    DB_STATUS getPartitionsForMBR(MBR &mbr, std::vector<int> &partitionIDs);
+
     namespace csv 
     {
          /** @brief Calculates the given CSV dataset's metadata with no pre-existing metadata knowledege about it.

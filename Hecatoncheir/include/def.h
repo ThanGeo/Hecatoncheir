@@ -17,8 +17,8 @@
 typedef boost::geometry::model::d2::point_xy<double> bg_point_xy;
 /** @typedef bg_linestring @brief boost geometry linestring definition. */
 typedef boost::geometry::model::linestring<bg_point_xy> bg_linestring;
-/** @typedef bg_rectangle @brief boost geometry rectangle definition. */
-typedef boost::geometry::model::box<bg_point_xy> bg_rectangle;
+/** @typedef bg_box @brief boost geometry box definition. */
+typedef boost::geometry::model::box<bg_point_xy> bg_box;
 /** @typedef bg_polygon @brief boost geometry polygon definition. */
 typedef boost::geometry::model::polygon<bg_point_xy> bg_polygon;
 
@@ -139,6 +139,8 @@ enum DB_STATUS {
     DBERR_QUERY_INVALID_INPUT = DBBASE + 7000,
     DBERR_QUERY_INVALID_TYPE = DBBASE + 7001,
     DBERR_QUERY_RESULT_INVALID_TYPE = DBBASE + 7002,
+    DBERR_QUERY_INVALID_ID = DBBASE + 7003,
+    DBERR_QUERY_RESULT_INVALID_NODE_RANK = DBBASE + 7004,
 };
 
 enum DatasetIndex {
@@ -150,7 +152,7 @@ enum DatasetIndex {
 enum DataType{
     DT_POINT,
     DT_LINESTRING,
-    DT_RECTANGLE,
+    DT_BOX,
     DT_POLYGON,
 };
 

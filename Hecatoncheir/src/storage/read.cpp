@@ -472,7 +472,7 @@ namespace storage
 //                     case DT_POINT:
 //                         ret = loadPointDatasetContents(pFile, dataset);
 //                         break;
-//                     case DT_RECTANGLE:
+//                     case DT_BOX:
 //                         ret = loadRectangleDatasetContents(pFile, dataset);
 //                         break;
 //                     default:
