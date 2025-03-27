@@ -100,6 +100,7 @@ namespace pack
         sysMetadataMsg.count += sizeof(int);                    // world size
         sysMetadataMsg.count += 2*sizeof(int);                  // dist + part partitions per dimension
         sysMetadataMsg.count += sizeof(int);                  // partitioning type
+        sysMetadataMsg.count += sizeof(int);                  // send/no send
         sysMetadataMsg.count += sizeof(int) + g_config.dirPaths.dataPath.length() * sizeof(char);   // data directory path length + string
         sysMetadataMsg.count += 3 * sizeof(int);              // MBRFilter, IFilter, Refinement
         
@@ -127,6 +128,9 @@ namespace pack
 
         *reinterpret_cast<PartitioningType*>(localBuffer) = g_config.partitioningMethod->getType();
         localBuffer += sizeof(PartitioningType);
+
+        *reinterpret_cast<int*>(localBuffer) = g_config.partitioningMethod->send;
+        localBuffer += sizeof(int);
 
         *reinterpret_cast<int*>(localBuffer) = g_config.dirPaths.dataPath.length();
         localBuffer += sizeof(int);
@@ -488,6 +492,9 @@ namespace unpack
             logger::log_error(DBERR_INVALID_PARAMETER, "Unknown partitioning type while unpacking system metadata:", partitioningType);
             return DBERR_INVALID_PARAMETER;
         }
+        // get send value
+        g_config.partitioningMethod->send = *reinterpret_cast<const int*>(localBuffer);
+        localBuffer += sizeof(int);
         // get datapath length + string
         // and set the paths
         int length;

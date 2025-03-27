@@ -591,5 +591,23 @@ namespace hec {
         return batchQueries;
     }
 
+
+
+
+
+
+
+
+
+
+
+
+    namespace time {
+
+        double getTime() {
+            return MPI_Wtime();
+        }
+    }
+
 }
 

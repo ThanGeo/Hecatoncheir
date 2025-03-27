@@ -252,6 +252,14 @@ namespace parser
             return DBERR_INVALID_PARAMETER;
         }
         // partitioning::printPartitionAssignment();
+
+        int send = system_config_pt.get<int>("Partitioning.send");
+        if (send < 0 || send > 1) {
+            logger::log_error(DBERR_INVALID_PARAMETER, "Invalid value for 'send' parameter in partitioning configuration. use 0 or 1 only.");
+            return DBERR_INVALID_PARAMETER;
+        }
+        g_config.partitioningMethod->send = send;
+
         return DBERR_OK;
     }
 

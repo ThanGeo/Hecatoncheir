@@ -39,6 +39,9 @@ namespace partitioning
      */
     DB_STATUS partitionDataset(Dataset *dataset);
 
+    /** @brief Partitions a dataset from a local filepath. No communications are performed at this stage. */
+    DB_STATUS partitionDatasetLocally(Dataset *dataset);
+
     /** @brief Calculates all partition two-layer classes for a given batch, based on the partitioning method specified in the global configuration. */
     // DB_STATUS calculateTwoLayerClasses(Batch &batch);
     

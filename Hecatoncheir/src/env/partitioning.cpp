@@ -47,6 +47,37 @@ namespace partitioning
         return DBERR_OK;
     }
 
+    /** @brief returns the list of partitions in the coarse grid that intersect the given MBR AND correspond to the invoking node. */
+    DB_STATUS getPartitionsForMBRAndNode(MBR &mbr, std::vector<int> &partitionIDs){
+        int minPartitionX = (mbr.pMin.x - g_config.datasetOptions.dataspaceMetadata.xMinGlobal) / g_config.partitioningMethod->getDistPartionExtentX();
+        int minPartitionY = (mbr.pMin.y - g_config.datasetOptions.dataspaceMetadata.yMinGlobal) / g_config.partitioningMethod->getDistPartionExtentY();
+        int maxPartitionX = (mbr.pMax.x - g_config.datasetOptions.dataspaceMetadata.xMinGlobal) / g_config.partitioningMethod->getDistPartionExtentX();
+        int maxPartitionY = (mbr.pMax.y - g_config.datasetOptions.dataspaceMetadata.yMinGlobal) / g_config.partitioningMethod->getDistPartionExtentY();
+        
+        int startPartitionID = g_config.partitioningMethod->getPartitionID(minPartitionX, minPartitionY, g_config.partitioningMethod->getDistributionPPD());
+        int lastPartitionID = g_config.partitioningMethod->getPartitionID(maxPartitionX, maxPartitionY, g_config.partitioningMethod->getDistributionPPD());
+        if (startPartitionID < 0 || startPartitionID > (g_config.partitioningMethod->getDistributionPPD() * g_config.partitioningMethod->getDistributionPPD()) -1) {
+            logger::log_error(DBERR_INVALID_PARTITION, "Start partition ID calculated wrong:", startPartitionID);
+            return DBERR_INVALID_PARTITION;
+        }
+        if (lastPartitionID < 0 || lastPartitionID > g_config.partitioningMethod->getDistributionPPD() * g_config.partitioningMethod->getDistributionPPD() -1) {
+            logger::log_error(DBERR_INVALID_PARTITION, "Last partition ID calculated wrong: MBR(", mbr.pMin.x, mbr.pMin.y, mbr.pMax.x, mbr.pMax.y, ")");
+            return DBERR_INVALID_PARTITION;
+        }
+        // create the distribution grid partition list for the object
+        for (int i=minPartitionX; i<=maxPartitionX; i++) {
+            for (int j=minPartitionY; j<=maxPartitionY; j++) {
+                int partitionID = g_config.partitioningMethod->getPartitionID(i, j, g_config.partitioningMethod->getDistributionPPD());
+                // check if this partition is assigned to this worker
+                int nodeRank = g_config.partitioningMethod->getNodeRankForPartitionID(partitionID);
+                if (nodeRank == g_parent_original_rank) {
+                    partitionIDs.emplace_back(partitionID);
+                }
+            }
+        }
+        return DBERR_OK;
+    }
+
     static DB_STATUS initializeBatchMap(std::unordered_map<int,Batch> &batchMap, DataType dataType) {
         // initialize batches
         for (int i=0; i<g_world_size; i++) {
@@ -744,7 +775,6 @@ namespace partitioning
             return ret;
         }
 
-
         static DB_STATUS loadDatasetAndPartitionNoBatches(Dataset* dataset) {
             DB_STATUS ret = DBERR_OK;
             // open file
@@ -891,9 +921,157 @@ namespace partitioning
             return ret;
         }
 
+        /** @brief Uses mmap to load and partition the given dataset locally. Does not perform any communications. Dataset must exist on this machine. */
+        static DB_STATUS loadDatasetAndPartitionMMAPlocally(Dataset *dataset) {
+            DB_STATUS ret = DBERR_OK;
+
+            // Open the file
+            int fd = open(dataset->metadata.path.c_str(), O_RDONLY);
+            if (fd == -1) {
+                logger::log_error(DBERR_OPEN_FILE_FAILED, "Failed to open dataset path:", dataset->metadata.path);
+                return DBERR_OPEN_FILE_FAILED;
+            }
+
+            // Get file size
+            off_t fileSize = lseek(fd, 0, SEEK_END);
+            if (fileSize == -1) {
+                logger::log_error(DBERR_OPEN_FILE_FAILED, "Failed to determine file size.");
+                return DBERR_DISK_READ_FAILED;
+            }
+
+            // Memory-map the file
+            char* mappedData = (char*) mmap(NULL, fileSize, PROT_READ, MAP_PRIVATE, fd, 0);
+            if (mappedData == MAP_FAILED) {
+                close(fd);
+                logger::log_error(DBERR_MMAP_FAILED, "mmap failed.");
+                return DBERR_MMAP_FAILED;
+            }
+
+            // Close the file descriptor
+            close(fd);
+
+            // Set chunk size per thread
+            size_t chunkSize = fileSize / MAX_THREADS;
+            size_t lineCounter = 0;
+
+            // Thread-local storage for reduction
+            std::vector<std::vector<Shape>> threadLocalVectors(MAX_THREADS);
+
+            #pragma omp parallel
+            {
+                int threadID = omp_get_thread_num();
+                size_t start = threadID * chunkSize;
+                size_t end = (threadID == MAX_THREADS - 1) ? fileSize : (threadID + 1) * chunkSize;
+
+                // Ensure we start at the beginning of a new line
+                while (start > 0 && mappedData[start] != '\n') start++;
+
+                // Local processing variables
+                DB_STATUS local_ret = DBERR_OK;
+                std::string token;
+                Shape object;
+                local_ret = shape_factory::createEmpty(dataset->metadata.dataType, object);
+                if (local_ret != DBERR_OK) {
+                    #pragma omp cancel parallel
+                    ret = local_ret;
+                }
+
+                // thread map
+                std::vector<Shape> &localVector = threadLocalVectors[threadID];
+
+                // Read & process lines in this chunk
+                while (start < end) {
+                    size_t lineStart = start;
+                    while (start < fileSize && mappedData[start] != '\n') start++;
+
+                    if (start < fileSize) { 
+                        std::string line(mappedData + lineStart, start - lineStart);
+                        start++;  // Move to next line
+
+                        object.reset();
+                        std::stringstream ss(line);
+                        std::getline(ss, token, '\t'); // Extract WKT
+
+                        object.recID = lineStart; // Use file offset as ID
+                        local_ret = object.setFromWKT(token);
+                        if (local_ret == DBERR_OK) {
+                            object.setMBR();
+                            // get partitions
+                            std::vector<int> partitionIDs;
+                            local_ret = partitioning::getPartitionsForMBRAndNode(object.mbr, partitionIDs);
+                            if (local_ret != DBERR_OK) {
+                                #pragma omp cancel parallel
+                            }
+                            if (!partitionIDs.empty()) {
+                                // object is assigned to this node
+                                // dataset->storeObject(object);
+                                localVector.emplace_back(object);
+                            }
+
+                        }
+                    }
+                }
+
+                
+            } // End of parallel region
+            if (ret != DBERR_OK) {
+                return ret;
+            }
+
+            // merging of all thread-local vectors
+            dataset->totalObjects = 0;
+            for (int i = 0; i < MAX_THREADS; ++i) {
+                dataset->totalObjects += threadLocalVectors[i].size();
+            }
+            dataset->objects.reserve(dataset->totalObjects);
+            for (int i = 0; i < MAX_THREADS; ++i) {
+                for (auto &it: threadLocalVectors[i]){
+                    dataset->storeObject(it);
+                }
+                threadLocalVectors[i].clear();
+            }
+
+            // set sizes and capacity
+            dataset->objects.shrink_to_fit();
+
+            // Unmap memory
+            if (munmap(mappedData, fileSize) == -1) {
+                logger::log_error(DBERR_MMAP_FAILED, "munmap failed.");
+                return DBERR_MMAP_FAILED;
+            }
+
+            return ret;
+        }
     } // wkt namespace
     
+    DB_STATUS partitionDatasetLocally(Dataset *dataset) {
+        if (dataset == nullptr) {
+            logger::log_error(DBERR_NULL_PTR_EXCEPTION, "Dataset pointer is null");
+            return DBERR_NULL_PTR_EXCEPTION;
+        }
+        DB_STATUS ret;
+        // time
+        switch (dataset->metadata.fileType) {
+            // perform the partitioning
+            case hec::FT_CSV:
+                // csv dataset
+                return DBERR_FEATURE_UNSUPPORTED;
+            case hec::FT_WKT:
+                // wkt dataset
+                ret = wkt::loadDatasetAndPartitionMMAPlocally(dataset);
+                if (ret != DBERR_OK) {
+                    logger::log_error(DBERR_PARTITIONING_FAILED, "Partitioning locally failed for dataset", dataset->metadata.internalID);
+                    return ret;
+                }
+                break;
+            default:
+                logger::log_error(DBERR_FEATURE_UNSUPPORTED, "Unsupported data file type:", dataset->metadata.fileType);
+                break;
+        }
 
+        // logger::log_success("Partitioning for dataset", dataset->metadata.internalID, "finished in", mpi_timer::getElapsedTime(startTime), "seconds.");                
+        return DBERR_OK;
+    }
 
     DB_STATUS partitionDataset(Dataset *dataset) {
         if (dataset == nullptr) {

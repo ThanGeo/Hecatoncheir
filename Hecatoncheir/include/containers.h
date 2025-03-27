@@ -1537,6 +1537,8 @@ struct DirectoryPaths {
 struct PartitioningMethod {
     /** @brief The partitioning technique */
     PartitioningType type;
+    /** @brief Send the data (1) or each node loads from the local disk? (0) */
+    int send = 1;
     /** @brief The number of partitions per dimension */
     int distPartitionsPerDim;
     /** @brief The batch size for the data distribution, in number of objects. */             

@@ -65,6 +65,12 @@ namespace hec {
     /** @brief Load a batch of queries from the given filepath. */
     std::vector<hec::Query*> loadQueriesFromFile(std::string &filePath, std::string fileTypeStr, int datasetID, hec::QueryResultType resultType);
 
+
+
+    namespace time {
+        /** @brief get a timestamp in Hecatoncheir's environment. */
+        double getTime();
+    }
 }
 
 

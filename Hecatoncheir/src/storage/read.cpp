@@ -266,6 +266,7 @@ namespace storage
 
         DB_STATUS calculateDatasetMetadata(Dataset* dataset) {
             DB_STATUS ret = DBERR_OK;
+            // logger::log_task("Calculating dataset dataspace bounds...");
             switch (dataset->metadata.fileType) {
                 // perform the partitioning
                 case hec::FT_CSV:
@@ -283,12 +284,12 @@ namespace storage
                         logger::log_error(DBERR_OPERATION_FAILED, "Calculating metadata failed for dataset", dataset->metadata.internalID);
                         return ret;
                     }
-                    // logger::log_task("Done!");
                     break;
                 default:
                     logger::log_error(DBERR_FEATURE_UNSUPPORTED, "Unsupported data file type:", dataset->metadata.fileType);
                     break;
             }
+            // logger::log_success("Dataset bounds:", dataset->metadata.dataspaceMetadata.xMinGlobal, dataset->metadata.dataspaceMetadata.yMinGlobal, dataset->metadata.dataspaceMetadata.xMaxGlobal, dataset->metadata.dataspaceMetadata.yMaxGlobal);
             return ret;
         }
 
