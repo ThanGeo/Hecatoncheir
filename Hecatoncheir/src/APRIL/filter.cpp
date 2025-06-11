@@ -14,7 +14,7 @@ namespace APRIL
     namespace topology
     {
         
-        static DB_STATUS specializedTopologyRinSContainment(Shape* objR, Shape* objS, hec::QueryResult &queryResult) {
+        static DB_STATUS specializedTopologyRinSContainment(Shape* objR, Shape* objS, hec::QResultBase*  queryResult) {
             DB_STATUS ret = DBERR_OK;
             int iFilterResult = INCONCLUSIVE;
             // use APRIL intermediate filter
@@ -30,7 +30,7 @@ namespace APRIL
                 case TR_DISJOINT:
                 case TR_INTERSECT:
                     // result
-                    queryResult.countTopologyRelationResult(iFilterResult, objR->recID, objS->recID);
+                    queryResult->addResult(iFilterResult, objR->recID, objS->recID);
                     return ret;
             }
             // count refinement candidate
@@ -53,13 +53,13 @@ namespace APRIL
                 
             }
             // count the refinement result
-            queryResult.countTopologyRelationResult(relation, objR->recID, objS->recID);
+            queryResult->addResult(relation, objR->recID, objS->recID);
 
             return ret;
         }
 
         
-        static DB_STATUS specializedTopologySinRContainment(Shape* objR, Shape* objS, hec::QueryResult &queryResult) {
+        static DB_STATUS specializedTopologySinRContainment(Shape* objR, Shape* objS, hec::QResultBase*  queryResult) {
             DB_STATUS ret = DBERR_OK;
             int iFilterResult = INCONCLUSIVE;
             // use APRIL intermediate filter
@@ -75,7 +75,7 @@ namespace APRIL
                 case TR_DISJOINT:
                 case TR_INTERSECT:
                     // result
-                    queryResult.countTopologyRelationResult(iFilterResult, objR->recID, objS->recID);
+                    queryResult->addResult(iFilterResult, objR->recID, objS->recID);
                     return ret;
             }
             // count refinement candidate
@@ -99,13 +99,13 @@ namespace APRIL
             }
             
             // count the refinement result
-            queryResult.countTopologyRelationResult(relation, objR->recID, objS->recID);
+            queryResult->addResult(relation, objR->recID, objS->recID);
 
             return ret;
         }
 
         
-        static DB_STATUS specializedTopologyEqual(Shape* objR, Shape* objS, hec::QueryResult &queryResult) {
+        static DB_STATUS specializedTopologyEqual(Shape* objR, Shape* objS, hec::QResultBase*  queryResult) {
             DB_STATUS ret = DBERR_OK;
             int iFilterResult = INCONCLUSIVE;
             // use APRIL intermediate filter
@@ -123,7 +123,7 @@ namespace APRIL
                 case TR_INTERSECT:
                 case TR_MEET:
                     // result
-                    queryResult.countTopologyRelationResult(iFilterResult, objR->recID, objS->recID);
+                    queryResult->addResult(iFilterResult, objR->recID, objS->recID);
                     return ret;
             }
             // count refinement candidate
@@ -153,12 +153,12 @@ namespace APRIL
                     return DBERR_APRIL_UNEXPECTED_RESULT;
             }
             // count the refinement result
-            queryResult.countTopologyRelationResult(relation, objR->recID, objS->recID);
+            queryResult->addResult(relation, objR->recID, objS->recID);
             return ret;
         }
 
         
-        static DB_STATUS specializedTopologyIntersection(Shape* objR, Shape* objS, hec::QueryResult &queryResult) {
+        static DB_STATUS specializedTopologyIntersection(Shape* objR, Shape* objS, hec::QResultBase*  queryResult) {
             DB_STATUS ret = DBERR_OK;
             int iFilterResult = INCONCLUSIVE;
             // use APRIL intermediate filter
@@ -173,19 +173,19 @@ namespace APRIL
                 case TR_DISJOINT:
                 case TR_INTERSECT:
                     // result
-                    queryResult.countTopologyRelationResult(iFilterResult, objR->recID, objS->recID);
+                    queryResult->addResult(iFilterResult, objR->recID, objS->recID);
                     return ret;
             }
             // count refinement candidate
             // refine
             int relation = refinement::topology::refineDisjointMeetIntersect(objR, objS);
             // count the refinement relation result
-            queryResult.countTopologyRelationResult(relation, objR->recID, objS->recID);
+            queryResult->addResult(relation, objR->recID, objS->recID);
             return ret;
         }
 
         
-        DB_STATUS IntermediateFilterEntrypoint(Shape* objR, Shape* objS, MBRRelationCase mbrRelationCase, hec::QueryResult &queryResult) {
+        DB_STATUS IntermediateFilterEntrypoint(Shape* objR, Shape* objS, MBRRelationCase mbrRelationCase, hec::QResultBase*  queryResult) {
             DB_STATUS ret = DBERR_OK;
             // switch based on how the MBRs intersect, to the appropriate intermediate filter
             switch (mbrRelationCase) {
@@ -225,7 +225,7 @@ namespace APRIL
     namespace standard
     {
         
-        DB_STATUS IntermediateFilterEntrypoint(Shape* objR, Shape* objS, hec::QueryResult &queryResult) {
+        DB_STATUS IntermediateFilterEntrypoint(Shape* objR, Shape* objS, hec::QResultBase*  queryResult) {
             DB_STATUS ret = DBERR_OK;
             // fetch the APRIL of R and S for this section
             int iFilterResult = INCONCLUSIVE;
@@ -286,7 +286,7 @@ namespace APRIL
             if (iFilterResult != INCONCLUSIVE) {
                 // count APRIL result
                 if (iFilterResult == TRUE_HIT) {
-                    queryResult.countResult(objR->recID, objS->recID);
+                    queryResult->addResult(objR->recID, objS->recID);
                 }
                 return ret;
             }

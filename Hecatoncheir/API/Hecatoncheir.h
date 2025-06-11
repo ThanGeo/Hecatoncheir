@@ -17,7 +17,7 @@ namespace hec {
      * @param[in] hosts: the hosts addresses and slots (right now, only 1 slot per node is supported)
      * @todo: make it context-encapsulated (see spark)
      */
-    int init(int numProcs, const std::vector<std::string> &hosts);
+    int init(int numProcs, std::vector<std::string> &hosts);
  
     /** @brief Terminate Hecatoncheir
      * @details Instructs the host controller to terminate all activity. 
@@ -54,10 +54,10 @@ namespace hec {
     int load(std::vector<DatasetID> indexes);
 
     /** @brief Run a query described by the passed object. */
-    hec::QueryResult query(Query* query);
+    hec::QResultBase* query(Query* query);
 
     /** @brief Run queries in batches. */
-    std::unordered_map<int, hec::QueryResult> query(std::vector<Query*> &queryBatch);
+    std::unordered_map<int, hec::QResultBase*> query(std::vector<Query*> &queryBatch);
 
     /** @brief Build index of indexType for the given datasets. */
     int buildIndex(std::vector<DatasetID> datasetIndexes, IndexType indexType);

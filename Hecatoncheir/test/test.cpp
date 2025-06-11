@@ -21,12 +21,15 @@ bool test6(hec::DatasetID datasetRID, hec::DatasetID datasetSID) {
 bool test5(hec::DatasetID datasetRID, hec::DatasetID datasetSID) {
     logger::log_task("Running Test5...");
     hec::JoinQuery intersectionJoinQuery(datasetRID, datasetSID, 0, hec::spatialQueries.INTERSECTS(), hec::queryResultTypes.COUNT());
-    hec::QueryResult result =  hec::query(&intersectionJoinQuery);
-
-    if (result.getResultCount() != 5) {
-        logger::log_error(DBERR_OPERATION_FAILED, "Expected 5 results in join query, got", result.getResultCount());
+    hec::QResultBase* result;
+    result = hec::query(&intersectionJoinQuery);
+    if (result->getResultCount() != 5) {
+        logger::log_error(DBERR_OPERATION_FAILED, "Expected 5 results in join query, got", result->getResultCount());
         return false;
     }
+
+    // free memory
+    delete result;
 
     return true;
 }

@@ -34,7 +34,7 @@ static DB_STATUS receiveResponse(int sourceRank, int sourceTag, MPI_Comm &comm, 
     return DBERR_OK;
 }
 
-static DB_STATUS receiveResult(int sourceRank, int sourceTag, MPI_Comm &comm, MPI_Status &status, hec::QueryResult &finalResults) {
+static DB_STATUS receiveResult(int sourceRank, int sourceTag, MPI_Comm &comm, MPI_Status &status, hec::QResultBase* finalResults) {
     SerializedMsg<char> msg(MPI_CHAR);
     // receive message
     DB_STATUS ret = comm::recv::receiveMessage(status, msg.type, g_global_intra_comm, msg);
@@ -42,12 +42,12 @@ static DB_STATUS receiveResult(int sourceRank, int sourceTag, MPI_Comm &comm, MP
         return ret;
     }
     // unpack
-    finalResults.deserialize(msg.data, msg.count);
+    finalResults->deserialize(msg.data, msg.count);
 
     return DBERR_OK;
 }
 
-static DB_STATUS receiveResultBatch(int sourceRank, int sourceTag, MPI_Comm &comm, MPI_Status &status, std::unordered_map<int,hec::QueryResult> &finalResults) {
+static DB_STATUS receiveResultBatch(int sourceRank, int sourceTag, MPI_Comm &comm, MPI_Status &status, std::unordered_map<int,hec::QResultBase*> &finalResults) {
     SerializedMsg<char> msg(MPI_CHAR);
     // receive message
     DB_STATUS ret = comm::recv::receiveMessage(status, msg.type, g_global_intra_comm, msg);
@@ -83,7 +83,7 @@ static DB_STATUS waitForResponse() {
     return ret;
 }    
 
-static DB_STATUS waitForResult(hec::QueryResult &finalResults) {
+static DB_STATUS waitForResult(hec::QResultBase* finalResults) {
     MPI_Status status;
     // wait for response by the host controller
     DB_STATUS ret = probeBlocking(1, MPI_ANY_TAG, g_global_intra_comm, status);
@@ -113,7 +113,7 @@ static DB_STATUS waitForResult(hec::QueryResult &finalResults) {
     return ret;
 }
 
-static DB_STATUS waitForResult(std::unordered_map<int, hec::QueryResult> &finalResults) {
+static DB_STATUS waitForResult(std::unordered_map<int, hec::QResultBase*> &finalResults) {
     MPI_Status status;
     // wait for response by the host controller
     DB_STATUS ret = probeBlocking(1, MPI_ANY_TAG, g_global_intra_comm, status);
@@ -223,8 +223,25 @@ static DB_STATUS terminate() {
 }
 
 namespace hec {
-    int init(int numProcs, const std::vector<std::string> &hosts){
+
+    static DB_STATUS fixHosts(std::vector<std::string> &hosts) {
+        for (auto &host : hosts) {
+            if (host.find(':') == std::string::npos) {
+                host += ":1";
+            }
+        }    
+        return DBERR_OK;
+    }
+
+    int init(int numProcs, std::vector<std::string> &hosts){
         DB_STATUS ret = DBERR_OK;
+        // fix hosts
+        ret = fixHosts(hosts);
+        if (ret != DBERR_OK) {
+            logger::log_error(DBERR_MPI_INIT_FAILED, "Invalid hosts, unable to fix.");
+            return ret;
+        }
+        
         // init MPI
         int provided;
         int mpi_ret = MPI_Init_thread(NULL, NULL, MPI_THREAD_MULTIPLE, &provided);
@@ -469,12 +486,25 @@ namespace hec {
         return 0;
     }
 
-    hec::QueryResult query(Query* query) {
-        DB_STATUS ret = DBERR_OK;
-        hec::QueryResult finalResults(query->getQueryID(), query->getQueryType(), (hec::QueryResultType) query->getResultType());
+    hec::QResultBase* query(Query* query) {
+        DB_STATUS ret = DBERR_OK;        
         SerializedMsg<char> msg(MPI_CHAR);
+        hec::QResultBase* qResPtr;        
         switch (query->getQueryType()) {
             case Q_RANGE:
+                // create query result object
+                switch (query->getResultType()) {
+                    case QR_COUNT:
+                        qResPtr = new QResultCount(query->getQueryID(), query->getQueryType(), query->getResultType());
+                        break;
+                    case QR_COLLECT:
+                        qResPtr = new QResultCollect(query->getQueryID(), query->getQueryType(), query->getResultType());
+                        break;
+                    default:
+                        logger::log_error(DBERR_QUERY_RESULT_INVALID_TYPE, "Unknown query result type:", query->getResultType());
+                        return nullptr;
+                }
+                break;
             case Q_INTERSECTION_JOIN:
             case Q_INSIDE_JOIN:
             case Q_DISJOINT_JOIN:
@@ -483,38 +513,64 @@ namespace hec {
             case Q_CONTAINS_JOIN:
             case Q_COVERS_JOIN:
             case Q_COVERED_BY_JOIN:
+                // create query result object
+                switch (query->getResultType()) {
+                    case QR_COUNT:
+                        qResPtr = new QResultCount(query->getQueryID(), query->getQueryType(), query->getResultType());
+                        break;
+                    case QR_COLLECT:
+                        qResPtr = new QPairResultCollect(query->getQueryID(), query->getQueryType(), query->getResultType());
+                        break;
+                    default:
+                        logger::log_error(DBERR_QUERY_RESULT_INVALID_TYPE, "Unknown query result type:", query->getResultType());
+                        return nullptr;
+                }
+                break;
             case Q_FIND_RELATION_JOIN:
-                // pack query info
-                ret = pack::packQuery(query, msg);
-                if (ret != DBERR_OK) {
-                    logger::log_error(ret, "Failed to pack query.");
-                    return finalResults;
-                }
-                // send the query to Host Controller
-                ret = comm::send::sendMessage(msg, HOST_CONTROLLER, MSG_QUERY, g_global_intra_comm);
-                if (ret != DBERR_OK) {
-                    logger::log_error(ret, "Sending dataset load message failed.");
-                    return finalResults;
-                }
-                // wait for result
-                ret = waitForResult(finalResults);
-                if (ret != DBERR_OK) {
-                    logger::log_error(ret, "Receiving query results failed.");
-                    return finalResults;
+                // create query result object
+                switch (query->getResultType()) {
+                    case QR_COUNT:
+                        qResPtr = new QTopologyResultCount(query->getQueryID(), query->getQueryType(), query->getResultType());
+                        break;
+                    case QR_COLLECT:
+                        qResPtr = new QTopologyResultCollect(query->getQueryID(), query->getQueryType(), query->getResultType());
+                        break;
+                    default:
+                        logger::log_error(DBERR_QUERY_RESULT_INVALID_TYPE, "Unknown query result type:", query->getResultType());
+                        return nullptr;
                 }
                 break;
             default:
                 // error
                 logger::log_error(DBERR_QUERY_INVALID_TYPE, "Invalid query name:", query->getQueryType());
-                return finalResults;
+                return nullptr;
+        }
+        // pack query info
+        ret = pack::packQuery(query, msg);
+        if (ret != DBERR_OK) {
+            logger::log_error(ret, "Failed to pack query.");
+            return nullptr;
+        }
+        // send the query to Host Controller
+        ret = comm::send::sendMessage(msg, HOST_CONTROLLER, MSG_QUERY, g_global_intra_comm);
+        if (ret != DBERR_OK) {
+            logger::log_error(ret, "Sending dataset load message failed.");
+            return nullptr;
+        }
+        
+        // wait for result
+        ret = waitForResult(qResPtr);
+        if (ret != DBERR_OK) {
+            logger::log_error(ret, "Receiving query results failed.");
+            return qResPtr;
         }
         logger::log_success("Evaluated query!");
-        return finalResults;
+        return qResPtr;
     }
 
-    std::unordered_map<int, hec::QueryResult> query(std::vector<Query*> &queryBatch) {
+    std::unordered_map<int, hec::QResultBase*> query(std::vector<Query*> &queryBatch) {
         DB_STATUS ret = DBERR_OK;
-        std::unordered_map<int, hec::QueryResult> finalResults;
+        std::unordered_map<int, hec::QResultBase*> finalResults;
 
         if (queryBatch.size() == 0) {
             logger::log_error(DBERR_INVALID_PARAMETER, "Query batch is empty.");

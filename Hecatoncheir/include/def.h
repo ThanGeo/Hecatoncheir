@@ -100,6 +100,10 @@ enum DB_STATUS {
     DBERR_BUFFER_SIZE_MISMATCH = DBBASE + 1021,
     DBERR_OPEN_FILE_FAILED = DBBASE + 1022,
     DBERR_MMAP_FAILED = DBBASE + 1023,
+    DBERR_OBJ_CREATION_FAILED = DBBASE + 1024,
+    DBERR_FORBIDDEN_METHOD_CALL = DBBASE + 1025,
+    DBERR_TYPE_CAST_MISMATCH = DBBASE + 1026,
+    DBERR_REDUCTION_MERGE_FAILURE = DBBASE + 1027,
 
     // comm
     DBERR_COMM_RECV = DBBASE + 2000,
@@ -180,14 +184,14 @@ enum MBRRelationCase {
  * 
  * @details Includes both the types of topological relations and the different refinement cases for the APRIL intermediate filter.  */
 enum TopologyRelation {
-    TR_EQUAL,
     TR_DISJOINT,
+    TR_INTERSECT,
     TR_INSIDE,
     TR_CONTAINS,
-    TR_MEET,
-    TR_COVERS,
     TR_COVERED_BY,
-    TR_INTERSECT,
+    TR_COVERS,
+    TR_EQUAL,
+    TR_MEET,
 
     REFINE_INSIDE_COVEREDBY_TRUEHIT_INTERSECT = 1000,
     REFINE_DISJOINT_INSIDE_COVEREDBY_MEET_INTERSECT,

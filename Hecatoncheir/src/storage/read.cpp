@@ -29,7 +29,7 @@ namespace storage
                 double global_xMax = -std::numeric_limits<int>::max();
                 double global_yMax = -std::numeric_limits<int>::max();
                 // spawn all available threads (processors)
-                #pragma omp parallel firstprivate(line, objectCount) reduction(min:global_xMin) reduction(min:global_yMin) reduction(max:global_xMax)  reduction(max:global_yMax)
+                #pragma omp parallel num_threads(MAX_THREADS) firstprivate(line, objectCount) reduction(min:global_xMin) reduction(min:global_yMin) reduction(max:global_xMax)  reduction(max:global_yMax)
                 {
                     size_t recID;
                     double x,y;
@@ -119,7 +119,7 @@ namespace storage
                 double global_xMax = -std::numeric_limits<int>::max();
                 double global_yMax = -std::numeric_limits<int>::max();
                 // spawn all available threads (processors)
-                #pragma omp parallel firstprivate(line, totalObjects) reduction(min:global_xMin) reduction(min:global_yMin) reduction(max:global_xMax)  reduction(max:global_yMax)
+                #pragma omp parallel num_threads(MAX_THREADS) firstprivate(line, totalObjects) reduction(min:global_xMin) reduction(min:global_yMin) reduction(max:global_xMax)  reduction(max:global_yMax)
                 {
                     DB_STATUS local_ret = DBERR_OK;
                     int tid = omp_get_thread_num();
@@ -155,6 +155,7 @@ namespace storage
                         std::string token;
                         while (true) {
                             object.reset();
+                            object.recID = currentLine;
                             // next object
                             std::getline(fin, line);   
                             // parse line to get only the first column (wkt geometry)

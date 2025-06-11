@@ -19,7 +19,7 @@ namespace APRIL
          * @param[in] mbrRelationCase Indicates how the objects' MBR relate to each other.
          * @param[out] queryOutput Where the query result is appended.
          */
-        DB_STATUS IntermediateFilterEntrypoint(Shape* objR, Shape* objS, MBRRelationCase mbrRelationCase, hec::QueryResult &queryOutput);
+        DB_STATUS IntermediateFilterEntrypoint(Shape* objR, Shape* objS, MBRRelationCase mbrRelationCase, hec::QResultBase* queryOutput);
     }
 
     /** @brief Standard APRIL filter methods. */
@@ -32,7 +32,7 @@ namespace APRIL
          * @param[in] objS The second object (right in relation).
          * @param[out] queryOutput Where the query result is appended.
          */
-        DB_STATUS IntermediateFilterEntrypoint(Shape* objR, Shape* objS, hec::QueryResult &queryOutput);
+        DB_STATUS IntermediateFilterEntrypoint(Shape* objR, Shape* objS, hec::QResultBase* queryOutput);
     }
 }
 

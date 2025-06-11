@@ -6,7 +6,7 @@ namespace twolayer
     namespace mbr_topological_join_filter
     {
         
-        static inline DB_STATUS forwardPair(Shape* objR, Shape* objS, MBRRelationCase mbrRelationCase, hec::QueryResult &queryResult) {
+        static inline DB_STATUS forwardPair(Shape* objR, Shape* objS, MBRRelationCase mbrRelationCase, hec::QResultBase* queryResult) {
             DB_STATUS ret = DBERR_OK;
             if (mbrRelationCase != MBR_CROSS) {
                 // count as MBR filter result
@@ -29,13 +29,13 @@ namespace twolayer
                 }
             } else {
                 // they cross, true hit intersect (skip intermediate filter)
-                queryResult.countTopologyRelationResult(TR_INTERSECT, objR->recID, objS->recID);
+                queryResult->addResult(TR_INTERSECT, objR->recID, objS->recID);
             }
             return ret;
         }
 
         
-        static inline DB_STATUS relateMBRs(Shape* objR, Shape* objS, hec::QueryResult &queryResult) {
+        static inline DB_STATUS relateMBRs(Shape* objR, Shape* objS, hec::QResultBase* queryResult) {
             DB_STATUS ret = DBERR_OK;
             // compute deltas
             double d_xmin = objR->mbr.pMin.x - objS->mbr.pMin.x;
@@ -114,7 +114,7 @@ namespace twolayer
         }
 
         
-        static inline DB_STATUS internal_sweepRollY_1(std::vector<Shape*>::iterator &rec, std::vector<Shape*>::iterator &firstFS, std::vector<Shape*>::iterator &lastFS, int flag, hec::QueryResult &queryResult) {
+        static inline DB_STATUS internal_sweepRollY_1(std::vector<Shape*>::iterator &rec, std::vector<Shape*>::iterator &firstFS, std::vector<Shape*>::iterator &lastFS, int flag, hec::QResultBase* queryResult) {
             DB_STATUS ret = DBERR_OK;
             auto pivot = firstFS;
             while ((pivot < lastFS) && ((*rec)->mbr.pMax.y >= (*pivot)->mbr.pMin.y)) {               
@@ -143,7 +143,7 @@ namespace twolayer
         }
 
         
-        static inline DB_STATUS internal_sweepRollY_2(std::vector<Shape*>::iterator &rec, std::vector<Shape*>::iterator &firstFS, std::vector<Shape*>::iterator &lastFS, int flag, hec::QueryResult &queryResult) {
+        static inline DB_STATUS internal_sweepRollY_2(std::vector<Shape*>::iterator &rec, std::vector<Shape*>::iterator &firstFS, std::vector<Shape*>::iterator &lastFS, int flag, hec::QResultBase* queryResult) {
             DB_STATUS ret = DBERR_OK;
             auto pivot = firstFS;
             while ((pivot < lastFS) && ((*rec)->mbr.pMax.y >= (*pivot)->mbr.pMin.y)) {               
@@ -171,7 +171,7 @@ namespace twolayer
         }
 
         
-        static inline DB_STATUS internal_sweepRollY_3_1(std::vector<Shape*>::iterator &rec, std::vector<Shape*>::iterator &firstFS, std::vector<Shape*>::iterator &lastFS, int flag, hec::QueryResult &queryResult) {
+        static inline DB_STATUS internal_sweepRollY_3_1(std::vector<Shape*>::iterator &rec, std::vector<Shape*>::iterator &firstFS, std::vector<Shape*>::iterator &lastFS, int flag, hec::QResultBase* queryResult) {
             DB_STATUS ret = DBERR_OK;
             auto pivot = firstFS;
             while ((pivot < lastFS) && ((*rec)->mbr.pMax.y >= (*pivot)->mbr.pMin.y)) {                
@@ -201,7 +201,7 @@ namespace twolayer
         }
 
         
-        static inline DB_STATUS internal_sweepRollY_3_2(std::vector<Shape*>::iterator &rec, std::vector<Shape*>::iterator &firstFS, std::vector<Shape*>::iterator &lastFS, int flag, hec::QueryResult &queryResult) {
+        static inline DB_STATUS internal_sweepRollY_3_2(std::vector<Shape*>::iterator &rec, std::vector<Shape*>::iterator &firstFS, std::vector<Shape*>::iterator &lastFS, int flag, hec::QResultBase* queryResult) {
             DB_STATUS ret = DBERR_OK;
             auto pivot = firstFS;
             while ((pivot < lastFS) && ((*rec)->mbr.pMax.y >= (*pivot)->mbr.pMin.y)) {       
@@ -229,7 +229,7 @@ namespace twolayer
         }
 
         
-        static inline DB_STATUS internal_sweepRollY_4(std::vector<Shape*>::iterator &rec, std::vector<Shape*>::iterator &firstFS, std::vector<Shape*>::iterator &lastFS, int flag, hec::QueryResult &queryResult) {
+        static inline DB_STATUS internal_sweepRollY_4(std::vector<Shape*>::iterator &rec, std::vector<Shape*>::iterator &firstFS, std::vector<Shape*>::iterator &lastFS, int flag, hec::QResultBase* queryResult) {
             DB_STATUS ret = DBERR_OK;
             auto pivot = firstFS;
             while ((pivot < lastFS) && ((*rec)->mbr.pMax.y >= (*pivot)->mbr.pMin.y)) {                       
@@ -257,7 +257,7 @@ namespace twolayer
         }
 
         
-        static inline DB_STATUS internal_sweepRollY_5(std::vector<Shape*>::iterator &rec, std::vector<Shape*>::iterator &firstFS, std::vector<Shape*>::iterator &lastFS, int flag, hec::QueryResult &queryResult) {
+        static inline DB_STATUS internal_sweepRollY_5(std::vector<Shape*>::iterator &rec, std::vector<Shape*>::iterator &firstFS, std::vector<Shape*>::iterator &lastFS, int flag, hec::QResultBase* queryResult) {
             DB_STATUS ret = DBERR_OK;
             auto pivot = firstFS;
             while ((pivot < lastFS) && ((*rec)->mbr.pMax.y >= (*pivot)->mbr.pMin.y)) {              
@@ -286,7 +286,7 @@ namespace twolayer
         }
 
         
-        static inline DB_STATUS sweepRollY_1(std::vector<Shape*>* objectsR, std::vector<Shape*>* objectsS, hec::QueryResult &queryResult) {
+        static inline DB_STATUS sweepRollY_1(std::vector<Shape*>* objectsR, std::vector<Shape*>* objectsS, hec::QResultBase* queryResult) {
             if (objectsR == nullptr || objectsS == nullptr) {
                 return DBERR_OK;
             }
@@ -319,7 +319,7 @@ namespace twolayer
         }
 
         
-        static inline DB_STATUS sweepRollY_2(std::vector<Shape*>* objectsR, std::vector<Shape*>* objectsS, int flag, hec::QueryResult &queryResult) {
+        static inline DB_STATUS sweepRollY_2(std::vector<Shape*>* objectsR, std::vector<Shape*>* objectsS, int flag, hec::QResultBase* queryResult) {
             if (objectsR == nullptr || objectsS == nullptr) {
                 return DBERR_OK;
             }
@@ -343,7 +343,7 @@ namespace twolayer
         }
 
         
-        static inline DB_STATUS sweepRollY_3(std::vector<Shape*>* objectsR, std::vector<Shape*>* objectsS, int flag, hec::QueryResult &queryResult) {
+        static inline DB_STATUS sweepRollY_3(std::vector<Shape*>* objectsR, std::vector<Shape*>* objectsS, int flag, hec::QResultBase* queryResult) {
             if (objectsR == nullptr || objectsS == nullptr) {
                 return DBERR_OK;
             }
@@ -377,7 +377,7 @@ namespace twolayer
         }
 
         
-        static inline DB_STATUS sweepRollY_4(std::vector<Shape*>* objectsR, std::vector<Shape*>* objectsS, int flag, hec::QueryResult &queryResult) {
+        static inline DB_STATUS sweepRollY_4(std::vector<Shape*>* objectsR, std::vector<Shape*>* objectsS, int flag, hec::QResultBase* queryResult) {
             if (objectsR == nullptr || objectsS == nullptr) {
                 return DBERR_OK;
             }
@@ -402,7 +402,7 @@ namespace twolayer
         }
 
         
-        inline DB_STATUS sweepRollY_5(std::vector<Shape*>* objectsR, std::vector<Shape*>* objectsS, int flag, hec::QueryResult &queryResult) {
+        inline DB_STATUS sweepRollY_5(std::vector<Shape*>* objectsR, std::vector<Shape*>* objectsS, int flag, hec::QResultBase* queryResult) {
             if (objectsR == nullptr || objectsS == nullptr) {
                 return DBERR_OK;
             }
@@ -429,15 +429,19 @@ namespace twolayer
          * optimized two-layer MBR filter for find topological relation queries, with intermediate filter forwarding
          */
         
-        static DB_STATUS evaluate(hec::JoinQuery *joinQuery, hec::QueryResult &queryResult) {
+        static DB_STATUS evaluate(hec::JoinQuery *joinQuery, hec::QResultBase* queryResult) {
+            if (!queryResult) {
+                logger::log_error(DBERR_NULL_PTR_EXCEPTION, "Null query resylt pointer during evaluation.");
+                return DBERR_NULL_PTR_EXCEPTION;
+            }
             DB_STATUS ret = DBERR_OK;
             Dataset* R = g_config.datasetOptions.getDatasetByIdx(joinQuery->getDatasetRid());
             Dataset* S = g_config.datasetOptions.getDatasetByIdx(joinQuery->getDatasetSid());
             // here the final results will be stored
-            #pragma omp parallel reduction(query_output_reduction:queryResult)
+            #pragma omp parallel num_threads(MAX_THREADS) reduction(query_output_reduction:queryResult)
             {
                 DB_STATUS local_ret = DBERR_OK;
-                hec::QueryResult threadQueryResults(queryResult.getID(), queryResult.getQueryType(), queryResult.getResultType());
+                
                 // loop common partitions (@todo: optimize to start from the dataset that has the fewer ones)
                 std::vector<PartitionBase *>* partitions = R->index->getPartitions();
                 #pragma omp for
@@ -449,63 +453,63 @@ namespace twolayer
                     if (partitionS != nullptr) {
                         // common partition found
                         // R_A - S_A
-                        local_ret = sweepRollY_1(partitionR->getContents(CLASS_A), partitionS->getContents(CLASS_A), threadQueryResults);
+                        local_ret = sweepRollY_1(partitionR->getContents(CLASS_A), partitionS->getContents(CLASS_A), queryResult);
                         if (local_ret != DBERR_OK) {
                             logger::log_error(ret, "R_A - S_A sweep roll failed");
                             #pragma omp cancel for
                             ret = local_ret;
                         }
                         // S_B - R_A
-                        local_ret = sweepRollY_2(partitionS->getContents(CLASS_B), partitionR->getContents(CLASS_A), 1, threadQueryResults);
+                        local_ret = sweepRollY_2(partitionS->getContents(CLASS_B), partitionR->getContents(CLASS_A), 1, queryResult);
                         if (local_ret != DBERR_OK) {
                             logger::log_error(ret, "S_B - R_A sweep roll failed");
                             #pragma omp cancel for
                             ret = local_ret;
                         }
                         // R_A - S_C
-                        local_ret = sweepRollY_3(partitionR->getContents(CLASS_A), partitionS->getContents(CLASS_C), 0, threadQueryResults);
+                        local_ret = sweepRollY_3(partitionR->getContents(CLASS_A), partitionS->getContents(CLASS_C), 0, queryResult);
                         if (local_ret != DBERR_OK) {
                             logger::log_error(ret, "R_A - S_C sweep roll failed");
                             #pragma omp cancel for
                             ret = local_ret;
                         }
                         // S_D - R_A
-                        local_ret = sweepRollY_5(partitionS->getContents(CLASS_D), partitionR->getContents(CLASS_A), 1, threadQueryResults);
+                        local_ret = sweepRollY_5(partitionS->getContents(CLASS_D), partitionR->getContents(CLASS_A), 1, queryResult);
                         if (local_ret != DBERR_OK) {
                             logger::log_error(ret, "S_D - R_A sweep roll failed");
                             #pragma omp cancel for
                             ret = local_ret;
                         }
                         // R_B - S_A
-                        local_ret = sweepRollY_2(partitionR->getContents(CLASS_B), partitionS->getContents(CLASS_A), 0, threadQueryResults);
+                        local_ret = sweepRollY_2(partitionR->getContents(CLASS_B), partitionS->getContents(CLASS_A), 0, queryResult);
                         if (local_ret != DBERR_OK) {
                             logger::log_error(ret, "R_B - S_A sweep roll failed");
                             #pragma omp cancel for
                             ret = local_ret;
                         }
                         // R_B - S_C
-                        local_ret = sweepRollY_4(partitionR->getContents(CLASS_B), partitionS->getContents(CLASS_C), 0, threadQueryResults);
+                        local_ret = sweepRollY_4(partitionR->getContents(CLASS_B), partitionS->getContents(CLASS_C), 0, queryResult);
                         if (local_ret != DBERR_OK) {
                             logger::log_error(ret, "R_B - S_C sweep roll failed");
                             #pragma omp cancel for
                             ret = local_ret;
                         }
                         // S_A - R_C
-                        local_ret = sweepRollY_3(partitionS->getContents(CLASS_A), partitionR->getContents(CLASS_C), 1, threadQueryResults);
+                        local_ret = sweepRollY_3(partitionS->getContents(CLASS_A), partitionR->getContents(CLASS_C), 1, queryResult);
                         if (local_ret != DBERR_OK) {
                             logger::log_error(ret, "S_A - R_C sweep roll failed");
                             #pragma omp cancel for
                             ret = local_ret;
                         }
                         // S_B - R_C
-                        local_ret = sweepRollY_4(partitionS->getContents(CLASS_B), partitionR->getContents(CLASS_C), 1, threadQueryResults);
+                        local_ret = sweepRollY_4(partitionS->getContents(CLASS_B), partitionR->getContents(CLASS_C), 1, queryResult);
                         if (local_ret != DBERR_OK) {
                             logger::log_error(ret, "S_B - R_C sweep roll failed");
                             #pragma omp cancel for
                             ret = local_ret;
                         }
                         // R_D - S_A
-                        local_ret = sweepRollY_5(partitionR->getContents(CLASS_D), partitionS->getContents(CLASS_A), 0, threadQueryResults);
+                        local_ret = sweepRollY_5(partitionR->getContents(CLASS_D), partitionS->getContents(CLASS_A), 0, queryResult);
                         if (local_ret != DBERR_OK) {
                             logger::log_error(ret, "R_D - S_A sweep roll failed");
                             #pragma omp cancel for
@@ -513,8 +517,6 @@ namespace twolayer
                         }
                     }
                 }
-                // reduct thread results to global
-                queryResult.mergeTopologyRelationResults(threadQueryResults);
             }
             return ret;
         }
@@ -522,7 +524,7 @@ namespace twolayer
 
     namespace mbr_intersection_join_filter
     {
-        static inline DB_STATUS forwardPair(Shape* objR, Shape* objS, hec::QueryResult &queryResult) {
+        static inline DB_STATUS forwardPair(Shape* objR, Shape* objS, hec::QResultBase* queryResult) {
             DB_STATUS ret = DBERR_OK;
             // check if intermediate filter is enabled
             if (g_config.queryMetadata.IntermediateFilter) {
@@ -544,7 +546,7 @@ namespace twolayer
         }
 
         
-        static inline DB_STATUS internal_sweepRollY_1(std::vector<Shape*>::iterator &rec, std::vector<Shape*>::iterator &firstFS, std::vector<Shape*>::iterator &lastFS, int flag, hec::QueryResult &queryResult) {
+        static inline DB_STATUS internal_sweepRollY_1(std::vector<Shape*>::iterator &rec, std::vector<Shape*>::iterator &firstFS, std::vector<Shape*>::iterator &lastFS, int flag, hec::QResultBase* queryResult) {
             DB_STATUS ret = DBERR_OK;
             auto pivot = firstFS;
             while ((pivot < lastFS) && ((*rec)->mbr.pMax.y >= (*pivot)->mbr.pMin.y)) {               
@@ -572,7 +574,7 @@ namespace twolayer
         }
 
         
-        static inline DB_STATUS internal_sweepRollY_2(std::vector<Shape*>::iterator &rec, std::vector<Shape*>::iterator &firstFS, std::vector<Shape*>::iterator &lastFS, int flag, hec::QueryResult &queryResult) {
+        static inline DB_STATUS internal_sweepRollY_2(std::vector<Shape*>::iterator &rec, std::vector<Shape*>::iterator &firstFS, std::vector<Shape*>::iterator &lastFS, int flag, hec::QResultBase* queryResult) {
             DB_STATUS ret = DBERR_OK;
             auto pivot = firstFS;
             while ((pivot < lastFS) && ((*rec)->mbr.pMax.y >= (*pivot)->mbr.pMin.y)) {               
@@ -600,7 +602,7 @@ namespace twolayer
         }
 
         
-        static inline DB_STATUS internal_sweepRollY_3_1(std::vector<Shape*>::iterator &rec, std::vector<Shape*>::iterator &firstFS, std::vector<Shape*>::iterator &lastFS, int flag, hec::QueryResult &queryResult) {
+        static inline DB_STATUS internal_sweepRollY_3_1(std::vector<Shape*>::iterator &rec, std::vector<Shape*>::iterator &firstFS, std::vector<Shape*>::iterator &lastFS, int flag, hec::QResultBase* queryResult) {
             DB_STATUS ret = DBERR_OK;
             auto pivot = firstFS;
             while ((pivot < lastFS) && ((*rec)->mbr.pMax.y >= (*pivot)->mbr.pMin.y)) {                
@@ -629,7 +631,7 @@ namespace twolayer
         }
 
         
-        static inline DB_STATUS internal_sweepRollY_3_2(std::vector<Shape*>::iterator &rec, std::vector<Shape*>::iterator &firstFS, std::vector<Shape*>::iterator &lastFS, int flag, hec::QueryResult &queryResult) {
+        static inline DB_STATUS internal_sweepRollY_3_2(std::vector<Shape*>::iterator &rec, std::vector<Shape*>::iterator &firstFS, std::vector<Shape*>::iterator &lastFS, int flag, hec::QResultBase* queryResult) {
             DB_STATUS ret = DBERR_OK;
             auto pivot = firstFS;
             while ((pivot < lastFS) && ((*rec)->mbr.pMax.y >= (*pivot)->mbr.pMin.y)) {       
@@ -657,7 +659,7 @@ namespace twolayer
         }
 
         
-        static inline DB_STATUS internal_sweepRollY_4(std::vector<Shape*>::iterator &rec, std::vector<Shape*>::iterator &firstFS, std::vector<Shape*>::iterator &lastFS, int flag, hec::QueryResult &queryResult) {
+        static inline DB_STATUS internal_sweepRollY_4(std::vector<Shape*>::iterator &rec, std::vector<Shape*>::iterator &firstFS, std::vector<Shape*>::iterator &lastFS, int flag, hec::QResultBase* queryResult) {
             DB_STATUS ret = DBERR_OK;
             auto pivot = firstFS;
             while ((pivot < lastFS) && ((*rec)->mbr.pMax.y >= (*pivot)->mbr.pMin.y)) {                       
@@ -685,7 +687,7 @@ namespace twolayer
         }
 
         
-        static inline DB_STATUS internal_sweepRollY_5(std::vector<Shape*>::iterator &rec, std::vector<Shape*>::iterator &firstFS, std::vector<Shape*>::iterator &lastFS, int flag, hec::QueryResult &queryResult) {
+        static inline DB_STATUS internal_sweepRollY_5(std::vector<Shape*>::iterator &rec, std::vector<Shape*>::iterator &firstFS, std::vector<Shape*>::iterator &lastFS, int flag, hec::QResultBase* queryResult) {
             DB_STATUS ret = DBERR_OK;
             auto pivot = firstFS;
             while ((pivot < lastFS) && ((*rec)->mbr.pMax.y >= (*pivot)->mbr.pMin.y)) {                
@@ -720,7 +722,7 @@ namespace twolayer
         }
 
         
-        static inline DB_STATUS sweepRollY_1(std::vector<Shape*>* objectsR, std::vector<Shape*>* objectsS, hec::QueryResult &queryResult) {
+        static inline DB_STATUS sweepRollY_1(std::vector<Shape*>* objectsR, std::vector<Shape*>* objectsS, hec::QResultBase* queryResult) {
             if (objectsR == nullptr || objectsS == nullptr) {
                 return DBERR_OK;
             }
@@ -753,7 +755,7 @@ namespace twolayer
         }
 
         
-        static inline DB_STATUS sweepRollY_2(std::vector<Shape*>* objectsR, std::vector<Shape*>* objectsS, int flag, hec::QueryResult &queryResult) {
+        static inline DB_STATUS sweepRollY_2(std::vector<Shape*>* objectsR, std::vector<Shape*>* objectsS, int flag, hec::QResultBase* queryResult) {
             if (objectsR == nullptr || objectsS == nullptr) {
                 return DBERR_OK;
             }
@@ -776,7 +778,7 @@ namespace twolayer
         }
 
         
-        static inline DB_STATUS sweepRollY_3(std::vector<Shape*>* objectsR, std::vector<Shape*>* objectsS, int flag, hec::QueryResult &queryResult) {
+        static inline DB_STATUS sweepRollY_3(std::vector<Shape*>* objectsR, std::vector<Shape*>* objectsS, int flag, hec::QResultBase* queryResult) {
             if (objectsR == nullptr || objectsS == nullptr) {
                 return DBERR_OK;
             }
@@ -810,7 +812,7 @@ namespace twolayer
         }
 
         
-        static inline DB_STATUS sweepRollY_4(std::vector<Shape*>* objectsR, std::vector<Shape*>* objectsS, int flag, hec::QueryResult &queryResult) {
+        static inline DB_STATUS sweepRollY_4(std::vector<Shape*>* objectsR, std::vector<Shape*>* objectsS, int flag, hec::QResultBase* queryResult) {
             if (objectsR == nullptr || objectsS == nullptr) {
                 return DBERR_OK;
             }
@@ -835,7 +837,7 @@ namespace twolayer
         }
 
         
-        inline DB_STATUS sweepRollY_5(std::vector<Shape*>* objectsR, std::vector<Shape*>* objectsS, int flag, hec::QueryResult &queryResult) {
+        inline DB_STATUS sweepRollY_5(std::vector<Shape*>* objectsR, std::vector<Shape*>* objectsS, int flag, hec::QResultBase* queryResult) {
             if (objectsR == nullptr || objectsS == nullptr) {
                 return DBERR_OK;
             }
@@ -862,14 +864,13 @@ namespace twolayer
          * simple two-layer MBR intersection filter with intermediate filter forwarding
          */
         
-        static DB_STATUS evaluate(hec::JoinQuery *joinQuery, hec::QueryResult &queryResult) {
+        static DB_STATUS evaluate(hec::JoinQuery *joinQuery, hec::QResultBase* queryResult) {
             DB_STATUS ret = DBERR_OK;
             Dataset* R = g_config.datasetOptions.getDatasetByIdx(joinQuery->getDatasetRid());
             Dataset* S = g_config.datasetOptions.getDatasetByIdx(joinQuery->getDatasetSid());
-            #pragma omp parallel reduction(query_output_reduction:queryResult)
+            #pragma omp parallel num_threads(MAX_THREADS) reduction(query_output_reduction:queryResult)
             {
                 DB_STATUS local_ret = DBERR_OK;
-                hec::QueryResult threadQueryResults(queryResult.getID(), queryResult.getQueryType(), queryResult.getResultType());
                 // loop common partitions (todo: optimize to start from the dataset that has the fewer ones)
                 std::vector<PartitionBase *>* partitions = R->index->getPartitions();
                 #pragma omp for
@@ -890,7 +891,7 @@ namespace twolayer
                         //     logger::log_task("RA-SA");
                         // }
                          // printf("RA-SA\n");
-                        local_ret = sweepRollY_1(partitionR->getContents(CLASS_A), partitionS->getContents(CLASS_A), threadQueryResults);
+                        local_ret = sweepRollY_1(partitionR->getContents(CLASS_A), partitionS->getContents(CLASS_A), queryResult);
                         if (local_ret != DBERR_OK) {
                             logger::log_error(ret, "R_A - S_A sweep roll failed");
                             #pragma omp cancel for
@@ -901,7 +902,7 @@ namespace twolayer
                         // if (partitionR->partitionID == 651299 || partitionR->partitionID == 651300) {
                         //     logger::log_task("RA-SB");
                         // }
-                        local_ret = sweepRollY_2(partitionS->getContents(CLASS_B), partitionR->getContents(CLASS_A), 1, threadQueryResults);
+                        local_ret = sweepRollY_2(partitionS->getContents(CLASS_B), partitionR->getContents(CLASS_A), 1, queryResult);
                         if (local_ret != DBERR_OK) {
                             logger::log_error(ret, "S_B - R_A sweep roll failed");
                             #pragma omp cancel for
@@ -912,7 +913,7 @@ namespace twolayer
                         // if (partitionR->partitionID == 651299 || partitionR->partitionID == 651300) {
                         //     logger::log_task("RA-SC");
                         // }
-                        local_ret = sweepRollY_3(partitionR->getContents(CLASS_A), partitionS->getContents(CLASS_C), 0, threadQueryResults);
+                        local_ret = sweepRollY_3(partitionR->getContents(CLASS_A), partitionS->getContents(CLASS_C), 0, queryResult);
                         if (local_ret != DBERR_OK) {
                             logger::log_error(ret, "R_A - S_C sweep roll failed");
                             #pragma omp cancel for
@@ -923,7 +924,7 @@ namespace twolayer
                         //     logger::log_task("RA-SD");
                         // }
                         // printf("SD-RA\n");
-                        local_ret = sweepRollY_5(partitionS->getContents(CLASS_D), partitionR->getContents(CLASS_A), 1, threadQueryResults);
+                        local_ret = sweepRollY_5(partitionS->getContents(CLASS_D), partitionR->getContents(CLASS_A), 1, queryResult);
                         if (local_ret != DBERR_OK) {
                             logger::log_error(ret, "S_D - R_A sweep roll failed");
                             #pragma omp cancel for
@@ -934,7 +935,7 @@ namespace twolayer
                         //     logger::log_task("RB-SA");
                         // }
                         // printf("RA-SA\n");
-                        local_ret = sweepRollY_2(partitionR->getContents(CLASS_B), partitionS->getContents(CLASS_A), 0, threadQueryResults);
+                        local_ret = sweepRollY_2(partitionR->getContents(CLASS_B), partitionS->getContents(CLASS_A), 0, queryResult);
                         if (local_ret != DBERR_OK) {
                             logger::log_error(ret, "R_B - S_A sweep roll failed");
                             #pragma omp cancel for
@@ -945,7 +946,7 @@ namespace twolayer
                         //     logger::log_task("RB-SC");
                         // }
                         // printf("RB-SC\n");
-                        local_ret = sweepRollY_4(partitionR->getContents(CLASS_B), partitionS->getContents(CLASS_C), 0, threadQueryResults);
+                        local_ret = sweepRollY_4(partitionR->getContents(CLASS_B), partitionS->getContents(CLASS_C), 0, queryResult);
                         if (local_ret != DBERR_OK) {
                             logger::log_error(ret, "R_B - S_C sweep roll failed");
                             #pragma omp cancel for
@@ -956,7 +957,7 @@ namespace twolayer
                         //     logger::log_task("RC-SA");
                         // }
                         // printf("SA-RC\n");
-                        local_ret = sweepRollY_3(partitionS->getContents(CLASS_A), partitionR->getContents(CLASS_C), 1, threadQueryResults);
+                        local_ret = sweepRollY_3(partitionS->getContents(CLASS_A), partitionR->getContents(CLASS_C), 1, queryResult);
                         if (local_ret != DBERR_OK) {
                             logger::log_error(ret, "S_A - R_C sweep roll failed");
                             #pragma omp cancel for
@@ -967,7 +968,7 @@ namespace twolayer
                         //     logger::log_task("RC-SB");
                         // }
                         // printf("SB-RC\n");
-                        local_ret = sweepRollY_4(partitionS->getContents(CLASS_B), partitionR->getContents(CLASS_C), 1, threadQueryResults);
+                        local_ret = sweepRollY_4(partitionS->getContents(CLASS_B), partitionR->getContents(CLASS_C), 1, queryResult);
                         if (local_ret != DBERR_OK) {
                             logger::log_error(ret, "S_B - R_C sweep roll failed");
                             #pragma omp cancel for
@@ -978,7 +979,7 @@ namespace twolayer
                         //     logger::log_task("RD-SA");
                         // }
                         // printf("RD-SA\n");
-                        local_ret = sweepRollY_5(partitionR->getContents(CLASS_D), partitionS->getContents(CLASS_A), 0, threadQueryResults);
+                        local_ret = sweepRollY_5(partitionR->getContents(CLASS_D), partitionS->getContents(CLASS_A), 0, queryResult);
                         if (local_ret != DBERR_OK) {
                             logger::log_error(ret, "R_D - S_A sweep roll failed");
                             #pragma omp cancel for
@@ -986,16 +987,15 @@ namespace twolayer
                         }
                     }
                 }
-                // reduct thread results to global
-                queryResult.mergeResults(threadQueryResults);
             }
+            logger::log_success("Computed:", queryResult->getResultCount(), "results.");
             return ret;
         }
     } // intersection mbr filter
 
     namespace mbr_range_query_filter
     {
-        static inline DB_STATUS forwardPair(Shape* objR, Shape* objS, hec::QueryResult &queryResult) {
+        static inline DB_STATUS forwardPair(Shape* objR, Shape* objS, hec::QResultBase* queryResult) {
             DB_STATUS ret = DBERR_OK;
             // check if intermediate filter is enabled
             if (g_config.queryMetadata.IntermediateFilter) {
@@ -1016,7 +1016,7 @@ namespace twolayer
             return ret;
         }
 
-        static inline DB_STATUS internal_RangeCorners(std::vector<Shape*>::iterator &firstFS, Shape* window, std::vector<Shape*>::iterator &lastFS, hec::QueryResult &queryResult) {
+        static inline DB_STATUS internal_RangeCorners(std::vector<Shape*>::iterator &firstFS, Shape* window, std::vector<Shape*>::iterator &lastFS, hec::QResultBase* queryResult) {
             DB_STATUS ret = DBERR_OK;
             auto pivot = firstFS;
             while(pivot < lastFS) {
@@ -1033,7 +1033,7 @@ namespace twolayer
             return ret;
         }
 
-        static inline DB_STATUS internal_RangeB_Class(std::vector<Shape*>::iterator &firstFS, Shape* window, std::vector<Shape*>::iterator &lastFS, hec::QueryResult &queryResult) {
+        static inline DB_STATUS internal_RangeB_Class(std::vector<Shape*>::iterator &firstFS, Shape* window, std::vector<Shape*>::iterator &lastFS, hec::QResultBase* queryResult) {
             DB_STATUS ret = DBERR_OK;
             auto pivot = firstFS;
             while(pivot < lastFS) {
@@ -1050,7 +1050,7 @@ namespace twolayer
             return ret;
         }
 
-        static inline DB_STATUS internal_RangeC_Class(std::vector<Shape*>::iterator &firstFS, Shape* window, std::vector<Shape*>::iterator &lastFS, hec::QueryResult &queryResult) {
+        static inline DB_STATUS internal_RangeC_Class(std::vector<Shape*>::iterator &firstFS, Shape* window, std::vector<Shape*>::iterator &lastFS, hec::QResultBase* queryResult) {
             DB_STATUS ret = DBERR_OK;
             auto pivot = firstFS;
             while(pivot < lastFS) {
@@ -1068,7 +1068,7 @@ namespace twolayer
             return ret;
         }
 
-        static inline DB_STATUS internal_RangeCorners_ABCD(std::vector<Shape*>::iterator &firstFS, Shape* window, std::vector<Shape*>::iterator &lastFS, hec::QueryResult &queryResult) {
+        static inline DB_STATUS internal_RangeCorners_ABCD(std::vector<Shape*>::iterator &firstFS, Shape* window, std::vector<Shape*>::iterator &lastFS, hec::QResultBase* queryResult) {
             DB_STATUS ret = DBERR_OK;
             auto pivot = firstFS;
             while(pivot < lastFS) {
@@ -1087,7 +1087,7 @@ namespace twolayer
         }
 
         
-        static inline DB_STATUS RangeCorners(std::vector<Shape*>* objectsR, Shape* objectS, hec::QueryResult &queryResult) {
+        static inline DB_STATUS RangeCorners(std::vector<Shape*>* objectsR, Shape* objectS, hec::QResultBase* queryResult) {
             if (objectsR == nullptr || objectS == nullptr) {
                 return DBERR_OK;
             }
@@ -1107,7 +1107,7 @@ namespace twolayer
             return ret;
         }
 
-        static inline DB_STATUS RangeCorners_ABCD(std::vector<Shape*>* objectsR, Shape* objectS, hec::QueryResult &queryResult) {
+        static inline DB_STATUS RangeCorners_ABCD(std::vector<Shape*>* objectsR, Shape* objectS, hec::QResultBase* queryResult) {
             if (objectsR == nullptr || objectS == nullptr) {
                 return DBERR_OK;
             }
@@ -1127,7 +1127,7 @@ namespace twolayer
             return ret;
         }
 
-        static inline DB_STATUS internal_RangeCorners_AB(std::vector<Shape*>::iterator &firstFS, Shape* window, std::vector<Shape*>::iterator &lastFS, hec::QueryResult &queryResult) {
+        static inline DB_STATUS internal_RangeCorners_AB(std::vector<Shape*>::iterator &firstFS, Shape* window, std::vector<Shape*>::iterator &lastFS, hec::QResultBase* queryResult) {
             DB_STATUS ret = DBERR_OK;
             auto pivot = firstFS;
             while(pivot < lastFS) {
@@ -1145,7 +1145,7 @@ namespace twolayer
             return ret;
         }
 
-        static inline DB_STATUS internal_RangeCorners_AC(std::vector<Shape*>::iterator &firstFS, Shape* window, std::vector<Shape*>::iterator &lastFS, hec::QueryResult &queryResult) {
+        static inline DB_STATUS internal_RangeCorners_AC(std::vector<Shape*>::iterator &firstFS, Shape* window, std::vector<Shape*>::iterator &lastFS, hec::QResultBase* queryResult) {
             DB_STATUS ret = DBERR_OK;
             auto pivot = firstFS;
             while(pivot < lastFS) {
@@ -1164,7 +1164,7 @@ namespace twolayer
         }
 
 
-        static inline DB_STATUS RangeCorners_AB(std::vector<Shape*>* objectsR, Shape* objectS, hec::QueryResult &queryResult) {
+        static inline DB_STATUS RangeCorners_AB(std::vector<Shape*>* objectsR, Shape* objectS, hec::QResultBase* queryResult) {
             if (objectsR == nullptr || objectS == nullptr) {
                 return DBERR_OK;
             }
@@ -1184,7 +1184,7 @@ namespace twolayer
             return ret;
         }
 
-        static inline DB_STATUS RangeCorners_AC(std::vector<Shape*>* objectsR, Shape* objectS, hec::QueryResult &queryResult) {
+        static inline DB_STATUS RangeCorners_AC(std::vector<Shape*>* objectsR, Shape* objectS, hec::QResultBase* queryResult) {
             if (objectsR == nullptr || objectS == nullptr) {
                 return DBERR_OK;
             }
@@ -1204,7 +1204,7 @@ namespace twolayer
             return ret;
         }
 
-        static inline DB_STATUS internal_RangeCorners_A(std::vector<Shape*>::iterator &firstFS, Shape* window, std::vector<Shape*>::iterator &lastFS, hec::QueryResult &queryResult) {
+        static inline DB_STATUS internal_RangeCorners_A(std::vector<Shape*>::iterator &firstFS, Shape* window, std::vector<Shape*>::iterator &lastFS, hec::QResultBase* queryResult) {
             DB_STATUS ret = DBERR_OK;
             auto pivot = firstFS;
             while(pivot < lastFS) {
@@ -1222,7 +1222,7 @@ namespace twolayer
             return ret;
         }
 
-        static inline DB_STATUS RangeCorners_A(std::vector<Shape*>* objectsR, Shape* objectS, hec::QueryResult &queryResult) {
+        static inline DB_STATUS RangeCorners_A(std::vector<Shape*>* objectsR, Shape* objectS, hec::QResultBase* queryResult) {
             if (objectsR == nullptr || objectS == nullptr) {
                 return DBERR_OK;
             }
@@ -1242,7 +1242,7 @@ namespace twolayer
             return ret;
         }
 
-        static inline DB_STATUS internal_RangeBorders_A_Horizontally(std::vector<Shape*>::iterator &firstFS, Shape* window, std::vector<Shape*>::iterator &lastFS, hec::QueryResult &queryResult) {
+        static inline DB_STATUS internal_RangeBorders_A_Horizontally(std::vector<Shape*>::iterator &firstFS, Shape* window, std::vector<Shape*>::iterator &lastFS, hec::QResultBase* queryResult) {
             DB_STATUS ret = DBERR_OK;
             auto pivot = firstFS;
             while(pivot < lastFS) {
@@ -1260,7 +1260,7 @@ namespace twolayer
             return ret;
         }
 
-        static inline DB_STATUS RangeBorders_A_Horizontally(std::vector<Shape*>* objectsR, Shape* objectS, hec::QueryResult &queryResult) {
+        static inline DB_STATUS RangeBorders_A_Horizontally(std::vector<Shape*>* objectsR, Shape* objectS, hec::QResultBase* queryResult) {
             if (objectsR == nullptr || objectS == nullptr) {
                 return DBERR_OK;
             }
@@ -1280,7 +1280,7 @@ namespace twolayer
             return ret;
         }
 
-        static inline DB_STATUS internal_RangeBorders_AC(std::vector<Shape*>::iterator &firstFS, Shape* window, std::vector<Shape*>::iterator &lastFS, hec::QueryResult &queryResult) {
+        static inline DB_STATUS internal_RangeBorders_AC(std::vector<Shape*>::iterator &firstFS, Shape* window, std::vector<Shape*>::iterator &lastFS, hec::QResultBase* queryResult) {
             DB_STATUS ret = DBERR_OK;
             auto pivot = firstFS;
             while(pivot < lastFS) {
@@ -1298,7 +1298,7 @@ namespace twolayer
             return ret;
         }
 
-        static inline DB_STATUS RangeBorders_AC(std::vector<Shape*>* objectsR, Shape* objectS, hec::QueryResult &queryResult) {
+        static inline DB_STATUS RangeBorders_AC(std::vector<Shape*>* objectsR, Shape* objectS, hec::QResultBase* queryResult) {
             if (objectsR == nullptr || objectS == nullptr) {
                 return DBERR_OK;
             }
@@ -1318,7 +1318,7 @@ namespace twolayer
             return ret;
         }
         
-        static inline DB_STATUS internal_RangeBorders_AB(std::vector<Shape*>::iterator &firstFS, Shape* window, std::vector<Shape*>::iterator &lastFS, hec::QueryResult &queryResult) {
+        static inline DB_STATUS internal_RangeBorders_AB(std::vector<Shape*>::iterator &firstFS, Shape* window, std::vector<Shape*>::iterator &lastFS, hec::QResultBase* queryResult) {
             DB_STATUS ret = DBERR_OK;
             auto pivot = firstFS;
             while(pivot < lastFS) {
@@ -1335,7 +1335,7 @@ namespace twolayer
             return ret;
         }
 
-        static inline DB_STATUS RangeBorders_AB(std::vector<Shape*>* objectsR, Shape* objectS, hec::QueryResult &queryResult) {
+        static inline DB_STATUS RangeBorders_AB(std::vector<Shape*>* objectsR, Shape* objectS, hec::QResultBase* queryResult) {
             if (objectsR == nullptr || objectS == nullptr) {
                 return DBERR_OK;
             }
@@ -1355,7 +1355,7 @@ namespace twolayer
             return ret;
         }
 
-        static inline DB_STATUS RangeB_Class(std::vector<Shape*>* objectsR, Shape* objectS, hec::QueryResult &queryResult) {
+        static inline DB_STATUS RangeB_Class(std::vector<Shape*>* objectsR, Shape* objectS, hec::QResultBase* queryResult) {
             if (objectsR == nullptr || objectS == nullptr) {
                 return DBERR_OK;
             }
@@ -1375,7 +1375,7 @@ namespace twolayer
             return ret;
         }
 
-        static inline DB_STATUS RangeC_Class(std::vector<Shape*>* objectsR, Shape* objectS, hec::QueryResult &queryResult) {
+        static inline DB_STATUS RangeC_Class(std::vector<Shape*>* objectsR, Shape* objectS, hec::QResultBase* queryResult) {
             if (objectsR == nullptr || objectS == nullptr) {
                 return DBERR_OK;
             }
@@ -1395,7 +1395,7 @@ namespace twolayer
             return ret;
         }
 
-        static inline DB_STATUS internal_RangeBorders_A_Vertically(std::vector<Shape*>::iterator &firstFS, Shape* window, std::vector<Shape*>::iterator &lastFS, hec::QueryResult &queryResult) {
+        static inline DB_STATUS internal_RangeBorders_A_Vertically(std::vector<Shape*>::iterator &firstFS, Shape* window, std::vector<Shape*>::iterator &lastFS, hec::QResultBase* queryResult) {
             DB_STATUS ret = DBERR_OK;
             auto pivot = firstFS;
             while(pivot < lastFS) {
@@ -1413,7 +1413,7 @@ namespace twolayer
             return ret;
         }
 
-        static inline DB_STATUS RangeBorders_A_Vertically(std::vector<Shape*>* objectsR, Shape* objectS, hec::QueryResult &queryResult) {
+        static inline DB_STATUS RangeBorders_A_Vertically(std::vector<Shape*>* objectsR, Shape* objectS, hec::QResultBase* queryResult) {
             if (objectsR == nullptr || objectS == nullptr) {
                 return DBERR_OK;
             }
@@ -1433,11 +1433,9 @@ namespace twolayer
             return ret;
         }
 
-        static DB_STATUS evaluate(hec::RangeQuery *rangeQuery, hec::QueryResult &queryResult) {
+        static DB_STATUS evaluate(hec::RangeQuery *rangeQuery, hec::QResultBase* queryResult) {
             DB_STATUS ret = DBERR_OK;
             Dataset* dataset = g_config.datasetOptions.getDatasetByIdx(rangeQuery->getDatasetID());
-            hec::QueryResult threadQueryResults(queryResult.getID(), queryResult.getQueryType(), queryResult.getResultType());
-            
             // create shape object for window
             // @todo fix, unitiialized shape object
             Shape window;
@@ -1680,7 +1678,7 @@ namespace twolayer
 
 
 
-    DB_STATUS processQuery(hec::Query* query, hec::QueryResult &queryResult) {
+    DB_STATUS processQuery(hec::Query* query, hec::QResultBase* queryResult) {
         DB_STATUS ret = DBERR_OK;
         // set to global config
         g_config.queryMetadata.queryType = (hec::QueryType) query->getQueryType();

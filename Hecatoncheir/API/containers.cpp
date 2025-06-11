@@ -135,345 +135,702 @@ namespace hec
         return this->wktText;
     }
 
-    QueryResult::QueryResult() {
-        reset();
+    // Q RESULT BASE
+
+    int QResultBase::getQueryID() {
+        return this->queryID;
     }
 
-    QueryResult::QueryResult(int queryID, QueryType queryType, QueryResultType queryResultType) {
-        this->reset();
+    QueryType QResultBase::getQueryType() {
+        return this->queryType;
+    }
+
+    QueryResultType QResultBase::getResultType() {
+        return this->queryResultType;
+    }
+
+    QueryType QResultBase::getQueryTypeFromSerializedBuffer(const char *buffer, int bufferSize) {
+        int position = sizeof(int); // move position accordingly
+        QueryType res;
+        // query type
+        memcpy(&res, buffer + position, sizeof(QueryType));
+        return res;
+    }
+
+    QueryResultType QResultBase::getResultTypeFromSerializedBuffer(const char *buffer, int bufferSize) {
+        int position = sizeof(int) + sizeof(QueryType); // move position accordingly
+        QueryResultType res;
+        // result type
+        memcpy(&res, buffer + position, sizeof(QueryResultType));
+        return res;
+    }
+
+    // RESULT COUNT
+
+    QResultCount::QResultCount(int queryID, QueryType queryType, QueryResultType queryResultType) {
         this->queryID = queryID;
         this->queryType = queryType;
         this->queryResultType = queryResultType;
-        // Prepopulate relationMap and pairMap once
-        for (int rel : {TR_DISJOINT, TR_EQUAL, TR_MEET, TR_CONTAINS, TR_COVERS, TR_COVERED_BY, TR_INSIDE, TR_INTERSECT}) {
-            countRelationMap[rel] = 0;
-            collectRelationMap[rel] = {};
-        }
+        this->resultCount = 0;
     }
 
-    void QueryResult::reset() {
-        queryID = -1;
-        queryType = Q_NONE;
-        queryResultType = QR_COUNT;
-        resultCount = 0;
-
-        // Reset only the values
-        for (int i=0; i<8; i++) {
-            countRelationMap[i] = 0;
-            collectRelationMap[i].clear();
-        }
-        pairs.clear();
+    void QResultCount::addResult(size_t id) {
+        this->resultCount++;
     }
 
-    void QueryResult::countResult(size_t idR, size_t idS) {
-        switch (this->getResultType()) {
-            case QR_COUNT:
-                this->resultCount++;
-                break;
-            case QR_COLLECT:
-                if (pairs.capacity() == pairs.size()) {
-                    // Reserve in chunks to avoid too many reallocations
-                    pairs.reserve(pairs.size() + 64);  
-                }
-                this->pairs.push_back(std::make_pair(idR, idS));
-                break;
-            default:
-                // invalid type
-                logger::log_error(DBERR_QUERY_RESULT_INVALID_TYPE, "Invalid query result type during countResult.");
-        }
+    void QResultCount::addResult(size_t idR, size_t idS) {
+        this->resultCount++;
+        // printf("%ld,%ld\n", idR, idS);
     }
 
-    void QueryResult::countTopologyRelationResult(int relation, size_t idR, size_t idS) {
-        switch (this->getResultType()) {
-            case QR_COUNT:
-                this->countRelationMap[relation]++;
-                break;
-            case QR_COLLECT:
-                this->collectRelationMap[relation].push_back(std::make_pair(idR, idS));
-                break;
-            default:
-                // invalid type
-                logger::log_error(DBERR_QUERY_RESULT_INVALID_TYPE, "Invalid query result type during countResult.");
-        }
-    }
+    void QResultCount::addResult(int relation, size_t idR, size_t idS) {
+        logger::log_error(DBERR_FORBIDDEN_METHOD_CALL, "Forbidden method call for QResultCount::addResult(int relation, size_t idR, size_t idS).");
+    };
 
-    void QueryResult::mergeResults(hec::QueryResult &other) {
-        if (this->getResultType() == QR_COUNT) {
-            switch (this->getQueryType()) {
-                case Q_RANGE:
-                case Q_INTERSECTION_JOIN:
-                case Q_INSIDE_JOIN:
-                case Q_DISJOINT_JOIN:
-                case Q_EQUAL_JOIN:
-                case Q_MEET_JOIN:
-                case Q_CONTAINS_JOIN:
-                case Q_COVERS_JOIN:
-                case Q_COVERED_BY_JOIN:
-                    this->resultCount += other.resultCount;
-                    break;
-                case Q_FIND_RELATION_JOIN:
-                    for (int i=0; i<8; i++) {
-                        this->countRelationMap[i] += other.countRelationMap[i];
-                    }
-                    break;
-            }
-        } else if (this->getResultType() == QR_COLLECT) {
-            switch (this->getQueryType()) {
-                case Q_RANGE:
-                case Q_INTERSECTION_JOIN:
-                case Q_INSIDE_JOIN:
-                case Q_DISJOINT_JOIN:
-                case Q_EQUAL_JOIN:
-                case Q_MEET_JOIN:
-                case Q_CONTAINS_JOIN:
-                case Q_COVERS_JOIN:
-                case Q_COVERED_BY_JOIN:
-                    this->pairs.reserve(this->pairs.size() + other.pairs.size());
-                    this->pairs.insert(this->pairs.end(), other.pairs.begin(), other.pairs.end());
-                    break;
-                case Q_FIND_RELATION_JOIN:
-                    for (int i=0; i<8; i++) {
-                        this->collectRelationMap[i].reserve(this->collectRelationMap[i].size() + other.collectRelationMap[i].size());
-                        this->collectRelationMap[i].insert(this->collectRelationMap[i].end(), other.collectRelationMap[i].begin(), other.collectRelationMap[i].end());
-                    }
-                    logger::log_error(DBERR_FEATURE_UNSUPPORTED, "Unsupported for merge");
-                    break;
-            }
-        } else {
-            logger::log_error(DBERR_QUERY_RESULT_INVALID_TYPE, "Invalid query result type during merge.");
-        }
-    }
 
-    void QueryResult::mergeTopologyRelationResults(hec::QueryResult &other) {
-        switch (this->getResultType()) {
-            case QR_COUNT:
-                this->resultCount += other.resultCount;
-                for (int i=0; i<8; i++) {
-                    countRelationMap[i] += other.countRelationMap[i];
-                }
-                break;
-            case QR_COLLECT:
-                
-                logger::log_error(DBERR_FEATURE_UNSUPPORTED, "Topology relation collect unsupported.");
-                break;
-            default:
-                // invalid type
-                logger::log_error(DBERR_QUERY_RESULT_INVALID_TYPE, "Invalid query result type during countResult.");
-        }
-    }
-
-    void QueryResult::setResultCount(size_t newResultCount) {
-        this->resultCount = newResultCount;
-    }
-
-    size_t QueryResult::getResultCount() {
-        return this->resultCount;
-    }
-
-    size_t* QueryResult::getTopologyResultCount() {
-        return this->countRelationMap;
-    }
-
-    void QueryResult::setTopologyResultCount(size_t* newRelationCountMap) {
-        for (int i=0; i<8; i++) {
-            this->countRelationMap[i] = newRelationCountMap[i];
-        }
-    }
-
-    int QueryResult::calculateBufferSize() {
+    int QResultCount::calculateBufferSize() {
         int size = 0;
         size += sizeof(int);                                                // query ID
         size += sizeof(QueryType);                                          // query type
         size += sizeof(QueryResultType);                                    // query result type
-        if (this->queryResultType == QR_COUNT) {
-            // count
-            size += sizeof(size_t);                                         // result count
-            size += 8 * (sizeof(int) + sizeof(size_t));                     // result count map (relations)
-        } else if (this->queryResultType == QR_COLLECT) {
-            // collect
-            size += sizeof(this->pairs.size());                             // result pairs count
-            size += this->pairs.size() * 2 * sizeof(size_t);                // result pairs
-            // result pair per relation
-            for (int i=0; i<8; i++) {
-                size += sizeof(this->collectRelationMap[i].size());                           // result pairs size for this relation
-                size += this->collectRelationMap[i].size() * (sizeof(int) + sizeof(size_t));    // result pairs for this relation
-            }
-        } else {
-            // error, unknown
-            logger::log_error(DBERR_QUERY_RESULT_INVALID_TYPE, "Invalid query result type.");
-            return -1;
-        }
+        size += sizeof(size_t);                                             // result count
         return size;
     }
 
-    void QueryResult::serialize(char **buffer, int &bufferSize) {
+    void QResultCount::serialize(char **buffer, int &bufferSize) {
         // calculate size
         int bufferSizeRet = calculateBufferSize();
         // allocate space
         (*buffer) = (char*) malloc(bufferSizeRet * sizeof(char));
         if (*buffer == NULL) {
             // malloc failed
+            logger::log_error(DBERR_MALLOC_FAILED, "Malloc failed on serialization of QResultCount object.");
             return;
         }
         char* localBuffer = *buffer;
-
         // add query id
         *reinterpret_cast<int*>(localBuffer) = this->queryID;
         localBuffer += sizeof(int);
-
         // add query type
         *reinterpret_cast<hec::QueryType*>(localBuffer) = this->queryType;
         localBuffer += sizeof(hec::QueryType);
-
         // add query result type
         *reinterpret_cast<QueryResultType*>(localBuffer) = this->queryResultType;
         localBuffer += sizeof(QueryResultType);
-
-        if (this->queryResultType == QR_COUNT) {
-            // result count
-            *reinterpret_cast<size_t*>(localBuffer) = this->resultCount;
-            localBuffer += sizeof(size_t);
-
-            // relation map relation counts
-            for (int i=0; i<8; i++) {
-                *reinterpret_cast<size_t*>(localBuffer) = this->countRelationMap[i];
-                localBuffer += sizeof(size_t);
-            }
-        } else if (this->queryResultType == QR_COLLECT) {
-            // collect
-            // pairs vector size
-            size_t pairsSize = this->pairs.size();
-            *reinterpret_cast<size_t*>(localBuffer) = pairsSize;
-            localBuffer += sizeof(size_t);
-            // pairs vector
-            for (auto &it : this->pairs) {
-                *reinterpret_cast<size_t*>(localBuffer) = it.first;
-                localBuffer += sizeof(size_t);
-                *reinterpret_cast<size_t*>(localBuffer) = it.second;
-                localBuffer += sizeof(size_t);
-            }
-            // pairs map
-            for (int i=0; i<8; i++) {
-                // relation pairs size
-                size_t relationPairsSize = collectRelationMap[i].size();
-                *reinterpret_cast<size_t*>(localBuffer) = relationPairsSize;
-                localBuffer += sizeof(size_t);
-                // relation pairs
-                for (auto &pairIT: collectRelationMap[i]) {
-                    *reinterpret_cast<size_t*>(localBuffer) = pairIT.first;
-                    localBuffer += sizeof(size_t);
-                    *reinterpret_cast<size_t*>(localBuffer) = pairIT.second;
-                    localBuffer += sizeof(size_t);
-                }
-            }
-        } else {
-            // error, unknown
-            logger::log_error(DBERR_QUERY_RESULT_INVALID_TYPE, "Invalid query result type.");
-            return;
-        }
+        // result count
+        *reinterpret_cast<size_t*>(localBuffer) = this->resultCount;
+        localBuffer += sizeof(size_t);
+        // set final size
         bufferSize = bufferSizeRet;
     }
-
-    void QueryResult::deserialize(const char *buffer, int bufferSize) {
+    
+    void QResultCount::deserialize(const char *buffer, int bufferSize) {
         int position = 0;
         // query id
         memcpy(&this->queryID, buffer + position, sizeof(int));
         position += sizeof(int);
-
         // query type
         memcpy(&this->queryType, buffer + position, sizeof(QueryType));
         position += sizeof(QueryType);
-
         // query result type
         memcpy(&this->queryResultType, buffer + position, sizeof(QueryResultType));
         position += sizeof(QueryResultType);
+        // result count
+        memcpy(&this->resultCount, buffer + position, sizeof(size_t));
+        position += sizeof(size_t);
 
-        if (this->queryResultType == QR_COUNT) {
-            // result count
-            memcpy(&this->resultCount, buffer + position, sizeof(size_t));
-            position += sizeof(size_t);
+        if (position != bufferSize) {
+            logger::log_error(DBERR_DESERIALIZE_FAILED, "Deserialization of QResultCount object finished, but buffer contains unchecked elements.");
+        }
+    }
 
-            // relation map relation counts
-            size_t results;
-            for (int i=0; i<8; i++) {
-                memcpy(&results, buffer + position, sizeof(size_t));
-                position += sizeof(size_t);
-                this->countRelationMap[i] = results;
-            }
-        } else if (this->queryResultType == QR_COLLECT) {
-            // result pair vector size
-            size_t pairsVectorSize;
-            memcpy(&pairsVectorSize, buffer + position, sizeof(size_t));
-            position += sizeof(size_t);
-            this->pairs.resize(pairsVectorSize);
-            // add to vector
-            for (int i=0; i<pairsVectorSize; i++) {
-                size_t idR, idS;
-                memcpy(&idR, buffer + position, sizeof(size_t));
-                position += sizeof(size_t);
-                memcpy(&idS, buffer + position, sizeof(size_t));
-                position += sizeof(size_t);
-                this->pairs[i] = std::make_pair(idR, idS);
-            }
+    void QResultCount::mergeResults(QResultBase* other) {
+        // cast object pointer from base to derived
+        auto otherCasted = dynamic_cast<QResultCount*>(other);
+        this->resultCount += otherCasted->resultCount;
+    }
 
-            // pairs map
-            for (int i=0; i<8; i++) {
-                // relation pairs size
-                size_t relationPairsSize;
-                memcpy(&relationPairsSize, buffer + position, sizeof(size_t));
-                position += sizeof(size_t);
+    size_t QResultCount::getResultCount() {
+        return this->resultCount;
+    }
 
-                std::vector<std::pair<size_t,size_t>> vec(relationPairsSize);
+    std::vector<size_t> QResultCount::getResultList() {
+        std::vector<size_t> empty;
+        logger::log_error(DBERR_FORBIDDEN_METHOD_CALL, "Forbidden method call for QResultCount::getResultList().");
+        return empty;
+    }
 
-                // relation pairs
-                for (int j=0; j<relationPairsSize; j++) {
-                    size_t idR, idS;
-                    memcpy(&idR, buffer + position, sizeof(size_t));
-                    position += sizeof(size_t);
-                    memcpy(&idS, buffer + position, sizeof(size_t));
-                    position += sizeof(size_t);
+    std::vector<std::vector<size_t>> QResultCount::getTopologyResultList() {
+        std::vector<std::vector<size_t>> empty;
+        logger::log_error(DBERR_FORBIDDEN_METHOD_CALL, "Forbidden method call for QResultCount::getTopologyResultList().");
+        return empty;
+    }
 
-                    vec[j] = std::make_pair(idR, idS);
-                }
-                this->collectRelationMap[i] = vec;
-            }
+    void QResultCount::setResult(size_t resultCount) {
+        this->resultCount = resultCount;
+    }
 
-        } else {
-            // unknown
-            logger::log_error(DBERR_QUERY_RESULT_INVALID_TYPE, "Invalid query result type.");
+    void QResultCount::deepCopy(QResultBase* other) {
+        this->queryID = other->getQueryID();
+        this->queryType = other->getQueryType();
+        this->queryResultType = other->getResultType();
+        this->resultCount = other->getResultCount();
+    }
+
+    QResultBase* QResultCount::cloneEmpty() {
+        QResultBase* newPtr = new hec::QResultCount(queryID, queryType, queryResultType);
+        return newPtr;
+    }
+
+
+    // SINGLE ID RESULT COLLECT
+
+    QResultCollect::QResultCollect(int queryID, QueryType queryType, QueryResultType queryResultType) {
+        this->queryID = queryID;
+        this->queryType = queryType;
+        this->queryResultType = queryResultType;
+        this->resultList.clear();
+    }
+
+    void QResultCollect::addResult(size_t id) {
+        this->resultList.emplace_back(id);
+    }
+    void QResultCollect::addResult(size_t idR, size_t idS) {
+        logger::log_error(DBERR_FORBIDDEN_METHOD_CALL, "Forbidden method call for QResultCollect::addResult(size_t idR, size_t idS).");
+    }
+    
+    void QResultCollect::addResult(int relation, size_t idR, size_t idS) {
+        logger::log_error(DBERR_FORBIDDEN_METHOD_CALL, "Forbidden method call for QResultCollect::addResult(int relation, size_t idR, size_t idS).");
+    }
+       
+    int QResultCollect::calculateBufferSize() {
+        int size = 0;
+        size += sizeof(int);                                                // query ID
+        size += sizeof(QueryType);                                          // query type
+        size += sizeof(QueryResultType);                                    // query result type
+        size += sizeof(this->resultList.size());                             // result ids count
+        size += this->resultList.size() * sizeof(size_t);                   // result ids
+        return size;
+    }
+
+    void QResultCollect::serialize(char **buffer, int &bufferSize) {
+        // calculate size
+        int bufferSizeRet = calculateBufferSize();
+        // allocate space
+        (*buffer) = (char*) malloc(bufferSizeRet * sizeof(char));
+        if (*buffer == NULL) {
+            // malloc failed
+            logger::log_error(DBERR_MALLOC_FAILED, "Malloc failed on serialization of QResultCollect object.");
             return;
         }
-
+        char* localBuffer = *buffer;
+        // add query id
+        *reinterpret_cast<int*>(localBuffer) = this->queryID;
+        localBuffer += sizeof(int);
+        // add query type
+        *reinterpret_cast<hec::QueryType*>(localBuffer) = this->queryType;
+        localBuffer += sizeof(hec::QueryType);
+        // add query result type
+        *reinterpret_cast<QueryResultType*>(localBuffer) = this->queryResultType;
+        localBuffer += sizeof(QueryResultType);
+        // ids list size
+        size_t idsListSize = this->resultList.size();
+        *reinterpret_cast<size_t*>(localBuffer) = idsListSize;
+        localBuffer += sizeof(size_t);
+        // ids
+        for (auto &id : this->resultList) {
+            *reinterpret_cast<size_t*>(localBuffer) = id;
+            localBuffer += sizeof(size_t);
+        }
+        // set final size
+        bufferSize = bufferSizeRet;
+    }
+    
+    void QResultCollect::deserialize(const char *buffer, int bufferSize) {
+        int position = 0;
+        // query id
+        memcpy(&this->queryID, buffer + position, sizeof(int));
+        position += sizeof(int);
+        // query type
+        memcpy(&this->queryType, buffer + position, sizeof(QueryType));
+        position += sizeof(QueryType);
+        // query result type
+        memcpy(&this->queryResultType, buffer + position, sizeof(QueryResultType));
+        position += sizeof(QueryResultType);
+        // result ids list size
+        size_t idsListSize;
+        memcpy(&idsListSize, buffer + position, sizeof(size_t));
+        position += sizeof(size_t);
+        this->resultList.resize(idsListSize);
+        // result ids
+        for (int i=0; i<idsListSize; i++) {
+            size_t id;
+            memcpy(&id, buffer + position, sizeof(size_t));
+            position += sizeof(size_t);
+            this->resultList[i] = id;
+        }
+        if (position != bufferSize) {
+            logger::log_error(DBERR_DESERIALIZE_FAILED, "Deserialization of QResultCollect object finished, but buffer contains unchecked elements.");
+            return;
+        }
+    }
+    
+    void QResultCollect::mergeResults(QResultBase* other) {
+        // cast object pointer from base to derived
+        auto otherCasted = dynamic_cast<QResultCollect*>(other);
+        this->resultList.reserve(this->resultList.size() + otherCasted->resultList.size());
+        this->resultList.insert(this->resultList.end(), otherCasted->resultList.begin(), otherCasted->resultList.end());
     }
 
-    void QueryResult::print() {
-        if (this->queryResultType == QR_COUNT) {
-            switch (this->getQueryType()) {
-                case hec::Q_RANGE: 
-                case hec::Q_INTERSECTION_JOIN: 
-                case hec::Q_INSIDE_JOIN: 
-                case hec::Q_DISJOINT_JOIN: 
-                case hec::Q_EQUAL_JOIN: 
-                case hec::Q_COVERED_BY_JOIN: 
-                case hec::Q_COVERS_JOIN: 
-                case hec::Q_CONTAINS_JOIN: 
-                case hec::Q_MEET_JOIN: 
-                    printf("Query %d total Results: %lu\n", this->getID(), this->resultCount);
-                    break;
-                case hec::Q_FIND_RELATION_JOIN: 
-                    printf("Query %d: \n", this->getID());
-                    for (int i=0; i<8; i++) {
-                        std::string relationName = mapping::relationIntToStr(i);
-                        printf("    Relation %s: %lu\n", relationName.c_str(), this->countRelationMap[i]);
-                    }
-                    break;
-                case hec::Q_NONE: 
-                    printf("Invalid query result object\n");
-                    break;
-            }
-        } else {
-            printf("Unsupported");
+    size_t QResultCollect::getResultCount() {
+        return this->resultList.size();
+    }
+
+    std::vector<size_t> QResultCollect::getResultList() {
+        return this->resultList;
+    }
+
+    std::vector<std::vector<size_t>> QResultCollect::getTopologyResultList() {
+        std::vector<std::vector<size_t>> empty;
+        logger::log_error(DBERR_FORBIDDEN_METHOD_CALL, "Forbidden method call for QResultCollect::getTopologyResultList().");
+        return empty;
+    }
+
+    void QResultCollect::setResult(std::vector<size_t> &resultList) {
+        this->resultList = resultList;
+    }
+
+    void QResultCollect::deepCopy(QResultBase* other) {
+        auto castedPtr = dynamic_cast<QResultCollect*>(other);
+        if (castedPtr) {
+            this->queryID = castedPtr->getQueryID();
+            this->queryType = castedPtr->getQueryType();
+            this->queryResultType = castedPtr->getResultType();
+            this->resultList = castedPtr->getResultList();
         }
     }
 
+    QResultBase* QResultCollect::cloneEmpty() {
+        QResultBase* newPtr = new hec::QPairResultCollect(queryID, queryType, queryResultType);
+        return newPtr;
+    }
+
+    // PAIR IDS RESULT COLLECT
+
+    QPairResultCollect::QPairResultCollect(int queryID, QueryType queryType, QueryResultType queryResultType) {
+        this->queryID = queryID;
+        this->queryType = queryType;
+        this->queryResultType = queryResultType;
+        this->resultList.clear();
+    }
+
+    void QPairResultCollect::addResult(size_t idR, size_t idS) {
+        this->resultList.emplace_back(idR);
+        this->resultList.emplace_back(idS);
+    }
+
+    int QPairResultCollect::calculateBufferSize() {
+        int size = 0;
+        size += sizeof(int);                                                // query ID
+        size += sizeof(QueryType);                                          // query type
+        size += sizeof(QueryResultType);                                    // query result type
+        size += sizeof(this->resultList.size());                             // result ids count
+        size += this->resultList.size() * sizeof(size_t);                   // result ids
+        return size;
+    }
+
+    void QPairResultCollect::serialize(char **buffer, int &bufferSize) {
+        // calculate size
+        int bufferSizeRet = calculateBufferSize();
+        // allocate space
+        (*buffer) = (char*) malloc(bufferSizeRet * sizeof(char));
+        if (*buffer == NULL) {
+            // malloc failed
+            logger::log_error(DBERR_MALLOC_FAILED, "Malloc failed on serialization of QPairResultCollect object.");
+            return;
+        }
+        char* localBuffer = *buffer;
+        // add query id
+        *reinterpret_cast<int*>(localBuffer) = this->queryID;
+        localBuffer += sizeof(int);
+        // add query type
+        *reinterpret_cast<hec::QueryType*>(localBuffer) = this->queryType;
+        localBuffer += sizeof(hec::QueryType);
+        // add query result type
+        *reinterpret_cast<QueryResultType*>(localBuffer) = this->queryResultType;
+        localBuffer += sizeof(QueryResultType);
+        // ids list size
+        size_t idsListSize = this->resultList.size();
+        *reinterpret_cast<size_t*>(localBuffer) = idsListSize;
+        localBuffer += sizeof(size_t);
+        // ids
+        for (auto &it : this->resultList) {
+            *reinterpret_cast<size_t*>(localBuffer) = it;
+            localBuffer += sizeof(size_t);
+        }
+        // set final size
+        bufferSize = bufferSizeRet;
+    }
+    
+    void QPairResultCollect::deserialize(const char *buffer, int bufferSize) {
+        int position = 0;
+        // query id
+        memcpy(&this->queryID, buffer + position, sizeof(int));
+        position += sizeof(int);
+        // query type
+        memcpy(&this->queryType, buffer + position, sizeof(QueryType));
+        position += sizeof(QueryType);
+        // query result type
+        memcpy(&this->queryResultType, buffer + position, sizeof(QueryResultType));
+        position += sizeof(QueryResultType);
+        // result ids list size
+        size_t idsListSize;
+        memcpy(&idsListSize, buffer + position, sizeof(size_t));
+        position += sizeof(size_t);
+        this->resultList.resize(idsListSize);
+        // result ids
+        for (int i=0; i<idsListSize; i++) {
+            size_t id;
+            memcpy(&id, buffer + position, sizeof(size_t));
+            position += sizeof(size_t);
+            this->resultList[i] = id;
+        }
+        // check correctness
+        if (position != bufferSize) {
+            logger::log_error(DBERR_DESERIALIZE_FAILED, "Deserialization of QPairResultCollect object finished, but buffer contains unchecked elements.");
+            return;
+        }
+    }
+    
+    void QPairResultCollect::mergeResults(QResultBase* other) {
+        // cast object pointer from base to derived
+        auto otherCasted = dynamic_cast<QPairResultCollect*>(other);
+        this->resultList.reserve(this->resultList.size() + otherCasted->resultList.size());
+        this->resultList.insert(this->resultList.end(), otherCasted->resultList.begin(), otherCasted->resultList.end());
+    }
+
+    size_t QPairResultCollect::getResultCount() {
+        // return size / 2 because every two ids in the list represent a pair
+        return this->resultList.size() / 2;
+    }
+
+    std::vector<size_t> QPairResultCollect::getResultList() {
+        return this->resultList;
+    }
+
+    std::vector<std::vector<size_t>> QPairResultCollect::getTopologyResultList() {
+        std::vector<std::vector<size_t>> empty;
+        logger::log_error(DBERR_FORBIDDEN_METHOD_CALL, "Forbidden method call for QPairResultCollect::getTopologyResultList().");
+        return empty;
+    }
+
+    void QPairResultCollect::setResult(std::vector<size_t> &resultList) {
+        this->resultList = resultList;
+    }
+
+    void QPairResultCollect::deepCopy(QResultBase* other) {
+        auto castedPtr = dynamic_cast<QPairResultCollect*>(other);
+        if (castedPtr) {
+            this->queryID = castedPtr->getQueryID();
+            this->queryType = castedPtr->getQueryType();
+            this->queryResultType = castedPtr->getResultType();
+            this->resultList = castedPtr->getResultList();
+        }
+    }
+
+    QResultBase* QPairResultCollect::cloneEmpty() {
+        QResultBase* newPtr = new hec::QPairResultCollect(queryID, queryType, queryResultType);
+        return newPtr;
+    }
+
+    // TOPOLOGY RESULT COUNT
+
+    QTopologyResultCount::QTopologyResultCount(int queryID, QueryType queryType, QueryResultType queryResultType) {
+        this->queryID = queryID;
+        this->queryType = queryType;
+        this->queryResultType = queryResultType;
+        this->resultList.resize(this->TOTAL_RELATIONS);
+        for (int i=0; i<this->TOTAL_RELATIONS; i++) {
+            this->resultList[i] = 0;
+        }
+    }
+
+    void QTopologyResultCount::addResult(int relation, size_t idR, size_t idS) {
+        if (relation < 0 || relation > 7) {
+            logger::log_error(DBERR_INVALID_PARAMETER, "Count Result: Invalid relation with code", relation,". Must be 0-7.");
+            return;
+        }
+        this->resultList[relation]++;
+    }
+
+    int QTopologyResultCount::calculateBufferSize() {
+        int size = 0;
+        size += sizeof(int);                                                // query ID
+        size += sizeof(QueryType);                                          // query type
+        size += sizeof(QueryResultType);                                    // query result type
+        size += this->TOTAL_RELATIONS * sizeof(size_t);                           // per relation result
+        return size;
+    }
+
+    void QTopologyResultCount::serialize(char **buffer, int &bufferSize) {
+        // calculate size
+        int bufferSizeRet = calculateBufferSize();
+        // allocate space
+        (*buffer) = (char*) malloc(bufferSizeRet * sizeof(char));
+        if (*buffer == NULL) {
+            // malloc failed
+            logger::log_error(DBERR_MALLOC_FAILED, "Malloc failed on serialization of QTopologyResultCount object.");
+            return;
+        }
+        char* localBuffer = *buffer;
+        // add query id
+        *reinterpret_cast<int*>(localBuffer) = this->queryID;
+        localBuffer += sizeof(int);
+        // add query type
+        *reinterpret_cast<hec::QueryType*>(localBuffer) = this->queryType;
+        localBuffer += sizeof(hec::QueryType);
+        // add query result type
+        *reinterpret_cast<QueryResultType*>(localBuffer) = this->queryResultType;
+        localBuffer += sizeof(QueryResultType);
+        // per relation results
+        for (int i=0; i<this->TOTAL_RELATIONS; i++) {
+            size_t relationResult = this->resultList[i];
+            *reinterpret_cast<size_t*>(localBuffer) = relationResult;
+            localBuffer += sizeof(size_t);
+        }
+        // set final size
+        bufferSize = bufferSizeRet;
+    }
+    
+    void QTopologyResultCount::deserialize(const char *buffer, int bufferSize) {
+        int position = 0;
+        // query id
+        memcpy(&this->queryID, buffer + position, sizeof(int));
+        position += sizeof(int);
+        // query type
+        memcpy(&this->queryType, buffer + position, sizeof(QueryType));
+        position += sizeof(QueryType);
+        // query result type
+        memcpy(&this->queryResultType, buffer + position, sizeof(QueryResultType));
+        position += sizeof(QueryResultType);
+        // per relation results
+        for (int i=0; i<this->TOTAL_RELATIONS; i++) {
+            size_t relationResult;
+            memcpy(&relationResult, buffer + position, sizeof(size_t));
+            position += sizeof(size_t);
+            this->resultList[i] = relationResult;
+        }
+        // check correctness
+        if (position != bufferSize) {
+            logger::log_error(DBERR_DESERIALIZE_FAILED, "Deserialization of QTopologyResultCount object finished, but buffer contains unchecked elements.");
+            return;
+        }
+    }
+
+    void QTopologyResultCount::mergeResults(QResultBase* other) {
+        // cast object pointer from base to derived
+        auto otherCasted = dynamic_cast<QTopologyResultCount*>(other);
+        for (int i=0; i<this->TOTAL_RELATIONS; i++) {
+            this->resultList[i] += otherCasted->resultList[i];
+        }
+    }
+
+    size_t QTopologyResultCount::getResultCount() {
+        logger::log_error(DBERR_FORBIDDEN_METHOD_CALL, "Forbidden method call for QTopologyResultCount::getResultCount().");
+        return 0;
+    }
+
+    std::vector<size_t> QTopologyResultCount::getResultList() {
+        return this->resultList;
+    }
+    
+    std::vector<std::vector<size_t>> QTopologyResultCount::getTopologyResultList() {
+        std::vector<std::vector<size_t>> empty;
+        logger::log_error(DBERR_FORBIDDEN_METHOD_CALL, "Forbidden method call for QTopologyResultCount::getTopologyResultList().");
+        return empty;
+    }
+
+    void QTopologyResultCount::setResult(int relation, size_t resultCount) {
+        if (relation < 0 || relation > 7) {
+            logger::log_error(DBERR_INVALID_PARAMETER, "Get Result: Invalid relation with code", relation,". Must be 0-7.");
+            return;
+        }
+        this->resultList[relation] = resultCount;
+    }
+
+    void QTopologyResultCount::deepCopy(QResultBase* other) {
+        auto castedPtr = dynamic_cast<QTopologyResultCount*>(other);
+        if (castedPtr) {
+            this->queryID = castedPtr->getQueryID();
+            this->queryType = castedPtr->getQueryType();
+            this->queryResultType = castedPtr->getResultType();
+            this->resultList = castedPtr->getResultList();
+        }
+    }
+
+    QResultBase* QTopologyResultCount::cloneEmpty() {
+        QResultBase* newPtr = new hec::QTopologyResultCount(queryID, queryType, queryResultType);
+        return newPtr;
+    }
+
+    // TOPOLOGY RESULT COLLECT
+
+    QTopologyResultCollect::QTopologyResultCollect(int queryID, QueryType queryType, QueryResultType queryResultType) {
+        this->queryID = queryID;
+        this->queryType = queryType;
+        this->queryResultType = queryResultType;
+        this->resultList.resize(this->TOTAL_RELATIONS);
+        for (int i=0; i<this->TOTAL_RELATIONS; i++) {
+            this->resultList[i].clear();
+        }
+    }
+
+    void QTopologyResultCollect::addResult(int relation, size_t idR, size_t idS) {
+        if (relation < 0 || relation > 7) {
+            logger::log_error(DBERR_INVALID_PARAMETER, "Count Result: Invalid relation with code", relation,". Must be 0-7.");
+            return;
+        }
+        this->resultList[relation].emplace_back(idR);
+        this->resultList[relation].emplace_back(idS);
+    }
+
+    int QTopologyResultCollect::calculateBufferSize() {
+        int size = 0;
+        size += sizeof(int);                                                // query ID
+        size += sizeof(QueryType);                                          // query type
+        size += sizeof(QueryResultType);                                    // query result type
+        for (auto &relation: this->resultList) {
+            size += sizeof(relation.size());                            // total pairs for this relation
+            size += relation.size() * sizeof(size_t);               // the pair ids for this relation
+        }
+        return size;
+    }
+
+    void QTopologyResultCollect::serialize(char **buffer, int &bufferSize) {
+        // calculate size
+        int bufferSizeRet = calculateBufferSize();
+        // allocate space
+        (*buffer) = (char*) malloc(bufferSizeRet * sizeof(char));
+        if (*buffer == NULL) {
+            // malloc failed
+            logger::log_error(DBERR_MALLOC_FAILED, "Malloc failed on serialization of QTopologyResultCollect object.");
+            return;
+        }
+        char* localBuffer = *buffer;
+        // add query id
+        *reinterpret_cast<int*>(localBuffer) = this->queryID;
+        localBuffer += sizeof(int);
+        // add query type
+        *reinterpret_cast<hec::QueryType*>(localBuffer) = this->queryType;
+        localBuffer += sizeof(hec::QueryType);
+        // add query result type
+        *reinterpret_cast<QueryResultType*>(localBuffer) = this->queryResultType;
+        localBuffer += sizeof(QueryResultType);
+        // per relation ids
+        for (auto &it : this->resultList) {
+            // ids list size
+            size_t idsListSize = it.size();
+            *reinterpret_cast<size_t*>(localBuffer) = idsListSize;
+            localBuffer += sizeof(size_t);
+            // ids
+            for (auto &id : it) {
+                *reinterpret_cast<size_t*>(localBuffer) = id;
+                localBuffer += sizeof(size_t);
+            }
+        }
+        // set final size
+        bufferSize = bufferSizeRet;
+    }
+    
+    void QTopologyResultCollect::deserialize(const char *buffer, int bufferSize) {
+        int position = 0;
+        // query id
+        memcpy(&this->queryID, buffer + position, sizeof(int));
+        position += sizeof(int);
+        // query type
+        memcpy(&this->queryType, buffer + position, sizeof(QueryType));
+        position += sizeof(QueryType);
+        // query result type
+        memcpy(&this->queryResultType, buffer + position, sizeof(QueryResultType));
+        position += sizeof(QueryResultType);
+        // per relation ids
+        for (int i=0; i<this->TOTAL_RELATIONS; i++) {
+            // ids list size
+            size_t idsListSize;
+            memcpy(&idsListSize, buffer + position, sizeof(size_t));
+            position += sizeof(size_t);
+            this->resultList[i].resize(idsListSize);
+            // ids
+            size_t id;
+            for (int j=0; j<idsListSize; j++) {
+                memcpy(&id, buffer + position, sizeof(size_t));
+                position += sizeof(size_t);
+                this->resultList[i][j] = id;
+            }
+        }
+        // check correctness
+        if (position != bufferSize) {
+            logger::log_error(DBERR_DESERIALIZE_FAILED, "Deserialization of QTopologyResultCollect object finished, but buffer contains unchecked elements.");
+            return;
+        }
+    }
+    
+    void QTopologyResultCollect::mergeResults(QResultBase* other) {
+        // cast object pointer from base to derived
+        auto otherCasted = dynamic_cast<QTopologyResultCollect*>(other);
+        for (int i=0; i<this->TOTAL_RELATIONS; i++) {
+            this->resultList[i].reserve(this->resultList[i].size() + otherCasted->resultList[i].size());
+            this->resultList[i].insert(this->resultList[i].end(), otherCasted->resultList[i].begin(), otherCasted->resultList[i].end());
+        }
+    }
+
+    size_t QTopologyResultCollect::getResultCount() {
+        logger::log_error(DBERR_FORBIDDEN_METHOD_CALL, "Forbidden method call for QTopologyResultCollect::getResultCount().");
+        return 0;
+    }
+
+    std::vector<size_t> QTopologyResultCollect::getResultList() {
+        std::vector<size_t> empty;
+        logger::log_error(DBERR_FORBIDDEN_METHOD_CALL, "Forbidden method call for QTopologyResultCollect::getResultCount().");
+        return empty;
+    }
+
+    std::vector<size_t> QTopologyResultCollect::getResultList(int relation) {
+        if (relation < 0 || relation > 7) {
+            logger::log_error(DBERR_INVALID_PARAMETER, "Count Result: Invalid relation with code", relation,". Must be 0-7.");
+            std::vector<size_t> empty;
+            return empty;
+        }
+        return this->resultList[relation];
+    }
+
+    std::vector<std::vector<size_t>> QTopologyResultCollect::getTopologyResultList() {
+        return this->resultList;
+    }
+
+
+    void QTopologyResultCollect::setResult(int relation, std::vector<size_t> &ids) {
+        if (relation < 0 || relation > 7) {
+            logger::log_error(DBERR_INVALID_PARAMETER, "Get Result: Invalid relation with code", relation,". Must be 0-7.");
+            return;
+        }
+        this->resultList[relation] = ids;
+    }
+
+    void QTopologyResultCollect::deepCopy(QResultBase* other) {
+        auto castedPtr = dynamic_cast<QTopologyResultCollect*>(other);
+        if (castedPtr) {
+            this->queryID = castedPtr->getQueryID();
+            this->queryType = castedPtr->getQueryType();
+            this->queryResultType = castedPtr->getResultType();
+            for (int i=0; i<this->TOTAL_RELATIONS; i++) {
+                this->resultList[i] = castedPtr->getResultList(i);
+            }
+        }
+    }
+
+    QResultBase* QTopologyResultCollect::cloneEmpty() {
+        QResultBase* newPtr = new hec::QTopologyResultCollect(queryID, queryType, queryResultType);
+        return newPtr;
+    }
 }

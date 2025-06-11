@@ -2,6 +2,7 @@
 #include <bitset>
 #include <fcntl.h>
 #include <sys/mman.h>
+#include <atomic>
 
 namespace partitioning
 {
@@ -148,7 +149,7 @@ namespace partitioning
             double global_xMax = -std::numeric_limits<int>::max();
             double global_yMax = -std::numeric_limits<int>::max();
             // spawn all available threads (processors)
-            #pragma omp parallel firstprivate(line, objectCount) reduction(min:global_xMin) reduction(min:global_yMin) reduction(max:global_xMax)  reduction(max:global_yMax)
+            #pragma omp parallel num_threads(MAX_THREADS) firstprivate(line, objectCount) reduction(min:global_xMin) reduction(min:global_yMin) reduction(max:global_xMax)  reduction(max:global_yMax)
             {
                 size_t recID;
                 double x,y;
@@ -232,7 +233,7 @@ namespace partitioning
             size_t objectCount = (size_t) std::stoull(line);
             // count how many batches have been sent in total
             int batchesSent = 0;
-            #pragma omp parallel firstprivate(batchMap, line, objectCount) reduction(+:batchesSent)
+            #pragma omp parallel num_threads(MAX_THREADS) firstprivate(batchMap, line, objectCount) reduction(+:batchesSent)
             {
                 int partitionID;
                 double x,y;
@@ -386,7 +387,7 @@ namespace partitioning
             double global_xMax = -std::numeric_limits<int>::max();
             double global_yMax = -std::numeric_limits<int>::max();
             // spawn all available threads (processors)
-            #pragma omp parallel firstprivate(line, totalObjects) reduction(min:global_xMin) reduction(min:global_yMin) reduction(max:global_xMax)  reduction(max:global_yMax)
+            #pragma omp parallel num_threads(MAX_THREADS) firstprivate(line, totalObjects) reduction(min:global_xMin) reduction(min:global_yMin) reduction(max:global_xMax)  reduction(max:global_yMax)
             {
                 DB_STATUS local_ret = DBERR_OK;
                 int tid = omp_get_thread_num();
@@ -483,8 +484,7 @@ namespace partitioning
             size_t totalValidObjects = 0;
             // count how many batches have been sent in total
             int batchesSent = 0;
-            // logger::log_task("Spawning", MAX_THREADS, "threads that each will store", g_world_size, "batches of", g_config.partitioningMethod->batchSize, "objects of arbitrary size");
-            #pragma omp parallel firstprivate(batchMap, line, totalObjects) reduction(+:batchesSent) reduction(+:totalValidObjects)
+            #pragma omp parallel num_threads(MAX_THREADS) firstprivate(batchMap, line, totalObjects) reduction(+:batchesSent) reduction(+:totalValidObjects)
             {
                 int partitionID;
                 double x,y;
@@ -648,9 +648,10 @@ namespace partitioning
             size_t chunkSize = fileSize / MAX_THREADS;
             size_t totalValidObjects = 0;
             int batchesSent = 0;
-            size_t lineCounter = 0;
+            // size_t lineCounter = 0;
+            std::atomic<size_t> lineCounter(0);
 
-            #pragma omp parallel firstprivate(batchMap) reduction(+:batchesSent) reduction(+:totalValidObjects)
+            #pragma omp parallel num_threads(MAX_THREADS) firstprivate(batchMap) reduction(+:batchesSent) reduction(+:totalValidObjects)
             {
                 int threadID = omp_get_thread_num();
                 size_t start = threadID * chunkSize;
@@ -682,7 +683,9 @@ namespace partitioning
                         std::stringstream ss(line);
                         std::getline(ss, token, '\t'); // Extract WKT
 
-                        object.recID = lineStart; // Use file offset as ID
+                        // object.recID = lineStart; // Use file offset as ID
+                        object.recID = lineCounter.fetch_add(1, std::memory_order_relaxed);
+
                         local_ret = object.setFromWKT(token);
                         if (local_ret == DBERR_OK) {
                             totalValidObjects++;
@@ -758,7 +761,7 @@ namespace partitioning
             size_t totalObjects = dataset->totalObjects;
             size_t totalValidObjects = 0;
             // count how many batches have been sent in total
-            #pragma omp parallel firstprivate(line, totalObjects) reduction(+:totalValidObjects)
+            #pragma omp parallel num_threads(MAX_THREADS) firstprivate(line, totalObjects) reduction(+:totalValidObjects)
             {
                 int partitionID;
                 double x,y;
@@ -914,9 +917,9 @@ namespace partitioning
                 break;
             case hec::FT_WKT:
                 // wkt dataset
-                // ret = wkt::loadDatasetAndPartition(dataset);
+                ret = wkt::loadDatasetAndPartition(dataset);
                 // ret = wkt::loadDatasetAndPartitionNoBatches(dataset);
-                ret = wkt::loadDatasetAndPartitionMMAP(dataset);
+                // ret = wkt::loadDatasetAndPartitionMMAP(dataset);
                 if (ret != DBERR_OK) {
                     logger::log_error(DBERR_PARTITIONING_FAILED, "Partitioning failed for dataset", dataset->metadata.internalID);
                     return ret;

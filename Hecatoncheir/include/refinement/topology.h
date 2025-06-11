@@ -16,7 +16,7 @@ namespace refinement
          * @param[in] mbrRelationCase How the objects' MBR intersect with each other.
          * @param[out] queryOutput Where the pair's result will be appended to.
         */
-        DB_STATUS specializedRefinementEntrypoint(Shape* objR, Shape* objS, int mbrRelationCase, hec::QueryResult &queryOutput);
+        DB_STATUS specializedRefinementEntrypoint(Shape* objR, Shape* objS, int mbrRelationCase, hec::QResultBase*  queryOutput);
 
         /** @brief Refines for the inside and covered by relation predicates, with the intersection being guaranteed.
          * @param[in] objR The first object (left in relation)
@@ -78,31 +78,36 @@ namespace refinement
     namespace relate
     {
         /** @brief Entrypoint function for when there is NO intermediate filter. */
-        DB_STATUS refinementEntrypoint(Shape* objR, Shape* objS, hec::QueryType queryType, hec::QueryResult &queryOutput);
+        DB_STATUS refinementEntrypoint(Shape* objR, Shape* objS, hec::QueryType queryType, hec::QResultBase*  queryOutput);
+
+        /** @brief Geometrically refines a window (polygon or box) with the given shape.
+         * Appends only the object's id as a result (instead of a pair of ids like the joins)
+.         */
+        void refineRange(Shape* window, Shape* obj, hec::QResultBase* queryResult);
 
         /** @brief Geometrically refines two objects for intersection. */
-        void refineIntersectionJoin(Shape* objR, Shape* objS, hec::QueryResult &queryOutput);
+        void refineIntersectionJoin(Shape* objR, Shape* objS, hec::QResultBase*  queryOutput);
         
         /** @brief Geometrically refines two objects for 'R inside S'. */
-        void refineInsideJoin(Shape* objR, Shape* objS, hec::QueryResult &queryOutput);
+        void refineInsideJoin(Shape* objR, Shape* objS, hec::QResultBase*  queryOutput);
 
         /** @brief Geometrically refines two objects for spatial equality. */
-        void refineEqualJoin(Shape* objR, Shape* objS, hec::QueryResult &queryOutput);
+        void refineEqualJoin(Shape* objR, Shape* objS, hec::QResultBase*  queryOutput);
 
         /** @brief Geometrically refines two objects for whether they are disjoint. */
-        void refineDisjointJoin(Shape* objR, Shape* objS, hec::QueryResult &queryOutput);
+        void refineDisjointJoin(Shape* objR, Shape* objS, hec::QResultBase*  queryOutput);
 
         /** @brief Geometrically refines two objects for whether R and S meet (touch). */
-        void refineMeetJoin(Shape* objR, Shape* objS, hec::QueryResult &queryOutput);
+        void refineMeetJoin(Shape* objR, Shape* objS, hec::QResultBase*  queryOutput);
 
         /** @brief Geometrically refines two objects for 'R contains S'. */
-        void refineContainsJoin(Shape* objR, Shape* objS, hec::QueryResult &queryOutput);
+        void refineContainsJoin(Shape* objR, Shape* objS, hec::QResultBase*  queryOutput);
 
         /** @brief Geometrically refines two objects for 'R covers S'. */
-        void refineCoversJoin(Shape* objR, Shape* objS, hec::QueryResult &queryOutput);
+        void refineCoversJoin(Shape* objR, Shape* objS, hec::QResultBase*  queryOutput);
 
         /** @brief Geometrically refines two objects for 'R is covered by S'. */
-        void refineCoveredByJoin(Shape* objR, Shape* objS, hec::QueryResult &queryOutput);
+        void refineCoveredByJoin(Shape* objR, Shape* objS, hec::QResultBase*  queryOutput);
 
         /** @brief Returns true of the two objects are spatially equal. */
         bool isEqual(Shape* objR, Shape* objS);

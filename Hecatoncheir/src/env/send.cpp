@@ -67,7 +67,7 @@ namespace comm
         DB_STATUS broadcastInstructionMessage(int tag) {
             DB_STATUS ret = DBERR_OK;
             // broadcast to all other controllers parallely
-            #pragma omp parallel
+            #pragma omp parallel num_threads(MAX_THREADS)
             {
                 DB_STATUS local_ret = DBERR_OK;
                 #pragma omp for

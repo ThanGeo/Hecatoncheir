@@ -6,7 +6,7 @@ namespace uniform_grid
     /** Only used for points, as non-point geometries are better benefited from the two layer indexing */
     namespace mbr_range_query_filter
     {
-        static inline DB_STATUS forwardPair(Shape* objR, Shape* objS, hec::QueryResult &queryResult) {
+        static inline DB_STATUS forwardPair(Shape* objR, Shape* objS, hec::QResultBase* queryResult) {
             DB_STATUS ret = DBERR_OK;
             // forward to refinement
             ret = refinement::relate::refinementEntrypoint(objR, objS, g_config.queryMetadata.queryType, queryResult);
@@ -20,7 +20,7 @@ namespace uniform_grid
         /** @brief Evaluates the contents of the given partition against the provided window. All objects are geometrically refined, 
          * thus, this method should be used only for partitions that are partially covered by the window in both axes.
          */
-        static DB_STATUS comparePartialPartition(Shape &window, PartitionBase* partition, hec::QueryResult &queryResult) {
+        static DB_STATUS comparePartialPartition(Shape &window, PartitionBase* partition, hec::QResultBase* queryResult) {
             DB_STATUS ret = DBERR_OK;
             if (partition == nullptr) {
                 // not assigned partition
@@ -44,7 +44,7 @@ namespace uniform_grid
             return ret;
         }
 
-        static DB_STATUS evaluateBoxQuery(hec::RangeQuery *rangeQuery, hec::QueryResult &queryResult) {
+        static DB_STATUS evaluateBoxQuery(hec::RangeQuery *rangeQuery, hec::QResultBase* queryResult) {
             Shape window;
             Dataset* dataset = g_config.datasetOptions.getDatasetByIdx(rangeQuery->getDatasetID());
             // create query shape
@@ -160,7 +160,7 @@ namespace uniform_grid
                         // loop contents
                         for (auto &it: *contents) {
                             // keep contents directly
-                            queryResult.countResult(window.recID, it->recID);
+                            queryResult->addResult(it->recID);
                         }
                     }     
                 }
@@ -169,7 +169,7 @@ namespace uniform_grid
         }
 
         /** @brief evaluates polygonal queries (needs refinement for all candidates) */
-        static DB_STATUS evaluatePolygonQuery(hec::RangeQuery *rangeQuery, hec::QueryResult &queryResult) {
+        static DB_STATUS evaluatePolygonQuery(hec::RangeQuery *rangeQuery, hec::QResultBase* queryResult) {
             Shape window;
             Dataset* dataset = g_config.datasetOptions.getDatasetByIdx(rangeQuery->getDatasetID());
             // create query shape
@@ -225,11 +225,9 @@ namespace uniform_grid
         }
 
         // @todo: different evaluation for box or polygon
-        static DB_STATUS evaluate(hec::RangeQuery *rangeQuery, hec::QueryResult &queryResult) {
+        static DB_STATUS evaluate(hec::RangeQuery *rangeQuery, hec::QResultBase* queryResult) {
             DB_STATUS ret = DBERR_OK;
             Dataset* dataset = g_config.datasetOptions.getDatasetByIdx(rangeQuery->getDatasetID());
-            hec::QueryResult threadQueryResults(queryResult.getID(), queryResult.getQueryType(), queryResult.getResultType());
-            
             // create shape object for window
             Shape window;
             if (rangeQuery->getWKT().find("POLYGON") != std::string::npos) {
@@ -275,7 +273,7 @@ namespace uniform_grid
 
 
 
-    DB_STATUS processQuery(hec::Query* query, hec::QueryResult &queryResult) {
+    DB_STATUS processQuery(hec::Query* query, hec::QResultBase* queryResult) {
         DB_STATUS ret = DBERR_OK;
         // set to global config
         g_config.queryMetadata.queryType = (hec::QueryType) query->getQueryType();

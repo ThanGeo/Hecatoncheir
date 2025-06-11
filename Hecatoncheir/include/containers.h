@@ -1388,6 +1388,11 @@ namespace shape_factory
     DB_STATUS createEmpty(DataType dataType, Shape &object);
 }
 
+namespace qresult_factory
+{
+    int createNew(int queryID, hec::QueryType queryType, hec::QueryResultType resultType, hec::QResultBase** object);
+}
+
 /** @brief Holds information about sections, i.e. APRIL partitions.
  */
 struct Section {
@@ -1807,7 +1812,7 @@ public:
         return nullptr;
     }
 
-    virtual DB_STATUS evaluateQuery(hec::Query* query, hec::QueryResult &queryResult) = 0;
+    virtual DB_STATUS evaluateQuery(hec::Query* query, hec::QResultBase* queryResult) = 0;
 
 };
 
@@ -1835,7 +1840,7 @@ public:
     void sortPartitionsOnY() override;
 
     /** @brief Evaluate the given query and store results in the queryResult object. */
-    DB_STATUS evaluateQuery(hec::Query* query, hec::QueryResult &queryResult) override;
+    DB_STATUS evaluateQuery(hec::Query* query, hec::QResultBase* queryResult) override;
 
 };
 
@@ -1864,7 +1869,7 @@ public:
     void sortPartitionsOnY() override;
 
     /** @brief Evaluate the given query and store results in the queryResult object. */
-    DB_STATUS evaluateQuery(hec::Query* query, hec::QueryResult &queryResult);
+    DB_STATUS evaluateQuery(hec::Query* query, hec::QResultBase* queryResult);
 
 };
 
@@ -1998,19 +2003,19 @@ struct Config {
 extern Config g_config;
 
 /** @brief Based on query type in config, it thread-safely appends new results to the query output in parallel.
- * Used only in parallel sections for OpenMP.
+ * Used only in parallel sections for OpenMP reduction.
  */
-DB_STATUS queryResultReductionFunc(hec::QueryResult &in, hec::QueryResult &out);
-
+DB_STATUS mergeResultObjects(hec::QResultBase *out, hec::QResultBase *in);
 
 /** @brief Merges two batch query result maps into a single one.
  */
-DB_STATUS mergeBatchResultMaps(std::unordered_map<int, hec::QueryResult>& dest, std::unordered_map<int, hec::QueryResult>& src);
+DB_STATUS mergeBatchResultMaps(std::unordered_map<int, hec::QResultBase*> &dest, std::unordered_map<int, hec::QResultBase*> &src);
 
 // Declare the parallel reduction function for merging query results into a single query result object
-#pragma omp declare reduction (query_output_reduction: hec::QueryResult: queryResultReductionFunc(omp_in, omp_out)) initializer(omp_priv = hec::QueryResult(omp_orig.getID(), omp_orig.getQueryType(), omp_orig.getResultType()))
+// #pragma omp declare reduction(query_output_reduction: hec::QResultBase*: mergeResultObjects(omp_out, omp_in)) initializer(omp_priv = omp_orig)
+#pragma omp declare reduction(query_output_reduction: hec::QResultBase*: mergeResultObjects(omp_out, omp_in)) initializer(omp_priv = omp_orig->cloneEmpty())
 
 // Declare the parallel reduction function for merging batch query result objects into a single map
-#pragma omp declare reduction(merge_batch_results_maps : std::unordered_map<int, hec::QueryResult> : mergeBatchResultMaps(omp_out, omp_in)) initializer(omp_priv = omp_orig)
+#pragma omp declare reduction(merge_batch_results_maps : std::unordered_map<int, hec::QResultBase*> : mergeBatchResultMaps(omp_out, omp_in)) initializer(omp_priv = omp_orig)
 
 #endif

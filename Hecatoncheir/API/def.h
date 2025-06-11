@@ -27,6 +27,18 @@ namespace hec
         Q_FIND_RELATION_JOIN,    // find what type of topological relation is there
         Q_NONE = 777, // no query
     };
+
+    /** @brief Topological Relations. */
+    enum TopologyRelation {
+        TR_DISJOINT,
+        TR_INTERSECT,
+        TR_INSIDE,
+        TR_CONTAINS,
+        TR_COVERED_BY,
+        TR_COVERS,
+        TR_EQUAL,
+        TR_MEET,
+    };
 }
 
 #endif

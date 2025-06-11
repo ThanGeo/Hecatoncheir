@@ -293,7 +293,7 @@ namespace refinement
         }
 
 
-        DB_STATUS specializedRefinementEntrypoint(Shape* objR, Shape* objS, int mbrRelationCase, hec::QueryResult &queryResult) {
+        DB_STATUS specializedRefinementEntrypoint(Shape* objR, Shape* objS, int mbrRelationCase, hec::QResultBase* queryResult) {
             int refinementResult = -1;
             // switch based on MBR intersection case
             switch(mbrRelationCase) {
@@ -314,7 +314,7 @@ namespace refinement
                     return DBERR_QUERY_INVALID_TYPE;
             }
             // count result
-            queryResult.countTopologyRelationResult(refinementResult, objR->recID, objS->recID);
+            queryResult->addResult(refinementResult, objR->recID, objS->recID);
 
             return DBERR_OK;
         }
@@ -369,7 +369,13 @@ namespace refinement
          * Refine find specific relation
          */
 
-        void refineIntersectionJoin(Shape* objR, Shape* objS, hec::QueryResult &queryResult) {
+        void refineRange(Shape* window, Shape* obj, hec::QResultBase* queryResult) {
+            if (window->intersects(*obj)) {
+                queryResult->addResult(obj->recID);
+            }
+        }
+
+        void refineIntersectionJoin(Shape* objR, Shape* objS, hec::QResultBase* queryResult) {
             // printf("Refining objects %ld and %ld\n", objR->recID, objS->recID);
             // objR->printGeometry();
             // objS->printGeometry();
@@ -379,7 +385,7 @@ namespace refinement
             // }
 
             if (objR->intersects(*objS)) {
-                queryResult.countResult(objR->recID, objS->recID);
+                queryResult->addResult(objR->recID, objS->recID);
                 // printf("%lu,%lu\n", objR->recID, objS->recID);
                 // if (objR->recID == 129032 && objS->recID == 2292762) {
                 //     logger::log_task(objR->recID, "and", objS->recID, "is result");
@@ -387,53 +393,53 @@ namespace refinement
             }
         }
 
-        void refineInsideJoin(Shape* objR, Shape* objS, hec::QueryResult &queryResult) {
+        void refineInsideJoin(Shape* objR, Shape* objS, hec::QResultBase* queryResult) {
             if (objR->inside(*objS)) {
-                queryResult.countResult(objR->recID, objS->recID);
+                queryResult->addResult(objR->recID, objS->recID);
             }
         }
 
-        void refineDisjointJoin(Shape* objR, Shape* objS, hec::QueryResult &queryResult) {
+        void refineDisjointJoin(Shape* objR, Shape* objS, hec::QResultBase* queryResult) {
             if (objR->disjoint(*objS)) {
-                queryResult.countResult(objR->recID, objS->recID);
+                queryResult->addResult(objR->recID, objS->recID);
             }
         }
 
-        void refineEqualJoin(Shape* objR, Shape* objS, hec::QueryResult &queryResult) {
+        void refineEqualJoin(Shape* objR, Shape* objS, hec::QResultBase* queryResult) {
             if (objR->equals(*objS)) {
-                queryResult.countResult(objR->recID, objS->recID);
+                queryResult->addResult(objR->recID, objS->recID);
             }
         }
 
-        void refineMeetJoin(Shape* objR, Shape* objS, hec::QueryResult &queryResult) {
+        void refineMeetJoin(Shape* objR, Shape* objS, hec::QResultBase* queryResult) {
             if (objR->meets(*objS)) {
-                queryResult.countResult(objR->recID, objS->recID);
+                queryResult->addResult(objR->recID, objS->recID);
             }
         }
 
-        void refineContainsJoin(Shape* objR, Shape* objS, hec::QueryResult &queryResult) {
+        void refineContainsJoin(Shape* objR, Shape* objS, hec::QResultBase* queryResult) {
             if (objR->contains(*objS)) {
-                queryResult.countResult(objR->recID, objS->recID);
+                queryResult->addResult(objR->recID, objS->recID);
             }
         }
 
-        void refineCoversJoin(Shape* objR, Shape* objS, hec::QueryResult &queryResult) {
+        void refineCoversJoin(Shape* objR, Shape* objS, hec::QResultBase* queryResult) {
             if (objR->covers(*objS)) {
-                queryResult.countResult(objR->recID, objS->recID);
+                queryResult->addResult(objR->recID, objS->recID);
             }
         }
 
-        void refineCoveredByJoin(Shape* objR, Shape* objS, hec::QueryResult &queryResult) {
+        void refineCoveredByJoin(Shape* objR, Shape* objS, hec::QResultBase* queryResult) {
             if (objR->coveredBy(*objS)) {
-                queryResult.countResult(objR->recID, objS->recID);
+                queryResult->addResult(objR->recID, objS->recID);
             }
         }
         
-        DB_STATUS refinementEntrypoint(Shape* objR, Shape* objS, hec::QueryType queryType, hec::QueryResult &queryResult) {
+        DB_STATUS refinementEntrypoint(Shape* objR, Shape* objS, hec::QueryType queryType, hec::QResultBase* queryResult) {
             // switch based on query type
             switch(queryType) {
                 case hec::Q_RANGE:
-                    refineIntersectionJoin(objR, objS, queryResult);
+                    refineRange(objR, objS, queryResult);
                     break;
                 case hec::Q_INTERSECTION_JOIN:
                     refineIntersectionJoin(objR, objS, queryResult);

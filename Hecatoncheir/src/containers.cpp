@@ -7,32 +7,39 @@
 
 Config g_config;
 
-DB_STATUS queryResultReductionFunc(hec::QueryResult &in, hec::QueryResult &out) {
-    DB_STATUS ret = DBERR_OK;
-    
-    out.mergeResults(in);
+DB_STATUS mergeResultObjects(hec::QResultBase *out, hec::QResultBase *in) {
+    if (out == nullptr || in == nullptr) {
+        logger::log_error(DBERR_NULL_PTR_EXCEPTION, "Either in or out pointer is null during query result reduction.");
+        return DBERR_NULL_PTR_EXCEPTION;
+    }
 
-    return ret;
+    try {
+        out->mergeResults(in);
+        return DBERR_OK;
+    } catch (const std::bad_cast& e) {
+        logger::log_error(DBERR_TYPE_CAST_MISMATCH, "Type mismatch during result merging: " + std::string(e.what()));
+        return DBERR_TYPE_CAST_MISMATCH;
+    } catch (...) {
+        logger::log_error(DBERR_REDUCTION_MERGE_FAILURE, "Unknown error during result merging");
+        return DBERR_REDUCTION_MERGE_FAILURE;
+    }
+
 }
 
 /** @brief Merges two batch query result maps into a single one.
+ * Both dest and src must contain QResultBase derived objects of THE SAME class.
  */
-DB_STATUS mergeBatchResultMaps(std::unordered_map<int, hec::QueryResult>& dest, std::unordered_map<int, hec::QueryResult>& src) {
+DB_STATUS mergeBatchResultMaps(std::unordered_map<int, hec::QResultBase*> &dest, std::unordered_map<int, hec::QResultBase*>& src) {
     DB_STATUS ret = DBERR_OK;
     for (auto& [key, value] : src) {
         auto it = dest.find(key);
         if (it == dest.end()) {
             dest[key] = value;
         } else {
-            dest[key].mergeResults(value);
+            dest[key]->mergeResults(value);
         }
     }
     return ret;
-}
-
-
-std::vector<std::pair<size_t,size_t>>* hec::QueryResult::getResultPairs() {
-    return &this->pairs;
 }
 
 void AprilData::printALLintervals() {
@@ -282,7 +289,7 @@ DB_STATUS Dataset::buildAPRIL() {
         return ret;
     }
 
-    #pragma omp parallel
+    #pragma omp parallel num_threads(MAX_THREADS)
     {
         DB_STATUS local_ret = DBERR_OK;
         #pragma omp for
@@ -740,7 +747,7 @@ void TwoLayerIndex::sortPartitionsOnY() {
     }
 }
 
-DB_STATUS TwoLayerIndex::evaluateQuery(hec::Query* query, hec::QueryResult &queryResult) {
+DB_STATUS TwoLayerIndex::evaluateQuery(hec::Query* query, hec::QResultBase* queryResult) {
     DB_STATUS ret = twolayer::processQuery(query, queryResult);
     if (ret != DBERR_OK) {
         logger::log_error(ret, "Failed to process query with id:", query->getQueryID());
@@ -854,7 +861,7 @@ void UniformGridIndex::sortPartitionsOnY() {
     }
 }
 
-DB_STATUS UniformGridIndex::evaluateQuery(hec::Query* query, hec::QueryResult &queryResult) {
+DB_STATUS UniformGridIndex::evaluateQuery(hec::Query* query, hec::QResultBase* queryResult) {
     DB_STATUS ret = uniform_grid::processQuery(query, queryResult);
     if (ret != DBERR_OK) {
         logger::log_error(ret, "Failed to process query with id:", query->getQueryID());
@@ -1249,3 +1256,58 @@ namespace shape_factory
     }
 }
 
+namespace qresult_factory
+{
+    int createNew(int queryID, hec::QueryType queryType, hec::QueryResultType resultType, hec::QResultBase **object) {
+        switch (queryType) {
+            case hec::Q_RANGE:
+                switch (resultType) {
+                    case hec::QR_COLLECT:
+                        (*object) = new hec::QResultCollect(queryID, queryType, resultType);
+                        break;
+                    case hec::QR_COUNT:
+                        (*object) = new hec::QResultCount(queryID, queryType, resultType);
+                        break;
+                    default:
+                        break;
+                }
+                break;
+            case hec::Q_INTERSECTION_JOIN:
+            case hec::Q_INSIDE_JOIN:
+            case hec::Q_DISJOINT_JOIN:
+            case hec::Q_EQUAL_JOIN:
+            case hec::Q_MEET_JOIN:
+            case hec::Q_CONTAINS_JOIN:
+            case hec::Q_COVERS_JOIN:
+            case hec::Q_COVERED_BY_JOIN:
+                switch (resultType) {
+                    case hec::QR_COLLECT:
+                        (*object) = new hec::QPairResultCollect(queryID, queryType, resultType);
+                        break;
+                    case hec::QR_COUNT:
+                        (*object) = new hec::QResultCount(queryID, queryType, resultType);
+                        break;
+                    default:
+                        break;
+                }
+                break;
+            case hec::Q_FIND_RELATION_JOIN:
+                switch (resultType) {
+                    case hec::QR_COLLECT:
+                        (*object) = new hec::QTopologyResultCollect(queryID, queryType, resultType);
+                        break;
+                    case hec::QR_COUNT:
+                        (*object) = new hec::QTopologyResultCount(queryID, queryType, resultType);
+                        break;
+                    default:
+                        break;
+                }
+                break;
+            default:
+                logger::log_error(DBERR_QUERY_INVALID_TYPE, "Invalid query type:", queryType);
+                return -1;
+        }
+        
+        return 0;
+    }
+}
