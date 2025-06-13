@@ -1,4 +1,5 @@
 #include "APRIL/filter.h"
+#include "APRIL/generate.h"
 
 
 namespace APRIL
@@ -232,7 +233,17 @@ namespace APRIL
             // use appropriate query function
             switch (g_config.queryMetadata.queryType) {
                 case hec::Q_RANGE:
-                    return DBERR_FEATURE_UNSUPPORTED;
+                    ret = APRIL::generation::memory::createAPRILforObject(objS, objS->getSpatialType(), g_config.approximationMetadata.aprilConfig, objS->aprilData);
+                    if (ret != DBERR_OK) {
+                        logger::log_error(ret, "Failed to create APRIL for range query.");
+                        return ret;
+                    }
+                    ret = uncompressed::standard::intersectionJoinAPRIL(&objR->aprilData, &objS->aprilData, iFilterResult);
+                    if (ret != DBERR_OK) {
+                        logger::log_error(ret, "APRIL intersection join failed for pair", objR->recID, "and", objS->recID);
+                        return ret;
+                    }
+                    break;
                 case hec::Q_INTERSECTION_JOIN:
                     ret = uncompressed::standard::intersectionJoinAPRIL(&objR->aprilData, &objS->aprilData, iFilterResult);
                     if (ret != DBERR_OK) {
@@ -293,7 +304,8 @@ namespace APRIL
             // refine based on query type
             switch (g_config.queryMetadata.queryType) {
                 case hec::Q_RANGE:
-                        return DBERR_FEATURE_UNSUPPORTED;
+                    refinement::relate::refineIntersectionJoin(objR, objS, queryResult);
+                    break;
                 case hec::Q_INTERSECTION_JOIN:
                     refinement::relate::refineIntersectionJoin(objR, objS, queryResult);
                     break;

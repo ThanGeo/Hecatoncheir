@@ -93,6 +93,8 @@ namespace pack
 
     /** @brief Packs a batch of results into a serialized message. */
     DB_STATUS packBatchResults(std::unordered_map<int, hec::QResultBase*> &batchResults, SerializedMsg<char> &batchMsg);
+
+    DB_STATUS packBatchResults(std::unordered_map<int, std::unique_ptr<hec::QResultBase>> &batchResults, SerializedMsg<char> &msg);
 }
 
 /** @brief Methos that unpack serialized messages and extract their contents, based on message type. */

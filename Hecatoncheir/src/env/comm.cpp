@@ -499,7 +499,7 @@ STOP_LISTENING:
             return ret;
         }
 
-        static DB_STATUS handlePrepareDatsetMessage(MPI_Status &status) {
+        static DB_STATUS handlePrepareDatasetMessage(MPI_Status &status) {
             SerializedMsg<char> msg(MPI_CHAR);
             // receive the message
             DB_STATUS ret = recv::receiveMessage(status, msg.type, g_agent_comm, msg);
@@ -755,6 +755,8 @@ STOP_LISTENING:
             // set global dataspace to all datasets
             g_config.datasetOptions.updateDatasetDataspaceToGlobal();
 
+            g_config.datasetOptions.dataspaceMetadata.print();
+
             // free message memory
             free(msg.data);
             // dont send ACK, return @todo, maybe send?
@@ -790,7 +792,6 @@ STOP_LISTENING:
             // evaluate query based on index (stored in R dataset)
             ret = g_config.datasetOptions.getDatasetR()->index->evaluateQuery(queryPtr, queryResult);
             if (ret != DBERR_OK) {
-                logger::log_error(ret, "Failed to process query with id:", queryPtr->getQueryID());
                 return ret;
             }
 
@@ -838,44 +839,38 @@ STOP_LISTENING:
             
             // holds all the final batch results
             std::unordered_map<int, hec::QResultBase*> batchResults;
-
-            #pragma omp parallel num_threads(MAX_THREADS) reduction(merge_batch_results_maps:batchResults)
+            
+            std::vector<std::unordered_map<int, hec::QResultBase*>> threadLocalMaps(MAX_THREADS);
+            #pragma omp parallel num_threads(MAX_THREADS)
             {
-                DB_STATUS local_ret = DBERR_OK;
-                std::unordered_map<int, hec::QResultBase*> localResults;
+                int tid = omp_get_thread_num();
+                auto& localResults = threadLocalMaps[tid];
                 #pragma omp for
-                for (int i=0; i<queryBatch.size(); i++) {
-                    // setup query result object
-                    hec::QResultBase* queryResult;
+                for (int i = 0; i < queryBatch.size(); i++) {
+                    hec::QResultBase* queryResult = nullptr;
+
                     int res = qresult_factory::createNew(queryBatch[i]->getQueryID(), queryBatch[i]->getQueryType(), queryBatch[i]->getResultType(), &queryResult);
                     if (res != 0) {
-                        #pragma omp cancel for
                         logger::log_error(DBERR_OBJ_CREATION_FAILED, "Failed to create query result objects.");
+                        #pragma omp cancel for
                         ret = DBERR_OBJ_CREATION_FAILED;
                     }
-                    
-                    // evaluate query based on index (stored in R dataset)
-                    local_ret = g_config.datasetOptions.getDatasetR()->index->evaluateQuery(queryBatch[i], queryResult);
+
+                    DB_STATUS local_ret = g_config.datasetOptions.getDatasetR()->index->evaluateQuery(queryBatch[i], queryResult);
                     if (local_ret != DBERR_OK) {
                         #pragma omp cancel for
-                        logger::log_error(ret, "Failed to process query with id:", queryBatch[i]->getQueryID());
                         ret = local_ret;
                     }
-                    // add to local hash map
+
                     localResults[queryBatch[i]->getQueryID()] = queryResult;
                 }
-
-                // reduction of resultss
-                local_ret = mergeBatchResultMaps(batchResults, localResults);
-                if (local_ret != DBERR_OK) {
-                    #pragma omp cancel parallel
-                    logger::log_error(ret, "Merging local thread results to final map failed.");
-                    ret = local_ret;
-                } 
-
-            }   // end of parallel region
+            }
             if (ret != DBERR_OK) {
                 return ret;
+            }
+            // After parallel region, merge maps
+            for (auto& map : threadLocalMaps) {
+                mergeBatchResultMaps(batchResults, map);
             }
 
             // pack results to send
@@ -911,6 +906,110 @@ STOP_LISTENING:
             return ret;
         }
 
+        // static DB_STATUS handleQueryBatchMessage(MPI_Status &status) {
+        //     SerializedMsg<char> msg(MPI_CHAR);
+        
+        //     // receive the message
+        //     DB_STATUS ret = recv::receiveMessage(status, msg.type, g_agent_comm, msg);
+        //     if (ret != DBERR_OK) {
+        //         return ret;
+        //     }
+        
+        //     // unpack query batch
+        //     std::vector<std::unique_ptr<hec::Query>> queryBatch;
+        //     {
+        //         std::vector<hec::Query*> rawBatch;
+        //         ret = unpack::unpackQueryBatch(msg, &rawBatch);
+        //         if (ret != DBERR_OK) {
+        //             logger::log_error(ret, "Failed to unpack query.");
+        //             return ret;
+        //         }
+        //         queryBatch.reserve(rawBatch.size());
+        //         for (auto* ptr : rawBatch) {
+        //             queryBatch.emplace_back(ptr);  // wrap raw pointer in unique_ptr
+        //         }
+        //     }
+        
+        //     // free message memory
+        //     free(msg.data);
+        
+        //     // holds all the final batch results
+        //     std::unordered_map<int, std::unique_ptr<hec::QResultBase>> batchResults;
+        
+        //     std::vector<std::unordered_map<int, std::unique_ptr<hec::QResultBase>>> threadLocalMaps(MAX_THREADS);
+        
+        //     #pragma omp parallel num_threads(MAX_THREADS)
+        //     {
+        //         int tid = omp_get_thread_num();
+        //         auto& localResults = threadLocalMaps[tid];
+        
+        //         #pragma omp for
+        //         for (int i = 0; i < queryBatch.size(); i++) {
+        //             hec::QResultBase* rawPtr = nullptr;
+        
+        //             int res = qresult_factory::createNew(
+        //                 queryBatch[i]->getQueryID(),
+        //                 queryBatch[i]->getQueryType(),
+        //                 queryBatch[i]->getResultType(),
+        //                 &rawPtr
+        //             );
+        
+        //             if (res != 0) {
+        //                 logger::log_error(DBERR_OBJ_CREATION_FAILED, "Failed to create query result objects.");
+        //                 ret = DBERR_OBJ_CREATION_FAILED;
+        //                 #pragma omp cancel for
+        //             }
+        
+        //             std::unique_ptr<hec::QResultBase> queryResult(rawPtr);
+        
+        //             DB_STATUS local_ret = g_config.datasetOptions.getDatasetR()->index->evaluateQuery(queryBatch[i].get(), queryResult.get());
+        //             if (local_ret != DBERR_OK) {
+        //                 ret = local_ret;
+        //                 #pragma omp cancel for
+        //             }
+        
+        //             localResults[queryBatch[i]->getQueryID()] = std::move(queryResult);
+        //         }
+        //     }
+        
+        //     if (ret != DBERR_OK) {
+        //         return ret;  // smart pointers clean up automatically
+        //     }
+        
+        //     // After parallel region, merge thread-local maps into batchResults
+        //     for (auto& map : threadLocalMaps) {
+        //         for (auto& [key, value] : map) {
+        //             auto it = batchResults.find(key);
+        //             if (it == batchResults.end()) {
+        //                 batchResults[key] = std::move(value);
+        //             } else {
+        //                 it->second->mergeResults(value.get());
+        //                 // value will be deleted when unique_ptr goes out of scope
+        //             }
+        //         }
+        //         map.clear();
+        //     }
+        
+        //     // pack results to send
+        //     SerializedMsg<char> batchResultMsg(MPI_CHAR);
+        //     ret = pack::packBatchResults(batchResults, batchResultMsg);
+        //     if (ret != DBERR_OK) {
+        //         logger::log_error(ret, "Failed to pack batch results.");
+        //         return ret;
+        //     }
+        
+        //     // send results
+        //     ret = send::sendMessage(batchResultMsg, PARENT_RANK, MSG_QUERY_BATCH_RESULT, g_agent_comm);
+        //     if (ret != DBERR_OK) {
+        //         return ret;
+        //     }
+        
+        //     // free message memory
+        //     batchResultMsg.clear();
+        
+        //     return ret;  // all memory is automatically cleaned up
+        // }     
+
         /**
         @brief pulls incoming message sent by the local controller 
          * (the one probed last, whose metadata is stored in the status parameter)
@@ -935,7 +1034,7 @@ STOP_LISTENING:
                     break;
                 case MSG_PREPARE_DATASET:
                     // logger::log_success("MSG_PREPARE_DATASET");
-                    ret = handlePrepareDatsetMessage(status);
+                    ret = handlePrepareDatasetMessage(status);
                     if (ret != DBERR_OK) {
                         return ret;
                     }
@@ -1361,7 +1460,7 @@ STOP_LISTENING:
             return ret;
         }
 
-        static DB_STATUS handlePrepareDatsetMessage(MPI_Status status) {
+        static DB_STATUS handlePrepareDatasetMessage(MPI_Status status) {
             SerializedMsg<char> msg(MPI_CHAR);
             // receive the message
             DB_STATUS ret = recv::receiveMessage(status, msg.type, g_controller_comm, msg);
@@ -1569,7 +1668,7 @@ STOP_LISTENING:
                     }
                     break;
                 case MSG_PREPARE_DATASET:
-                    ret = handlePrepareDatsetMessage(status);
+                    ret = handlePrepareDatasetMessage(status);
                     if (ret != DBERR_OK) {
                         logger::log_error(ret, "Handling dataset metadata message failed.");
                         return ret;
@@ -1770,7 +1869,7 @@ STOP_LISTENING:
             return ret;
         }
 
-        static DB_STATUS handlePrepareDatsetMessage(MPI_Status &status) {
+        static DB_STATUS handlePrepareDatasetMessage(MPI_Status &status) {
             SerializedMsg<char> msg(MPI_CHAR);
             // receive the message
             DB_STATUS ret = recv::receiveMessage(status, msg.type, g_global_intra_comm, msg);
@@ -1865,14 +1964,9 @@ STOP_LISTENING:
             g_config.datasetOptions.updateDataspace();
             g_config.datasetOptions.dataspaceMetadata.boundsSet = true;
 
-
             // update the grids' dataspace metadata in the partitioning object 
             g_config.partitioningMethod->setDistGridDataspace(g_config.datasetOptions.dataspaceMetadata);
             g_config.partitioningMethod->setPartGridDataspace(g_config.datasetOptions.dataspaceMetadata);
-            // printf("Partitioning metadata set: (%f,%f),(%f,%f)\n", g_config.partitioningMethod->distGridDataspaceMetadata.xMinGlobal, g_config.partitioningMethod->distGridDataspaceMetadata.yMinGlobal, g_config.partitioningMethod->distGridDataspaceMetadata.xMaxGlobal, g_config.partitioningMethod->distGridDataspaceMetadata.yMaxGlobal);
-            // printf("Partitioning metadata set: gPPD %d, dPPD %d, pPPD %d\n", g_config.partitioningMethod->getGlobalPPD(), g_config.partitioningMethod->getDistributionPPD(), g_config.partitioningMethod->getPartitioningPPD());
-            // printf("distExtents %f,%f, partitionExtents %f,%f\n", g_config.partitioningMethod->getDistPartionExtentX(), g_config.partitioningMethod->getDistPartionExtentY(), g_config.partitioningMethod->getPartPartionExtentX(), g_config.partitioningMethod->getPartPartionExtentY());
-           
 
             // perform the partitioning for each dataset in the message
             for (auto &index : datasetIndexes) {
@@ -2498,7 +2592,7 @@ STOP_LISTENING:
                 case MSG_PREPARE_DATASET:
                     /* dataset metadata message */
                     // logger::log_success("MSG_PREPARE_DATASET");
-                    ret = handlePrepareDatsetMessage(status);
+                    ret = handlePrepareDatasetMessage(status);
                     if (ret != DBERR_OK) {
                         logger::log_error(ret, "Failed while handling dataset metadata message.");
                         return ret;

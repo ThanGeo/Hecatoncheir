@@ -590,6 +590,8 @@ namespace hec {
             logger::log_error(ret, "Sending dataset load message failed.");
             return finalResults;
         }
+        // free memory
+        msg.clear();
         // wait for result
         ret = waitForResult(finalResults);
         if (ret != DBERR_OK) {

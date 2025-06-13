@@ -234,15 +234,15 @@ namespace uniform_grid
                 // polygon query
                 ret = evaluatePolygonQuery(rangeQuery, queryResult);
                 if (ret != DBERR_OK) {
-                    logger::log_error(DBERR_INVALID_GEOMETRY, "Polygon query evaluation failed.");
-                    return DBERR_INVALID_GEOMETRY;
+                    logger::log_error(ret, "Polygon query evaluation failed.");
+                    return ret;
                 }
             } else if (rangeQuery->getWKT().find("BOX") != std::string::npos) {
                 // box query
                 ret = evaluateBoxQuery(rangeQuery, queryResult);
                 if (ret != DBERR_OK) {
-                    logger::log_error(DBERR_INVALID_GEOMETRY, "Box query evaluation failed.");
-                    return DBERR_INVALID_GEOMETRY;
+                    logger::log_error(ret, "Box query evaluation failed.");
+                    return ret;
                 }
             } else {
                 // invalid query type
@@ -253,25 +253,6 @@ namespace uniform_grid
             return ret;
         }
     } // range query mbr filter
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
     DB_STATUS processQuery(hec::Query* query, hec::QResultBase* queryResult) {
         DB_STATUS ret = DBERR_OK;

@@ -2016,6 +2016,7 @@ DB_STATUS mergeBatchResultMaps(std::unordered_map<int, hec::QResultBase*> &dest,
 #pragma omp declare reduction(query_output_reduction: hec::QResultBase*: mergeResultObjects(omp_out, omp_in)) initializer(omp_priv = omp_orig->cloneEmpty())
 
 // Declare the parallel reduction function for merging batch query result objects into a single map
-#pragma omp declare reduction(merge_batch_results_maps : std::unordered_map<int, hec::QResultBase*> : mergeBatchResultMaps(omp_out, omp_in)) initializer(omp_priv = omp_orig)
+// #pragma omp declare reduction(merge_batch_results_maps : std::unordered_map<int, hec::QResultBase*> : mergeBatchResultMaps(omp_out, omp_in)) initializer(omp_priv = omp_orig)
+#pragma omp declare reduction(merge_batch_results_maps : std::unordered_map<int, hec::QResultBase*> : mergeBatchResultMaps(omp_out, omp_in)) initializer(omp_priv = std::unordered_map<int, hec::QResultBase*>())
 
 #endif

@@ -35,8 +35,11 @@ DB_STATUS mergeBatchResultMaps(std::unordered_map<int, hec::QResultBase*> &dest,
         auto it = dest.find(key);
         if (it == dest.end()) {
             dest[key] = value;
+            if (key == 0) {
+            }
         } else {
             dest[key]->mergeResults(value);
+            delete value;
         }
     }
     return ret;

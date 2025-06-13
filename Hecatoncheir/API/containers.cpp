@@ -53,11 +53,20 @@ namespace hec
             logger::log_error(DBERR_INVALID_PARAMETER, "Invalid (empty) wkt for range query.");
             return;
         }
+        if (queryWKT.find("POLYGON") != std::string::npos) {
+            this->shapeType = DT_POLYGON;
+        } else if (queryWKT.find("BOX") != std::string::npos) {
+            this->shapeType = DT_BOX;
+        } else {
+            logger::log_error(DBERR_INVALID_DATATYPE, "Invalid WKT for range query. Use only POLYGON or BOX. WKT:", queryWKT);
+            return;
+        }
         this->datasetID = datasetID;
         this->queryID = id;
         this->queryType = Q_RANGE;
         this->resultType = QR_COUNT;
         this->wktText = queryWKT;
+        
     }
 
     RangeQuery::RangeQuery(DatasetID datasetID, int id, std::string queryWKT, std::string resultTypeStr) {
@@ -65,29 +74,18 @@ namespace hec
             logger::log_error(DBERR_INVALID_PARAMETER, "Invalid (empty) wkt for range query.");
             return;
         }
+        if (queryWKT.find("POLYGON") != std::string::npos) {
+            this->shapeType = DT_POLYGON;
+        } else if (queryWKT.find("BOX") != std::string::npos) {
+            this->shapeType = DT_BOX;
+        } else {
+            logger::log_error(DBERR_INVALID_DATATYPE, "Invalid WKT for range query. Use only POLYGON or BOX. WKT:", queryWKT);
+            return;
+        }
         this->datasetID = datasetID;
         this->queryID = id;
         this->queryType = Q_RANGE;
         this->wktText = queryWKT;
-        // Shape window;
-        // DB_STATUS ret = window.setFromWKT(queryWKT);
-        // if (ret != DBERR_OK) {
-        //     logger::log_error(ret, "Invalid wkt geometry for window:", queryWKT);
-        //     return;
-        // }
-        // window.setMBR();
-        // this->coords = coords;
-        // this->xMin = std::numeric_limits<int>::max();
-        // this->yMin = std::numeric_limits<int>::max();
-        // this->xMax = -std::numeric_limits<int>::max();
-        // this->yMax = -std::numeric_limits<int>::max();
-
-        // for (int i=0; i<coords.size(); i+=2) {
-        //     this->xMin = std::min(this->xMin, coords[i]);
-        //     this->yMin = std::min(this->yMin, coords[i+1]);
-        //     this->xMax = std::max(this->xMax, coords[i]);
-        //     this->yMax = std::max(this->yMax, coords[i+1]);
-        // }
         QueryResultType resultType = mapping::queryResultTypeStrToInt(resultTypeStr);
         if (resultType != QR_COUNT && resultType != QR_COLLECT) {
             logger::log_error(DBERR_INVALID_PARAMETER, "Invalid result type parameter:", resultType);
@@ -101,29 +99,18 @@ namespace hec
             logger::log_error(DBERR_INVALID_PARAMETER, "Invalid (empty) wkt for range query.");
             return;
         }
+        if (queryWKT.find("POLYGON") != std::string::npos) {
+            this->shapeType = DT_POLYGON;
+        } else if (queryWKT.find("BOX") != std::string::npos) {
+            this->shapeType = DT_BOX;
+        } else {
+            logger::log_error(DBERR_INVALID_DATATYPE, "Invalid WKT for range query. Use only POLYGON or BOX. WKT:", queryWKT);
+            return;
+        }
         this->datasetID = datasetID;
         this->queryID = id;
         this->queryType = Q_RANGE;
         this->wktText = queryWKT;
-        // Shape window;
-        // DB_STATUS ret = window.setFromWKT(queryWKT);
-        // if (ret != DBERR_OK) {
-        //     logger::log_error(ret, "Invalid wkt geometry for window:", queryWKT);
-        //     return;
-        // }
-        // window.setMBR();
-        // this->coords = coords;
-        // this->xMin = std::numeric_limits<int>::max();
-        // this->yMin = std::numeric_limits<int>::max();
-        // this->xMax = -std::numeric_limits<int>::max();
-        // this->yMax = -std::numeric_limits<int>::max();
-
-        // for (int i=0; i<coords.size(); i+=2) {
-        //     this->xMin = std::min(this->xMin, coords[i]);
-        //     this->yMin = std::min(this->yMin, coords[i+1]);
-        //     this->xMax = std::max(this->xMax, coords[i]);
-        //     this->yMax = std::max(this->yMax, coords[i+1]);
-        // }
         if (resultType != QR_COUNT && resultType != QR_COLLECT) {
             logger::log_error(DBERR_INVALID_PARAMETER, "Invalid result type parameter:", resultType);
             return;
@@ -133,6 +120,10 @@ namespace hec
 
     std::string RangeQuery::getWKT() {
         return this->wktText;
+    }
+
+    int RangeQuery::getShapeType() {
+        return this->shapeType;
     }
 
     // Q RESULT BASE
@@ -295,8 +286,11 @@ namespace hec
     void QResultCollect::addResult(size_t id) {
         this->resultList.emplace_back(id);
     }
+
     void QResultCollect::addResult(size_t idR, size_t idS) {
-        logger::log_error(DBERR_FORBIDDEN_METHOD_CALL, "Forbidden method call for QResultCollect::addResult(size_t idR, size_t idS).");
+        // it is assumed that query file will always be S, so add idR
+        // @todo: verify
+        this->resultList.emplace_back(idR);
     }
     
     void QResultCollect::addResult(int relation, size_t idR, size_t idS) {

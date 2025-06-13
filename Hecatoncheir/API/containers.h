@@ -239,9 +239,8 @@ namespace hec
     struct RangeQuery : public Query {
     private:
         DatasetID datasetID;
-        // std::vector<double> coords;
-        // double xMin, yMin, xMax, yMax;
         std::string wktText;
+        int shapeType;
     public:
         RangeQuery(DatasetID datasetID, int queryID, std::string queryWKT);
         RangeQuery(DatasetID datasetID, int queryID, std::string queryWKT, std::string resultType);
@@ -250,6 +249,7 @@ namespace hec
             return datasetID;
         }
         std::string getWKT();
+        int getShapeType();
     };
 
     struct JoinQuery : public Query {

@@ -1439,7 +1439,15 @@ namespace twolayer
             // create shape object for window
             // @todo fix, unitiialized shape object
             Shape window;
-            window.setFromWKT(rangeQuery->getWKT());
+            ret = shape_factory::createEmpty((DataType) rangeQuery->getShapeType(), window);
+            if (ret != DBERR_OK) {
+                return ret;
+            }
+            ret = window.setFromWKT(rangeQuery->getWKT());
+            if (ret != DBERR_OK) {
+                logger::log_error(ret, "Setting window shape from WKT failed. WKT:", rangeQuery->getWKT());
+                return ret;
+            }
             window.setMBR();
             
             // get cells range
@@ -1614,7 +1622,10 @@ namespace twolayer
                         partition = dataset->index->getPartition(partitionID);
                         if (partition != nullptr) {
                             /** @todo GET ONLY A RESULTS, NO CHECKS */
-
+                            std::vector<Shape*>* contents = partition->getContents(CLASS_A);
+                            for (auto &it: *contents) {
+                                queryResult->addResult(it->recID);
+                            }
                         }
                         
                     }
@@ -1674,8 +1685,6 @@ namespace twolayer
             return ret;
         }
     } // range query mbr filter
-
-
 
 
     DB_STATUS processQuery(hec::Query* query, hec::QResultBase* queryResult) {
