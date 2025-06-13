@@ -60,6 +60,8 @@ static DB_STATUS receiveResultBatch(int sourceRank, int sourceTag, MPI_Comm &com
         logger::log_error(ret, "Failed to unpack batch query results.");
         return ret;
     }
+    // free memory
+    msg.clear();
     return DBERR_OK;
 }
 
