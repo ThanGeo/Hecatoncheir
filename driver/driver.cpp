@@ -28,10 +28,10 @@ int main(int argc, char* argv[]) {
     // std::string pointsPath = "/home/hec/datasets/T2_lo48_points.tsv";
     // int pointDatasetID = hec::prepareDataset(pointsPath, "WKT", "POINT", false);
 
-    // std::string landmarkPath = "/home/hec/datasets/T1_lo48.tsv";
-    // int landmarkID = hec::prepareDataset(landmarkPath, "WKT", "POLYGON", false);
-    std::string waterPath = "/home/hec/datasets/T2_lo48.tsv";
-    int waterID = hec::prepareDataset(waterPath, "WKT", "POLYGON", false);
+    std::string landmarkPath = "/home/hec/datasets/T1_lo48.tsv";
+    int landmarkID = hec::prepareDataset(landmarkPath, "WKT", "POLYGON", false);
+    // std::string waterPath = "/home/hec/datasets/T2_lo48.tsv";
+    // int waterID = hec::prepareDataset(waterPath, "WKT", "POLYGON", false);
     // std::string roadsPath = "/home/hec/datasets/T8_lo48.tsv";
     // int roadsID = hec::prepareDataset(roadsPath, "WKT", "LINESTRING", false);
 
@@ -42,7 +42,7 @@ int main(int argc, char* argv[]) {
      */
     double start = hec::time::getTime();
     // int ret = hec::partition({landmarkID, waterID});
-    int ret = hec::partition({waterID});
+    int ret = hec::partition({landmarkID});
     printf("Partitioning finished in %0.2f seconds.\n", hec::time::getTime() - start);
 
     // double start = hec::time::getTime();
@@ -54,7 +54,7 @@ int main(int argc, char* argv[]) {
      * 
      */
     start = hec::time::getTime();
-    ret = hec::buildIndex({waterID}, hec::IT_TWO_LAYER);
+    ret = hec::buildIndex({landmarkID}, hec::IT_UNIFORM_GRID);
     // ret = hec::buildIndex({waterID}, hec::IT_TWO_LAYER);
     printf("Indexes built in %0.2f seconds.\n", hec::time::getTime() - start);
 
@@ -81,7 +81,7 @@ int main(int argc, char* argv[]) {
     start = hec::time::getTime();
     std::string queriesPath = "/home/hec/datasets/USA_queries/USA_c0.01_n10000_polygons.wkt";
     // std::string queriesPath = "/home/hec/thanasis/Hecatoncheir/test_query.wkt";
-    std::vector<hec::Query *> batch = hec::loadQueriesFromFile(queriesPath, "WKT", waterID, hec::QR_COLLECT);
+    std::vector<hec::Query *> batch = hec::loadQueriesFromFile(queriesPath, "WKT", landmarkID, hec::QR_COUNT);
     std::unordered_map<int, hec::QResultBase *> results = hec::query(batch);
     printf("Query finished in %0.2f seconds.\n", hec::time::getTime() - start);
     // for (int i=0; i<batch.size(); i++) {
@@ -91,6 +91,9 @@ int main(int argc, char* argv[]) {
     //         printf(" %ld", id);
     //     }
     //     printf("\n");
+    // }
+    // for (int i=0; i<batch.size(); i++) {
+    //     printf("Query %d results: %ld\n", i, results[i]->getResultCount());
     // }
 
     for (auto &it : batch) {

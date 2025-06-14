@@ -1,5 +1,6 @@
 #include "Hecatoncheir.h"
 
+#include <regex>
 #include "def.h"
 #include "utils.h"
 #include "env/comm_def.h"
@@ -235,6 +236,47 @@ namespace hec {
         return DBERR_OK;
     }
 
+    static std::vector<std::string> getExactBinaryPIDs(const std::string& binaryPath) {
+        std::vector<std::string> pids;
+        std::string cmd = "ps -eo pid,args | grep \"" + binaryPath + "\" | grep -v grep";
+
+        std::array<char, 256> buffer;
+        std::string line;
+
+        std::unique_ptr<FILE, decltype(&pclose)> pipe(popen(cmd.c_str(), "r"), pclose);
+        if (!pipe) {
+            std::cerr << "popen() failed!" << std::endl;
+            return pids;
+        }
+
+        while (fgets(buffer.data(), buffer.size(), pipe.get()) != nullptr) {
+            line = buffer.data();
+
+            std::istringstream iss(line);
+            std::string pid;
+            std::string cmd_part;
+
+            // Extract PID
+            iss >> pid;
+
+            // Remainder is full command
+            std::getline(iss, cmd_part);
+            size_t start = cmd_part.find_first_not_of(" \t");
+            if (start != std::string::npos) {
+                cmd_part = cmd_part.substr(start);
+            }
+
+            // Check if the command starts exactly with the binary path
+            if (cmd_part.rfind(binaryPath, 0) == 0) { // starts with
+                pids.push_back(pid);
+            }
+        }
+
+        return pids;
+    }
+
+
+
     int init(int numProcs, std::vector<std::string> &hosts){
         DB_STATUS ret = DBERR_OK;
         // fix hosts
@@ -259,6 +301,19 @@ namespace hec {
         if (ret != DBERR_OK) {
             return -1;
         }
+
+        // get process IDs
+        std::vector<std::string> all_pids;
+        for (const std::string& proc : {"build/Hecatoncheir/agent", "build/Hecatoncheir/controller", "build/driver/driver"}) {
+            std::vector<std::string> pids = getExactBinaryPIDs(proc);
+            for (const auto& pid : pids) {
+                std::cout << proc << " PID: " << pid << std::endl;
+                all_pids.push_back(pid);
+            }
+        }
+
+
+
         // all ok
         return 0;
     }
@@ -299,8 +354,8 @@ namespace hec {
             return -1;
         }
 
-        // free
-        free(msg.data);
+        // free memory
+        msg.clear();
 
         // wait for response with dataset internal ID
         MPI_Status status;
@@ -326,7 +381,7 @@ namespace hec {
         }
 
         // free
-        free(msgFromHost.data);
+        msgFromHost.clear();
 
         // return the ID
         return indexes[0];
@@ -423,6 +478,8 @@ namespace hec {
             logger::log_error(ret, "Sending dataset partition message failed.");
             return -1;
         }
+        // free memory
+        msg.clear();
 
         // wait for ACK
         MPI_Status status;
@@ -451,6 +508,8 @@ namespace hec {
             logger::log_error(ret, "Sending build index message failed.");
             return -1;
         }
+        // free memory
+        msg.clear();
 
         // wait for ACK
         MPI_Status status;

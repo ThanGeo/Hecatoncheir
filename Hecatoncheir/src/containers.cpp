@@ -269,7 +269,6 @@ DB_STATUS Dataset::buildIndex(hec::IndexType indexType) {
             }
             // sort
             this->index->sortPartitionsOnY();
-
             break;
         default:
             logger::log_error(DBERR_INVALID_INDEX_TYPE, "Invalid index type for build index.");
