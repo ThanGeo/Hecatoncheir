@@ -66,6 +66,10 @@ namespace configurer
             logger::log_error(DBERR_MPI_INIT_FAILED, "Freeing obsolete inter-comm failed.");
             return DBERR_MPI_INIT_FAILED;
         }
+
+        // logger::log_success("My rank in global is", g_global_rank);
+        // logger::log_success("My rank in g_controller_comm is", g_node_rank);
+
         return DBERR_OK;
     }
 
@@ -111,9 +115,12 @@ namespace configurer
             logger::log_error(DBERR_COMM_BCAST, "Receiving parent rank failed", DBERR_COMM_BCAST);
             return DBERR_COMM_BCAST;
         }
+        // logger::log_success("My daddy's rank is", g_parent_original_rank);
 
         // syncrhonize with parent
         MPI_Barrier(g_agent_comm);
+
+        // logger::log_success("My rank in g_agent_comm is", g_node_rank);
 
         return DBERR_OK;
     }

@@ -44,8 +44,9 @@ static DB_STATUS receiveResult(int sourceRank, int sourceTag, MPI_Comm &comm, MP
     }
     // unpack
     finalResults->deserialize(msg.data, msg.count);
-
-    return DBERR_OK;
+    // free memory
+    msg.clear();
+    return ret;
 }
 
 static DB_STATUS receiveResultBatch(int sourceRank, int sourceTag, MPI_Comm &comm, MPI_Status &status, std::unordered_map<int,hec::QResultBase*> &finalResults) {
@@ -69,7 +70,7 @@ static DB_STATUS receiveResultBatch(int sourceRank, int sourceTag, MPI_Comm &com
 static DB_STATUS waitForResponse() {
     MPI_Status status;
     // wait for response by the host controller
-    DB_STATUS ret = probeBlocking(1, MPI_ANY_TAG, g_global_intra_comm, status);
+    DB_STATUS ret = probeBlocking(HOST_CONTROLLER, MPI_ANY_TAG, g_global_intra_comm, status);
     if (ret != DBERR_OK) {
         return ret;
     }
@@ -80,7 +81,7 @@ static DB_STATUS waitForResponse() {
     }
     // check response, if its NACK then terminate
     if (status.MPI_TAG == MSG_NACK) {
-        logger::log_error(DBERR_COMM_RECEIVED_NACK, "Received NACK by agent");
+        logger::log_error(DBERR_COMM_RECEIVED_NACK, "Received NACK by host controller");
         return DBERR_COMM_RECEIVED_NACK;
     }
     return ret;
@@ -182,7 +183,13 @@ static DB_STATUS spawnControllers(int num_procs, const std::vector<std::string> 
         }
 
         // Free the MPI_Info object after use
-        MPI_Info_free(info);
+        for (int i=0; i<num_procs; i++) {
+            MPI_Info_free(&info[i]);
+        }
+        free(info);
+        free(np);
+        free(error_codes);
+
 
         // merge inter-comm to intra-comm
         MPI_Intercomm_merge(g_global_inter_comm, 0, &g_global_intra_comm);
@@ -216,11 +223,20 @@ static DB_STATUS spawnControllers(int num_procs, const std::vector<std::string> 
 
 static DB_STATUS terminate() {
     // send the message
-    int mpi_ret = MPI_Ssend(NULL, 0, MPI_CHAR, HOST_CONTROLLER, MSG_INSTR_FIN, g_global_intra_comm);
-    if (mpi_ret != MPI_SUCCESS) {
+    DB_STATUS ret = comm::send::sendInstructionMessage(HOST_CONTROLLER, MSG_INSTR_FIN, g_global_intra_comm);
+    if (ret != DBERR_OK) {
         logger::log_error(DBERR_COMM_SEND, "Send message with tag", MSG_INSTR_FIN);
         return DBERR_COMM_SEND;
     }
+    // get ack for termination? @todo
+    ret = waitForResponse();
+    if (ret != DBERR_OK) {
+        logger::log_error(ret, "Finalization failed with errors.");
+        return ret;
+    }        
+    // syncrhonize with host controller
+    MPI_Barrier(g_global_intra_comm);
+    MPI_Finalize();
     logger::log_success("System finalization complete.");
     return DBERR_OK;
 }
@@ -307,8 +323,8 @@ namespace hec {
         for (const std::string& proc : {"build/Hecatoncheir/agent", "build/Hecatoncheir/controller", "build/driver/driver"}) {
             std::vector<std::string> pids = getExactBinaryPIDs(proc);
             for (const auto& pid : pids) {
-                std::cout << proc << " PID: " << pid << std::endl;
                 all_pids.push_back(pid);
+                logger::log_success("Process", proc, "PID:", pid);
             }
         }
 
@@ -328,7 +344,7 @@ namespace hec {
         return 0;
     }
 
-    DatasetID prepareDataset(std::string &filePath, std::string fileTypeStr, std::string dataTypeStr, bool persist) {
+    DatasetID prepareDataset(std::string filePath, std::string fileTypeStr, std::string dataTypeStr, bool persist) {
         if (filePath == "") {
             // empty path, empty dataset
             return -1;
@@ -376,7 +392,7 @@ namespace hec {
         std::vector<int> indexes;
         ret = unpack::unpackDatasetIndexes(msgFromHost, indexes);
         if (ret != DBERR_OK) {
-            logger::log_error(ret, "Error unpacking dataste indexes.");
+            logger::log_error(ret, "Error unpacking dataset indexes.");
             return ret;
         }
 
@@ -618,7 +634,8 @@ namespace hec {
             logger::log_error(ret, "Sending dataset load message failed.");
             return nullptr;
         }
-        
+        // free memory
+        msg.clear();
         // wait for result
         ret = waitForResult(qResPtr);
         if (ret != DBERR_OK) {
@@ -688,7 +705,7 @@ namespace hec {
         return 0;
     }
 
-    std::vector<hec::Query*> loadQueriesFromFile(std::string &filePath, std::string fileTypeStr, int datasetID, hec::QueryResultType resultType) {
+    std::vector<hec::Query*> loadQueriesFromFile(std::string filePath, std::string fileTypeStr, int datasetID, hec::QueryResultType resultType) {
         std::vector<hec::Query*> batchQueries;
         int ret = 0;
         hec::FileType fileType = mapping::fileTypeTextToInt(fileTypeStr);

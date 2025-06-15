@@ -39,6 +39,10 @@ namespace proc
         // syncrhonize with agent
         MPI_Barrier(g_agent_comm);
 
+        int testRank;
+        MPI_Comm_rank(g_agent_comm, &testRank);
+        // logger::log_success("My rank in g_agent_comm is", testRank);
+
         return DBERR_OK;
     }
 

@@ -23,7 +23,7 @@ namespace controller
             // if (ret != DBERR_OK) {
             //     logger::log_error(ret, "Worker termination broadcast failed");
             // }
-            int send_ret = comm::send::sendResponse(DRIVER_GLOBAL_RANK, MSG_NACK, g_global_intra_comm);
+            // int send_ret = comm::send::sendResponse(DRIVER_GLOBAL_RANK, MSG_NACK, g_global_intra_comm);
         }
 
         // Wait for the children processes to finish
@@ -32,11 +32,15 @@ namespace controller
         // Wait for all the controllers to finish
         MPI_Barrier(g_controller_comm);
 
+        // syncrhonize with driver
+        MPI_Barrier(g_global_intra_comm);
+
         // Finalize the MPI environment.
         MPI_Finalize();
         // if (g_node_rank == HOST_LOCAL_RANK) {
         //     logger::log_success("System finalized successfully");
         // }
+        // logger::log_success("System finalized successfully");
     }
 }
 
@@ -54,6 +58,8 @@ static DB_STATUS initAPRILCreation() {
         logger::log_error(ret, "Failed to broadcast APRIL metadata");
         return ret;
     }
+    // free memory
+    aprilMetadataMsg.clear();
     // measure response time
     double startTime;
     startTime = mpi_timer::markTime();
@@ -84,6 +90,8 @@ static DB_STATUS initLoadDataset(Dataset *dataset, DatasetIndex datasetIndex) {
         logger::log_error(ret, "Failed to broadcast query metadata");
         return ret;
     }
+    // free memory
+    msg.clear();
 
     // wait for responses by workers+agent that all is ok
     ret = comm::host::gatherResponses();
@@ -108,6 +116,8 @@ static DB_STATUS initLoadAPRIL() {
         logger::log_error(ret, "Failed to broadcast APRIL metadata");
         return ret;
     }
+    // free memory
+    aprilMetadataMsg.clear();
     // wait for responses by workers+agent that all is ok
     ret = comm::host::gatherResponses();
     if (ret != DBERR_OK) {
@@ -123,7 +133,6 @@ int main(int argc, char* argv[]) {
         controller::terminate();
         return ret;
     }
-
 
     // all nodes create their agent process
     ret = proc::setupProcesses();

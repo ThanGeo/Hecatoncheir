@@ -1619,6 +1619,8 @@ struct PartitioningMethod {
 
     virtual double getPartPartionExtentX() = 0;
     virtual double getPartPartionExtentY() = 0;
+
+    virtual ~PartitioningMethod() {}
 };
 
 /** @brief Two Grid partitioning method. Uses a distribution grid for data distribution and a partitioning grid for the actual partitioning. */
@@ -1780,8 +1782,6 @@ protected:
     std::vector<PartitionBase*> partitions;
     std::unordered_map<int, size_t> partitionMap;
 public:
-    virtual ~BaseIndex() = default;
-
     virtual DB_STATUS addObject(Shape *objectRef) = 0;
 
     /** @brief Sorts all objects in the index along the Y-axis. */
@@ -1814,6 +1814,21 @@ public:
 
     virtual DB_STATUS evaluateQuery(hec::Query* query, hec::QResultBase* queryResult) = 0;
 
+    DB_STATUS clear() {
+        if (partitions.size() > 0) {
+            for (auto& it : partitions) {
+                delete it;
+                it = nullptr; // optional, for safety
+            }
+            partitions.clear();
+        }
+        partitionMap.clear();
+        return DBERR_OK;
+    }
+
+    ~BaseIndex() {
+        this->clear();
+    }
 };
 
 /** @brief Holds all two-layer related index information.
@@ -1841,7 +1856,6 @@ public:
 
     /** @brief Evaluate the given query and store results in the queryResult object. */
     DB_STATUS evaluateQuery(hec::Query* query, hec::QResultBase* queryResult) override;
-
 };
 
 /** @brief Holds all two-layer related index information.
@@ -1870,7 +1884,6 @@ public:
 
     /** @brief Evaluate the given query and store results in the queryResult object. */
     DB_STATUS evaluateQuery(hec::Query* query, hec::QResultBase* queryResult);
-
 };
 
 /**
@@ -1939,6 +1952,8 @@ struct Dataset{
     AprilData* getAprilDataBySectionAndObjectID(uint sectionID, size_t recID);
     /** @brief Sets the april data in the dataset for the given object ID and section ID */
     DB_STATUS setAprilDataForSectionAndObjectID(uint sectionID, size_t recID, AprilData &aprilData);
+    /** @brief cleans up all memory and contents for this dataset */
+    void clear();
 };
 
 
@@ -1995,6 +2010,15 @@ struct Config {
     DatasetOptions datasetOptions;
     ApproximationMetadata approximationMetadata;
     QueryMetadata queryMetadata;    // rename to query pipeline
+
+    void clear() {
+        datasetOptions.clear();
+        if (partitioningMethod != nullptr) {
+            // @todo: find how to delete properly
+            delete partitioningMethod;
+            partitioningMethod = nullptr; // Avoid dangling pointer
+        } 
+    }
 };
 
 

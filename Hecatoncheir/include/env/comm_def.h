@@ -100,6 +100,7 @@ struct SerializedMsg {
         count = 0;
         if (data != nullptr){
             free(data);
+            data = nullptr;
         }
     }
 

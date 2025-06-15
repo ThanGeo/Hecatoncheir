@@ -6,8 +6,10 @@
 #include "config/setup.h"
 #include "env/comm.h"
 
+
 void terminateAgent() {
-    // logger::log_success("Waiting for exit...");
+    // cleanup everything
+    g_config.clear();
     // wait for the rest of the processes in the intercomm to finish
     MPI_Barrier(g_agent_comm);
     // Finalize the MPI environment.
@@ -35,5 +37,7 @@ int main(int argc, char* argv[]) {
 
     // return
     terminateAgent();
+    // logger::log_success("System finalized successfully");
+
     return 0;
 }

@@ -17,26 +17,39 @@ int main(int argc, char* argv[]) {
     /** 
      * Prepare data
      * You can prepare your data using hec::prepareDataset()
-     * and then partition it using hec::partition();
+     * specify the following:
+     * * path
+     * * file type
+     * * spatial data type
+     * * true/false for persistence (under development)
      */
+    int datasetID = hec::prepareDataset("path_to_dataset.wkt", "WKT", "POLYGON", false);
 
 
     /** 
      * Partition data
-     * 
+     * To partition your dataset you only need to call hec::partition();
+     * with the dataset IDs you want to partition across the system.
      */
+    int ret = hec::partition({datasetID});
 
 
     /** 
      * Index data
-     * 
+     * you can index your partitioned datasets by specifying their IDs and the Index type to use.
      */
+    ret = hec::buildIndex({datasetID}, hec::IT_TWO_LAYER);
 
 
     /** 
-     * Define a query and evaluate it
-     * 
+     * Define a query and evaluate it/
+     * Range queries can be loaded from the disk. Specify the query filepath, filetype 
+     * and the dataset ID on which the queries will be evaluated on.
+     * You can either count the results or collect the result ids.
+     * Join queries require two dataset IDs instead and no query file.
      */
+    std::vector<hec::Query *> batch = hec::loadQueriesFromFile("path_to_query.wkt", "WKT", datasetID, hec::QR_COUNT);
+    std::unordered_map<int, hec::QResultBase *> results = hec::query(batch);
 
     /**
      * Don't forget to terminate Hecatoncheir when you are done!

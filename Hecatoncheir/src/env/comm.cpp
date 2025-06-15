@@ -139,6 +139,8 @@ namespace comm
                 logger::log_error(ret, "Forwarding response to host controller failed");
                 return ret;
             }
+            // free msg
+            msg.clear();
         }
         return ret;
     }    
@@ -159,7 +161,6 @@ namespace comm
             batch.deserialize(buffer, bufferSize);
             // logger::log_success("Received batch with", batch.objectCount, "objects");
             if (batch.objectCount > 0) {
-                
                 // append to partition file
                 ret = storage::writer::partitionFile::appendBatchToPartitionFile(partitionFile, &batch, dataset);
                 if (ret != DBERR_OK) {
@@ -259,7 +260,7 @@ namespace comm
                     break;
             }
             // free memory
-            free(msg.data);
+            msg.clear();
             return ret;
         }
 
@@ -295,7 +296,7 @@ namespace comm
                     break;
             }
             // free memory
-            free(msg.data);
+            msg.clear();
             return ret;
         }
 
@@ -324,14 +325,14 @@ namespace comm
                 }
                 // pull
                 switch (status.MPI_TAG) {
-                    case MSG_INSTR_FIN: // todo: maybe this is not needed
-                        /* stop listening for instructions */
-                        ret = recv::receiveInstructionMessage(PARENT_RANK, status.MPI_TAG, g_agent_comm, status);
-                        if (ret == DBERR_OK) {
-                            // break the listening loop
-                            return DB_FIN;
-                        }
-                        break;
+                    // case MSG_INSTR_FIN: // todo: maybe this is not needed
+                    //     /* stop listening for instructions */
+                    //     ret = recv::receiveInstructionMessage(PARENT_RANK, status.MPI_TAG, g_agent_comm, status);
+                    //     if (ret == DBERR_OK) {
+                    //         // break the listening loop
+                    //         return DB_FIN;
+                    //     }
+                    //     break;
                     case MSG_BATCH_POINT:
                     case MSG_BATCH_LINESTRING:
                     case MSG_BATCH_POLYGON:
@@ -393,14 +394,14 @@ namespace comm
                 }
                 // pull
                 switch (status.MPI_TAG) {
-                    case MSG_INSTR_FIN: // todo: maybe this is not needed
-                        /* stop listening for instructions */
-                        ret = recv::receiveInstructionMessage(PARENT_RANK, status.MPI_TAG, g_agent_comm, status);
-                        if (ret == DBERR_OK) {
-                            // break the listening loop
-                            return DB_FIN;
-                        }
-                        goto STOP_LISTENING;
+                    // case MSG_INSTR_FIN: // todo: maybe this is not needed
+                    //     /* stop listening for instructions */
+                    //     ret = recv::receiveInstructionMessage(PARENT_RANK, status.MPI_TAG, g_agent_comm, status);
+                    //     if (ret == DBERR_OK) {
+                    //         // break the listening loop
+                    //         return DB_FIN;
+                    //     }
+                    //     goto STOP_LISTENING;
                     case MSG_BATCH_POINT:
                     case MSG_BATCH_LINESTRING:
                     case MSG_BATCH_POLYGON:
@@ -441,6 +442,12 @@ STOP_LISTENING:
             // perform the corresponding instruction
             switch (status.MPI_TAG) {
                 case MSG_INSTR_FIN:
+                    // send ACK
+                    ret = send::sendResponse(PARENT_RANK, MSG_ACK, g_agent_comm);
+                    if (ret != DBERR_OK) {
+                        logger::log_error(ret, "Failed to send ACK for termination instruction.");
+                        return ret;
+                    }
                     return DB_FIN;
                 case MSG_INSTR_BATCH_FINISHED:
                     // send ACK
@@ -477,7 +484,7 @@ STOP_LISTENING:
                 return ret ;
             }
             // free memory
-            free(msg.data);
+            msg.clear();
             // send response
             if (ret == DBERR_OK) {
                 // send ACK 
@@ -533,7 +540,7 @@ STOP_LISTENING:
             }
 
             // free message memory
-            free(msg.data);
+            msg.clear();
 
             // return dataset ID
             SerializedMsg<int> msgToController(MPI_INT);
@@ -547,6 +554,8 @@ STOP_LISTENING:
                 logger::log_error(ret, "Failed sending indexes message to parent controller.");
                 return ret;
             }
+            // free memory
+            msgToController.clear();
             return ret;
         }
 
@@ -576,9 +585,9 @@ STOP_LISTENING:
             // printf("Partitioning metadata set: (%f,%f),(%f,%f)\n", g_config.partitioningMethod->distGridDataspaceMetadata.xMinGlobal, g_config.partitioningMethod->distGridDataspaceMetadata.yMinGlobal, g_config.partitioningMethod->distGridDataspaceMetadata.xMaxGlobal, g_config.partitioningMethod->distGridDataspaceMetadata.yMaxGlobal);
             // printf("Partitioning metadata set: gPPD %d, dPPD %d, pPPD %d\n", g_config.partitioningMethod->getGlobalPPD(), g_config.partitioningMethod->getDistributionPPD(), g_config.partitioningMethod->getPartitioningPPD());
             // printf("distExtents %f,%f, partitionExtents %f,%f\n", g_config.partitioningMethod->getDistPartionExtentX(), g_config.partitioningMethod->getDistPartionExtentY(), g_config.partitioningMethod->getPartPartionExtentX(), g_config.partitioningMethod->getPartPartionExtentY());
-           
-
-
+            
+            // free memory
+            msg.clear();
             return ret;
         }
 
@@ -598,7 +607,7 @@ STOP_LISTENING:
             }
             
             // free message memory
-            free(msg.data);
+            msg.clear();
 
             for (auto &index : datasetIndexes) {
                 if (g_config.datasetOptions.getDatasetByIdx(index)->metadata.persist) {
@@ -655,7 +664,7 @@ STOP_LISTENING:
             }
             
             // free message memory
-            free(msg.data);
+            msg.clear();
 
             // first number is the build index
             hec::IndexType indexType = (hec::IndexType) messageContents[0];
@@ -704,7 +713,7 @@ STOP_LISTENING:
             }
             
             // free message memory
-            free(msg.data);
+            msg.clear();
 
             for (auto &index : datasetIndexes) {
                 // get dataset container
@@ -758,7 +767,7 @@ STOP_LISTENING:
             g_config.datasetOptions.dataspaceMetadata.print();
 
             // free message memory
-            free(msg.data);
+            msg.clear();
             // dont send ACK, return @todo, maybe send?
             return ret;
         }
@@ -779,7 +788,7 @@ STOP_LISTENING:
             }
 
             // free message memory
-            free(msg.data);
+            msg.clear();
 
             // setup query result object
             hec::QResultBase* queryResult;
@@ -806,7 +815,7 @@ STOP_LISTENING:
             }
 
             // free message memory
-            free(resultMsg.data);
+            resultMsg.clear();
 
             // free query memory
             delete queryPtr;
@@ -835,7 +844,7 @@ STOP_LISTENING:
             // logger::log_success("Unpacked", queryBatch.size(), "queries to process.");
 
             // free message memory
-            free(msg.data);
+            msg.clear();
             
             // holds all the final batch results
             std::unordered_map<int, hec::QResultBase*> batchResults;
@@ -1012,7 +1021,6 @@ STOP_LISTENING:
 STOP_LISTENING:
             return DBERR_OK;
         }
-    
     }
 
     namespace controller
@@ -1037,7 +1045,7 @@ STOP_LISTENING:
                     return ret;
                 }
                 // free memory
-                free(msg.data);
+                msg.clear();
                 // wait for response by the agent that system init went ok
                 ret = waitForResponse();
                 if (ret != DBERR_OK) {
@@ -1070,7 +1078,6 @@ STOP_LISTENING:
                     logger::log_error(DBERR_COMM_SEND, "Failed forwarding instruction");
                     return DBERR_COMM_SEND;
                 }
-
                 return DBERR_OK;
             }
 
@@ -1082,7 +1089,7 @@ STOP_LISTENING:
                 }
                 
                 MPI_Status status;
-                // receive instruction
+                // receive response
                 DB_STATUS ret = recv::receiveResponse(sourceRank, sourceTag, sourceComm, status);
                 if (ret != DBERR_OK) {
                     logger::log_error(DBERR_COMM_RECV, "Failed forwarding response");
@@ -1127,7 +1134,7 @@ STOP_LISTENING:
                     continueListening = 0;
                 }
                 // free memory
-                free(msg.data);
+                msg.clear();
                 return ret;
             }
 
@@ -1144,7 +1151,7 @@ STOP_LISTENING:
                     return ret;
                 }
                 // free memory
-                free(msg.data);
+                msg.clear();
                 // wait for response by the agent that all is well for the APRIL creation
                 ret = waitForResponse();
                 if (ret != DBERR_OK) {
@@ -1166,7 +1173,7 @@ STOP_LISTENING:
                     return ret;
                 }
                 // free memory
-                free(msg.data);
+                msg.clear();
                 return ret;
             }
 
@@ -1229,7 +1236,7 @@ STOP_LISTENING:
                     return ret;
                 }
                 // free memory
-                free(msg.data);
+                msg.clear();
                 // wait for the results by the agent 
                 ret = waitForResults();
                 if (ret != DBERR_OK) {
@@ -1261,7 +1268,7 @@ STOP_LISTENING:
                 return ret;
             }
             // free memory
-            free(msg.data);
+            msg.clear();
             // logger::log_task("Sent batch to node", batch->destRank);
             return ret;
         }
@@ -1292,7 +1299,7 @@ STOP_LISTENING:
                     return ret;
                 }
                 // free memory
-                free(msg.data);
+                msg.clear();
             }
             
             return ret;
@@ -1313,7 +1320,7 @@ STOP_LISTENING:
             }              
 
             // free
-            free(msgPack.data);
+            msgPack.clear();
 
             return ret;
         }
@@ -1330,14 +1337,14 @@ STOP_LISTENING:
                 }
                 // a message has been probed, check its tag
                 switch (status.MPI_TAG) {
-                    case MSG_INSTR_FIN:
-                        /* stop listening  */
-                        ret = recv::receiveInstructionMessage(PARENT_RANK, status.MPI_TAG, g_agent_comm, status);
-                        if (ret == DBERR_OK) {
-                            // break the listening loop
-                            return DB_FIN;
-                        }
-                        return ret;
+                    // case MSG_INSTR_FIN:
+                    //     /* stop listening  */
+                    //     ret = recv::receiveInstructionMessage(PARENT_RANK, status.MPI_TAG, g_agent_comm, status);
+                    //     if (ret == DBERR_OK) {
+                    //         // break the listening loop
+                    //         return DB_FIN;
+                    //     }
+                    //     return ret;
                     case MSG_BATCH_POINT:
                     case MSG_BATCH_LINESTRING:
                     case MSG_BATCH_POLYGON:
@@ -1370,7 +1377,7 @@ STOP_LISTENING:
                 return ret;
             }
             // free message memory
-            free(msg.data);
+            msg.clear();
             // wait for response from agent with the dataset ID
             SerializedMsg<int> msgFromAgent(MPI_INT);
             ret = probe(AGENT_RANK, MSG_DATASET_INDEX, g_agent_comm, status);
@@ -1400,7 +1407,7 @@ STOP_LISTENING:
                 return ret;
             }
             // free message memory
-            free(msg.data);
+            msg.clear();
             return ret;
         }
 
@@ -1418,7 +1425,7 @@ STOP_LISTENING:
                 return ret;
             }
             // free message memory
-            free(msg.data);
+            msg.clear();
 
             // start listening for partitioning messages (batches)
             ret = listenForDatasetPartitioning();
@@ -1449,7 +1456,7 @@ STOP_LISTENING:
                 return ret;
             }
             // free message memory
-            free(msg.data);
+            msg.clear();
 
             // wait for response by agent and forward it to the host controller when it arrives
             ret = waitForResponse();
@@ -1474,7 +1481,7 @@ STOP_LISTENING:
                 return ret;
             }
             // free message memory
-            free(msg.data);
+            msg.clear();
 
             // wait for response by agent and forward it to the host controller when it arrives
             ret = waitForResponse();
@@ -1499,7 +1506,7 @@ STOP_LISTENING:
                 return ret;
             }
             // free message memory
-            free(msg.data);
+            msg.clear();
 
             // no ACK, return
             return ret;
@@ -1520,7 +1527,7 @@ STOP_LISTENING:
                 return ret;
             }
             // free message memory
-            free(msg.data);
+            msg.clear();
 
             // wait for response by agent and forward it to the host controller when it arrives
             ret = waitForResults();
@@ -1547,6 +1554,11 @@ STOP_LISTENING:
                 case MSG_INSTR_FIN:
                     /* terminate */
                     ret = forward::forwardInstructionMessage(HOST_LOCAL_RANK, status.MPI_TAG, g_controller_comm, AGENT_RANK, g_agent_comm);
+                    if (ret != DBERR_OK) {
+                        return ret;
+                    }
+                    /* wait for ACK from agent and forward to host controller*/
+                    ret = forward::forwardResponse(AGENT_RANK, MSG_ACK, g_agent_comm, HOST_LOCAL_RANK, g_controller_comm);
                     if (ret != DBERR_OK) {
                         return ret;
                     }
@@ -1689,7 +1701,7 @@ STOP_LISTENING:
                     return DBERR_COMM_RECV;
                 }
                 
-                // send to controllers
+                // send instruction to controllers
                 #pragma omp parallel num_threads(MAX_THREADS)
                 {
                     DB_STATUS local_ret = DBERR_OK;
@@ -1721,7 +1733,6 @@ STOP_LISTENING:
             #pragma omp parallel num_threads(MAX_THREADS)
             {
                 DB_STATUS local_ret = DBERR_OK;
-                int messageFound = 0;
                 MPI_Status status;
                 #pragma omp for
                 for (int i=0; i<g_world_size; i++) {
@@ -1790,7 +1801,7 @@ STOP_LISTENING:
             }
 
             // free memory
-            free(msg.data);
+            msg.clear();
 
             // wait for response from agent with the dataset ID
             SerializedMsg<int> msgToDriver(MPI_INT);
@@ -1814,7 +1825,7 @@ STOP_LISTENING:
                 return ret;
             }
             // free memory
-            free(msgToDriver.data);
+            msgToDriver.clear();
             return ret;
         }
 
@@ -1835,7 +1846,7 @@ STOP_LISTENING:
             }
 
             // free memory
-            free(msg.data);
+            msg.clear();
 
             // double check if bounds are set for all datasets
             for (auto &index: datasetIndexes) {
@@ -1882,7 +1893,7 @@ STOP_LISTENING:
                 }
 
                 // free message
-                free(datasetInfoMsg.data);
+                datasetInfoMsg.clear();
 
                 // signal the begining of the partitioning
                 SerializedMsg<int> signal(MPI_INT);
@@ -1912,7 +1923,7 @@ STOP_LISTENING:
                 }
 
                 // free memory
-                free(signal.data);
+                signal.clear();
             }
 
             // send ACK to the driver
@@ -1971,7 +1982,7 @@ STOP_LISTENING:
             }
 
             // free memory
-            free(msg.data);
+            msg.clear();
 
             // notify the controllers and the local agent to load each dataset in the message
             for (auto &index : datasetIndexes) {
@@ -2014,7 +2025,7 @@ STOP_LISTENING:
                     return ret;
                 }
                 // free memory
-                free(signal.data);
+                signal.clear();
 
                 // wait for ACK from everyone
                 ret = gatherResponses();
@@ -2349,7 +2360,7 @@ STOP_LISTENING:
             }
 
             // free memory
-            free(msg.data);
+            msg.clear();
 
             // create query result object
             hec::QResultBase* totalResults;
@@ -2376,6 +2387,7 @@ STOP_LISTENING:
             }
             
             // free memory
+            resultMsg.clear();
             delete totalResults;
             return ret;
         }
@@ -2467,7 +2479,6 @@ STOP_LISTENING:
                 delete value;
             }
             batchResultsMap.clear();
-
             return ret;
         }
 
@@ -2478,11 +2489,23 @@ STOP_LISTENING:
                 case MSG_INSTR_FIN:
                     /* terminate everything */
                     // forward instruction
-                    // logger::log_success("MSG_INSTR_FIN");
                     ret = forward::forwardInstructionMessage(MSG_INSTR_FIN);
                     if (ret != DBERR_OK) {
                         logger::log_error(DBERR_COMM_RECV, "Failed forwarding instruction from driver");
                         return DBERR_COMM_RECV;
+                    }
+                    
+                    // wait for ACKs
+                    ret = gatherResponses();
+                    if (ret != DBERR_OK) {
+                        logger::log_error(ret, "Not all nodes finished successfully.");
+                        return ret;
+                    }
+                    // send ACK to driver
+                    ret = comm::send::sendResponse(DRIVER_GLOBAL_RANK, MSG_ACK, g_global_intra_comm);
+                    if (ret != DBERR_OK) {
+                        logger::log_error(ret, "Failed sending ACK to driver.");
+                        return ret;
                     }
                     return DB_FIN;
                 case MSG_PREPARE_DATASET:
@@ -2553,7 +2576,8 @@ STOP_LISTENING:
             DB_STATUS ret = DBERR_OK;
             int messageFound = 0;
             while(true){
-                // check for DRIVER messages                    
+                // check for DRIVER messages  
+                // @todo: make wait-probe instead of nowait?
                 ret = probe(DRIVER_GLOBAL_RANK, MPI_ANY_TAG, g_global_intra_comm, status, messageFound);
                 if (ret != DBERR_OK){
                     return ret;

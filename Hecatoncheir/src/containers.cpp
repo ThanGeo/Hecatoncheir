@@ -476,6 +476,17 @@ DB_STATUS Dataset::setAprilDataForSectionAndObjectID(uint sectionID, size_t recI
     return DBERR_OK;
 }
 
+void Dataset::clear() {
+    // free index memory
+    delete index;
+    // delete objects
+    this->objects.clear();
+    this->objectPosMap.clear();
+    this->sectionMap.clear();
+    this->recToSectionIdMap.clear();
+}
+
+
 Dataset* DatasetOptions::getDatasetByIdx(int index) {
     auto it = datasets.find((DatasetIndex) index);
     if (it == datasets.end()) {
@@ -879,8 +890,14 @@ int DatasetOptions::getNumberOfDatasets() {
 
 void DatasetOptions::clear() {
     numberOfDatasets = 0;
-    R = nullptr;
-    S = nullptr;
+    if (R != nullptr) {
+        R->clear();
+        R = nullptr;
+    }
+    if (S != nullptr) {
+        S->clear();
+        S = nullptr;
+    }
     datasets.clear();
     dataspaceMetadata.clear();
 }

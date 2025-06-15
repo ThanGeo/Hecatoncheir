@@ -31,7 +31,7 @@ namespace hec {
      * @return Assigned dataset id.
      * @details Internally, generates and assigns a Dataset object to Hecatoncheir's configuration.
      */
-    DatasetID prepareDataset(std::string &filePath, std::string fileTypeStr, std::string dataTypeStr, bool persist);
+    DatasetID prepareDataset(std::string filePath, std::string fileTypeStr, std::string dataTypeStr, bool persist);
 
     /**
      * @brief Prepares a dataset object for handling, manually setting its bounding box. 
@@ -63,7 +63,7 @@ namespace hec {
     int buildIndex(std::vector<DatasetID> datasetIndexes, IndexType indexType);
 
     /** @brief Load a batch of queries from the given filepath. */
-    std::vector<hec::Query*> loadQueriesFromFile(std::string &filePath, std::string fileTypeStr, int datasetID, hec::QueryResultType resultType);
+    std::vector<hec::Query*> loadQueriesFromFile(std::string filePath, std::string fileTypeStr, int datasetID, hec::QueryResultType resultType);
 
 
     namespace time {

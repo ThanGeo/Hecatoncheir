@@ -2,6 +2,7 @@
 
 #include <fstream>
 #include <sstream>
+#include <unistd.h>
 
 int main(int argc, char* argv[]) {
     /** Your hosts list. It is mandatory to define each node as:
@@ -54,7 +55,8 @@ int main(int argc, char* argv[]) {
      * 
      */
     start = hec::time::getTime();
-    ret = hec::buildIndex({landmarkID}, hec::IT_UNIFORM_GRID);
+    // ret = hec::buildIndex({landmarkID}, hec::IT_UNIFORM_GRID);
+    ret = hec::buildIndex({landmarkID}, hec::IT_TWO_LAYER);
     // ret = hec::buildIndex({waterID}, hec::IT_TWO_LAYER);
     printf("Indexes built in %0.2f seconds.\n", hec::time::getTime() - start);
 
@@ -83,7 +85,7 @@ int main(int argc, char* argv[]) {
     // std::string queriesPath = "/home/hec/thanasis/Hecatoncheir/test_query.wkt";
     std::vector<hec::Query *> batch = hec::loadQueriesFromFile(queriesPath, "WKT", landmarkID, hec::QR_COUNT);
     std::unordered_map<int, hec::QResultBase *> results = hec::query(batch);
-    printf("Query finished in %0.2f seconds.\n", hec::time::getTime() - start);
+    double end = hec::time::getTime() - start;
     // for (int i=0; i<batch.size(); i++) {
     //     std::vector<size_t> ids = results[i]->getResultList();
     //     printf("Query %d results: %ld\n", i, ids.size());
@@ -100,6 +102,7 @@ int main(int argc, char* argv[]) {
         delete results[it->getQueryID()];
         delete it;
     }
+    printf("Query finished in %0.2f seconds.\n", end);
 
     /**
      * Don't forget to terminate Hecatoncheir when you are done!

@@ -299,7 +299,7 @@ namespace APRIL
             auto current_partial_cell = partialCells.begin();
             uint32_t allStart = *current_partial_cell;
             //set first interval start and starting uncertain cell (the next cell after the first partial interval)
-            while(*current_partial_cell == *(current_partial_cell+1) - 1){
+            while ( (current_partial_cell + 1) != partialCells.end() && *current_partial_cell == *(current_partial_cell + 1) - 1) {
                 current_partial_cell++;
             }
             current_id = *(current_partial_cell) + 1;
@@ -341,9 +341,10 @@ namespace APRIL
                 }
 
                 //get next partial and uncertain
-                while(*current_partial_cell == *(current_partial_cell+1) - 1){
+                while ((current_partial_cell + 1) != partialCells.end() && *current_partial_cell == *(current_partial_cell + 1) - 1) {
                     current_partial_cell++;
                 }
+
                 current_id = *(current_partial_cell) + 1;
                 hilbert::d2xy(cellsPerDim, current_id, x, y);
                 current_partial_cell++;
@@ -382,9 +383,9 @@ namespace APRIL
             sort(partialCells.begin(), partialCells.end());
             // delete the matrix memory, not needed anymore
             for(size_t i = 0; i < rasterData.bufferWidth; i++){
-                delete M[i];
+                delete[] M[i];
             }
-            delete M;
+            delete[] M;
             // logger::log_success("sorted");
             // generate all/full intervals
             ret = computeAllAndFullIntervals(object, cellsPerDim, rasterData, partialCells, aprilData);
@@ -413,9 +414,9 @@ namespace APRIL
             sort(partialCells.begin(), partialCells.end());
             // delete the matrix memory, not needed anymore
             for(size_t i = 0; i < rasterData.bufferWidth; i++){
-                delete M[i];
+                delete[] M[i];
             }
-            delete M;
+            delete[] M;
             // generate all intervals from the partial cells
             ret = computeAllIntervalsFromPartialCells(cellsPerDim, rasterData, partialCells, aprilData);
             return ret;
