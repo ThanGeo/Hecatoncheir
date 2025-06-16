@@ -997,21 +997,11 @@ namespace twolayer
     {
         static inline DB_STATUS forwardPair(Shape* objR, Shape* objS, hec::QResultBase* queryResult) {
             DB_STATUS ret = DBERR_OK;
-            // check if intermediate filter is enabled
-            if (g_config.queryMetadata.IntermediateFilter) {
-                // forward to intermediate filter
-                ret = APRIL::standard::IntermediateFilterEntrypoint(objR, objS, queryResult);
-                if (ret != DBERR_OK) {
-                    logger::log_error(ret, "Intermediate filter failed.");
-                    return ret;
-                }
-            } else {
-                // forward to refinement
-                ret = refinement::relate::refinementEntrypoint(objR, objS, g_config.queryMetadata.queryType, queryResult);
-                if (ret != DBERR_OK) {
-                    logger::log_error(ret, "Refinement failed.");
-                    return ret;
-                }
+            // forward to refinement
+            ret = refinement::relate::refinementEntrypoint(objR, objS, g_config.queryMetadata.queryType, queryResult);
+            if (ret != DBERR_OK) {
+                logger::log_error(ret, "Refinement failed.");
+                return ret;
             }
             return ret;
         }
@@ -1627,7 +1617,6 @@ namespace twolayer
                                 queryResult->addResult(it->recID);
                             }
                         }
-                        
                     }
 
                     //end tile in the row   
