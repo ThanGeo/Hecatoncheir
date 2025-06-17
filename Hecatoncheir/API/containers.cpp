@@ -6,8 +6,11 @@
 
 namespace hec
 {
+    // globals
     SpatialQueries spatialQueries;
     SupportedQueryResultTypes queryResultTypes;
+
+    // JOIN QUERY
 
     JoinQuery::JoinQuery(DatasetID Rid, DatasetID Sid, int id, std::string predicateStr) {
         QueryType queryType = mapping::queryTypeStrToInt(predicateStr);
@@ -47,6 +50,8 @@ namespace hec
         }
         logger::log_error(DBERR_QUERY_INVALID_TYPE, "Invalid predicate for a join query:", predicate);
     }
+
+    // RANGE QUERY
 
     RangeQuery::RangeQuery(DatasetID datasetID, int id, std::string queryWKT) {
         if (queryWKT == "") {
@@ -126,6 +131,38 @@ namespace hec
         return this->shapeType;
     }
 
+    // kNN
+    KNNQuery::KNNQuery(DatasetID datasetID, int id, std::string queryWKT, int k) {
+        if (queryWKT == "") {
+            logger::log_error(DBERR_INVALID_PARAMETER, "Invalid (empty) wkt for range query.");
+            return;
+        }
+        if (queryWKT.find("POINT") != std::string::npos) {
+            this->shapeType = DT_POINT;
+        } else {
+            logger::log_error(DBERR_INVALID_DATATYPE, "Invalid WKT for kNN query. Only POINT is supported currently. WKT:", queryWKT);
+            return;
+        }
+        this->datasetID = datasetID;
+        this->queryID = id;
+        this->queryType = Q_KNN;
+        this->resultType = QR_KNN;
+        this->wktText = queryWKT;
+        this->k = k;
+    }
+
+    std::string KNNQuery::getWKT() {
+        return this->wktText;
+    }
+
+    int KNNQuery::getShapeType() {
+        return this->shapeType;
+    }
+
+    int KNNQuery::getK() {
+        return this->k;
+    }
+    
     // Q RESULT BASE
 
     int QResultBase::getQueryID() {
@@ -173,11 +210,6 @@ namespace hec
         this->resultCount++;
         // printf("%ld,%ld\n", idR, idS);
     }
-
-    void QResultCount::addResult(int relation, size_t idR, size_t idS) {
-        logger::log_error(DBERR_FORBIDDEN_METHOD_CALL, "Forbidden method call for QResultCount::addResult(int relation, size_t idR, size_t idS).");
-    };
-
 
     int QResultCount::calculateBufferSize() {
         int size = 0;
@@ -238,23 +270,15 @@ namespace hec
     void QResultCount::mergeResults(QResultBase* other) {
         // cast object pointer from base to derived
         auto otherCasted = dynamic_cast<QResultCount*>(other);
-        this->resultCount += otherCasted->resultCount;
+        if (otherCasted) {
+            this->resultCount += otherCasted->resultCount;
+        } else {
+            logger::log_error(DBERR_TYPE_CAST_MISMATCH, "Cast failed for QResultCount::mergeResults.");
+        }
     }
 
     size_t QResultCount::getResultCount() {
         return this->resultCount;
-    }
-
-    std::vector<size_t> QResultCount::getResultList() {
-        std::vector<size_t> empty;
-        logger::log_error(DBERR_FORBIDDEN_METHOD_CALL, "Forbidden method call for QResultCount::getResultList().");
-        return empty;
-    }
-
-    std::vector<std::vector<size_t>> QResultCount::getTopologyResultList() {
-        std::vector<std::vector<size_t>> empty;
-        logger::log_error(DBERR_FORBIDDEN_METHOD_CALL, "Forbidden method call for QResultCount::getTopologyResultList().");
-        return empty;
     }
 
     void QResultCount::setResult(size_t resultCount) {
@@ -262,10 +286,15 @@ namespace hec
     }
 
     void QResultCount::deepCopy(QResultBase* other) {
-        this->queryID = other->getQueryID();
-        this->queryType = other->getQueryType();
-        this->queryResultType = other->getResultType();
-        this->resultCount = other->getResultCount();
+        auto castedPtr = dynamic_cast<QResultCount*>(other);
+        if (castedPtr) {
+            this->queryID = castedPtr->getQueryID();
+            this->queryType = castedPtr->getQueryType();
+            this->queryResultType = castedPtr->getResultType();
+            this->resultCount = castedPtr->getResultCount();
+        } else {
+            logger::log_error(DBERR_TYPE_CAST_MISMATCH, "Cast failed for QResultCount::deepCopy.");
+        }
     }
 
     QResultBase* QResultCount::cloneEmpty() {
@@ -292,17 +321,13 @@ namespace hec
         // @todo: verify
         this->resultList.emplace_back(idR);
     }
-    
-    void QResultCollect::addResult(int relation, size_t idR, size_t idS) {
-        logger::log_error(DBERR_FORBIDDEN_METHOD_CALL, "Forbidden method call for QResultCollect::addResult(int relation, size_t idR, size_t idS).");
-    }
-       
+           
     int QResultCollect::calculateBufferSize() {
         int size = 0;
         size += sizeof(int);                                                // query ID
         size += sizeof(QueryType);                                          // query type
         size += sizeof(QueryResultType);                                    // query result type
-        size += sizeof(this->resultList.size());                             // result ids count
+        size += sizeof(size_t);                             // result ids count
         size += this->resultList.size() * sizeof(size_t);                   // result ids
         return size;
     }
@@ -372,8 +397,12 @@ namespace hec
     void QResultCollect::mergeResults(QResultBase* other) {
         // cast object pointer from base to derived
         auto otherCasted = dynamic_cast<QResultCollect*>(other);
-        this->resultList.reserve(this->resultList.size() + otherCasted->resultList.size());
-        this->resultList.insert(this->resultList.end(), otherCasted->resultList.begin(), otherCasted->resultList.end());
+        if (otherCasted) {
+            this->resultList.reserve(this->resultList.size() + otherCasted->resultList.size());
+            this->resultList.insert(this->resultList.end(), otherCasted->resultList.begin(), otherCasted->resultList.end());
+        } else {
+            logger::log_error(DBERR_TYPE_CAST_MISMATCH, "Cast failed for QResultCollect::mergeResults.");
+        }
     }
 
     size_t QResultCollect::getResultCount() {
@@ -382,12 +411,6 @@ namespace hec
 
     std::vector<size_t> QResultCollect::getResultList() {
         return this->resultList;
-    }
-
-    std::vector<std::vector<size_t>> QResultCollect::getTopologyResultList() {
-        std::vector<std::vector<size_t>> empty;
-        logger::log_error(DBERR_FORBIDDEN_METHOD_CALL, "Forbidden method call for QResultCollect::getTopologyResultList().");
-        return empty;
     }
 
     void QResultCollect::setResult(std::vector<size_t> &resultList) {
@@ -401,11 +424,181 @@ namespace hec
             this->queryType = castedPtr->getQueryType();
             this->queryResultType = castedPtr->getResultType();
             this->resultList = castedPtr->getResultList();
+        } else {
+            logger::log_error(DBERR_TYPE_CAST_MISMATCH, "Cast failed for QResultCollect::deepCopy.");
         }
     }
 
     QResultBase* QResultCollect::cloneEmpty() {
         QResultBase* newPtr = new hec::QPairResultCollect(queryID, queryType, queryResultType);
+        return newPtr;
+    }
+
+    // KNN RESULT COLLECT
+    
+    QResultkNN::QResultkNN(int queryID, int k) {
+        this->queryID = queryID;
+        this->queryType = Q_KNN;
+        this->queryResultType = QR_KNN;
+        this->k = k;
+        while (!maxHeap.empty()) {
+            maxHeap.pop();
+        }        
+    }
+
+    void QResultkNN::addResult(size_t id, double distance) {
+        if (maxHeap.size() < this->k) {
+            maxHeap.emplace(distance, id);
+            // logger::log_success("Added point", id, "with distance", distance);
+        } else if (distance < maxHeap.top().first) {
+            maxHeap.pop();
+            maxHeap.emplace(distance, id);
+            // logger::log_success("Added point", id, "with distance", distance);
+        }
+    }
+
+    int QResultkNN::calculateBufferSize() {
+        int size = 0;
+        size += sizeof(int);                                                // query ID
+        size += sizeof(QueryType);                                          // query type
+        size += sizeof(QueryResultType);                                    // query result type
+        size += sizeof(int);                                                // k
+        size += sizeof(size_t);                                             // heap size
+        size += this->maxHeap.size() * (sizeof(size_t) + sizeof(double));   // heap contents (pair<double,size_t>)
+        return size;
+    }
+
+    void QResultkNN::serialize(char **buffer, int &bufferSize) {
+        // calculate size
+        int bufferSizeRet = calculateBufferSize();
+        // allocate space
+        (*buffer) = (char*) malloc(bufferSizeRet * sizeof(char));
+        if (*buffer == NULL) {
+            // malloc failed
+            logger::log_error(DBERR_MALLOC_FAILED, "Malloc failed on serialization of QResultCollect object.");
+            return;
+        }
+        char* localBuffer = *buffer;
+        // add query id
+        *reinterpret_cast<int*>(localBuffer) = this->queryID;
+        localBuffer += sizeof(int);
+        // add query type
+        *reinterpret_cast<hec::QueryType*>(localBuffer) = this->queryType;
+        localBuffer += sizeof(hec::QueryType);
+        // add query result type
+        *reinterpret_cast<QueryResultType*>(localBuffer) = this->queryResultType;
+        localBuffer += sizeof(QueryResultType);
+        // k
+        *reinterpret_cast<int*>(localBuffer) = this->k;
+        localBuffer += sizeof(int);
+        // ids list size
+        size_t heapSize = this->maxHeap.size();
+        *reinterpret_cast<size_t*>(localBuffer) = heapSize;
+        localBuffer += sizeof(size_t);
+        // pairs (keep a copy to preserve the original)
+        auto heapCopy = this->maxHeap;
+        while (!heapCopy.empty()) {
+            auto pair = heapCopy.top();
+            heapCopy.pop();
+            *reinterpret_cast<double*>(localBuffer) = pair.first;
+            localBuffer += sizeof(double);
+            *reinterpret_cast<size_t*>(localBuffer) = pair.second;
+            localBuffer += sizeof(size_t);
+        }
+        // set final size
+        bufferSize = bufferSizeRet;
+    }
+
+    void QResultkNN::deserialize(const char *buffer, int bufferSize) {
+        int position = 0;
+        // query id
+        memcpy(&this->queryID, buffer + position, sizeof(int));
+        position += sizeof(int);
+        // query type
+        memcpy(&this->queryType, buffer + position, sizeof(QueryType));
+        position += sizeof(QueryType);
+        // query result type
+        memcpy(&this->queryResultType, buffer + position, sizeof(QueryResultType));
+        position += sizeof(QueryResultType);
+        // k
+        memcpy(&this->k, buffer + position, sizeof(int));
+        position += sizeof(int);
+        // heap size
+        size_t heapSize;
+        memcpy(&heapSize, buffer + position, sizeof(size_t));
+        position += sizeof(size_t);
+        // result ids
+        double distance;
+        size_t id;
+        for (int i=0; i<heapSize; i++) {
+            memcpy(&distance, buffer + position, sizeof(double));
+            position += sizeof(double);
+            memcpy(&id, buffer + position, sizeof(size_t));
+            position += sizeof(size_t);
+            this->maxHeap.emplace(distance, id);
+        }
+        if (position != bufferSize) {
+            logger::log_error(DBERR_DESERIALIZE_FAILED, "Deserialization of QResultCollect object finished, but buffer contains unchecked elements.");
+            return;
+        }
+    }
+
+    void QResultkNN::mergeResults(QResultBase* other) {
+        auto otherCasted = dynamic_cast<QResultkNN*>(other);
+        if (otherCasted) {
+            auto otherHeapCopy = otherCasted->maxHeap;
+            while (!otherHeapCopy.empty()) {
+                auto pair = otherHeapCopy.top();
+                otherHeapCopy.pop();
+                if (this->maxHeap.size() < this->k) {
+                    this->maxHeap.push(pair);
+                } else if (pair.first < this->maxHeap.top().first) {
+                    this->maxHeap.push(pair);
+                    // remove the worst (largest) distance
+                    this->maxHeap.pop(); 
+                }
+            }
+        } else {
+            logger::log_error(DBERR_TYPE_CAST_MISMATCH, "Cast failed for QResultkNN::mergeResults.");
+        }
+    }    
+
+    size_t QResultkNN::getResultCount() {
+        return this->maxHeap.size();
+    }
+
+    std::vector<size_t> QResultkNN::getResultList() {
+        std::vector<size_t> ids;
+        ids.reserve(this->maxHeap.size());
+        auto heapCopy = this->maxHeap;
+        while (!heapCopy.empty()) {
+            auto pair = heapCopy.top();
+            heapCopy.pop();
+            ids.emplace_back(pair.second);
+        }
+        std::reverse(ids.begin(), ids.end());
+        return ids;
+    }
+
+    void QResultkNN::setResult(std::priority_queue<std::pair<double, size_t>> &maxHeap) {
+        this->maxHeap = maxHeap;
+    }
+
+    void QResultkNN::deepCopy(QResultBase* other) {
+        auto castedPtr = dynamic_cast<QResultkNN*>(other);
+        if (castedPtr) {
+            this->queryID = castedPtr->getQueryID();
+            this->queryType = castedPtr->getQueryType();
+            this->queryResultType = castedPtr->getResultType();
+            this->k = castedPtr->k;
+            this->maxHeap = castedPtr->maxHeap;
+        } else {
+            logger::log_error(DBERR_TYPE_CAST_MISMATCH, "Cast failed for QResultkNN::deepCopy.");
+        }
+    } 
+
+    QResultBase* QResultkNN::cloneEmpty() {
+        QResultBase* newPtr = new hec::QResultkNN(queryID, k);
         return newPtr;
     }
 
@@ -428,7 +621,7 @@ namespace hec
         size += sizeof(int);                                                // query ID
         size += sizeof(QueryType);                                          // query type
         size += sizeof(QueryResultType);                                    // query result type
-        size += sizeof(this->resultList.size());                             // result ids count
+        size += sizeof(size_t);                                             // result ids count
         size += this->resultList.size() * sizeof(size_t);                   // result ids
         return size;
     }
@@ -499,8 +692,12 @@ namespace hec
     void QPairResultCollect::mergeResults(QResultBase* other) {
         // cast object pointer from base to derived
         auto otherCasted = dynamic_cast<QPairResultCollect*>(other);
-        this->resultList.reserve(this->resultList.size() + otherCasted->resultList.size());
-        this->resultList.insert(this->resultList.end(), otherCasted->resultList.begin(), otherCasted->resultList.end());
+        if (otherCasted) {
+            this->resultList.reserve(this->resultList.size() + otherCasted->resultList.size());
+            this->resultList.insert(this->resultList.end(), otherCasted->resultList.begin(), otherCasted->resultList.end());
+        } else {
+            logger::log_error(DBERR_TYPE_CAST_MISMATCH, "Cast failed for QPairResultCollect::mergeResults.");
+        }
     }
 
     size_t QPairResultCollect::getResultCount() {
@@ -510,12 +707,6 @@ namespace hec
 
     std::vector<size_t> QPairResultCollect::getResultList() {
         return this->resultList;
-    }
-
-    std::vector<std::vector<size_t>> QPairResultCollect::getTopologyResultList() {
-        std::vector<std::vector<size_t>> empty;
-        logger::log_error(DBERR_FORBIDDEN_METHOD_CALL, "Forbidden method call for QPairResultCollect::getTopologyResultList().");
-        return empty;
     }
 
     void QPairResultCollect::setResult(std::vector<size_t> &resultList) {
@@ -529,6 +720,8 @@ namespace hec
             this->queryType = castedPtr->getQueryType();
             this->queryResultType = castedPtr->getResultType();
             this->resultList = castedPtr->getResultList();
+        } else {
+            logger::log_error(DBERR_TYPE_CAST_MISMATCH, "Cast failed for QPairResultCollect::deepCopy.");
         }
     }
 
@@ -624,24 +817,17 @@ namespace hec
     void QTopologyResultCount::mergeResults(QResultBase* other) {
         // cast object pointer from base to derived
         auto otherCasted = dynamic_cast<QTopologyResultCount*>(other);
-        for (int i=0; i<this->TOTAL_RELATIONS; i++) {
-            this->resultList[i] += otherCasted->resultList[i];
+        if (otherCasted) {
+            for (int i=0; i<this->TOTAL_RELATIONS; i++) {
+                this->resultList[i] += otherCasted->resultList[i];
+            }
+        } else {
+            logger::log_error(DBERR_TYPE_CAST_MISMATCH, "Cast failed for QTopologyResultCount::mergeResults.");
         }
-    }
-
-    size_t QTopologyResultCount::getResultCount() {
-        logger::log_error(DBERR_FORBIDDEN_METHOD_CALL, "Forbidden method call for QTopologyResultCount::getResultCount().");
-        return 0;
     }
 
     std::vector<size_t> QTopologyResultCount::getResultList() {
         return this->resultList;
-    }
-    
-    std::vector<std::vector<size_t>> QTopologyResultCount::getTopologyResultList() {
-        std::vector<std::vector<size_t>> empty;
-        logger::log_error(DBERR_FORBIDDEN_METHOD_CALL, "Forbidden method call for QTopologyResultCount::getTopologyResultList().");
-        return empty;
     }
 
     void QTopologyResultCount::setResult(int relation, size_t resultCount) {
@@ -659,6 +845,8 @@ namespace hec
             this->queryType = castedPtr->getQueryType();
             this->queryResultType = castedPtr->getResultType();
             this->resultList = castedPtr->getResultList();
+        } else {
+            logger::log_error(DBERR_TYPE_CAST_MISMATCH, "Cast failed for QTopologyResultCount::deepCopy.");
         }
     }
 
@@ -694,7 +882,7 @@ namespace hec
         size += sizeof(QueryType);                                          // query type
         size += sizeof(QueryResultType);                                    // query result type
         for (auto &relation: this->resultList) {
-            size += sizeof(relation.size());                            // total pairs for this relation
+            size += sizeof(size_t);                            // total pairs for this relation
             size += relation.size() * sizeof(size_t);               // the pair ids for this relation
         }
         return size;
@@ -772,21 +960,19 @@ namespace hec
     void QTopologyResultCollect::mergeResults(QResultBase* other) {
         // cast object pointer from base to derived
         auto otherCasted = dynamic_cast<QTopologyResultCollect*>(other);
-        for (int i=0; i<this->TOTAL_RELATIONS; i++) {
-            this->resultList[i].reserve(this->resultList[i].size() + otherCasted->resultList[i].size());
-            this->resultList[i].insert(this->resultList[i].end(), otherCasted->resultList[i].begin(), otherCasted->resultList[i].end());
+        if (otherCasted) {
+            for (int i=0; i<this->TOTAL_RELATIONS; i++) {
+                this->resultList[i].reserve(this->resultList[i].size() + otherCasted->resultList[i].size());
+                this->resultList[i].insert(this->resultList[i].end(), otherCasted->resultList[i].begin(), otherCasted->resultList[i].end());
+            }
+        } else {
+            logger::log_error(DBERR_TYPE_CAST_MISMATCH, "Cast failed for QTopologyResultCollect::mergeResults.");
         }
     }
 
     size_t QTopologyResultCollect::getResultCount() {
         logger::log_error(DBERR_FORBIDDEN_METHOD_CALL, "Forbidden method call for QTopologyResultCollect::getResultCount().");
         return 0;
-    }
-
-    std::vector<size_t> QTopologyResultCollect::getResultList() {
-        std::vector<size_t> empty;
-        logger::log_error(DBERR_FORBIDDEN_METHOD_CALL, "Forbidden method call for QTopologyResultCollect::getResultCount().");
-        return empty;
     }
 
     std::vector<size_t> QTopologyResultCollect::getResultList(int relation) {
@@ -801,7 +987,6 @@ namespace hec
     std::vector<std::vector<size_t>> QTopologyResultCollect::getTopologyResultList() {
         return this->resultList;
     }
-
 
     void QTopologyResultCollect::setResult(int relation, std::vector<size_t> &ids) {
         if (relation < 0 || relation > 7) {
@@ -820,6 +1005,8 @@ namespace hec
             for (int i=0; i<this->TOTAL_RELATIONS; i++) {
                 this->resultList[i] = castedPtr->getResultList(i);
             }
+        } else {
+            logger::log_error(DBERR_TYPE_CAST_MISMATCH, "Cast failed for QTopologyResultCollect::deepCopy.");
         }
     }
 

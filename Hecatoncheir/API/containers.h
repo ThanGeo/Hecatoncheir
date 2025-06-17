@@ -4,6 +4,7 @@
 #include <string>
 #include <vector>
 #include <unordered_map>
+#include <queue>
 
 #include "def.h"
 
@@ -57,6 +58,7 @@ namespace hec
     enum QueryResultType {
         QR_COUNT,
         QR_COLLECT,
+        QR_KNN,
         QR_NONE = 777,
     };
 
@@ -66,14 +68,25 @@ namespace hec
         QueryType queryType = Q_NONE;                       // query type
         QueryResultType queryResultType = QR_COUNT;         // default result type
 
-        
         int getQueryID();
         QueryType getQueryType();
         QueryResultType getResultType();
         
-        virtual void addResult(size_t id) = 0;
-        virtual void addResult(size_t idR, size_t idS) = 0;
-        virtual void addResult(int relation, size_t idR, size_t idS) = 0;
+        virtual void addResult(size_t id) {
+            printf("Error: Forbidden method call in QResultBase for addResult(size_t id).");
+        }
+
+        virtual void addResult(size_t id, double distance) {
+            printf("Error: Forbidden method call in QResultBase for addResult(size_t id, double distance).");
+        }
+
+        virtual void addResult(size_t idR, size_t idS) {
+            printf("Error: Forbidden method call in QResultBase for addResult(size_t idR, size_t idS).");
+        }
+
+        virtual void addResult(int relation, size_t idR, size_t idS) {
+            printf("Error: Forbidden method call in QResultBase for addResult(int relation, size_t idR, size_t idS).");
+        }
         
         virtual void deepCopy(QResultBase* other) = 0;
 
@@ -87,9 +100,22 @@ namespace hec
 
         virtual void mergeResults(QResultBase* other) = 0;
 
-        virtual size_t getResultCount() = 0;
-        virtual std::vector<size_t> getResultList() = 0;
-        virtual std::vector<std::vector<size_t>> getTopologyResultList() = 0;
+        virtual size_t getResultCount() {
+            printf("Error: Forbidden method call in QResultBase for getResultCount().");
+            return 0;
+        }
+        
+        virtual std::vector<size_t> getResultList() {
+            printf("Error: Forbidden method call in QResultBase for getResultList().");
+            std::vector<size_t> empty;
+            return empty;
+        }
+
+        virtual std::vector<std::vector<size_t>> getTopologyResultList() {
+            printf("Error: Forbidden method call in QResultBase for getTopologyResultList().");
+            std::vector<std::vector<size_t>> empty;
+            return empty;
+        }
 
         virtual QResultBase* cloneEmpty() = 0;
 
@@ -97,41 +123,54 @@ namespace hec
     };
 
     struct QResultCount : public QResultBase {
-    private:
+    protected:
         size_t resultCount;
     public:
         QResultCount(int queryID, QueryType queryType, QueryResultType queryResultType);
         void addResult(size_t id) override;
         void addResult(size_t idR, size_t idS) override;
-        void addResult(int relation, size_t idR, size_t idS) override;
         int calculateBufferSize() override;
         void serialize(char **buffer, int &bufferSize) override;
         void deserialize(const char *buffer, int bufferSize) override;
         void mergeResults(QResultBase* other);
         size_t getResultCount() override;
-        std::vector<size_t> getResultList() override;
-        std::vector<std::vector<size_t>> getTopologyResultList() override;
         void setResult(size_t resultCount);
         void deepCopy(QResultBase* other) override; 
         QResultBase* cloneEmpty() override;
     };
 
     struct QResultCollect : public QResultBase {
-    private:
+    protected:
         std::vector<size_t> resultList;
     public:
         QResultCollect(int queryID, QueryType queryType, QueryResultType queryResultType);
         void addResult(size_t id) override;
         void addResult(size_t idR, size_t idS) override;
-        void addResult(int relation, size_t idR, size_t idS) override;
         int calculateBufferSize() override;
         void serialize(char **buffer, int &bufferSize) override;
         void deserialize(const char *buffer, int bufferSize) override;
         void mergeResults(QResultBase* other);
         size_t getResultCount() override;
-        std::vector<size_t> getResultList();
-        std::vector<std::vector<size_t>> getTopologyResultList() override;
+        std::vector<size_t> getResultList() override;
         void setResult(std::vector<size_t> &resultList);
+        void deepCopy(QResultBase* other) override; 
+        QResultBase* cloneEmpty() override;
+    };
+
+    struct QResultkNN : public QResultBase {
+    protected:
+        int k;
+        std::priority_queue<std::pair<double, size_t>> maxHeap;
+    public:
+        QResultkNN(int queryID, int k);
+        void addResult(size_t id, double distance) override;
+        int calculateBufferSize() override;
+        void serialize(char **buffer, int &bufferSize) override;
+        void deserialize(const char *buffer, int bufferSize) override;
+        void mergeResults(QResultBase* other);
+        size_t getResultCount() override;
+        std::vector<size_t> getResultList() override;
+        void setResult(std::priority_queue<std::pair<double, size_t>> &maxHeap);
         void deepCopy(QResultBase* other) override; 
         QResultBase* cloneEmpty() override;
     };
@@ -142,62 +181,52 @@ namespace hec
         std::vector<size_t> resultList;
     public:
         QPairResultCollect(int queryID, QueryType queryType, QueryResultType queryResultType);
-        void addResult(size_t id) override {}
         void addResult(size_t idR, size_t idS) override;
-        void addResult(int relation, size_t idR, size_t idS) override {}
         int calculateBufferSize() override;
         void serialize(char **buffer, int &bufferSize) override;
         void deserialize(const char *buffer, int bufferSize) override;
         void mergeResults(QResultBase* other);
         size_t getResultCount() override;
-        std::vector<size_t> getResultList();
-        std::vector<std::vector<size_t>> getTopologyResultList() override;
+        std::vector<size_t> getResultList() override;
         void setResult(std::vector<size_t> &resultList);
         void deepCopy(QResultBase* other) override; 
         QResultBase* cloneEmpty() override;
     };
 
     struct QTopologyResultCount : public QResultBase {
-    private:
-    //positions 0-7 are the unique topology relations. 
-    std::vector<size_t> resultList;
+    protected:
+        //positions 0-7 are the unique topology relations. 
+        std::vector<size_t> resultList;
     public:
         // Always size 8. 
         const int TOTAL_RELATIONS = 8;
         QTopologyResultCount(int queryID, QueryType queryType, QueryResultType queryResultType);
-        void addResult(size_t id) override {}
-        void addResult(size_t idR, size_t idS) {}
         void addResult(int relation, size_t idR, size_t idS) override;
         int calculateBufferSize() override;
         void serialize(char **buffer, int &bufferSize) override;
         void deserialize(const char *buffer, int bufferSize) override;
         void mergeResults(QResultBase* other);
-        size_t getResultCount() override;
         std::vector<size_t> getResultList() override;
-        std::vector<std::vector<size_t>> getTopologyResultList() override;
         void setResult(int relation, size_t resultCount);
         void deepCopy(QResultBase* other) override; 
         QResultBase* cloneEmpty() override;
     };
 
     struct QTopologyResultCollect : public QResultBase {
-    private:
+    protected:
         // positions 0-7 are the unique topology relations. 
         std::vector<std::vector<size_t>> resultList;
         std::vector<size_t> getResultList(int relation);
-        public:
+    public:
         // Always size 8. 
         const int TOTAL_RELATIONS = 8;
         QTopologyResultCollect(int queryID, QueryType queryType, QueryResultType queryResultType);
-        void addResult(size_t id) override {}
-        void addResult(size_t idR, size_t idS) {}
         void addResult(int relation, size_t idR, size_t idS) override;
         int calculateBufferSize() override;
         void serialize(char **buffer, int &bufferSize) override;
         void deserialize(const char *buffer, int bufferSize) override;
         void mergeResults(QResultBase* other);
         size_t getResultCount() override;
-        std::vector<size_t> getResultList() override;
         std::vector<std::vector<size_t>> getTopologyResultList() override;
         void setResult(int relation, std::vector<size_t> &idPairs);
         void deepCopy(QResultBase* other) override; 
@@ -231,6 +260,11 @@ namespace hec
             queryID = 0;
             queryType = Q_NONE;
             resultType = QR_COUNT;
+        }
+
+        virtual int getK() {
+            printf("Error: Invalid call of getK() for query type.");
+            return -1;
         }
 
         virtual ~Query() = default;
@@ -268,6 +302,21 @@ namespace hec
         DatasetID getDatasetSid() {
             return Sid;
         }
+    };
+
+    struct KNNQuery : public Query {
+        DatasetID datasetID;
+        std::string wktText;
+        int shapeType;
+        int k;
+
+        KNNQuery(DatasetID datasetID, int id, std::string queryWKT, int k);
+        DatasetID getDatasetID() {
+            return datasetID;
+        }
+        std::string getWKT();
+        int getShapeType();
+        int getK();
     };
 }
 

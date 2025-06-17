@@ -1288,7 +1288,8 @@ namespace qresult_factory
                         (*object) = new hec::QResultCount(queryID, queryType, resultType);
                         break;
                     default:
-                        break;
+                        logger::log_error(DBERR_QUERY_RESULT_INVALID_TYPE, "Invalid query result type for range query. QR type:", resultType);
+                        return DBERR_QUERY_RESULT_INVALID_TYPE;
                 }
                 break;
             case hec::Q_INTERSECTION_JOIN:
@@ -1307,7 +1308,8 @@ namespace qresult_factory
                         (*object) = new hec::QResultCount(queryID, queryType, resultType);
                         break;
                     default:
-                        break;
+                        logger::log_error(DBERR_QUERY_RESULT_INVALID_TYPE, "Invalid query result type for predicate join. QR type:", resultType);
+                        return DBERR_QUERY_RESULT_INVALID_TYPE;
                 }
                 break;
             case hec::Q_FIND_RELATION_JOIN:
@@ -1319,11 +1321,82 @@ namespace qresult_factory
                         (*object) = new hec::QTopologyResultCount(queryID, queryType, resultType);
                         break;
                     default:
-                        break;
+                        logger::log_error(DBERR_QUERY_RESULT_INVALID_TYPE, "Invalid query result type for Find Relation join. QR type:", resultType);
+                        return DBERR_QUERY_RESULT_INVALID_TYPE;
                 }
                 break;
             default:
-                logger::log_error(DBERR_QUERY_INVALID_TYPE, "Invalid query type:", queryType);
+                logger::log_error(DBERR_QUERY_INVALID_TYPE, "Invalid query type for qresult_factory::createNew (arguments):", queryType);
+                return -1;
+        }
+        
+        return 0;
+    }
+    
+    int createNew(hec::Query* query, hec::QResultBase **object) {
+        if (query == nullptr) {
+            logger::log_error(DBERR_NULL_PTR_EXCEPTION, "Query null pointer at qresult_factory::createNew.");
+            return DBERR_NULL_PTR_EXCEPTION;
+        }
+        switch (query->getQueryType()) {
+            case hec::Q_RANGE:
+                switch (query->getResultType()) {
+                    case hec::QR_COLLECT:
+                        (*object) = new hec::QResultCollect(query->getQueryID(), query->getQueryType(), query->getResultType());
+                        break;
+                    case hec::QR_COUNT:
+                        (*object) = new hec::QResultCount(query->getQueryID(), query->getQueryType(), query->getResultType());
+                        break;
+                    default:
+                        logger::log_error(DBERR_QUERY_RESULT_INVALID_TYPE, "Invalid query result type for range query. QR type:", query->getResultType());
+                        return DBERR_QUERY_RESULT_INVALID_TYPE;
+                }
+                break;
+            case hec::Q_INTERSECTION_JOIN:
+            case hec::Q_INSIDE_JOIN:
+            case hec::Q_DISJOINT_JOIN:
+            case hec::Q_EQUAL_JOIN:
+            case hec::Q_MEET_JOIN:
+            case hec::Q_CONTAINS_JOIN:
+            case hec::Q_COVERS_JOIN:
+            case hec::Q_COVERED_BY_JOIN:
+                switch (query->getResultType()) {
+                    case hec::QR_COLLECT:
+                        (*object) = new hec::QPairResultCollect(query->getQueryID(), query->getQueryType(), query->getResultType());
+                        break;
+                    case hec::QR_COUNT:
+                        (*object) = new hec::QResultCount(query->getQueryID(), query->getQueryType(), query->getResultType());
+                        break;
+                    default:
+                        logger::log_error(DBERR_QUERY_RESULT_INVALID_TYPE, "Invalid query result type for predicate join. QR type:", query->getResultType());
+                        return DBERR_QUERY_RESULT_INVALID_TYPE;
+                }
+                break;
+            case hec::Q_FIND_RELATION_JOIN:
+                switch (query->getResultType()) {
+                    case hec::QR_COLLECT:
+                        (*object) = new hec::QTopologyResultCollect(query->getQueryID(), query->getQueryType(), query->getResultType());
+                        break;
+                    case hec::QR_COUNT:
+                        (*object) = new hec::QTopologyResultCount(query->getQueryID(), query->getQueryType(), query->getResultType());
+                        break;
+                    default:
+                        logger::log_error(DBERR_QUERY_RESULT_INVALID_TYPE, "Invalid query result type for Find Relation join. QR type:", query->getResultType());
+                        return DBERR_QUERY_RESULT_INVALID_TYPE;
+                }
+                break;
+            case hec::Q_KNN:
+                switch (query->getResultType()) {
+                    case hec::QR_KNN:
+                        (*object) = new hec::QResultkNN(query->getQueryID(), query->getK());
+                        break;
+                    default:
+                        logger::log_error(DBERR_QUERY_RESULT_INVALID_TYPE, "Invalid query result type for KNN query. QR type:", query->getResultType());
+                        return DBERR_QUERY_RESULT_INVALID_TYPE;
+                }
+                break;
+            default:
+                logger::log_error(DBERR_QUERY_INVALID_TYPE, "Invalid query type for qresult_factory::createNew (query pointer):", query->getQueryType());
                 return -1;
         }
         

@@ -792,7 +792,7 @@ STOP_LISTENING:
 
             // setup query result object
             hec::QResultBase* queryResult;
-            int res = qresult_factory::createNew(queryPtr->getQueryID(), queryPtr->getQueryType(), queryPtr->getResultType(), &queryResult);
+            int res = qresult_factory::createNew(queryPtr, &queryResult);
             if (res != 0) {
                 logger::log_error(DBERR_OBJ_CREATION_FAILED, "Failed to create query result objects.");
                 return DBERR_OBJ_CREATION_FAILED;
@@ -858,7 +858,7 @@ STOP_LISTENING:
                 for (int i = 0; i < queryBatch.size(); i++) {
                     hec::QResultBase* queryResult = nullptr;
 
-                    int res = qresult_factory::createNew(queryBatch[i]->getQueryID(), queryBatch[i]->getQueryType(), queryBatch[i]->getResultType(), &queryResult);
+                    int res = qresult_factory::createNew(queryBatch[i], &queryResult);
                     if (res != 0) {
                         logger::log_error(DBERR_OBJ_CREATION_FAILED, "Failed to create query result objects.");
                         #pragma omp cancel for
@@ -2044,7 +2044,7 @@ STOP_LISTENING:
             return ret;
         }
         
-        static DB_STATUS gatherJoinResults(hec::QResultBase* totalResults) {
+        static DB_STATUS gatherJoinResults(hec::Query* query, hec::QResultBase* totalResults) {
             if (!totalResults) {
                 logger::log_error(DBERR_NULL_PTR_EXCEPTION, "Null query result pointer while gathering join results.");
                 return DBERR_NULL_PTR_EXCEPTION;
@@ -2086,7 +2086,7 @@ STOP_LISTENING:
                             }
                             // unpack
                             hec::QResultBase* localResult;
-                            int res = qresult_factory::createNew(totalResults->getQueryID(), totalResults->getQueryType(), totalResults->getResultType(), &localResult);
+                            int res = qresult_factory::createNew(query, &localResult);
                             if (res != 0) {
                                 #pragma omp cancel for
                                 logger::log_error(DBERR_OBJ_CREATION_FAILED, "Failed to create query result objects.");
@@ -2130,7 +2130,7 @@ STOP_LISTENING:
                             }
                             // unpack
                             hec::QResultBase* localResult = nullptr;
-                            int res = qresult_factory::createNew(totalResults->getQueryID(), totalResults->getQueryType(), totalResults->getResultType(), &localResult);
+                            int res = qresult_factory::createNew(query, &localResult);
                             if (res != 0) {
                                 #pragma omp cancel for
                                 logger::log_error(DBERR_OBJ_CREATION_FAILED, "Failed to create query result objects.");
@@ -2315,64 +2315,24 @@ STOP_LISTENING:
             return ret;
         }
 
-        static DB_STATUS handleQueryMessage(MPI_Status &status) {
-            SerializedMsg<char> msg(MPI_CHAR);
-            // receive the message
-            DB_STATUS ret = recv::receiveMessage(status, msg.type, g_global_intra_comm, msg);
+        static DB_STATUS performJoinQuery(MPI_Status &status, SerializedMsg<char> &msg, hec::Query* query) {
+            DB_STATUS ret = DBERR_OK;
+            // broadcast join query to every worker
+            ret = broadcast::broadcastMessage(msg, status.MPI_TAG);
             if (ret != DBERR_OK) {
                 return ret;
             }
-
-            // unpack query
-            hec::Query* query;
-            ret = unpack::unpackQuery(msg, &query);
-            if (ret != DBERR_OK) {
-                return ret;
-            }
-            
-            switch (query->getQueryType()) {
-                case hec::Q_RANGE:
-                {
-                    // send query only to the responsible nodes
-                    hec::RangeQuery* rangeQuery = dynamic_cast<hec::RangeQuery*>(query);
-
-                    return DBERR_FEATURE_UNSUPPORTED;
-                }
-                    break;
-                case hec::Q_INTERSECTION_JOIN:
-                case hec::Q_INSIDE_JOIN:
-                case hec::Q_DISJOINT_JOIN:
-                case hec::Q_EQUAL_JOIN:
-                case hec::Q_MEET_JOIN:
-                case hec::Q_CONTAINS_JOIN:
-                case hec::Q_COVERS_JOIN:
-                case hec::Q_COVERED_BY_JOIN:
-                case hec::Q_FIND_RELATION_JOIN:
-                    // broadcast join query to every worker
-                    ret = broadcast::broadcastMessage(msg, status.MPI_TAG);
-                    if (ret != DBERR_OK) {
-                        return ret;
-                    }
-                    break;
-                default:
-                    logger::log_error(DBERR_QUERY_INVALID_TYPE, "Invalid query type:", query->getQueryType());
-                    return DBERR_QUERY_INVALID_TYPE;
-            }
-
-            // free memory
-            msg.clear();
-
             // create query result object
             hec::QResultBase* totalResults;
             // peek query and result types
-            int res = qresult_factory::createNew(query->getQueryID(), query->getQueryType(), query->getResultType(), &totalResults);
+            int res = qresult_factory::createNew(query, &totalResults);
             if (res != 0) {
                 logger::log_error(DBERR_OBJ_CREATION_FAILED, "Failed to create query result object.");
                 return DBERR_OBJ_CREATION_FAILED;
             }
 
             // wait for result
-            ret = gatherJoinResults(totalResults);
+            ret = gatherJoinResults(query, totalResults);
             if (ret != DBERR_OK) {
                 logger::log_error(ret, "Failed while gathering results for query.");
                 return ret;
@@ -2389,6 +2349,200 @@ STOP_LISTENING:
             // free memory
             resultMsg.clear();
             delete totalResults;
+            return ret;
+        }
+
+        static DB_STATUS gatherkNNResults(hec::Query* query, hec::QResultBase* totalResults) {
+            if (!totalResults) {
+                logger::log_error(DBERR_NULL_PTR_EXCEPTION, "Null query result pointer while gathering join results.");
+                return DBERR_NULL_PTR_EXCEPTION;
+            }
+            DB_STATUS ret = DBERR_OK;
+            // use threads to parallelize gathering of responses
+            #pragma omp parallel num_threads(MAX_THREADS) reduction(query_output_reduction:totalResults)
+            {
+                DB_STATUS local_ret = DBERR_OK;
+                MPI_Status status;
+
+                #pragma omp for
+                for (int i=0; i<g_world_size; i++) {
+                    // probe for responses
+                    if (i == 0) {
+                        // wait for agent's response
+                        local_ret = probe(AGENT_RANK, MPI_ANY_TAG, g_agent_comm, status);
+                        if (local_ret != DBERR_OK) {
+                            #pragma omp cancel for
+                            ret = local_ret;
+                        }
+                        // check tag
+                        if (status.MPI_TAG == MSG_NACK) {
+                            // something failed during query evaluation
+                            local_ret = recv::receiveResponse(status.MPI_SOURCE, status.MPI_TAG, g_agent_comm, status);
+                            if (local_ret != DBERR_OK) {
+                                #pragma omp cancel for
+                                ret = DBERR_COMM_RECEIVED_NACK;
+                                logger::log_error(ret, "Received NACK from agent.");
+                            }
+                        } else {
+                            // receive result message
+                            SerializedMsg<char> msg(MPI_CHAR);
+                            local_ret = recv::receiveMessage(status, msg.type, g_agent_comm, msg);
+                            if (local_ret != DBERR_OK) {
+                                #pragma omp cancel for
+                                logger::log_error(ret, "Received response from agent.");
+                                ret = local_ret;
+                            }
+                            // unpack
+                            hec::QResultBase* localResult;
+                            int res = qresult_factory::createNew(query, &localResult);
+                            if (res != 0) {
+                                #pragma omp cancel for
+                                logger::log_error(DBERR_OBJ_CREATION_FAILED, "Failed to create query result objects.");
+                                ret = DBERR_OBJ_CREATION_FAILED;
+                            }
+                            localResult->deserialize(msg.data, msg.count);
+                            // add results
+                            local_ret = mergeResultObjects(totalResults, localResult);
+                            if (local_ret != DBERR_OK) {
+                                logger::log_error(ret, "Merging query results failed.");
+                                #pragma omp cancel for
+                                ret = local_ret;
+                            }
+                            // free memory
+                            delete localResult;
+                        }
+                    } else {
+                        // wait for workers' responses (each thread with id X receives from worker with rank X)
+                        local_ret = probe(i, MPI_ANY_TAG, g_controller_comm, status);
+                        if (local_ret != DBERR_OK) {
+                            #pragma omp cancel for
+                            ret = local_ret;
+                        }
+                        // check tag
+                        if (status.MPI_TAG == MSG_NACK) {
+                            // something failed during query evaluation
+                            local_ret = recv::receiveResponse(status.MPI_SOURCE, status.MPI_TAG, g_controller_comm, status);
+                            if (local_ret != DBERR_OK) {
+                                #pragma omp cancel for
+                                ret = DBERR_COMM_RECEIVED_NACK;
+                                logger::log_error(ret, "Received response from controller", i);
+                            }
+                        } else {
+                            // receive result
+                            SerializedMsg<char> msg(MPI_CHAR);
+                            local_ret = recv::receiveMessage(status, msg.type, g_controller_comm, msg);
+                            if (local_ret != DBERR_OK) {
+                                #pragma omp cancel for
+                                ret = DBERR_COMM_RECEIVED_NACK;
+                                logger::log_error(ret, "Received NACK from agent.");
+                            }
+                            // unpack
+                            hec::QResultBase* localResult = nullptr;
+                            int res = qresult_factory::createNew(query, &localResult);
+                            if (res != 0) {
+                                #pragma omp cancel for
+                                logger::log_error(DBERR_OBJ_CREATION_FAILED, "Failed to create query result objects.");
+                                ret = DBERR_OBJ_CREATION_FAILED;
+                            }
+                            localResult->deserialize(msg.data, msg.count);
+                            // add results
+                            local_ret = mergeResultObjects(totalResults, localResult);
+                            if (local_ret != DBERR_OK) {
+                                logger::log_error(ret, "Merging query results failed.");
+                                #pragma omp cancel for
+                                ret = local_ret;
+                            }
+                            // free memory
+                            delete localResult;
+                        }
+                    }
+                }
+            }
+            return ret;
+        }
+
+        static DB_STATUS performKnnQuery(MPI_Status &status, SerializedMsg<char> &msg, hec::Query* query) {
+            DB_STATUS ret = DBERR_OK;
+            // broadcast join query to every worker
+            ret = broadcast::broadcastMessage(msg, status.MPI_TAG);
+            if (ret != DBERR_OK) {
+                return ret;
+            }
+            // create query result object
+            hec::QResultBase* totalResults;
+            // peek query and result types
+            int res = qresult_factory::createNew(query, &totalResults);
+            if (res != 0) {
+                logger::log_error(DBERR_OBJ_CREATION_FAILED, "Failed to create query result object.");
+                return DBERR_OBJ_CREATION_FAILED;
+            }
+
+            // wait for result
+            ret = gatherkNNResults(query, totalResults);
+            if (ret != DBERR_OK) {
+                logger::log_error(ret, "Failed while gathering results for query.");
+                return ret;
+            }
+            // serialize to message
+            SerializedMsg<char> resultMsg(MPI_CHAR);
+            totalResults->serialize(&resultMsg.data, resultMsg.count);
+            // send result to driver
+            ret = send::sendMessage(resultMsg, DRIVER_GLOBAL_RANK, MSG_QUERY_RESULT, g_global_intra_comm);
+            if (ret != DBERR_OK) {
+                return ret;
+            }
+
+            // free memory
+            resultMsg.clear();
+            delete totalResults;
+            return ret;
+        }
+
+        static DB_STATUS handleQueryMessage(MPI_Status &status) {
+            SerializedMsg<char> msg(MPI_CHAR);
+            // receive the message
+            DB_STATUS ret = recv::receiveMessage(status, msg.type, g_global_intra_comm, msg);
+            if (ret != DBERR_OK) {
+                return ret;
+            }
+
+            // unpack query
+            hec::Query* query;
+            ret = unpack::unpackQuery(msg, &query);
+            if (ret != DBERR_OK) {
+                return ret;
+            }
+            
+            switch (query->getQueryType()) {
+                case hec::Q_INTERSECTION_JOIN:
+                case hec::Q_INSIDE_JOIN:
+                case hec::Q_DISJOINT_JOIN:
+                case hec::Q_EQUAL_JOIN:
+                case hec::Q_MEET_JOIN:
+                case hec::Q_CONTAINS_JOIN:
+                case hec::Q_COVERS_JOIN:
+                case hec::Q_COVERED_BY_JOIN:
+                case hec::Q_FIND_RELATION_JOIN:
+                    // perform the Join
+                    ret = performJoinQuery(status, msg, query);
+                    if (ret != DBERR_OK) {
+                        return ret;
+                    }
+                    break;
+                case hec::Q_KNN:
+                    // perform the kNN
+                    ret = performKnnQuery(status, msg, query);
+                    if (ret != DBERR_OK) {
+                        return ret;
+                    }
+                    break;
+                default:
+                    logger::log_error(DBERR_QUERY_INVALID_TYPE, "Invalid query type:", query->getQueryType());
+                    return DBERR_QUERY_INVALID_TYPE;
+            }
+
+            // free memory
+            msg.clear();
             return ret;
         }
 

@@ -191,6 +191,7 @@ namespace mapping
     std::string queryTypeIntToStr(hec::QueryType val){
         switch(val) {
             case hec::Q_RANGE: return "range";
+            case hec::Q_KNN: return "kNN";
             case hec::Q_INTERSECTION_JOIN: return "intersect";
             case hec::Q_INSIDE_JOIN: return "inside";
             case hec::Q_DISJOINT_JOIN: return "disjoint";
@@ -209,6 +210,8 @@ namespace mapping
         if (str == "range") {
             return hec::Q_RANGE;
         } else if (str == "intersect") {
+            return hec::Q_KNN;
+        } else if (str == "kNN") {
             return hec::Q_INTERSECTION_JOIN;
         } else if (str == "inside") {
             return hec::Q_INSIDE_JOIN;
@@ -236,6 +239,8 @@ namespace mapping
             return hec::QR_COUNT;
         } else if (str == "COLLECT") {
             return hec::QR_COLLECT;
+        } else if (str == "KNN_COLLECT") {
+            return hec::QR_KNN;
         } else {
             return hec::QR_NONE;
         }
@@ -245,6 +250,7 @@ namespace mapping
         switch(val) {
             case hec::QR_COUNT: return "COUNT";
             case hec::QR_COLLECT: return "COLLECT";
+            case hec::QR_KNN: return "KNN_COLLECT";
             default: return "";
         }
     }

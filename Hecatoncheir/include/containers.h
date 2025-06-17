@@ -201,6 +201,11 @@ public:
     }
 
     template<typename OtherBoostGeometryObj>
+    double distance(const OtherBoostGeometryObj &other) const {
+        return boost::geometry::distance(geometry, other.geometry);
+    }
+
+    template<typename OtherBoostGeometryObj>
     bool intersects(const OtherBoostGeometryObj &other) const {
         return boost::geometry::intersects(geometry, other.geometry);
     }
@@ -394,6 +399,11 @@ public:
     std::string createMaskCode(const GeometryWrapper<bg_box>& other) const {return "";}
 
     template<typename OtherBoostGeometryObj>
+    double distance(const OtherBoostGeometryObj &other) const {
+        return boost::geometry::distance(geometry, other.geometry);
+    }
+
+    template<typename OtherBoostGeometryObj>
     bool intersects(const OtherBoostGeometryObj &other) const {
         return boost::geometry::intersects(geometry, other.geometry);
     }
@@ -554,6 +564,11 @@ public:
     std::string createMaskCode(const GeometryWrapper<OtherGeometryType> &other) const {
         logger::log_error(DBERR_INVALID_OPERATION, "createMaskCode unsupported for the invoked shapes.");
         return "";
+    }
+
+    template<typename OtherBoostGeometryObj>
+    double distance(const OtherBoostGeometryObj &other) const {
+        return boost::geometry::distance(geometry, other.geometry);
     }
 
     template<typename OtherBoostGeometryObj>
@@ -758,6 +773,11 @@ public:
     std::string createMaskCode(const GeometryWrapper<bg_linestring>& other) const {
         boost::geometry::de9im::matrix matrix = boost::geometry::relation(geometry, other.geometry);
         return matrix.str();
+    }
+
+    template<typename OtherBoostGeometryObj>
+    double distance(const OtherBoostGeometryObj &other) const {
+        return boost::geometry::distance(geometry, other.geometry);
     }
     
     template<typename OtherBoostGeometryObj>
@@ -965,6 +985,11 @@ public:
     std::string createMaskCode(const GeometryWrapper<bg_point_xy>& other) const {
         boost::geometry::de9im::matrix matrix = boost::geometry::relation(geometry, other.geometry);
         return matrix.str();
+    }
+
+    template<typename OtherBoostGeometryObj>
+    double distance(const OtherBoostGeometryObj &other) const {
+        return boost::geometry::distance(geometry, other.geometry);
     }
 
     template<typename OtherBoostGeometryObj>
@@ -1267,6 +1292,18 @@ public:
         }, shape);
     }
 
+    /** @brief Returns the Euclidean distance between the two objects. 
+     * @warning Not all geometry type combinations are supported (see data type support).
+    */
+    template<typename OtherBoostGeometryObj>
+    double distance(const OtherBoostGeometryObj &other) const {
+        return std::visit([&other](auto&& arg) -> double {
+            return std::visit([&arg](auto&& otherArg) -> double {
+                return arg.distance(otherArg);
+            }, other.shape);
+        }, shape);
+    }
+
     /** @brief Returns true whether the input geometry intersects (border or area) with this geometry. False otherwise. 
      * @warning Not all geometry type combinations are supported (see data type support).
     */
@@ -1390,7 +1427,8 @@ namespace shape_factory
 
 namespace qresult_factory
 {
-    int createNew(int queryID, hec::QueryType queryType, hec::QueryResultType resultType, hec::QResultBase** object);
+    int createNew(int queryID, hec::QueryType queryType, hec::QueryResultType resultType, hec::QResultBase **object);
+    int createNew(hec::Query* query, hec::QResultBase **object);
 }
 
 /** @brief Holds information about sections, i.e. APRIL partitions.

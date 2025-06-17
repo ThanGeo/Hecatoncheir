@@ -3,7 +3,57 @@
 
 namespace uniform_grid
 {
-    /** Only used for points, as non-point geometries are better benefited from the two layer indexing */
+    namespace knn_filter
+    {
+        static DB_STATUS evaluate(hec::KNNQuery *knnQuery, hec::QResultBase* queryResult) {
+            Shape qPoint;
+            Dataset* dataset = g_config.datasetOptions.getDatasetByIdx(knnQuery->getDatasetID());
+            // create query shape
+            DB_STATUS ret = shape_factory::createEmpty(DT_POINT, qPoint);
+            if (ret != DBERR_OK) {
+                logger::log_error(DBERR_INVALID_GEOMETRY, "Couldn't create shape object from knn query.");
+                return DBERR_INVALID_GEOMETRY;
+            }
+            ret = qPoint.setFromWKT(knnQuery->getWKT());
+            if (ret != DBERR_OK) {
+                logger::log_error(DBERR_INVALID_GEOMETRY, "Couldn't set knn query shape from query WKT. WKT:", knnQuery->getWKT());
+                return DBERR_INVALID_GEOMETRY;
+            }
+            
+            // get cells range
+            int partitionX = std::floor((qPoint.mbr.pMin.x - g_config.datasetOptions.dataspaceMetadata.xMinGlobal) / g_config.partitioningMethod->getPartPartionExtentX());
+            int partitionY = std::floor((qPoint.mbr.pMin.y - g_config.datasetOptions.dataspaceMetadata.yMinGlobal) / g_config.partitioningMethod->getPartPartionExtentY());
+
+            std::vector<PartitionBase*>* partitions = dataset->index->getPartitions();
+            for (auto &partition : *partitions) {
+                if (partition == nullptr) {
+                    continue;
+                }
+                // check partition bounds TODO
+                int i = partition->partitionID % g_config.partitioningMethod->getGlobalPPD(); 
+                int j = partition->partitionID / g_config.partitioningMethod->getGlobalPPD(); 
+
+                // get partition contents
+                std::vector<Shape *>* contents = partition->getContents();
+                if (contents == nullptr) {
+                    continue;
+                }
+                // loop contents
+                for (auto &obj: *contents) {
+                    // contents->at(i)->printGeometry();
+                    double distance = obj->distance(qPoint);
+                    // logger::log_task("Distance between", obj->recID, "and pivot:", distance);
+                    // obj->printGeometry();
+                    // add result (will handle the heap)
+                    queryResult->addResult(obj->recID, distance);
+                }
+            }
+
+            return ret;
+        }
+    }
+
+    /** @brief Should only be used for points, as non-point geometries are better benefited from the two layer indexing */
     namespace mbr_range_query_filter
     {
         static inline DB_STATUS forwardPair(Shape* objR, Shape* objS, hec::QResultBase* queryResult) {
@@ -270,6 +320,23 @@ namespace uniform_grid
                     if (ret != DBERR_OK) {
                         return ret;
                     }
+                }
+                break;
+            case hec::Q_KNN:
+                {
+                    // cast
+                    hec::KNNQuery* kNNQuery = dynamic_cast<hec::KNNQuery*>(query);
+                    // evaluate
+                    ret = knn_filter::evaluate(kNNQuery, queryResult);
+                    if (ret != DBERR_OK) {
+                        return ret;
+                    }
+                    // auto results = queryResult->getResultList();
+                    // logger::log_task("Results:");
+                    // for (auto &it: results) {
+                    //     printf(" %ld,", it);
+                    // }
+                    // printf("\n");
                 }
                 break;
             default:

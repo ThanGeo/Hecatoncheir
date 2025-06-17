@@ -578,7 +578,7 @@ namespace hec {
                         qResPtr = new QResultCollect(query->getQueryID(), query->getQueryType(), query->getResultType());
                         break;
                     default:
-                        logger::log_error(DBERR_QUERY_RESULT_INVALID_TYPE, "Unknown query result type:", query->getResultType());
+                        logger::log_error(DBERR_QUERY_RESULT_INVALID_TYPE, "Invalid query result type for RANGE query:", query->getResultType());
                         return nullptr;
                 }
                 break;
@@ -599,7 +599,7 @@ namespace hec {
                         qResPtr = new QPairResultCollect(query->getQueryID(), query->getQueryType(), query->getResultType());
                         break;
                     default:
-                        logger::log_error(DBERR_QUERY_RESULT_INVALID_TYPE, "Unknown query result type:", query->getResultType());
+                        logger::log_error(DBERR_QUERY_RESULT_INVALID_TYPE, "Invalid query result type for JOIN query:", query->getResultType());
                         return nullptr;
                 }
                 break;
@@ -613,13 +613,23 @@ namespace hec {
                         qResPtr = new QTopologyResultCollect(query->getQueryID(), query->getQueryType(), query->getResultType());
                         break;
                     default:
-                        logger::log_error(DBERR_QUERY_RESULT_INVALID_TYPE, "Unknown query result type:", query->getResultType());
+                        logger::log_error(DBERR_QUERY_RESULT_INVALID_TYPE, "Invalid query result type for FIND RELATION query:", query->getResultType());
+                        return nullptr;
+                }
+                break;
+            case Q_KNN:
+                switch (query->getResultType()) {
+                    case QR_KNN:
+                        qResPtr = new QResultkNN(query->getQueryID(), query->getK());
+                        break;
+                    default:
+                        logger::log_error(DBERR_QUERY_RESULT_INVALID_TYPE, "Invalid query result type for KNN query:", query->getResultType());
                         return nullptr;
                 }
                 break;
             default:
                 // error
-                logger::log_error(DBERR_QUERY_INVALID_TYPE, "Invalid query name:", query->getQueryType());
+                logger::log_error(DBERR_QUERY_INVALID_TYPE, "Invalid query type:", query->getQueryType());
                 return nullptr;
         }
         // pack query info
