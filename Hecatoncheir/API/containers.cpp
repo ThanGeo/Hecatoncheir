@@ -143,6 +143,10 @@ namespace hec
             logger::log_error(DBERR_INVALID_DATATYPE, "Invalid WKT for kNN query. Only POINT is supported currently. WKT:", queryWKT);
             return;
         }
+        if (k <= 0) {
+            logger::log_error(DBERR_INVALID_PARAMETER, "k value for kNN query must be larger than 0. k =", k);
+            return;
+        }
         this->datasetID = datasetID;
         this->queryID = id;
         this->queryType = Q_KNN;
@@ -589,8 +593,22 @@ namespace hec
         return ids;
     }
 
+    std::vector<std::pair<double, size_t>> QResultkNN::getHeap() {
+        std::vector<std::pair<double, size_t>> heapList;
+        heapList.reserve(this->maxHeap.size());
+        auto heapCopy = this->maxHeap;
+        while (!heapCopy.empty()) {
+            auto pair = heapCopy.top();
+            heapCopy.pop();
+            heapList.emplace_back(pair);
+        }
+        return heapList;
+    }
+
+
     void QResultkNN::setResult(std::priority_queue<std::pair<double, size_t>> &maxHeap) {
         this->maxHeap = maxHeap;
+        this->k = maxHeap.size();
     }
 
     void QResultkNN::deepCopy(QResultBase* other) {

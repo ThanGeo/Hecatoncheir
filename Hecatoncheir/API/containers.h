@@ -179,6 +179,7 @@ namespace hec
         void mergeResults(QResultBase* other);
         size_t getResultCount() override;
         std::vector<size_t> getResultList() override;
+        std::vector<std::pair<double, size_t>> getHeap();
         void setResult(std::priority_queue<std::pair<double, size_t>> &maxHeap);
         void deepCopy(QResultBase* other) override; 
         QResultBase* cloneEmpty() override;

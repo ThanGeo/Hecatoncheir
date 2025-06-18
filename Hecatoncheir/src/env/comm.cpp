@@ -228,7 +228,6 @@ namespace comm
             return ret;
         }
 
-
         /** @brief Pulls a serialized batch message and stores its contents ON DISK (persistence).
          * @warning the objects are not stored in memory.
          */

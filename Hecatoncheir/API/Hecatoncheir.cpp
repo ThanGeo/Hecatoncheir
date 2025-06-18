@@ -690,38 +690,91 @@ namespace hec {
         return finalResults;
     }
 
-    static int loadQueriesFromWKT(std::string &filePath, int datasetID, hec::QueryResultType resultType, std::vector<hec::Query*> &batchQueries) {
-        std::ifstream fin(filePath);
-        if (!fin.is_open()) {
-            logger::log_error(DBERR_MISSING_FILE, "Failed to open query file from path:", filePath);
-            return -1;
+    namespace range_queries 
+    {
+        static int loadQueriesFromWKT(std::string &filePath, int datasetID, hec::QueryResultType resultType, std::vector<hec::Query*> &batchQueries) {
+            std::ifstream fin(filePath);
+            if (!fin.is_open()) {
+                logger::log_error(DBERR_MISSING_FILE, "Failed to open query file from path:", filePath);
+                return -1;
+            }
+            std::string line, token;
+            int queryID = 0;
+    
+            while (getline(fin, line)) {
+                // parse line to get only the first column (wkt geometry)
+                std::stringstream ss(line);
+                std::getline(ss, token, '\t');
+    
+                hec::RangeQuery* query = new hec::RangeQuery(datasetID, queryID, token, resultType);
+                batchQueries.emplace_back(query);
+    
+                queryID++;
+            }
+    
+            fin.close();
+    
+            return 0;
         }
-        std::string line, token;
-        int queryID = 0;
-
-        while (getline(fin, line)) {
-            // parse line to get only the first column (wkt geometry)
-            std::stringstream ss(line);
-            std::getline(ss, token, '\t');
-
-            hec::RangeQuery* query = new hec::RangeQuery(datasetID, queryID, token, resultType);
-            batchQueries.emplace_back(query);
-
-            queryID++;
-        }
-
-        fin.close();
-
-        return 0;
     }
 
-    std::vector<hec::Query*> loadQueriesFromFile(std::string filePath, std::string fileTypeStr, int datasetID, hec::QueryResultType resultType) {
+    std::vector<hec::Query*> loadRangeQueriesFromFile(std::string filePath, std::string fileTypeStr, int datasetID, hec::QueryResultType resultType){
         std::vector<hec::Query*> batchQueries;
         int ret = 0;
         hec::FileType fileType = mapping::fileTypeTextToInt(fileTypeStr);
         switch (fileType) {
             case FT_WKT:
-                ret = loadQueriesFromWKT(filePath, datasetID, resultType, batchQueries);
+                ret = range_queries::loadQueriesFromWKT(filePath, datasetID, resultType, batchQueries);
+                if (ret != 0) {
+                    logger::log_error(DBERR_INVALID_FILETYPE, "Failed to parse the given file as WKT.");
+                    return batchQueries;
+                }
+                break;
+            case FT_CSV:
+            default:
+                logger::log_error(DBERR_INVALID_FILETYPE, "Unsupported file type for query file:", fileTypeStr, "Supported query types: WKT");
+                break;
+
+        }
+
+        return batchQueries;
+    }
+
+    namespace knn_queries 
+    {
+        static int loadQueriesFromWKT(std::string &filePath, int datasetID, int k, std::vector<hec::Query*> &batchQueries) {
+            std::ifstream fin(filePath);
+            if (!fin.is_open()) {
+                logger::log_error(DBERR_MISSING_FILE, "Failed to open query file from path:", filePath);
+                return -1;
+            }
+            std::string line, token;
+            int queryID = 0;
+    
+            while (getline(fin, line)) {
+                // parse line to get only the first column (wkt geometry)
+                std::stringstream ss(line);
+                std::getline(ss, token, '\t');
+    
+                hec::KNNQuery* query = new hec::KNNQuery(datasetID, queryID, token, k);
+                batchQueries.emplace_back(query);
+    
+                queryID++;
+            }
+    
+            fin.close();
+    
+            return 0;
+        }
+    }
+
+    std::vector<hec::Query*> loadKNNQueriesFromFile(std::string filePath, std::string fileTypeStr, int datasetID, int k) {
+        std::vector<hec::Query*> batchQueries;
+        int ret = 0;
+        hec::FileType fileType = mapping::fileTypeTextToInt(fileTypeStr);
+        switch (fileType) {
+            case FT_WKT:
+                ret = knn_queries::loadQueriesFromWKT(filePath, datasetID, k, batchQueries);
                 if (ret != 0) {
                     logger::log_error(DBERR_INVALID_FILETYPE, "Failed to parse the given file as WKT.");
                     return batchQueries;

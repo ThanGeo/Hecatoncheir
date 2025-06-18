@@ -1325,6 +1325,16 @@ namespace qresult_factory
                         return DBERR_QUERY_RESULT_INVALID_TYPE;
                 }
                 break;
+            case hec::Q_KNN:
+                switch (resultType) {
+                    case hec::QR_KNN:
+                        (*object) = new hec::QResultkNN(queryID, 1);    // dummy value for K, will replace later
+                        break;
+                    default:
+                        logger::log_error(DBERR_QUERY_RESULT_INVALID_TYPE, "Invalid query result type for KNN query. QR type:", resultType);
+                        return DBERR_QUERY_RESULT_INVALID_TYPE;
+                }
+                break;
             default:
                 logger::log_error(DBERR_QUERY_INVALID_TYPE, "Invalid query type for qresult_factory::createNew (arguments):", queryType);
                 return -1;

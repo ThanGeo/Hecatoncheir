@@ -62,8 +62,11 @@ namespace hec {
     /** @brief Build index of indexType for the given datasets. */
     int buildIndex(std::vector<DatasetID> datasetIndexes, IndexType indexType);
 
-    /** @brief Load a batch of queries from the given filepath. */
-    std::vector<hec::Query*> loadQueriesFromFile(std::string filePath, std::string fileTypeStr, int datasetID, hec::QueryResultType resultType);
+    /** @brief Load a batch of range queries from the given filepath. */
+    std::vector<hec::Query*> loadRangeQueriesFromFile(std::string filePath, std::string fileTypeStr, int datasetID, hec::QueryResultType resultType);
+    
+    /** @brief Load a batch of knn queries from the given filepath */
+    std::vector<hec::Query*> loadKNNQueriesFromFile(std::string filePath, std::string fileTypeStr, int datasetID, int k);
 
 
     namespace time {
