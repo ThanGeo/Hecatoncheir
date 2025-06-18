@@ -457,6 +457,15 @@ namespace hec
         }
     }
 
+    bool QResultkNN::checkDistance(double distance) {
+        if (maxHeap.empty()) {
+            return true;
+        } else if (distance < maxHeap.top().first) {
+            return true;
+        }
+        return false;
+    }
+
     int QResultkNN::calculateBufferSize() {
         int size = 0;
         size += sizeof(int);                                                // query ID

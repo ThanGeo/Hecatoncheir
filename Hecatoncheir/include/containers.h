@@ -202,22 +202,30 @@ public:
 
     template<typename OtherBoostGeometryObj>
     double distance(const OtherBoostGeometryObj &other) const {
-        return boost::geometry::distance(geometry, other.geometry);
+        logger::log_error(DBERR_INVALID_OPERATION, "distance computation unsupported for the invoked shapes.");
+        return false;
+    }
+
+    double distanceToPartition(double xMin, double yMin, double xMax, double yMax) const {
+        logger::log_error(DBERR_INVALID_OPERATION, "distanceToPartition computation unsupported for the invoked shapes.");
+        return false;
     }
 
     template<typename OtherBoostGeometryObj>
     bool intersects(const OtherBoostGeometryObj &other) const {
-        return boost::geometry::intersects(geometry, other.geometry);
+        logger::log_error(DBERR_INVALID_OPERATION, "intersects predicate unsupported for the invoked shapes.");
+        return false;
     }
 
     template<typename OtherBoostGeometryObj>
     bool disjoint(const OtherBoostGeometryObj &other) const {
-        return boost::geometry::disjoint(geometry, other.geometry);
+        logger::log_error(DBERR_INVALID_OPERATION, "disjoint predicate unsupported for the invoked shapes.");
+        return false;
     }
 
     template<typename OtherBoostGeometryObj>
     bool inside(const OtherBoostGeometryObj &other) const {
-        logger::log_error(DBERR_INVALID_OPERATION, "intersects predicate unsupported for the invoked shapes.");
+        logger::log_error(DBERR_INVALID_OPERATION, "inside predicate unsupported for the invoked shapes.");
         return false;
     }
 
@@ -402,6 +410,12 @@ public:
     double distance(const OtherBoostGeometryObj &other) const {
         return boost::geometry::distance(geometry, other.geometry);
     }
+    
+    double distanceToPartition(double xMin, double yMin, double xMax, double yMax) const {
+        double dx = std::max({ xMin - this->geometry.x(), 0.0, this->geometry.x() - xMax });
+        double dy = std::max({ yMin - this->geometry.y(), 0.0, this->geometry.y() - yMax });
+        return std::sqrt(dx * dx + dy * dy);
+    }
 
     template<typename OtherBoostGeometryObj>
     bool intersects(const OtherBoostGeometryObj &other) const {
@@ -569,6 +583,15 @@ public:
     template<typename OtherBoostGeometryObj>
     double distance(const OtherBoostGeometryObj &other) const {
         return boost::geometry::distance(geometry, other.geometry);
+    }
+
+    double distanceToPartition(double xMin, double yMin, double xMax, double yMax) const {
+        // Shape partitionShape = shape_factory::createEmptyRectangleShape();
+        // partitionShape.setFromWKT("BOX (" + std::to_string(xMin) + " " + std::to_string(yMin) + "," + std::to_string(xMax) + " " + std::to_string(yMax) + ")");
+        // partitionShape.setMBR();
+        // return this->distance(partitionShape);
+        logger::log_error(DBERR_INVALID_OPERATION, "distanceToPartition unsupported for bg_box.");
+        return 0;
     }
 
     template<typename OtherBoostGeometryObj>
@@ -778,6 +801,15 @@ public:
     template<typename OtherBoostGeometryObj>
     double distance(const OtherBoostGeometryObj &other) const {
         return boost::geometry::distance(geometry, other.geometry);
+    }
+
+    double distanceToPartition(double xMin, double yMin, double xMax, double yMax) const {
+        // Shape partitionShape = shape_factory::createEmptyRectangleShape();
+        // partitionShape.setFromWKT("BOX (" + std::to_string(xMin) + " " + std::to_string(yMin) + "," + std::to_string(xMax) + " " + std::to_string(yMax) + ")");
+        // partitionShape.setMBR();
+        // return this->distance(partitionShape);
+        logger::log_error(DBERR_INVALID_OPERATION, "distanceToPartition unsupported for bg_linestring.");
+        return 0;
     }
     
     template<typename OtherBoostGeometryObj>
@@ -990,6 +1022,15 @@ public:
     template<typename OtherBoostGeometryObj>
     double distance(const OtherBoostGeometryObj &other) const {
         return boost::geometry::distance(geometry, other.geometry);
+    }
+
+    double distanceToPartition(double xMin, double yMin, double xMax, double yMax) const {
+        // Shape partitionShape = shape_factory::createEmptyRectangleShape();
+        // partitionShape.setFromWKT("BOX (" + std::to_string(xMin) + " " + std::to_string(yMin) + "," + std::to_string(xMax) + " " + std::to_string(yMax) + ")");
+        // partitionShape.setMBR();
+        // return this->distance(partitionShape);
+        logger::log_error(DBERR_INVALID_OPERATION, "distanceToPartition unsupported for bg_polygon.");
+        return 0;
     }
 
     template<typename OtherBoostGeometryObj>
@@ -1303,6 +1344,16 @@ public:
             }, other.shape);
         }, shape);
     }
+    
+    /** @brief Returns the Euclidean distance between the object and the given MBR. 
+     * @warning Not all geometry type combinations are supported (see data type support).
+    */
+    double distanceToPartition(double xMin, double yMin, double xMax, double yMax) const {
+        return std::visit([xMin, yMin, xMax, yMax](auto&& arg) -> double {
+            return arg.distanceToPartition(xMin, yMin, xMax, yMax);
+        }, shape);
+    }   
+
 
     /** @brief Returns true whether the input geometry intersects (border or area) with this geometry. False otherwise. 
      * @warning Not all geometry type combinations are supported (see data type support).

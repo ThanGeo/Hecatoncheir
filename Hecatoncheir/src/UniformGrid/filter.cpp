@@ -4,7 +4,7 @@
 namespace uniform_grid
 {
     namespace knn_filter
-    {
+    {        
         static DB_STATUS evaluate(hec::KNNQuery *knnQuery, hec::QResultBase* queryResult) {
             Shape qPoint;
             Dataset* dataset = g_config.datasetOptions.getDatasetByIdx(knnQuery->getDatasetID());
@@ -19,19 +19,26 @@ namespace uniform_grid
                 logger::log_error(DBERR_INVALID_GEOMETRY, "Couldn't set knn query shape from query WKT. WKT:", knnQuery->getWKT());
                 return DBERR_INVALID_GEOMETRY;
             }
-            
-            // get cells range
-            int partitionX = std::floor((qPoint.mbr.pMin.x - g_config.datasetOptions.dataspaceMetadata.xMinGlobal) / g_config.partitioningMethod->getPartPartionExtentX());
-            int partitionY = std::floor((qPoint.mbr.pMin.y - g_config.datasetOptions.dataspaceMetadata.yMinGlobal) / g_config.partitioningMethod->getPartPartionExtentY());
 
             std::vector<PartitionBase*>* partitions = dataset->index->getPartitions();
             for (auto &partition : *partitions) {
                 if (partition == nullptr) {
                     continue;
                 }
+                /** CHECK PARTITION OPTIMIZATION */
                 // check partition bounds TODO
-                int i = partition->partitionID % g_config.partitioningMethod->getGlobalPPD(); 
-                int j = partition->partitionID / g_config.partitioningMethod->getGlobalPPD(); 
+                int iFine = partition->partitionID % g_config.partitioningMethod->getGlobalPPD(); 
+                int jFine = partition->partitionID / g_config.partitioningMethod->getGlobalPPD(); 
+                double xFineStart = g_config.datasetOptions.dataspaceMetadata.xMinGlobal + iFine * g_config.partitioningMethod->getPartPartionExtentX();
+                double yFineStart = g_config.datasetOptions.dataspaceMetadata.yMinGlobal + jFine * g_config.partitioningMethod->getPartPartionExtentY();
+                double xFineEnd = xFineStart + g_config.partitioningMethod->getDistPartionExtentX();
+                double yFineEnd = yFineStart + g_config.partitioningMethod->getDistPartionExtentY();                
+                // calculate query point distance to coarse partition
+                double distanceToPartition = qPoint.distanceToPartition(xFineStart, yFineStart, xFineEnd, yFineEnd);
+                // if the distance to partition is larger than the current max in heap, skip this partition entirely
+                if (!queryResult->checkDistance(distanceToPartition)) {
+                    continue;
+                }
 
                 // get partition contents
                 std::vector<Shape *>* contents = partition->getContents();
@@ -40,11 +47,8 @@ namespace uniform_grid
                 }
                 // loop contents
                 for (auto &obj: *contents) {
-                    // contents->at(i)->printGeometry();
                     double distance = obj->distance(qPoint);
-                    // logger::log_task("Distance between", obj->recID, "and pivot:", distance);
-                    // obj->printGeometry();
-                    // add result (will handle the heap)
+                    // add result (the heap handles insertions automatically)
                     queryResult->addResult(obj->recID, distance);
                 }
             }

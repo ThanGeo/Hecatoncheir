@@ -117,6 +117,14 @@ namespace hec
             return empty;
         }
 
+        /** @brief Checks the given distance with the max heap. if the distance is smaller, then returns true. 
+         * for kNN ONLY.
+        */
+        virtual bool checkDistance(double distance) {
+            printf("Error: Forbidden method call in QResultBase for checkDistance().");
+            return false;
+        }
+
         virtual QResultBase* cloneEmpty() = 0;
 
         virtual ~QResultBase() = default;
@@ -164,6 +172,7 @@ namespace hec
     public:
         QResultkNN(int queryID, int k);
         void addResult(size_t id, double distance) override;
+        bool checkDistance(double distance) override;
         int calculateBufferSize() override;
         void serialize(char **buffer, int &bufferSize) override;
         void deserialize(const char *buffer, int bufferSize) override;
