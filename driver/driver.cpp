@@ -41,14 +41,14 @@ int main(int argc, char* argv[]) {
      * Partition data
      * 
      */
-    double start = hec::time::getTime();
+    // double start = hec::time::getTime();
     // int ret = hec::partition({landmarkID, waterID});
+    // // int ret = hec::partition({pointDatasetID});
+    // printf("Partitioning finished in %0.2f seconds.\n", hec::time::getTime() - start);
+
+    double start = hec::time::getTime();
     int ret = hec::partition({pointDatasetID});
     printf("Partitioning finished in %0.2f seconds.\n", hec::time::getTime() - start);
-
-    // double start = hec::time::getTime();
-    // int ret = hec::partition({pointDatasetID});
-    // printf("Partitioning finished in %0.2f seconds.\n", hec::time::getTime() - start);
 
     /** 
      * Index data
@@ -65,37 +65,37 @@ int main(int argc, char* argv[]) {
     // printf("Indexes built in %0.2f seconds.\n", hec::time::getTime() - start);
 
 
-    /** 
-     * Define a query and evaluate it
-     * 
+    /**
+     * JOIN QUERIES
      */
     // hec::JoinQuery joinQuery(landmarkID, waterID, 0, hec::Q_FIND_RELATION_JOIN, hec::QR_COLLECT);
     // start = hec::time::getTime();
     // hec::QResultBase* result = hec::query(&joinQuery);
-    // printf("Query finished in %0.2f seconds.\n", hec::time::getTime() - start);
+    // double total_time = hec::time::getTime() - start;
     // std::vector<std::vector<size_t>> res = result->getTopologyResultList();
     // for (int i=0; i<res.size(); i++) {
     //     printf("Relation %d count: %ld\n", i, res[i].size()/2);
-        
     // }
+    // printf("Query finished in %0.2f seconds.\n", total_time);
 
 
     // std::string queriesPath = "/home/hec/datasets/USA_queries/USA_c0.01_n10000_polygons.wkt";
     // // std::string queriesPath = "/home/hec/thanasis/Hecatoncheir/test_query.wkt";
-    // std::vector<hec::Query *> batch = hec::loadQueriesFromFile(queriesPath, "WKT", roadsID, hec::QR_COUNT);
-    // int RUNS = 10;
+    // std::vector<hec::Query *> batch = hec::loadRangeQueriesFromFile(queriesPath, "WKT", pointDatasetID, hec::QR_COUNT);
+    // int RUNS = 1;
     // double total_time = 0;
     // for (int i=0; i<RUNS; i++) {
     //     start = hec::time::getTime();
     //     std::unordered_map<int, hec::QResultBase *> results = hec::query(batch);
     //     total_time += hec::time::getTime() - start;
     //     for (auto &it : batch) {
+    //         printf("Query %d results: %ld\n", it->getQueryID(), results[it->getQueryID()]->getResultCount());
     //         delete results[it->getQueryID()];
     //     }
     //     results.clear();
     // }
-    
     // printf("Query finished in %0.2f seconds.\n", total_time/(double)RUNS);
+    
     // for (int i=0; i<batch.size(); i++) {
     //     std::vector<size_t> ids = results[i]->getResultList();
     //     printf("Query %d results: %ld\n", i, ids.size());
@@ -140,15 +140,16 @@ int main(int argc, char* argv[]) {
     double total_time = 0;
     for (int i=0; i<RUNS; i++) {
         start = hec::time::getTime();
-        std::unordered_map<int, hec::QResultBase *> results = hec::query(batch);
+        std::vector<hec::Query *> temp = {batch[0]};
+        std::unordered_map<int, hec::QResultBase *> results = hec::query(temp);
         total_time += hec::time::getTime() - start;
-        for (auto &it : batch) {
-            // std::vector<size_t> ids = results[it->getQueryID()]->getResultList();
-            // printf("Query %d results for k=%d:\n", it->getQueryID(), k);
-            // for (auto &id : ids) {
-            //     printf(" %ld", id);
-            // }
-            // printf("\n");
+        for (auto &it : temp) {
+            std::vector<size_t> ids = results[it->getQueryID()]->getResultList();
+            printf("Query %d results for k=%d:\n", it->getQueryID(), k);
+            for (auto &id : ids) {
+                printf(" %ld", id);
+            }
+            printf("\n");
             delete results[it->getQueryID()];
         }
         results.clear();

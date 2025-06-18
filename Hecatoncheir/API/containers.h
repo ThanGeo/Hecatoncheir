@@ -277,15 +277,42 @@ namespace hec
             return -1;
         }
 
+        /** @brief Returns the size in bytes required to serialize this object instance. */
+        virtual int calculateBufferSize() {
+            printf("Error: Invalid call of calculateBufferSize() for query type.");
+            return -1;
+        }
+
+        /** @brief Serializes the object instance into the buffer and stores the size into bufferSize. 
+         * returns 0 if serialization finishes successfuly, -1 otherwise.
+        */
+        virtual int serialize(char **buffer, int &bufferSize) {
+            printf("Error: Invalid call of serialize() for query type.");
+            return -1;
+        }
+
+        /** @brief Deserializes the serialized object info from the buffer and stores it this object instance.
+         * The correct object instance must be created before calling this method to fill it in. 
+         * returns 0 if deserialization finishes successfuly, -1 otherwise.
+        */
+        virtual int deserialize(char*& buffer) {
+            printf("Error: Invalid call of deserialize() for query type.");
+            return -1;
+        }
+
+        /** @brief creates a Query instance of the appropriate derived type based on the given serialized buffer. */
+        static Query* createFromBuffer(char*& buffer);
+        
         virtual ~Query() = default;
     };
 
     struct RangeQuery : public Query {
     private:
-        DatasetID datasetID;
-        std::string wktText;
-        int shapeType;
+        DatasetID datasetID = -1;
+        std::string wktText = "";
+        int shapeType = -1;
     public:
+        RangeQuery(){}
         RangeQuery(DatasetID datasetID, int queryID, std::string queryWKT);
         RangeQuery(DatasetID datasetID, int queryID, std::string queryWKT, std::string resultType);
         RangeQuery(DatasetID datasetID, int queryID, std::string queryWKT, QueryResultType resultType);
@@ -294,13 +321,18 @@ namespace hec
         }
         std::string getWKT();
         int getShapeType();
+
+        int calculateBufferSize() override;
+        int serialize(char **buffer, int &bufferSize) override;
+        int deserialize(char*& buffer) override;
     };
 
     struct JoinQuery : public Query {
     private:
-        DatasetID Rid;
-        DatasetID Sid;
+        DatasetID Rid = -1;
+        DatasetID Sid = -1;
     public:
+        JoinQuery(){}
         JoinQuery(DatasetID Rid, DatasetID Sid, int queryID, std::string predicate);
         JoinQuery(DatasetID Rid, DatasetID Sid, int queryID, std::string predicate, std::string resultTypeStr);
         JoinQuery(DatasetID Rid, DatasetID Sid, int queryID, QueryType predicate, QueryResultType resultType);
@@ -312,14 +344,19 @@ namespace hec
         DatasetID getDatasetSid() {
             return Sid;
         }
+
+        int calculateBufferSize() override;
+        int serialize(char **buffer, int &bufferSize) override;
+        int deserialize(char*& buffer) override;
     };
 
     struct KNNQuery : public Query {
-        DatasetID datasetID;
-        std::string wktText;
-        int shapeType;
-        int k;
+        DatasetID datasetID = -1;
+        std::string wktText = "";
+        int shapeType = -1;
+        int k = -1;
 
+        KNNQuery(){}
         KNNQuery(DatasetID datasetID, int id, std::string queryWKT, int k);
         DatasetID getDatasetID() {
             return datasetID;
@@ -327,6 +364,10 @@ namespace hec
         std::string getWKT();
         int getShapeType();
         int getK();
+
+        int calculateBufferSize() override;
+        int serialize(char **buffer, int &bufferSize) override;
+        int deserialize(char*& buffer) override;
     };
 }
 

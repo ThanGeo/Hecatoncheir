@@ -10,6 +10,54 @@ namespace hec
     SpatialQueries spatialQueries;
     SupportedQueryResultTypes queryResultTypes;
 
+    // BASE QUERY
+
+    Query* Query::createFromBuffer(char*& buffer) {
+        char* start = buffer;
+        // Read query type to determine subclass
+        int queryID = *reinterpret_cast<const int*>(buffer);
+        buffer += sizeof(int);
+
+        QueryType type = *reinterpret_cast<const QueryType*>(buffer);
+        buffer += sizeof(QueryType);
+
+        // Restore buffer for the right subclass to read fully
+        buffer = start;
+
+        Query* query = nullptr;
+
+        switch (type) {
+            case Q_RANGE:
+                query = new RangeQuery(); // empty constructor
+                break;
+            case Q_KNN:
+                query = new KNNQuery();
+                break;
+            case Q_INTERSECTION_JOIN:
+            case Q_INSIDE_JOIN:
+            case Q_DISJOINT_JOIN:
+            case Q_CONTAINS_JOIN:
+            case Q_COVERS_JOIN:
+            case Q_COVERED_BY_JOIN:
+            case Q_MEET_JOIN:
+            case Q_EQUAL_JOIN:
+            case Q_FIND_RELATION_JOIN:
+                query = new JoinQuery();
+                break;
+            default:
+                logger::log_error(DBERR_QUERY_INVALID_TYPE, "Invalid query type in message.");
+                return nullptr;
+        }
+
+        // Deserialize into the new object
+        if (query->deserialize(buffer) < 0) {
+            delete query;
+            return nullptr;
+        }
+
+        return query;
+    }
+
     // JOIN QUERY
 
     JoinQuery::JoinQuery(DatasetID Rid, DatasetID Sid, int id, std::string predicateStr) {
@@ -49,6 +97,68 @@ namespace hec
             return;
         }
         logger::log_error(DBERR_QUERY_INVALID_TYPE, "Invalid predicate for a join query:", predicate);
+    }
+
+    int JoinQuery::calculateBufferSize() {
+        int size = 0;
+        size += sizeof(int);                                       // query id
+        size += sizeof(hec::QueryType);                            // query type
+        size += sizeof(hec::QueryResultType);                      // result type
+        size += 2 * sizeof(hec::DatasetID); 
+        return size;
+    }
+
+    int JoinQuery::serialize(char **buffer, int &bufferSize) {
+         // calculate size
+        int bufferSizeRet = calculateBufferSize();
+        // allocate space
+        (*buffer) = (char*) malloc(bufferSizeRet * sizeof(char));
+        if (*buffer == NULL) {
+            // malloc failed
+            logger::log_error(DBERR_MALLOC_FAILED, "Malloc failed on serialization of QResultCount object.");
+            return -1;
+        }
+        char* localBuffer = *buffer;
+        *reinterpret_cast<int*>(localBuffer) = (int) this->queryID;
+        localBuffer += sizeof(int);
+        *reinterpret_cast<hec::QueryType*>(localBuffer) = (hec::QueryType) this->queryType;
+        localBuffer += sizeof(hec::QueryType);
+        *reinterpret_cast<hec::QueryResultType*>(localBuffer) = this->resultType;
+        localBuffer += sizeof(hec::QueryResultType);
+        *reinterpret_cast<hec::DatasetID*>(localBuffer) = (hec::DatasetID) this->Rid;
+        localBuffer += sizeof(hec::DatasetID);
+        *reinterpret_cast<hec::DatasetID*>(localBuffer) = (hec::DatasetID) this->Sid;
+        localBuffer += sizeof(hec::DatasetID);
+        return 0;
+    }
+
+    int JoinQuery::deserialize(char*& buffer) {
+        int position = 0;
+        // query id
+        int id = (int) *reinterpret_cast<const int*>(buffer + position);
+        position += sizeof(int);
+        // query type
+        hec::QueryType queryType = (hec::QueryType) *reinterpret_cast<const hec::QueryType*>(buffer + position);
+        position += sizeof(hec::QueryType);
+        // query result type
+        hec::QueryResultType queryResultType = (hec::QueryResultType) *reinterpret_cast<const hec::QueryResultType*>(buffer + position);
+        position += sizeof(hec::QueryResultType);
+        // unpack the rest of the info
+        hec::DatasetID datasetRid = (hec::DatasetID) *reinterpret_cast<const hec::DatasetID*>(buffer + position);
+        position += sizeof(hec::DatasetID);
+        hec::DatasetID datasetSid = (hec::DatasetID) *reinterpret_cast<const hec::DatasetID*>(buffer + position);
+        position += sizeof(hec::DatasetID); 
+        
+        // set object 
+        this->queryID = id;
+        this->queryType = queryType;
+        this->resultType = queryResultType;
+        this->Rid = datasetRid;
+        this->Sid = datasetSid;
+
+        // increment original buffer
+        buffer += position;
+        return 0;
     }
 
     // RANGE QUERY
@@ -131,6 +241,77 @@ namespace hec
         return this->shapeType;
     }
 
+    int RangeQuery::calculateBufferSize() {
+        int size = 0;
+        size += sizeof(int);                                        // query id
+        size += sizeof(hec::QueryType);                             // query type
+        size += sizeof(hec::QueryResultType);                       // result type
+        size += sizeof(hec::DatasetID);                             // dataset id
+        size += sizeof(int);                                        // wkt text length
+        size += this->wktText.length() * sizeof(char);              // wkt string
+        return size;
+    }
+
+    int RangeQuery::serialize(char **buffer, int &bufferSize) {
+        // calculate size
+        int bufferSizeRet = calculateBufferSize();
+        // allocate space
+        (*buffer) = (char*) malloc(bufferSizeRet * sizeof(char));
+        if (*buffer == NULL) {
+            // malloc failed
+            logger::log_error(DBERR_MALLOC_FAILED, "Malloc failed on serialization of QResultCount object.");
+            return -1;
+        }
+        char* localBuffer = *buffer;
+        *reinterpret_cast<int*>(localBuffer) = (int) this->queryID;
+        localBuffer += sizeof(int);
+        *reinterpret_cast<hec::QueryType*>(localBuffer) = (hec::QueryType) this->queryType;
+        localBuffer += sizeof(hec::QueryType);
+        *reinterpret_cast<hec::QueryResultType*>(localBuffer) = this->resultType;
+        localBuffer += sizeof(hec::QueryResultType);
+        *reinterpret_cast<hec::DatasetID*>(localBuffer) = (hec::DatasetID) this->datasetID;
+        localBuffer += sizeof(hec::DatasetID); 
+        *reinterpret_cast<int*>(localBuffer) = this->wktText.length();
+        localBuffer += sizeof(int);
+        std::memcpy(localBuffer, this->wktText.data(), this->wktText.length() * sizeof(char));
+        localBuffer += this->wktText.length() * sizeof(char);
+        return 0;
+    }
+
+    int RangeQuery::deserialize(char*& buffer) {
+        int position = 0;
+        // query id
+        int id = (int) *reinterpret_cast<const int*>(buffer + position);
+        position += sizeof(int);
+        // query type
+        hec::QueryType queryType = (hec::QueryType) *reinterpret_cast<const hec::QueryType*>(buffer + position);
+        position += sizeof(hec::QueryType);
+        // query result type
+        hec::QueryResultType queryResultType = (hec::QueryResultType) *reinterpret_cast<const hec::QueryResultType*>(buffer + position);
+        position += sizeof(hec::QueryResultType);
+        // unpack the rest of the info
+        hec::DatasetID datasetID = (hec::DatasetID) *reinterpret_cast<const hec::DatasetID*>(buffer + position);
+        position += sizeof(hec::DatasetID);
+        // wkt text length + string
+        int length;
+        length = *reinterpret_cast<const int*>(buffer + position);
+        position += sizeof(int);
+        std::string wktText(buffer + position, buffer + position + length);
+        position += length * sizeof(char);
+
+        // set object instance
+        this->queryID = id;
+        this->queryType = queryType;
+        this->resultType = queryResultType;
+        this->datasetID = datasetID;
+        this->wktText = wktText;
+
+        // increment original buffer
+        buffer += position;
+
+        return 0;
+    }
+
     // kNN
     KNNQuery::KNNQuery(DatasetID datasetID, int id, std::string queryWKT, int k) {
         if (queryWKT == "") {
@@ -165,6 +346,84 @@ namespace hec
 
     int KNNQuery::getK() {
         return this->k;
+    }
+
+    int KNNQuery::calculateBufferSize() {
+        int size = 0;
+        size += sizeof(int);                                        // query id
+        size += sizeof(hec::QueryType);                             // query type
+        size += sizeof(hec::QueryResultType);                       // result type
+        size += sizeof(hec::DatasetID);                             // dataset id
+        size += sizeof(int);                                        // k
+        size += sizeof(int);                                        // wkt text length
+        size += this->wktText.length() * sizeof(char);              // wkt string
+        return size;
+    }
+
+    int KNNQuery::serialize(char **buffer, int &bufferSize) {
+        // calculate size
+        int bufferSizeRet = calculateBufferSize();
+        // allocate space
+        (*buffer) = (char*) malloc(bufferSizeRet * sizeof(char));
+        if (*buffer == NULL) {
+            // malloc failed
+            logger::log_error(DBERR_MALLOC_FAILED, "Malloc failed on serialization of QResultCount object.");
+            return -1;
+        }
+        char* localBuffer = *buffer;
+        *reinterpret_cast<int*>(localBuffer) = (int) this->queryID;
+        localBuffer += sizeof(int);
+        *reinterpret_cast<hec::QueryType*>(localBuffer) = (hec::QueryType) this->queryType;
+        localBuffer += sizeof(hec::QueryType);
+        *reinterpret_cast<hec::QueryResultType*>(localBuffer) = this->resultType;
+        localBuffer += sizeof(hec::QueryResultType);
+        *reinterpret_cast<hec::DatasetID*>(localBuffer) = (hec::DatasetID) this->datasetID;
+        localBuffer += sizeof(hec::DatasetID); 
+        *reinterpret_cast<int*>(localBuffer) = this->k;
+        localBuffer += sizeof(int);
+        *reinterpret_cast<int*>(localBuffer) = this->wktText.length();
+        localBuffer += sizeof(int);
+        std::memcpy(localBuffer, this->wktText.data(), this->wktText.length() * sizeof(char));
+        localBuffer += this->wktText.length() * sizeof(char);
+        return 0;
+    }
+
+    int KNNQuery::deserialize(char*& buffer) {
+        int position = 0;
+        // query id
+        int id = (int) *reinterpret_cast<const int*>(buffer + position);
+        position += sizeof(int);
+        // query type
+        hec::QueryType queryType = (hec::QueryType) *reinterpret_cast<const hec::QueryType*>(buffer + position);
+        position += sizeof(hec::QueryType);
+        // query result type
+        hec::QueryResultType queryResultType = (hec::QueryResultType) *reinterpret_cast<const hec::QueryResultType*>(buffer + position);
+        position += sizeof(hec::QueryResultType);
+        // unpack the rest of the info
+        hec::DatasetID datasetID = (hec::DatasetID) *reinterpret_cast<const hec::DatasetID*>(buffer + position);
+        position += sizeof(hec::DatasetID);
+        int k = *reinterpret_cast<const int*>(buffer + position);
+        position += sizeof(int);
+        // wkt text length + string
+        int length;
+        length = *reinterpret_cast<const int*>(buffer + position);
+        position += sizeof(int);
+        std::string wktText(buffer + position, buffer + position + length);
+        position += length * sizeof(char);
+
+        // set object instance
+        this->queryID = id;
+        this->queryType = queryType;
+        this->resultType = queryResultType;
+        this->datasetID = datasetID;
+        this->k = k;
+        this->wktText = wktText;
+
+        // increment original buffer
+        buffer += position;
+
+        return 0;
+                        
     }
     
     // Q RESULT BASE

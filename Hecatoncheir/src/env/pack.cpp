@@ -328,103 +328,48 @@ namespace pack
         return ret;
     }
 
-    DB_STATUS packQueryBatch(std::vector<hec::Query*> *batch, SerializedMsg<char> &batchMsg) {
+    DB_STATUS packQueryBatch(std::vector<hec::Query*>* batch, SerializedMsg<char>& batchMsg) {
         DB_STATUS ret = DBERR_OK;
-        // count total size
-        batchMsg.count = 0;
-
-        // total queries
-        batchMsg.count += sizeof(int);     
-
-        for (int i=0; i<batch->size(); i++) {
-            if (auto rangeQuery = dynamic_cast<hec::RangeQuery*>(batch->at(i))){
-                batchMsg.count += sizeof(int);                                        // query id
-                batchMsg.count += sizeof(hec::QueryType);                             // query type
-                batchMsg.count += sizeof(hec::QueryResultType);                       // result type
-                batchMsg.count += sizeof(hec::DatasetID);                             // dataset id
-                batchMsg.count += sizeof(int);                                        // wkt text length
-                batchMsg.count += rangeQuery->getWKT().length() * sizeof(char);       // wkt string
-            } else if (auto joinQuery = dynamic_cast<hec::JoinQuery*>(batch->at(i))) {
-                batchMsg.count += sizeof(int);                                       // query id
-                batchMsg.count += sizeof(hec::QueryType);                            // query type
-                batchMsg.count += sizeof(hec::QueryResultType);                      // result type
-                batchMsg.count += 2 * sizeof(hec::DatasetID);                        // dataset R and S ids
-            } else if (auto knnQuery = dynamic_cast<hec::KNNQuery*>(batch->at(i))){
-                batchMsg.count += sizeof(int);                                        // query id
-                batchMsg.count += sizeof(hec::QueryType);                             // query type
-                batchMsg.count += sizeof(hec::QueryResultType);                       // result type
-                batchMsg.count += sizeof(hec::DatasetID);                             // dataset id
-                batchMsg.count += sizeof(int);                                        // k
-                batchMsg.count += sizeof(int);                                        // wkt text length
-                batchMsg.count += knnQuery->getWKT().length() * sizeof(char);       // wkt string
-            } else {
-                logger::log_error(DBERR_INVALID_DATATYPE, "Invalid query type");
-                return DBERR_INVALID_DATATYPE;
-            }
+        // calculate total size: sizeof(int) for query count + serialized size of each query
+        batchMsg.count = sizeof(int);
+        for (auto& query : *batch) {
+            batchMsg.count += query->calculateBufferSize();
         }
-        
-        // allocate space
-        batchMsg.data = (char*) malloc(batchMsg.count * sizeof(char));
+
+        // Allocate memory for total batch buffer
+        batchMsg.data = (char*) malloc(batchMsg.count);
         if (batchMsg.data == nullptr) {
-            // malloc failed
             logger::log_error(DBERR_MALLOC_FAILED, "Malloc for pack system metadata failed");
             return DBERR_MALLOC_FAILED;
         }
+        char* writePtr = batchMsg.data;
+        // Write query count at the beginning
+        *reinterpret_cast<int*>(writePtr) = (int)batch->size();
+        writePtr += sizeof(int);
 
-        char* localBuffer = batchMsg.data;
+        // Serialize each query individually into a temp buffer and copy it in
+        for (auto& query : *batch) {
+            char* tempBuffer = nullptr;
+            int tempSize = 0;
 
-        // put query count in buffer
-        *reinterpret_cast<int*>(localBuffer) = (int) batch->size();
-        localBuffer += sizeof(int);
+            tempSize = query->calculateBufferSize(); // get size
+            int res = query->serialize(&tempBuffer, tempSize); // allocates + writes
 
-        // put queries in buffer
-        for (int i=0; i<batch->size(); i++) {
-            if (auto rangeQuery = dynamic_cast<hec::RangeQuery*>(batch->at(i))){
-                *reinterpret_cast<int*>(localBuffer) = (int) rangeQuery->getQueryID();
-                localBuffer += sizeof(int);
-                *reinterpret_cast<hec::QueryType*>(localBuffer) = (hec::QueryType) rangeQuery->getQueryType();
-                localBuffer += sizeof(hec::QueryType);
-                *reinterpret_cast<hec::QueryResultType*>(localBuffer) = rangeQuery->getResultType();
-                localBuffer += sizeof(hec::QueryResultType);
-                *reinterpret_cast<hec::DatasetID*>(localBuffer) = (hec::DatasetID) rangeQuery->getDatasetID();
-                localBuffer += sizeof(hec::DatasetID); 
-                *reinterpret_cast<int*>(localBuffer) = rangeQuery->getWKT().length();
-                localBuffer += sizeof(int);
-                std::memcpy(localBuffer, rangeQuery->getWKT().data(), rangeQuery->getWKT().length() * sizeof(char));
-                localBuffer += rangeQuery->getWKT().length() * sizeof(char);
-            } else if (auto joinQuery = dynamic_cast<hec::JoinQuery*>(batch->at(i))) {
-                *reinterpret_cast<int*>(localBuffer) = (int) joinQuery->getQueryID();
-                localBuffer += sizeof(int);
-                *reinterpret_cast<hec::QueryType*>(localBuffer) = (hec::QueryType) joinQuery->getQueryType();
-                localBuffer += sizeof(hec::QueryType);
-                *reinterpret_cast<hec::QueryResultType*>(localBuffer) = joinQuery->getResultType();
-                localBuffer += sizeof(hec::QueryResultType);
-                *reinterpret_cast<hec::DatasetID*>(localBuffer) = (hec::DatasetID) joinQuery->getDatasetRid();
-                localBuffer += sizeof(hec::DatasetID);
-                *reinterpret_cast<hec::DatasetID*>(localBuffer) = (hec::DatasetID) joinQuery->getDatasetSid();
-                localBuffer += sizeof(hec::DatasetID);
-            } else if (auto knnQuery = dynamic_cast<hec::KNNQuery*>(batch->at(i))) {
-                *reinterpret_cast<int*>(localBuffer) = (int) knnQuery->getQueryID();
-                localBuffer += sizeof(int);
-                *reinterpret_cast<hec::QueryType*>(localBuffer) = (hec::QueryType) knnQuery->getQueryType();
-                localBuffer += sizeof(hec::QueryType);
-                *reinterpret_cast<hec::QueryResultType*>(localBuffer) = knnQuery->getResultType();
-                localBuffer += sizeof(hec::QueryResultType);
-                *reinterpret_cast<hec::DatasetID*>(localBuffer) = (hec::DatasetID) knnQuery->getDatasetID();
-                localBuffer += sizeof(hec::DatasetID); 
-                *reinterpret_cast<int*>(localBuffer) = knnQuery->getK();
-                localBuffer += sizeof(int);
-                *reinterpret_cast<int*>(localBuffer) = knnQuery->getWKT().length();
-                localBuffer += sizeof(int);
-                std::memcpy(localBuffer, knnQuery->getWKT().data(), knnQuery->getWKT().length() * sizeof(char));
-                localBuffer += knnQuery->getWKT().length() * sizeof(char);
-            } else {
-                logger::log_error(DBERR_INVALID_DATATYPE, "Invalid query type");
-                return DBERR_INVALID_DATATYPE;
+            if (res < 0 || tempBuffer == nullptr) {
+                logger::log_error(DBERR_SERIALIZE_FAILED, "Query batch serialization failed for query", query->getQueryID());
+                free(batchMsg.data); // cleanup
+                return DBERR_SERIALIZE_FAILED;
             }
+
+            std::memcpy(writePtr, tempBuffer, tempSize);  // copy serialized data
+            writePtr += tempSize;
+
+            free(tempBuffer); // cleanup temp buffer
         }
+
         return ret;
     }
+
 
     DB_STATUS packBatchResults(std::unordered_map<int, hec::QResultBase*> &batchResults, SerializedMsg<char> &msg) {       
         DB_STATUS ret = DBERR_OK;
@@ -564,125 +509,6 @@ namespace pack
         }
         return ret;
     }
-
-    // DB_STATUS packBatchResults(std::unordered_map<int, std::unique_ptr<hec::QResultBase>> &batchResults, SerializedMsg<char> &msg) {       
-    //     DB_STATUS ret = DBERR_OK;
-    //     msg.count = 0;
-    //     msg.count += sizeof(int);  // total query results in batch
-    
-    //     for (auto &it : batchResults) {
-    //         msg.count += it.second->calculateBufferSize();
-    //     }
-    
-    //     msg.data = (char*) malloc(msg.count * sizeof(char));
-    //     if (msg.data == nullptr) {
-    //         logger::log_error(DBERR_MALLOC_FAILED, "Malloc for pack system metadata failed");
-    //         return DBERR_MALLOC_FAILED;
-    //     }
-    
-    //     char* localBuffer = msg.data;
-    
-    //     *reinterpret_cast<int*>(localBuffer) = batchResults.size();
-    //     localBuffer += sizeof(int);
-    
-    //     for (auto &it : batchResults) {
-    //         auto* result = it.second.get();  // access raw pointer
-    
-    //         *reinterpret_cast<int*>(localBuffer) = result->getQueryID();
-    //         localBuffer += sizeof(int);
-    
-    //         *reinterpret_cast<hec::QueryType*>(localBuffer) = result->getQueryType();
-    //         localBuffer += sizeof(hec::QueryType);
-    
-    //         *reinterpret_cast<hec::QueryResultType*>(localBuffer) = result->getResultType();
-    //         localBuffer += sizeof(hec::QueryResultType);
-    
-    //         switch (result->getQueryType()) {
-    //             case hec::Q_RANGE:
-    //                 switch (result->getResultType()) {
-    //                     case hec::QR_COLLECT: {
-    //                         auto castedPtr = dynamic_cast<hec::QResultCollect*>(result);
-    //                         *reinterpret_cast<size_t*>(localBuffer) = castedPtr->getResultCount();
-    //                         localBuffer += sizeof(size_t);
-    //                         std::vector<size_t> ids = castedPtr->getResultList();
-    //                         std::memcpy(localBuffer, ids.data(), ids.size() * sizeof(size_t));
-    //                         localBuffer += ids.size() * sizeof(size_t);
-    //                         break;
-    //                     }
-    //                     case hec::QR_COUNT:
-    //                         *reinterpret_cast<size_t*>(localBuffer) = result->getResultCount();
-    //                         localBuffer += sizeof(size_t);
-    //                         break;
-    //                     default:
-    //                         logger::log_error(DBERR_QUERY_RESULT_INVALID_TYPE, "Unknown query result type:", result->getResultType());
-    //                         return DBERR_QUERY_RESULT_INVALID_TYPE;
-    //                 }
-    //                 break;
-    
-    //             case hec::Q_INTERSECTION_JOIN:
-    //             case hec::Q_INSIDE_JOIN:
-    //             case hec::Q_DISJOINT_JOIN:
-    //             case hec::Q_EQUAL_JOIN:
-    //             case hec::Q_MEET_JOIN:
-    //             case hec::Q_CONTAINS_JOIN:
-    //             case hec::Q_COVERS_JOIN:
-    //             case hec::Q_COVERED_BY_JOIN:
-    //                 switch (result->getResultType()) {
-    //                     case hec::QR_COLLECT: {
-    //                         auto castedPtr = dynamic_cast<hec::QPairResultCollect*>(result);
-    //                         *reinterpret_cast<size_t*>(localBuffer) = castedPtr->getResultCount();
-    //                         localBuffer += sizeof(size_t);
-    //                         std::vector<size_t> ids = castedPtr->getResultList();
-    //                         std::memcpy(localBuffer, ids.data(), ids.size() * sizeof(size_t));
-    //                         localBuffer += ids.size() * sizeof(size_t);
-    //                         break;
-    //                     }
-    //                     case hec::QR_COUNT:
-    //                         *reinterpret_cast<size_t*>(localBuffer) = result->getResultCount();
-    //                         localBuffer += sizeof(size_t);
-    //                         break;
-    //                     default:
-    //                         logger::log_error(DBERR_QUERY_RESULT_INVALID_TYPE, "Unknown query result type:", result->getResultType());
-    //                         return DBERR_QUERY_RESULT_INVALID_TYPE;
-    //                 }
-    //                 break;
-    
-    //             case hec::Q_FIND_RELATION_JOIN:
-    //                 switch (result->getResultType()) {
-    //                     case hec::QR_COLLECT: {
-    //                         auto castedPtr = dynamic_cast<hec::QTopologyResultCollect*>(result);
-    //                         auto results = castedPtr->getTopologyResultList();
-    //                         for (int i = 0; i < castedPtr->TOTAL_RELATIONS; i++) {
-    //                             *reinterpret_cast<size_t*>(localBuffer) = results[i].size();
-    //                             localBuffer += sizeof(size_t);
-    //                             std::memcpy(localBuffer, results[i].data(), results[i].size() * sizeof(size_t));
-    //                             localBuffer += results[i].size() * sizeof(size_t);
-    //                         }
-    //                         break;
-    //                     }
-    //                     case hec::QR_COUNT: {
-    //                         auto castedPtr = dynamic_cast<hec::QTopologyResultCount*>(result);
-    //                         auto results = castedPtr->getResultList();
-    //                         for (int i = 0; i < castedPtr->TOTAL_RELATIONS; i++) {
-    //                             *reinterpret_cast<size_t*>(localBuffer) = results[i];
-    //                             localBuffer += sizeof(size_t);
-    //                         }
-    //                         break;
-    //                     }
-    //                     default:
-    //                         logger::log_error(DBERR_QUERY_RESULT_INVALID_TYPE, "Unknown query result type:", result->getResultType());
-    //                         return DBERR_QUERY_RESULT_INVALID_TYPE;
-    //                 }
-    //                 break;
-    
-    //             default:
-    //                 logger::log_error(DBERR_QUERY_INVALID_TYPE, "Invalid query type:", result->getQueryType());
-    //                 return DBERR_QUERY_INVALID_TYPE;
-    //         }
-    //     }
-    
-    //     return ret;
-    // }
 }
 
 namespace unpack
@@ -880,91 +706,27 @@ namespace unpack
         return ret;
     }
 
-    DB_STATUS unpackQueryBatch(SerializedMsg<char> &msg, std::vector<hec::Query*>* queryBatchPtr) {
+    DB_STATUS unpackQueryBatch(SerializedMsg<char>& msg, std::vector<hec::Query*>* queryBatchPtr) {
         DB_STATUS ret = DBERR_OK;
 
-        char *localBuffer = msg.data;
+        char* localBuffer = msg.data;
 
-        // total queries
-        int queryCount = (int) *reinterpret_cast<const int*>(localBuffer);
+        // Total query count
+        int queryCount = *reinterpret_cast<const int*>(localBuffer);
         localBuffer += sizeof(int);
 
-        for (int i=0; i<queryCount; i++) {
-            // query id
-            int id = (int) *reinterpret_cast<const int*>(localBuffer);
-            localBuffer += sizeof(int);
-            // query type
-            hec::QueryType queryType = (hec::QueryType) *reinterpret_cast<const hec::QueryType*>(localBuffer);
-            localBuffer += sizeof(hec::QueryType);
-            // query result type
-            hec::QueryResultType queryResultType = (hec::QueryResultType) *reinterpret_cast<const hec::QueryResultType*>(localBuffer);
-            localBuffer += sizeof(hec::QueryResultType);
-            
-            switch (queryType) {
-                case hec::Q_RANGE:
-                    {
-                        // unpack the rest of the info
-                        hec::DatasetID datasetID = (hec::DatasetID) *reinterpret_cast<const hec::DatasetID*>(localBuffer);
-                        localBuffer += sizeof(hec::DatasetID);
-                        // wkt text length + string
-                        int length;
-                        length = *reinterpret_cast<const int*>(localBuffer);
-                        localBuffer += sizeof(int);
-                        std::string wktText(localBuffer, localBuffer + length);
-                        localBuffer += length * sizeof(char);
-                        
-                        // the caller is responsible for freeing this memory
-                        hec::RangeQuery* rangeQuery = new hec::RangeQuery(datasetID, id, wktText, queryResultType);
-                        queryBatchPtr->emplace_back(rangeQuery);
-                    }
-                    break;
-                case hec::Q_DISJOINT_JOIN:
-                case hec::Q_INTERSECTION_JOIN:
-                case hec::Q_INSIDE_JOIN:
-                case hec::Q_CONTAINS_JOIN:
-                case hec::Q_COVERS_JOIN:
-                case hec::Q_COVERED_BY_JOIN:
-                case hec::Q_MEET_JOIN:
-                case hec::Q_EQUAL_JOIN:
-                case hec::Q_FIND_RELATION_JOIN:
-                    {
-                        hec::DatasetID datasetRid = (hec::DatasetID) *reinterpret_cast<const hec::DatasetID*>(localBuffer);
-                        localBuffer += sizeof(hec::DatasetID);
-                        hec::DatasetID datasetSid = (hec::DatasetID) *reinterpret_cast<const hec::DatasetID*>(localBuffer);
-                        localBuffer += sizeof(hec::DatasetID);
-                        // the caller is responsible for freeing this memory
-                        hec::JoinQuery* joinQuery = new hec::JoinQuery(datasetRid, datasetSid, id, queryType, queryResultType);
-                        queryBatchPtr->emplace_back(joinQuery);
-                    }
-                    break;
-                case hec::Q_KNN:
-                    {
-                        // unpack the rest of the info
-                        hec::DatasetID datasetID = (hec::DatasetID) *reinterpret_cast<const hec::DatasetID*>(localBuffer);
-                        localBuffer += sizeof(hec::DatasetID);
-                        // k
-                        int k;
-                        k = *reinterpret_cast<const int*>(localBuffer);
-                        localBuffer += sizeof(int);
-                        // wkt text length + string
-                        int length;
-                        length = *reinterpret_cast<const int*>(localBuffer);
-                        localBuffer += sizeof(int);
-                        std::string wktText(localBuffer, localBuffer + length);
-                        localBuffer += length * sizeof(char);
-                        
-                        // the caller is responsible for freeing this memory
-                        hec::KNNQuery* knnQuery = new hec::KNNQuery(datasetID, id, wktText, k);
-                        queryBatchPtr->emplace_back(knnQuery);
-                    }
-                    break;
-                default:
-                    logger::log_error(DBERR_QUERY_INVALID_TYPE, "Invalid query type in message.");
-                    return DBERR_QUERY_INVALID_TYPE;
+        for (int i = 0; i < queryCount; ++i) {
+            hec::Query* query = hec::Query::createFromBuffer(localBuffer);
+            if (query == nullptr) {
+                logger::log_error(DBERR_DESERIALIZE_FAILED, "Failed to deserialize query object in batch");
+                return DBERR_DESERIALIZE_FAILED;
             }
+            queryBatchPtr->emplace_back(query);
         }
+
         return ret;
     }
+
 
     DB_STATUS unpackShape(SerializedMsg<char> &msg, Shape &shape) {
         DB_STATUS ret = DBERR_OK;
