@@ -110,9 +110,9 @@ namespace hec
 
     int JoinQuery::serialize(char **buffer, int &bufferSize) {
          // calculate size
-        int bufferSizeRet = calculateBufferSize();
+        bufferSize = calculateBufferSize();
         // allocate space
-        (*buffer) = (char*) malloc(bufferSizeRet * sizeof(char));
+        (*buffer) = (char*) malloc(bufferSize * sizeof(char));
         if (*buffer == NULL) {
             // malloc failed
             logger::log_error(DBERR_MALLOC_FAILED, "Malloc failed on serialization of QResultCount object.");
@@ -254,9 +254,9 @@ namespace hec
 
     int RangeQuery::serialize(char **buffer, int &bufferSize) {
         // calculate size
-        int bufferSizeRet = calculateBufferSize();
+        bufferSize = calculateBufferSize();
         // allocate space
-        (*buffer) = (char*) malloc(bufferSizeRet * sizeof(char));
+        (*buffer) = (char*) malloc(bufferSize * sizeof(char));
         if (*buffer == NULL) {
             // malloc failed
             logger::log_error(DBERR_MALLOC_FAILED, "Malloc failed on serialization of QResultCount object.");
@@ -362,9 +362,9 @@ namespace hec
 
     int KNNQuery::serialize(char **buffer, int &bufferSize) {
         // calculate size
-        int bufferSizeRet = calculateBufferSize();
+        bufferSize = calculateBufferSize();
         // allocate space
-        (*buffer) = (char*) malloc(bufferSizeRet * sizeof(char));
+        (*buffer) = (char*) malloc(bufferSize * sizeof(char));
         if (*buffer == NULL) {
             // malloc failed
             logger::log_error(DBERR_MALLOC_FAILED, "Malloc failed on serialization of QResultCount object.");
@@ -375,7 +375,7 @@ namespace hec
         localBuffer += sizeof(int);
         *reinterpret_cast<hec::QueryType*>(localBuffer) = (hec::QueryType) this->queryType;
         localBuffer += sizeof(hec::QueryType);
-        *reinterpret_cast<hec::QueryResultType*>(localBuffer) = this->resultType;
+        *reinterpret_cast<hec::QueryResultType*>(localBuffer) = (hec::QueryResultType) this->resultType;
         localBuffer += sizeof(hec::QueryResultType);
         *reinterpret_cast<hec::DatasetID*>(localBuffer) = (hec::DatasetID) this->datasetID;
         localBuffer += sizeof(hec::DatasetID); 

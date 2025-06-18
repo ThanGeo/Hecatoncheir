@@ -78,7 +78,9 @@ int main(int argc, char* argv[]) {
     // }
     // printf("Query finished in %0.2f seconds.\n", total_time);
 
-
+    /**
+     * RANGE QUERIES
+     */
     // std::string queriesPath = "/home/hec/datasets/USA_queries/USA_c0.01_n10000_polygons.wkt";
     // // std::string queriesPath = "/home/hec/thanasis/Hecatoncheir/test_query.wkt";
     // std::vector<hec::Query *> batch = hec::loadRangeQueriesFromFile(queriesPath, "WKT", pointDatasetID, hec::QR_COUNT);
@@ -117,44 +119,43 @@ int main(int argc, char* argv[]) {
      * KNN QUERIES
      */
 
-    // hec::KNNQuery kNNQuery(pointDatasetID, 0, "POINT (-87.905635 32.897007)", 5);
-    // start = hec::time::getTime();
-    // hec::QResultBase* result = hec::query(&kNNQuery);
-    // double end = hec::time::getTime() - start;
-    // std::vector<size_t> res = result->getResultList();
-    // printf("Results:\n");
-    // for (auto &it : res) {
-    //     printf(" %ld,", it);
-    // }
-    // printf("\n");
-
-    // printf("Query finished in %0.5f seconds.\n", end);
+    hec::KNNQuery kNNQuery(pointDatasetID, 0, "POINT (-87.905635 32.897007)", 5);
+    start = hec::time::getTime();
+    hec::QResultBase* result = hec::query(&kNNQuery);
+    double total_time = hec::time::getTime() - start;
+    std::vector<size_t> res = result->getResultList();
+    printf("Results:\n");
+    for (auto &it : res) {
+        printf(" %ld,", it);
+    }
+    printf("\n");
+    printf("Query finished in %0.5f seconds.\n", total_time);
 
     /**
      * Batch KNN QUERIES
      */
-    std::string queriesPath = "/home/hec/datasets/USA_queries/NN_queries.wkt";
-    int k = 5;
-    std::vector<hec::Query *> batch = hec::loadKNNQueriesFromFile(queriesPath, "WKT", pointDatasetID, k);
-    int RUNS = 1;
-    double total_time = 0;
-    for (int i=0; i<RUNS; i++) {
-        start = hec::time::getTime();
-        std::vector<hec::Query *> temp = {batch[0]};
-        std::unordered_map<int, hec::QResultBase *> results = hec::query(temp);
-        total_time += hec::time::getTime() - start;
-        for (auto &it : temp) {
-            std::vector<size_t> ids = results[it->getQueryID()]->getResultList();
-            printf("Query %d results for k=%d:\n", it->getQueryID(), k);
-            for (auto &id : ids) {
-                printf(" %ld", id);
-            }
-            printf("\n");
-            delete results[it->getQueryID()];
-        }
-        results.clear();
-    }
-    printf("Query finished in %0.5f seconds.\n", total_time/(double)RUNS);
+    // std::string queriesPath = "/home/hec/datasets/USA_queries/NN_queries.wkt";
+    // int k = 5;
+    // std::vector<hec::Query *> batch = hec::loadKNNQueriesFromFile(queriesPath, "WKT", pointDatasetID, k);
+    // int RUNS = 1;
+    // double total_time = 0;
+    // for (int i=0; i<RUNS; i++) {
+    //     start = hec::time::getTime();
+    //     std::vector<hec::Query *> temp = {batch[0]};
+    //     std::unordered_map<int, hec::QResultBase *> results = hec::query(temp);
+    //     total_time += hec::time::getTime() - start;
+    //     for (auto &it : temp) {
+    //         std::vector<size_t> ids = results[it->getQueryID()]->getResultList();
+    //         printf("Query %d results for k=%d:\n", it->getQueryID(), k);
+    //         for (auto &id : ids) {
+    //             printf(" %ld", id);
+    //         }
+    //         printf("\n");
+    //         delete results[it->getQueryID()];
+    //     }
+    //     results.clear();
+    // }
+    // printf("Query finished in %0.5f seconds.\n", total_time/(double)RUNS);
 
     /**
      * Don't forget to terminate Hecatoncheir when you are done!

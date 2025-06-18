@@ -633,9 +633,9 @@ namespace hec {
                 return nullptr;
         }
         // pack query info
-        ret = pack::packQuery(query, msg);
-        if (ret != DBERR_OK) {
-            logger::log_error(ret, "Failed to pack query.");
+        int res = query->serialize(&msg.data, msg.count);
+        if (res < 0) {
+            logger::log_error(DBERR_SERIALIZE_FAILED, "Failed to serialize query.");
             return nullptr;
         }
         // send the query to Host Controller

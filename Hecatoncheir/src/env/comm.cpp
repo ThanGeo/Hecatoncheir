@@ -779,10 +779,10 @@ STOP_LISTENING:
                 return ret;
             }
             // unpack query
-            hec::Query* queryPtr;
-            ret = unpack::unpackQuery(msg, &queryPtr);
-            if (ret != DBERR_OK) {
-                logger::log_error(ret, "Failed to unpack query.");
+            char* localBuffer = msg.data;
+            hec::Query* queryPtr = hec::Query::createFromBuffer(localBuffer);
+            if (queryPtr == nullptr) {
+                logger::log_error(ret, "Failed to create query from message buffer.");
                 return ret;
             }
 
@@ -2506,10 +2506,11 @@ STOP_LISTENING:
             }
 
             // unpack query
-            hec::Query* query;
-            ret = unpack::unpackQuery(msg, &query);
-            if (ret != DBERR_OK) {
-                return ret;
+            char* localBuffer = msg.data;
+            hec::Query* query = hec::Query::createFromBuffer(localBuffer);
+            if (query == nullptr) {
+                logger::log_error(DBERR_DESERIALIZE_FAILED, "Failed to create query from msg buffer.");
+                return DBERR_DESERIALIZE_FAILED;
             }
             
             switch (query->getQueryType()) {
@@ -2541,6 +2542,7 @@ STOP_LISTENING:
             }
 
             // free memory
+            delete query;
             msg.clear();
             return ret;
         }

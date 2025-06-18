@@ -85,9 +85,6 @@ namespace pack
     /** @brief Packs the 'load dataset' message information for the given dataset and index (R or S) */
     DB_STATUS packDatasetLoadMsg(Dataset *dataset, DatasetIndex datasetIndex, SerializedMsg<char> &msg);
 
-    /** @brief Packs the query metadata into a serialized message. */
-    DB_STATUS packQuery(hec::Query *query, SerializedMsg<char> &msg);
-
     /** @brief Packs a batch of queries into a serialized message. */
     DB_STATUS packQueryBatch(std::vector<hec::Query*> *batch, SerializedMsg<char> &batchMsg);
 
@@ -120,11 +117,6 @@ namespace unpack
 
     /** @brief Unpacks a 'dataset load' message. Results are stored in the dataset and datasetIndex arguments. */
     DB_STATUS unpackDatasetLoadMsg(SerializedMsg<char> &msg, Dataset &dataset, DatasetIndex &datasetIndex);
-
-    /** @brief Unpacks a query message. Results are stored in the pointer of the address, casted to the appropriate type. 
-     * The caller is responsible to call delete for the queryPtr after they are done with it.
-    */
-    DB_STATUS unpackQuery(SerializedMsg<char> &msg, hec::Query** queryPtr);
 
     /** @brief Unpacks a query batch message. 
      */
