@@ -36,31 +36,29 @@ namespace pack
     }
 
     // Base function to add integers to the buffer (terminates recursion)
-    inline void addToBuffer(int*&) {}
+    inline void addToBuffer(char*&) {}
 
     // Variadic function to add integers to the buffer
     template <typename... Args>
-    void addToBuffer(int*& buffer, int first, Args... rest) {
-        *reinterpret_cast<int*>(buffer) = first; // Add the first integer
-        buffer += 1;                            // Move to the next position
-        addToBuffer(buffer, rest...);           // Recur for remaining integers
+    void addToBuffer(char*& buffer, int first, Args... rest) {
+        *reinterpret_cast<int*>(buffer) = first;    // Store int into char buffer
+        buffer += sizeof(int);                     // Move buffer pointer
+        addToBuffer(buffer, rest...);              // Recur
     }
 
-    // The new method
+    /** @brief packs any number of integers into a message */
     template <typename... Args>
-    DB_STATUS packIntegers(SerializedMsg<int>& msg, Args... integers) {
-        // Calculate the total size of all integers
+    DB_STATUS packIntegers(SerializedMsg<char>& msg, Args... integers) {
         int count = calculateCountINT(integers...);
-        // Allocate memory for the message
-        msg.count = count;
-        msg.data = (int*)malloc(msg.count * sizeof(int));
+
+        msg.count = count * sizeof(int);  // Total number of bytes
+        msg.data = (char*)malloc(msg.count);
         if (msg.data == NULL) {
-            // malloc failed
             logger::log_error(DBERR_MALLOC_FAILED, "Malloc for pack dataset integers failed");
             return DBERR_MALLOC_FAILED;
         }
 
-        int* localBuffer = msg.data;
+        char* localBuffer = msg.data;
 
         // Add the integers to the buffer
         addToBuffer(localBuffer, integers...);
@@ -69,7 +67,7 @@ namespace pack
     }
 
     /** @brief Packs a vector of integers into a serialized message */
-    DB_STATUS packIntegers(SerializedMsg<int>& msg, std::vector<int> integers);
+    DB_STATUS packIntegers(SerializedMsg<char>& msg, std::vector<int>& integers);
 
     /** @brief Packs necessary system metadata for broadcast like number of partitions, system setup type etc. */
     DB_STATUS packSystemMetadata(SerializedMsg<char> &sysMetadataMsg);
@@ -81,9 +79,6 @@ namespace pack
 
     /** @brief Packs the april configuration metadata into a serialized message. */
     DB_STATUS packAPRILMetadata(AprilConfig &aprilConfig, SerializedMsg<int> &aprilMetadataMsg);
-
-    /** @brief Packs the 'load dataset' message information for the given dataset and index (R or S) */
-    DB_STATUS packDatasetLoadMsg(Dataset *dataset, DatasetIndex datasetIndex, SerializedMsg<char> &msg);
 
     /** @brief Packs a batch of queries into a serialized message. */
     DB_STATUS packQueryBatch(std::vector<hec::Query*> *batch, SerializedMsg<char> &batchMsg);
@@ -99,6 +94,7 @@ namespace unpack
 {   
     /** @brief Unpacks a message containg integers to the given vector. The integer count is stored in the message count. */
     DB_STATUS unpackIntegers(SerializedMsg<int> &integersMsg, std::vector<int> &integers);
+    DB_STATUS unpackIntegers(SerializedMsg<char> &msg, std::vector<int> &integers);
 
     /** @brief Unpacks a system metadata serialized message. */
     DB_STATUS unpackSystemMetadata(SerializedMsg<char> &sysMetadataMsg);

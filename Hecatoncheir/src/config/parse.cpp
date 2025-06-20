@@ -72,31 +72,6 @@ namespace parser
         return DBERR_INVALID_PARAMETER;
     }
 
-    // static DB_STATUS verifyDatatypeCombinationForQueryType(hec::QueryType queryType) {
-    //     // get number of datasets
-    //     int numberOfDatasets = g_config.datasetOptions.getNumberOfDatasets();
-    //     // find if query type is supported
-    //     auto queryIT = g_querySupportMap.find(queryType);
-    //     if (queryIT != g_querySupportMap.end()) {
-    //         DataType dataTypeR = g_config.datasetOptions.getDatasetR()->metadata.dataType;
-    //         // todo: for queries with one dataset input, handle this accordingly
-    //         DataType dataTypeS = g_config.datasetOptions.getDatasetS()->metadata.dataType;
-    //         const auto& allowedCombinations = queryIT->second;
-    //         auto dataTypesPair = std::make_pair(dataTypeR, dataTypeS);
-    //         auto datatypesIT = allowedCombinations.find(dataTypesPair);
-    //         if (datatypesIT != allowedCombinations.end()) {
-    //             // query data types combination supported
-    //             return DBERR_OK;
-    //         } else {
-    //             logger::log_error(DBERR_QUERY_INVALID_TYPE, "Data type combination unsupported for query", mapping::queryTypeIntToStr(g_config.queryMetadata.type), "combination:", mapping::dataTypeIntToStr(dataTypeR), "and", mapping::dataTypeIntToStr(dataTypeS));
-    //             return DBERR_QUERY_INVALID_TYPE;
-    //         }
-    //     }
-    //     // error for query type
-    //     logger::log_error(DBERR_QUERY_INVALID_TYPE, "Query type unsupported. Query code:", queryType);
-    //     return DBERR_QUERY_INVALID_TYPE;
-    // }
-
     static DB_STATUS loadAPRILconfig() {
         ApproximationMetadata approxMetadata(AT_APRIL);
         int N = system_config_pt.get<int>("APRIL.N");
@@ -140,11 +115,11 @@ namespace parser
     //         g_config.actions.emplace_back(action);
     //     }
     //     // load dataset actions
-    //     if (actionsStmt->loadDatasetR && g_config.queryMetadata.type != hec::Q_NONE) {
+    //     if (actionsStmt->loadDatasetR && g_config.queryPipeline.type != hec::Q_NONE) {
     //         Action action(ACTION_LOAD_DATASET_R);
     //         g_config.actions.emplace_back(action);
     //     }
-    //     if (actionsStmt->loadDatasetS && g_config.queryMetadata.type != hec::Q_NONE) {
+    //     if (actionsStmt->loadDatasetS && g_config.queryPipeline.type != hec::Q_NONE) {
     //         Action action(ACTION_LOAD_DATASET_S);
     //         g_config.actions.emplace_back(action);
     //     }
@@ -165,12 +140,12 @@ namespace parser
     //     }
     //     // load APRIL (after any creation and after the datasets have been loaded)
     //     // only of there is at least one dataset and the intermediate filter is enabled
-    //     if ((actionsStmt->loadDatasetR || actionsStmt->loadDatasetS) && g_config.queryMetadata.IntermediateFilter && g_config.queryMetadata.type != hec::Q_NONE) {
+    //     if ((actionsStmt->loadDatasetR || actionsStmt->loadDatasetS) && g_config.queryPipeline.IntermediateFilter && g_config.queryPipeline.type != hec::Q_NONE) {
     //         Action action(ACTION_LOAD_APRIL);
     //         g_config.actions.emplace_back(action);
     //     }
     //     // queries
-    //     if (g_config.queryMetadata.type != hec::Q_NONE) {
+    //     if (g_config.queryPipeline.type != hec::Q_NONE) {
     //         Action action(ACTION_QUERY);
     //         g_config.actions.emplace_back(action);
     //     }
@@ -397,7 +372,7 @@ namespace parser
     //     }
 
     //     // set to configuration
-    //     g_config.queryMetadata.type = (QueryType) queryType;
+    //     g_config.queryPipeline.type = (QueryType) queryType;
         
     //     return DBERR_OK;    
     // }
@@ -417,18 +392,18 @@ namespace parser
             sysOpsStmt.nodeCount = system_config_pt.get<int>("Environment.nodeCount");
         }
         // load pipeline configuration
-        g_config.queryMetadata.MBRFilter = system_config_pt.get<int>("Pipeline.MBRFilter");
-        if (g_config.queryMetadata.MBRFilter != 0 && g_config.queryMetadata.MBRFilter != 1) {
+        g_config.queryPipeline.MBRFilter = system_config_pt.get<int>("Pipeline.MBRFilter");
+        if (g_config.queryPipeline.MBRFilter != 0 && g_config.queryPipeline.MBRFilter != 1) {
             logger::log_error(DBERR_CONFIG_FILE, "MBRFilter setting in configuration file must be 0 or 1");
             return DBERR_CONFIG_FILE;
         }
-        g_config.queryMetadata.IntermediateFilter = system_config_pt.get<int>("Pipeline.IFilter");
-        if (g_config.queryMetadata.MBRFilter != 0 && g_config.queryMetadata.MBRFilter != 1) {
+        g_config.queryPipeline.IntermediateFilter = system_config_pt.get<int>("Pipeline.IFilter");
+        if (g_config.queryPipeline.MBRFilter != 0 && g_config.queryPipeline.MBRFilter != 1) {
             logger::log_error(DBERR_CONFIG_FILE, "IFilter setting in configuration file must be 0 or 1");
             return DBERR_CONFIG_FILE;
         }
-        g_config.queryMetadata.Refinement = system_config_pt.get<int>("Pipeline.Refinement");
-        if (g_config.queryMetadata.MBRFilter != 0 && g_config.queryMetadata.MBRFilter != 1) {
+        g_config.queryPipeline.Refinement = system_config_pt.get<int>("Pipeline.Refinement");
+        if (g_config.queryPipeline.MBRFilter != 0 && g_config.queryPipeline.MBRFilter != 1) {
             logger::log_error(DBERR_CONFIG_FILE, "Refinement setting in configuration file must be 0 or 1");
             return DBERR_CONFIG_FILE;
         }

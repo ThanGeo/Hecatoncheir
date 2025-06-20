@@ -14,6 +14,13 @@ namespace setup
         if (ret != DBERR_OK) {
             return ret;
         }
+
+        // notify driver that all is well
+        ret = comm::send::sendResponse(DRIVER_GLOBAL_RANK, MSG_ACK, g_global_intra_comm);
+        if (ret != DBERR_OK) {
+            logger::log_error(ret, "Responding to driver failed");
+            return ret;
+        }
         
         return ret;
     }

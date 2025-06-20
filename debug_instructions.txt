@@ -1,5 +1,5 @@
 on gdb:
-    set environment ASAN_OPTIONS=abort_on_error=1:print_stacktrace=1:symbolize=1:verbosity=0:log_threads=1
+    set environment ASAN_OPTIONS=abort_on_error=1:print_stacktrace=1:symbolize=1:verbosity=1:log_threads=1
 
 
 Options

@@ -449,7 +449,7 @@ namespace hec {
         }
 
         // free
-        free(msg.data);
+        msg.clear();
 
         // wait for response with dataset internal ID
         MPI_Status status;
@@ -475,14 +475,42 @@ namespace hec {
         }
 
         // free
-        free(msgFromHost.data);
+        msgFromHost.clear();
 
         // return the ID
         return indexes[0];
     }
 
+    int unloadDataset(DatasetID datasetID) {
+        SerializedMsg<char> msg(MPI_CHAR);
+        DB_STATUS ret = pack::packIntegers(msg, datasetID);
+        if (ret != DBERR_OK) {
+            logger::log_error(ret, "Packing dataset id failed.");
+            return -1;
+        }
+
+        // send
+        ret = comm::send::sendMessage(msg, HOST_CONTROLLER, MSG_UNLOAD_DATASET, g_global_intra_comm);
+        if (ret != DBERR_OK) {
+            logger::log_error(ret, "Sending dataset metadata message failed.");
+            return -1;
+        }
+        // free memory
+        msg.clear();
+
+        // wait for ACK
+        MPI_Status status;
+        ret = waitForResponse();
+        if (ret != DBERR_OK) {
+            logger::log_error(ret, "Partitioning finished with errors.");
+            return -1;
+        }        
+        logger::log_success("Unloaded dataset.");
+        return 0;
+    }
+
     int partition(std::vector<DatasetID> datasetIndexes) {
-        SerializedMsg<int> msg(MPI_INT);
+        SerializedMsg<char> msg(MPI_CHAR);
         DB_STATUS ret = pack::packIntegers(msg, datasetIndexes);
         if (ret != DBERR_OK) {
             logger::log_error(ret, "Packing dataset indexes failed.");
@@ -509,7 +537,7 @@ namespace hec {
     }
 
     int buildIndex(std::vector<DatasetID> datasetIndexes, IndexType indexType) {
-        SerializedMsg<int> msg(MPI_INT);
+        SerializedMsg<char> msg(MPI_CHAR);
         std::vector<int> indexTypeAndDatasets = {indexType};
         indexTypeAndDatasets.insert(indexTypeAndDatasets.end(), datasetIndexes.begin(), datasetIndexes.end());
 
@@ -539,7 +567,7 @@ namespace hec {
     }
 
     int load(std::vector<DatasetID> datasetIndexes) {
-        SerializedMsg<int> msg(MPI_INT);
+        SerializedMsg<char> msg(MPI_CHAR);
         DB_STATUS ret = pack::packIntegers(msg, datasetIndexes);
         if (ret != DBERR_OK) {
             logger::log_error(ret, "Packing dataset indexes failed.");
@@ -551,7 +579,8 @@ namespace hec {
             logger::log_error(ret, "Sending dataset load message failed.");
             return -1;
         }
-
+        // free memory
+        msg.clear();
         // wait for ACK
         MPI_Status status;
         ret = waitForResponse();

@@ -63,7 +63,7 @@ namespace uniform_grid
         static inline DB_STATUS forwardPair(Shape* objR, Shape* objS, hec::QResultBase* queryResult) {
             DB_STATUS ret = DBERR_OK;
             // forward to refinement
-            ret = refinement::relate::refinementEntrypoint(objR, objS, g_config.queryMetadata.queryType, queryResult);
+            ret = refinement::relate::refinementEntrypoint(objR, objS, g_config.queryPipeline.queryType, queryResult);
             if (ret != DBERR_OK) {
                 logger::log_error(ret, "Refinement failed.");
                 return ret;
@@ -311,7 +311,7 @@ namespace uniform_grid
     DB_STATUS processQuery(hec::Query* query, hec::QResultBase* queryResult) {
         DB_STATUS ret = DBERR_OK;
         // set to global config
-        g_config.queryMetadata.queryType = (hec::QueryType) query->getQueryType();
+        g_config.queryPipeline.queryType = (hec::QueryType) query->getQueryType();
 
         // switch based on query type
         switch (query->getQueryType()) {

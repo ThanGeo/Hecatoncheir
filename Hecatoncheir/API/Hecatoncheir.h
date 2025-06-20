@@ -41,6 +41,11 @@ namespace hec {
      */
     DatasetID prepareDataset(std::string &filePath, std::string fileTypeStr, std::string dataTypeStr, double xMin, double yMin, double xMax, double yMax, bool persist);
 
+    /** @brief Unloads the dataset with the given datasetID from Hecatoncheir.
+     * The datasetID will no longer be valid after this method is invoked. 
+     * To reload, prepareDataset must be called again.
+     */
+    int unloadDataset(DatasetID datasetID);
 
     /**
      * @brief Partition dataset(s) across the system. 

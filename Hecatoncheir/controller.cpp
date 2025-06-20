@@ -73,35 +73,6 @@ static DB_STATUS initAPRILCreation() {
     return ret;
 }
 
-/** @brief initializes (broadcasts) the load specific dataset action for the given dataset */
-static DB_STATUS initLoadDataset(Dataset *dataset, DatasetIndex datasetIndex) {
-    // send load instruction + dataset metadata
-    DB_STATUS ret = DBERR_OK;
-    // pack nicknames
-    SerializedMsg<char> msg(MPI_CHAR);
-    ret = pack::packDatasetLoadMsg(dataset, datasetIndex, msg);
-    if (ret != DBERR_OK) {
-        return ret;
-    }
-
-    // broadcast message
-    ret = comm::broadcast::broadcastMessage(msg, MSG_LOAD_DATASET);
-    if (ret != DBERR_OK) {
-        logger::log_error(ret, "Failed to broadcast query metadata");
-        return ret;
-    }
-    // free memory
-    msg.clear();
-
-    // wait for responses by workers+agent that all is ok
-    ret = comm::host::gatherResponses();
-    if (ret != DBERR_OK) {
-        return ret;
-    }
-
-    return ret;
-}
-
 static DB_STATUS initLoadAPRIL() {
     SerializedMsg<int> aprilMetadataMsg(MPI_INT);
     // pack the APRIL metadata
@@ -152,13 +123,6 @@ int main(int argc, char* argv[]) {
         ret = setup::setupSystem(argc, argv);
         if (ret != DBERR_OK) {
             logger::log_error(ret, "System setup failed");
-            controller::terminate();
-            return ret;
-        }
-        // notify driver that all is well
-        ret = comm::send::sendResponse(DRIVER_GLOBAL_RANK, MSG_ACK, g_global_intra_comm);
-        if (ret != DBERR_OK) {
-            logger::log_error(ret, "Responding to driver failed");
             controller::terminate();
             return ret;
         }

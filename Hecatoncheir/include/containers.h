@@ -15,6 +15,7 @@
 #include <any>
 #include <cstring>
 #include <variant>
+#include <optional>
 
 #include "def.h"
 #include "utils.h"
@@ -1810,7 +1811,7 @@ struct ApproximationMetadata {
 
 /** @brief Holds all the query related metadata in the configuration.
  */
-struct QueryMetadata {
+struct QueryPipelineMetadata {
     hec::QueryType queryType;
     int MBRFilter = 1;
     int IntermediateFilter = 1;
@@ -1876,48 +1877,25 @@ public:
     /** @brief Sorts all objects in the index along the Y-axis. */
     virtual void sortPartitionsOnY() = 0;
 
-    std::vector<PartitionBase*>* getPartitions() {
-        return &partitions;
-    }
+    /** @brief returns the partitions */
+    std::vector<PartitionBase*>* getPartitions();
 
+    /** @brief returns or creates (empty) the partition with the given id */
     virtual PartitionBase* getOrCreatePartition(int partitionID) = 0;
 
-    PartitionBase* getPartition(int partitionID) {
-        auto it = partitionMap.find(partitionID);
-        if (it != partitionMap.end()) {
-            return partitions[it->second];
-        }
-        return nullptr;
-    }
+    /** @brief returns the partition with the given id if it exists */
+    PartitionBase* getPartition(int partitionID);
 
-    PartitionBase* getPartition(double x, double y, DataspaceMetadata* dataspaceMetadata, PartitioningMethod* partitioningMethod) {
-        int fineMinX = std::floor((x - dataspaceMetadata->xMinGlobal) / partitioningMethod->getPartPartionExtentX());
-        int fineMinY = std::floor((y - dataspaceMetadata->yMinGlobal) / partitioningMethod->getPartPartionExtentY());
-        int partitionID = partitioningMethod->getPartitionID(fineMinX, fineMinY, partitioningMethod->getGlobalPPD());
-        auto it = partitionMap.find(partitionID);
-        if (it != partitionMap.end()) {
-            return partitions[it->second];
-        }
-        return nullptr;
-    }
+    /** @brief returns the partition for the given x,y coordinates in the given dataspace metadata setting, as defined by the given partitioning method */
+    PartitionBase* getPartition(double x, double y, DataspaceMetadata* dataspaceMetadata, PartitioningMethod* partitioningMethod);
 
+    /** @brief evaluates a query on the index */
     virtual DB_STATUS evaluateQuery(hec::Query* query, hec::QResultBase* queryResult) = 0;
 
-    DB_STATUS clear() {
-        if (partitions.size() > 0) {
-            for (auto& it : partitions) {
-                delete it;
-                it = nullptr; // optional, for safety
-            }
-            partitions.clear();
-        }
-        partitionMap.clear();
-        return DBERR_OK;
-    }
+    /** @brief clears all index contents */
+    DB_STATUS clear();
 
-    ~BaseIndex() {
-        this->clear();
-    }
+    ~BaseIndex();
 };
 
 /** @brief Holds all two-layer related index information.
@@ -1988,7 +1966,7 @@ struct Dataset{
     // map of object id-position in the objects vector
     std::unordered_map<size_t,size_t> objectPosMap;
     // the index
-    BaseIndex* index;
+    std::unique_ptr<BaseIndex> index;
     // approximations (only april is supported)
     ApproximationType approxType = AT_APRIL;
     AprilConfig aprilConfig;
@@ -2050,47 +2028,47 @@ struct Dataset{
  */
 struct DatasetOptions {
 private:
-    Dataset* S = nullptr;
-    Dataset* R = nullptr;
-    int numberOfDatasets;
+    // Dataset* S = nullptr;
+    // Dataset* R = nullptr;
+    std::optional<Dataset> R;  // Uses std::optional to indicate presence/absence
+    std::optional<Dataset> S;
 
 public:
-    std::unordered_map<DatasetIndex, Dataset> datasets;
+    // std::unordered_map<DatasetIndex, Dataset> datasets;
     DataspaceMetadata dataspaceMetadata;
-    
-    // Dataset* getDatasetByNickname(std::string &nickname);
-
-    int getNumberOfDatasets();
 
     void clear();
+
+    DB_STATUS unloadDataset(int datasetIndex);
 
     Dataset* getDatasetR();
 
     Dataset* getDatasetS();
 
     Dataset* getDatasetByIdx(int datasetIndex);
-    DB_STATUS getDatasetByIdx(int datasetIndex, Dataset **datasetRef);
+    // DB_STATUS getDatasetByIdx(int datasetIndex, Dataset **datasetRef);
 
     /**
     @brief adds a Dataset to the configuration's dataset metadata
      */
-    DB_STATUS addDataset(DatasetIndex datasetIdx, Dataset &dataset);
+    // DB_STATUS addDataset(DatasetIndex datasetIdx, Dataset &dataset);
+    DB_STATUS addDataset(DatasetIndex datasetIdx, Dataset&& dataset);
 
     /**
      * @brief Add a dataset to the configuration. 
      * Whether this dataset is R or S, is automatically determined by the current state.
      * If its the first dataset to be added its R, otherwise its S.
+     * Returns the id that was assigned to the dataset.
      * Returns error if R is null but S is already set.
      */
-    DB_STATUS addDataset(Dataset &dataset);
+    DB_STATUS addDataset(Dataset&& dataset, int &id);
 
     void updateDataspace();
     void updateDatasetDataspaceToGlobal();
 };
 
 
-/** @brief The main configuration struct. Holds all necessary configuration options.
- */
+/** @brief The main configuration struct. Holds all necessary configuration options. */
 struct Config {
     DirectoryPaths dirPaths;
     SystemOptions options;
@@ -2098,21 +2076,14 @@ struct Config {
     PartitioningMethod *partitioningMethod;
     DatasetOptions datasetOptions;
     ApproximationMetadata approximationMetadata;
-    QueryMetadata queryMetadata;    // rename to query pipeline
+    QueryPipelineMetadata queryPipeline;
 
-    void clear() {
-        datasetOptions.clear();
-        if (partitioningMethod != nullptr) {
-            // @todo: find how to delete properly
-            delete partitioningMethod;
-            partitioningMethod = nullptr; // Avoid dangling pointer
-        } 
-    }
+    /** @brief Resets configuration contents. */
+    void reset();
 };
 
 
-/** @brief The main global configuration variable.
-*/
+/** @brief The main, singleton global configuration variable. */
 extern Config g_config;
 
 /** @brief Based on query type in config, it thread-safely appends new results to the query output in parallel.

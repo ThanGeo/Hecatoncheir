@@ -205,7 +205,7 @@ namespace configurer
             R.metadata.fileType = (hec::FileType) mapping::fileTypeTextToInt(datasetStmt->filetypeR);
             
             // add to config
-            DB_STATUS ret = g_config.datasetOptions.addDataset(DATASET_R, R);
+            DB_STATUS ret = g_config.datasetOptions.addDataset(DATASET_R, std::move(R));
             if (ret != DBERR_OK) {
                 logger::log_error(ret, "Failed to add dataset R in configuration. Dataset nickname:", datasetStmt->datasetNicknameR, "Dataset idx: DATASET_R");
                 return ret;
@@ -220,7 +220,7 @@ namespace configurer
                 S.metadata.datasetName = getFileNameFromPath(S.metadata.path);
                 S.metadata.fileType = (hec::FileType) mapping::fileTypeTextToInt(datasetStmt->filetypeS);
                 // add to config
-                DB_STATUS ret = g_config.datasetOptions.addDataset(DATASET_S, S);
+                DB_STATUS ret = g_config.datasetOptions.addDataset(DATASET_S, std::move(S));
                 if (ret != DBERR_OK) {
                     logger::log_error(ret, "Failed to add dataset S in configuration. Dataset nickname:", datasetStmt->datasetNicknameS, "Dataset idx: DATASET_S");
                     return ret;

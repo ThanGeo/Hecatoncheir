@@ -210,13 +210,7 @@ enum TopologyRelation {
 /** @enum ApproximationType @brief Spatial approximation types (mostly for polygons). */
 enum ApproximationType{
     AT_NONE,
-    // mine
     AT_APRIL,
-    AT_RI,
-    // competitors
-    AT_5CCH,
-    AT_RA,
-    AT_GEOS,
 };
 
 /** @enum TwoLayerClass @brief The two-layer index classes. (see paper) */

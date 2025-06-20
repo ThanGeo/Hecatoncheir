@@ -231,7 +231,7 @@ namespace APRIL
             // fetch the APRIL of R and S for this section
             int iFilterResult = INCONCLUSIVE;
             // use appropriate query function
-            switch (g_config.queryMetadata.queryType) {
+            switch (g_config.queryPipeline.queryType) {
                 case hec::Q_RANGE:
                     ret = APRIL::generation::memory::createAPRILforObject(objS, objS->getSpatialType(), g_config.approximationMetadata.aprilConfig, objS->aprilData);
                     if (ret != DBERR_OK) {
@@ -290,7 +290,7 @@ namespace APRIL
                     break;
                 default:
                     // not supported/unknown
-                    logger::log_error(DBERR_QUERY_INVALID_TYPE, "Unsupported query for standard APRIL intermediate filter. Query type:", mapping::queryTypeIntToStr(g_config.queryMetadata.queryType));
+                    logger::log_error(DBERR_QUERY_INVALID_TYPE, "Unsupported query for standard APRIL intermediate filter. Query type:", mapping::queryTypeIntToStr(g_config.queryPipeline.queryType));
                     return DBERR_QUERY_INVALID_TYPE;
             }
             // if true negative or true hit, return
@@ -302,7 +302,7 @@ namespace APRIL
                 return ret;
             }
             // refine based on query type
-            switch (g_config.queryMetadata.queryType) {
+            switch (g_config.queryPipeline.queryType) {
                 case hec::Q_RANGE:
                     refinement::relate::refineIntersectionJoin(objR, objS, queryResult);
                     break;
@@ -332,7 +332,7 @@ namespace APRIL
                     break;
                 default:
                     // not supported/unknown
-                    logger::log_error(DBERR_QUERY_INVALID_TYPE, "Unsupported query for refinement. Query type:", mapping::queryTypeIntToStr(g_config.queryMetadata.queryType));
+                    logger::log_error(DBERR_QUERY_INVALID_TYPE, "Unsupported query for refinement. Query type:", mapping::queryTypeIntToStr(g_config.queryPipeline.queryType));
                     return DBERR_QUERY_INVALID_TYPE;
             }
             return ret;

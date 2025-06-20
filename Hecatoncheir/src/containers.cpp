@@ -5,8 +5,24 @@
 #include "TwoLayer/filter.h"
 #include "UniformGrid/filter.h"
 
+/* CONFIGURATION */
+
 Config g_config;
 
+void Config::reset() {
+    datasetOptions.clear();
+    if (partitioningMethod != nullptr) {
+        // @todo: find how to delete properly
+        delete partitioningMethod;
+        partitioningMethod = nullptr; // Avoid dangling pointer
+    } 
+}
+
+/* MERGE METHODS */
+
+/** @brief  Merges two QResultBase objects. 
+ * Both dest and src must contain QResultBase derived objects of THE SAME class.
+*/
 DB_STATUS mergeResultObjects(hec::QResultBase *out, hec::QResultBase *in) {
     if (out == nullptr || in == nullptr) {
         logger::log_error(DBERR_NULL_PTR_EXCEPTION, "Either in or out pointer is null during query result reduction.");
@@ -44,6 +60,8 @@ DB_STATUS mergeBatchResultMaps(std::unordered_map<int, hec::QResultBase*> &dest,
     }
     return ret;
 }
+
+/* APRIL DATA */
 
 void AprilData::printALLintervals() {
     for (int i=0; i<intervalsALL.size(); i+=2) {
@@ -87,10 +105,6 @@ std::vector<Shape*>* PartitionTwoLayer::getContents(TwoLayerClass classType) {
 
 void PartitionTwoLayer::addObject(Shape *objectRef, TwoLayerClass classType) {
     classIndex[classType].push_back(objectRef);
-    // if (this->partitionID == 289605) {
-    //     printf("partition %d class %s new size after insertion of %ld: %ld\n", this->partitionID, mapping::twoLayerClassIntToStr(classType).c_str(), objectRef->recID, classIndex[classType].size());
-    // }
-    // printf("Adding object of type %s and class %s in partition %ld\n", objectRef->getShapeType().c_str(), mapping::twoLayerClassIntToStr(classType).c_str(), this->partitionID);
 }
 
 std::vector<Shape*>* PartitionUniformGrid::getContents(TwoLayerClass classType) {
@@ -99,10 +113,6 @@ std::vector<Shape*>* PartitionUniformGrid::getContents(TwoLayerClass classType) 
 
 void PartitionUniformGrid::addObject(Shape *objectRef, TwoLayerClass classType) {
     classIndex.push_back(objectRef);
-    // if (this->partitionID == 289605) {
-    //     printf("partition %d class %s new size after insertion of %ld: %ld\n", this->partitionID, mapping::twoLayerClassIntToStr(classType).c_str(), objectRef->recID, classIndex[classType].size());
-    // }
-    // printf("Adding object of type %s and class %s in partition %ld\n", objectRef->getShapeType().c_str(), mapping::twoLayerClassIntToStr(classType).c_str(), this->partitionID);
 }
 
 int DatasetMetadata::calculateBufferSize() {
@@ -236,15 +246,10 @@ DB_STATUS Dataset::storeObject(Shape &object) {
 
 DB_STATUS Dataset::buildIndex(hec::IndexType indexType) {
     DB_STATUS ret = DBERR_OK;
-
-    // logger::log_task("Building index for dataset", this->metadata.datasetName);
-    // logger::log_success("Global dataspace:", g_config.datasetOptions.dataspaceMetadata.xMinGlobal, g_config.datasetOptions.dataspaceMetadata.yMinGlobal, g_config.datasetOptions.dataspaceMetadata.xMaxGlobal, g_config.datasetOptions.dataspaceMetadata.yMaxGlobal);
-    // logger::log_success("Extents:", g_config.datasetOptions.dataspaceMetadata.xExtent, g_config.datasetOptions.dataspaceMetadata.yExtent);
-
     switch (indexType) {
         case hec::IT_TWO_LAYER:
-            /** non-point geometries - april */
-            this->index = new TwoLayerIndex();
+            /** non-point geometries */
+            this->index = std::make_unique<TwoLayerIndex>();
             // add objects to index
             for(auto &object : this->objects) {
                 ret = index->addObject(&object);
@@ -258,7 +263,7 @@ DB_STATUS Dataset::buildIndex(hec::IndexType indexType) {
             break;
         case hec::IT_UNIFORM_GRID:
             /** point geometries - no april */
-            this->index = new UniformGridIndex();
+            this->index = std::make_unique<UniformGridIndex>();
             // add objects to index
             for(auto &object : this->objects) {
                 ret = index->addObject(&object);
@@ -478,21 +483,12 @@ DB_STATUS Dataset::setAprilDataForSectionAndObjectID(uint sectionID, size_t recI
 
 void Dataset::clear() {
     // free index memory
-    delete index;
+    index.reset();
     // delete objects
     this->objects.clear();
     this->objectPosMap.clear();
     this->sectionMap.clear();
     this->recToSectionIdMap.clear();
-}
-
-
-Dataset* DatasetOptions::getDatasetByIdx(int index) {
-    auto it = datasets.find((DatasetIndex) index);
-    if (it == datasets.end()) {
-        return nullptr;
-    }        
-    return &it->second;
 }
 
 DataspaceMetadata::DataspaceMetadata() {
@@ -598,6 +594,50 @@ DB_STATUS DataspaceMetadata::deserialize(const double *buffer, int bufferSize) {
 
     return DBERR_OK;
 }
+
+/** BASE INDEX */
+
+std::vector<PartitionBase*>* BaseIndex::getPartitions() {
+    return &partitions;
+}
+
+PartitionBase* BaseIndex::getPartition(int partitionID) {
+    auto it = partitionMap.find(partitionID);
+    if (it != partitionMap.end()) {
+        return partitions[it->second];
+    }
+    return nullptr;
+}
+
+PartitionBase* BaseIndex::getPartition(double x, double y, DataspaceMetadata* dataspaceMetadata, PartitioningMethod* partitioningMethod) {
+    int fineMinX = std::floor((x - dataspaceMetadata->xMinGlobal) / partitioningMethod->getPartPartionExtentX());
+    int fineMinY = std::floor((y - dataspaceMetadata->yMinGlobal) / partitioningMethod->getPartPartionExtentY());
+    int partitionID = partitioningMethod->getPartitionID(fineMinX, fineMinY, partitioningMethod->getGlobalPPD());
+    auto it = partitionMap.find(partitionID);
+    if (it != partitionMap.end()) {
+        return partitions[it->second];
+    }
+    return nullptr;
+}
+
+DB_STATUS BaseIndex::clear() {
+    if (partitions.size() > 0) {
+        for (auto& it : partitions) {
+            delete it;
+            it = nullptr; // optional, for safety
+        }
+        partitions.clear();
+    }
+    partitionMap.clear();
+    return DBERR_OK;
+}
+
+BaseIndex::~BaseIndex() {
+    this->clear();
+}
+
+
+/** TWO LAYER INDEX */
 
 DB_STATUS TwoLayerIndex::getPartitionsForMBR(Shape* objectRef, std::vector<int> &partitionIDs, std::vector<TwoLayerClass> &partionClasses){
     DataspaceMetadata* dataspace = &g_config.datasetOptions.dataspaceMetadata;
@@ -737,11 +777,6 @@ DB_STATUS TwoLayerIndex::addObject(Shape *objectRef) {
     for (int i=0; i<partitionIDs.size(); i++) {
         PartitionBase* partition = this->getOrCreatePartition(partitionIDs[i]);
         partition->addObject(objectRef, partitionClasses[i]);
-        // logger::log_task("Adding object to partition", partitionIDs[i], "with class", partitionClasses[i]);
-        // if (objectRef->recID == 129032 || objectRef->recID == 2292762) {
-        //     logger::log_task("Adding object ", objectRef->recID, "to partition", partitionIDs[i], "with class", partitionClasses[i]);
-        //     objectRef->printGeometry();
-        // }
     }
     
     return ret;
@@ -855,11 +890,6 @@ DB_STATUS UniformGridIndex::addObject(Shape *objectRef) {
     for (int i=0; i<partitionIDs.size(); i++) {
         PartitionBase* partition = this->getOrCreatePartition(partitionIDs[i]);
         partition->addObject(objectRef);
-        // logger::log_task("Adding object to partition", partitionIDs[i], "with class", partitionClasses[i]);
-        // if (objectRef->recID == 129032 || objectRef->recID == 2292762) {
-        //     logger::log_task("Adding object ", objectRef->recID, "to partition", partitionIDs[i], "with class", partitionClasses[i]);
-        //     objectRef->printGeometry();
-        // }
     }
 
     return ret;
@@ -883,126 +913,138 @@ DB_STATUS UniformGridIndex::evaluateQuery(hec::Query* query, hec::QResultBase* q
     return ret;
 }
 
-
-int DatasetOptions::getNumberOfDatasets() {
-    return numberOfDatasets;
-}
-
 void DatasetOptions::clear() {
-    numberOfDatasets = 0;
-    if (R != nullptr) {
-        R->clear();
-        R = nullptr;
-    }
-    if (S != nullptr) {
-        S->clear();
-        S = nullptr;
-    }
-    datasets.clear();
+    R.reset();
+    S.reset();
     dataspaceMetadata.clear();
 }
 
 Dataset* DatasetOptions::getDatasetR() {
-    return R;
+    return R.has_value() ? &R.value() : nullptr;
 }
 
 Dataset* DatasetOptions::getDatasetS() {
-    return S;
+    return S.has_value() ? &S.value() : nullptr;
 }
 
-DB_STATUS DatasetOptions::getDatasetByIdx(int datasetIndex, Dataset **datasetRef) {
+DB_STATUS DatasetOptions::unloadDataset(int datasetIndex) {
     switch (datasetIndex) {
         case DATASET_R:
-            (*datasetRef) = R;
+            if (R) {
+                R->clear();
+                R.reset();
+                return DBERR_OK;
+            }
             break;
         case DATASET_S:
-            (*datasetRef) = S;
+            if (S) {
+                S->clear();
+                S.reset();
+                return DBERR_OK;
+            }
             break;
         default:
             logger::log_error(DBERR_INVALID_PARAMETER, "Invalid dataset index:", datasetIndex);
-            (*datasetRef) = nullptr;
             return DBERR_INVALID_PARAMETER;
     }
-    return DBERR_OK;
     
+    logger::log_warning("No dataset is loaded with ID", datasetIndex);
+    return DBERR_OK;
 }
+
+Dataset* DatasetOptions::getDatasetByIdx(int datasetIndex) {
+    switch (datasetIndex) {
+        case DATASET_R: return R.has_value() ? &R.value() : nullptr;
+        case DATASET_S: return S.has_value() ? &S.value() : nullptr;
+        default: return nullptr;
+    }
+}
+
 /**
 @brief adds a Dataset to the configuration's dataset metadata
- * @warning it has to be an empty dataset BUT its nickname needs to be set
  */
-DB_STATUS DatasetOptions::addDataset(DatasetIndex datasetIdx, Dataset &dataset) {
-    // add to datasets struct (todo, change this to use internal id)
-    datasets[datasetIdx] = dataset;
+DB_STATUS DatasetOptions::addDataset(DatasetIndex datasetIdx, Dataset&& dataset) {
     switch (datasetIdx) {
         case DATASET_R:
-            // R is being added
-            R = &datasets[datasetIdx];
+            if (R.has_value()) {
+                logger::log_error(DBERR_INVALID_PARAMETER, "Dataset R already exists");
+                return DBERR_INVALID_PARAMETER;
+            }
+            R = std::move(dataset);
+            R->metadata.internalID = DATASET_R;
             break;
         case DATASET_S:
-            // S is being added
-            S = &datasets[datasetIdx];
+            if (S.has_value()) {
+                logger::log_error(DBERR_INVALID_PARAMETER, "Dataset S already exists");
+                return DBERR_INVALID_PARAMETER;
+            }
+            S = std::move(dataset);
+            S->metadata.internalID = DATASET_S;
             break;
         default:
-            logger::log_error(DBERR_INVALID_PARAMETER, "Invalid dataset index. Use only DATASET_R or DATASET_S.");
+            logger::log_error(DBERR_INVALID_PARAMETER, "Invalid dataset index");
             return DBERR_INVALID_PARAMETER;
     }
-    numberOfDatasets++;
     return DBERR_OK;
 }
 
-DB_STATUS DatasetOptions::addDataset(Dataset &dataset) {
-    if (this->R == nullptr) {
-        // set as R
-        dataset.metadata.internalID = DATASET_R;
-        datasets[DATASET_R] = dataset;
-        // R is being added
-        R = &datasets[DATASET_R];
-        numberOfDatasets++;
+
+DB_STATUS DatasetOptions::addDataset(Dataset&& dataset, int &id) {
+    if (!R.has_value()) {
+        R = std::move(dataset);
+        R->metadata.internalID = DATASET_R;
+        id = DATASET_R;
+    } else if (!S.has_value()) {
+        S = std::move(dataset);
+        S->metadata.internalID = DATASET_S;
+        id = DATASET_S;
     } else {
-        if (this->S == nullptr) {
-            // set as S
-            dataset.metadata.internalID = DATASET_S;
-            datasets[DATASET_S] = dataset;
-            // S is being added
-            S = &datasets[DATASET_S];
-            numberOfDatasets++;
-        } else {
-            // error, R is set but S is not? 
-            logger::log_error(DBERR_INVALID_PARAMETER, "Invalid state while adding dataset: R is not set but S is set.");
-            return DBERR_INVALID_PARAMETER;
-        }
+        logger::log_error(DBERR_INVALID_PARAMETER, "Both R and S datasets exist");
+        return DBERR_INVALID_PARAMETER;
     }
     return DBERR_OK;
 }
+
 
 void DatasetOptions::updateDataspace() {
-    // find the bounds that enclose both datasets
-    for (auto &it: datasets) {
-        dataspaceMetadata.xMinGlobal = std::min(dataspaceMetadata.xMinGlobal, it.second.metadata.dataspaceMetadata.xMinGlobal);
-        dataspaceMetadata.yMinGlobal = std::min(dataspaceMetadata.yMinGlobal, it.second.metadata.dataspaceMetadata.yMinGlobal);
-        dataspaceMetadata.xMaxGlobal = std::max(dataspaceMetadata.xMaxGlobal, it.second.metadata.dataspaceMetadata.xMaxGlobal);
-        dataspaceMetadata.yMaxGlobal = std::max(dataspaceMetadata.yMaxGlobal, it.second.metadata.dataspaceMetadata.yMaxGlobal);
+    // Reset bounds to extreme values
+    dataspaceMetadata.xMinGlobal = std::numeric_limits<double>::max();
+    dataspaceMetadata.yMinGlobal = std::numeric_limits<double>::max();
+    dataspaceMetadata.xMaxGlobal = std::numeric_limits<double>::lowest();
+    dataspaceMetadata.yMaxGlobal = std::numeric_limits<double>::lowest();
+
+    // Update bounds based on available datasets
+    if (R) {
+        const auto& meta = R->metadata.dataspaceMetadata;
+        dataspaceMetadata.xMinGlobal = std::min(dataspaceMetadata.xMinGlobal, meta.xMinGlobal);
+        dataspaceMetadata.yMinGlobal = std::min(dataspaceMetadata.yMinGlobal, meta.yMinGlobal);
+        dataspaceMetadata.xMaxGlobal = std::max(dataspaceMetadata.xMaxGlobal, meta.xMaxGlobal);
+        dataspaceMetadata.yMaxGlobal = std::max(dataspaceMetadata.yMaxGlobal, meta.yMaxGlobal);
     }
+    
+    if (S) {
+        const auto& meta = S->metadata.dataspaceMetadata;
+        dataspaceMetadata.xMinGlobal = std::min(dataspaceMetadata.xMinGlobal, meta.xMinGlobal);
+        dataspaceMetadata.yMinGlobal = std::min(dataspaceMetadata.yMinGlobal, meta.yMinGlobal);
+        dataspaceMetadata.xMaxGlobal = std::max(dataspaceMetadata.xMaxGlobal, meta.xMaxGlobal);
+        dataspaceMetadata.yMaxGlobal = std::max(dataspaceMetadata.yMaxGlobal, meta.yMaxGlobal);
+    }
+
+    // Calculate extents
     dataspaceMetadata.xExtent = dataspaceMetadata.xMaxGlobal - dataspaceMetadata.xMinGlobal;
     dataspaceMetadata.yExtent = dataspaceMetadata.yMaxGlobal - dataspaceMetadata.yMinGlobal;
     dataspaceMetadata.maxExtent = std::max(dataspaceMetadata.xExtent, dataspaceMetadata.yExtent);
-    // set as both datasets' bounds
-    for (auto &it: datasets) {
-        it.second.metadata.dataspaceMetadata = dataspaceMetadata;
-    }
 
-    // logger::log_success("Updated global dataspace:", g_config.datasetOptions.dataspaceMetadata.xMinGlobal, g_config.datasetOptions.dataspaceMetadata.yMinGlobal, g_config.datasetOptions.dataspaceMetadata.xMaxGlobal, g_config.datasetOptions.dataspaceMetadata.yMaxGlobal);
+    // Update both datasets' bounds
+    updateDatasetDataspaceToGlobal();
 }
 
 void DatasetOptions::updateDatasetDataspaceToGlobal() {
-    for (auto &it: datasets) {
-        it.second.metadata.dataspaceMetadata.xMinGlobal = dataspaceMetadata.xMinGlobal;
-        it.second.metadata.dataspaceMetadata.yMinGlobal = dataspaceMetadata.yMinGlobal;
-        it.second.metadata.dataspaceMetadata.xMaxGlobal = dataspaceMetadata.xMaxGlobal;
-        it.second.metadata.dataspaceMetadata.yMaxGlobal = dataspaceMetadata.yMaxGlobal;
-        it.second.metadata.dataspaceMetadata.xExtent = dataspaceMetadata.xExtent;
-        it.second.metadata.dataspaceMetadata.yExtent = dataspaceMetadata.yExtent;
-        it.second.metadata.dataspaceMetadata.maxExtent = dataspaceMetadata.maxExtent;
+    if (R) {
+        R->metadata.dataspaceMetadata = dataspaceMetadata;
+    }
+    if (S) {
+        S->metadata.dataspaceMetadata = dataspaceMetadata;
     }
 }
 
@@ -1085,6 +1127,8 @@ DB_STATUS Batch::serialize(char **buffer, int &bufferSize) {
         ret = it.serializeCoordinates(&bufferPtr, bufferElementCount);
         if (ret != DBERR_OK) {
             logger::log_error(ret, "Serializing coordinates failed.");
+            free(*buffer);
+            *buffer = nullptr;
             return ret;
         }
         // logger::log_task("Adding object to buffer with", bufferElementCount, "elements");

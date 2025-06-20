@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.0.0)
 project(Hecatoncheir VERSION 1.0.1)
 
 set(CMAKE_CXX_FLAGS "-fopenmp")
-set(CMAKE_CXX_FLAGS_DEBUG "-g -O0 -fsanitize=address -fsanitize=leak -fno-omit-frame-pointer")
+set(CMAKE_CXX_FLAGS_DEBUG "-g -O1 -fsanitize=address -fsanitize=leak -fno-omit-frame-pointer")
 set(CMAKE_CXX_FLAGS_RELEASE "-O3")
 
 set(CMAKE_CXX_STANDARD 17)

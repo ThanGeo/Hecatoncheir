@@ -2,28 +2,29 @@
 
 namespace pack
 {
-    DB_STATUS packIntegers(SerializedMsg<int>& msg, std::vector<int> integers) {
-        // Calculate the total size of all integers
+    DB_STATUS packIntegers(SerializedMsg<char>& msg, std::vector<int>& integers) {
+        // Calculate total size in bytes
         int count = integers.size();
+        msg.count = count * sizeof(int);
+
         // Allocate memory for the message
-        msg.count = count;
-        msg.data = (int*)malloc(msg.count * sizeof(int));
+        msg.data = (char*)malloc(msg.count);
         if (msg.data == NULL) {
-            // malloc failed
             logger::log_error(DBERR_MALLOC_FAILED, "Malloc for pack dataset integers failed");
             return DBERR_MALLOC_FAILED;
         }
 
-        int* localBuffer = msg.data;
+        char* localBuffer = msg.data;
 
         // Add the integers to the buffer
-        for (auto &integer : integers) {
+        for (const auto& integer : integers) {
             *reinterpret_cast<int*>(localBuffer) = integer;
-            localBuffer += 1;    
+            localBuffer += sizeof(int);
         }
 
         return DBERR_OK;
     }
+
 
     DB_STATUS packDatasetIndexes(std::vector<int> indexes, SerializedMsg<int> &msg) {
         msg.count = 1 + indexes.size();
@@ -133,11 +134,11 @@ namespace pack
         std::memcpy(localBuffer, g_config.dirPaths.dataPath.data(), g_config.dirPaths.dataPath.length() * sizeof(char));
         localBuffer += g_config.dirPaths.dataPath.length() * sizeof(char);
 
-        *reinterpret_cast<int*>(localBuffer) = g_config.queryMetadata.MBRFilter;
+        *reinterpret_cast<int*>(localBuffer) = g_config.queryPipeline.MBRFilter;
         localBuffer += sizeof(int);
-        *reinterpret_cast<int*>(localBuffer) = g_config.queryMetadata.IntermediateFilter;
+        *reinterpret_cast<int*>(localBuffer) = g_config.queryPipeline.IntermediateFilter;
         localBuffer += sizeof(int);
-        *reinterpret_cast<int*>(localBuffer) = g_config.queryMetadata.Refinement;
+        *reinterpret_cast<int*>(localBuffer) = g_config.queryPipeline.Refinement;
         localBuffer += sizeof(int);
 
         return DBERR_OK;
@@ -159,29 +160,6 @@ namespace pack
         aprilMetadataMsg.data[0] = aprilConfig.getN();
         aprilMetadataMsg.data[1] = aprilConfig.compression;
         aprilMetadataMsg.data[2] = aprilConfig.partitions;
-
-        return DBERR_OK;
-    }
-
-    DB_STATUS packDatasetLoadMsg(Dataset *dataset, DatasetIndex datasetIndex, SerializedMsg<char> &msg) {
-        msg.count = 0;
-
-        // count for buffer size
-        msg.count += sizeof(int);           // dataset index
-
-        // allocate space
-        msg.data = (char*) malloc(msg.count * sizeof(char));
-        if (msg.data == NULL) {
-            // malloc failed
-            logger::log_error(DBERR_MALLOC_FAILED, "Malloc for pack system metadata failed");
-            return DBERR_MALLOC_FAILED;
-        }
-        
-        char* localBuffer = msg.data;
-        // store in buffer
-        // dataset index
-        *reinterpret_cast<int*>(localBuffer) = datasetIndex;
-        localBuffer += sizeof(int);
 
         return DBERR_OK;
     }
@@ -227,7 +205,6 @@ namespace pack
 
         return ret;
     }
-
 
     DB_STATUS packBatchResults(std::unordered_map<int, hec::QResultBase*> &batchResults, SerializedMsg<char> &msg) {       
         DB_STATUS ret = DBERR_OK;
@@ -379,6 +356,27 @@ namespace unpack
         return DBERR_OK;
     }
 
+    DB_STATUS unpackIntegers(SerializedMsg<char>& msg, std::vector<int>& integers) {
+        // Ensure msg.count is divisible by sizeof(int)
+        if (msg.count % sizeof(int) != 0) {
+            logger::log_error(DBERR_INVALID_PARAMETER, "Serialized message size is not a multiple of int size");
+            return DBERR_INVALID_PARAMETER;
+        }
+
+        int count = msg.count / sizeof(int);
+        integers.reserve(count);
+
+        char* buffer = msg.data;
+        for (int i = 0; i < count; ++i) {
+            int value = *reinterpret_cast<int*>(buffer);
+            integers.push_back(value);
+            buffer += sizeof(int);
+        }
+
+        return DBERR_OK;
+    }
+
+
     DB_STATUS unpackSystemMetadata(SerializedMsg<char> &sysMetadataMsg) {
         PartitioningType partitioningType;
         int partPartitionsPerDim, distPartitionsPerDim;
@@ -415,11 +413,11 @@ namespace unpack
         std::string datapath(localBuffer, localBuffer + length);
         localBuffer += length * sizeof(char);
         // pipeline
-        g_config.queryMetadata.MBRFilter = *reinterpret_cast<const int*>(localBuffer);
+        g_config.queryPipeline.MBRFilter = *reinterpret_cast<const int*>(localBuffer);
         localBuffer += sizeof(int);
-        g_config.queryMetadata.IntermediateFilter = *reinterpret_cast<const int*>(localBuffer);
+        g_config.queryPipeline.IntermediateFilter = *reinterpret_cast<const int*>(localBuffer);
         localBuffer += sizeof(int);
-        g_config.queryMetadata.Refinement = *reinterpret_cast<const int*>(localBuffer);
+        g_config.queryPipeline.Refinement = *reinterpret_cast<const int*>(localBuffer);
         localBuffer += sizeof(int);
 
         return DBERR_OK;
@@ -435,11 +433,18 @@ namespace unpack
         g_config.approximationMetadata.aprilConfig.partitions = aprilMetadataMsg.data[2];
         // set type
         g_config.approximationMetadata.type = AT_APRIL;
-        for (auto& it: g_config.datasetOptions.datasets) {
-            it.second.approxType = AT_APRIL;
-            it.second.aprilConfig.setN(N);
-            it.second.aprilConfig.compression = g_config.approximationMetadata.aprilConfig.compression;
-            it.second.aprilConfig.partitions = g_config.approximationMetadata.aprilConfig.partitions;
+        if (g_config.datasetOptions.getDatasetR()) {
+            g_config.datasetOptions.getDatasetR()->approxType = AT_APRIL;
+            g_config.datasetOptions.getDatasetR()->aprilConfig.setN(N);
+            g_config.datasetOptions.getDatasetR()->aprilConfig.compression = g_config.approximationMetadata.aprilConfig.compression;
+            g_config.datasetOptions.getDatasetR()->aprilConfig.partitions = g_config.approximationMetadata.aprilConfig.partitions;
+        }
+
+        if (g_config.datasetOptions.getDatasetS()) {
+            g_config.datasetOptions.getDatasetS()->approxType = AT_APRIL;
+            g_config.datasetOptions.getDatasetS()->aprilConfig.setN(N);
+            g_config.datasetOptions.getDatasetS()->aprilConfig.compression = g_config.approximationMetadata.aprilConfig.compression;
+            g_config.datasetOptions.getDatasetS()->aprilConfig.partitions = g_config.approximationMetadata.aprilConfig.partitions;
         }
 
         return DBERR_OK;

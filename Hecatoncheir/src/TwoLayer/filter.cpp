@@ -11,7 +11,7 @@ namespace twolayer
             if (mbrRelationCase != MBR_CROSS) {
                 // count as MBR filter result
                 // if intermediate filter is enabled
-                if (g_config.queryMetadata.IntermediateFilter) {
+                if (g_config.queryPipeline.IntermediateFilter) {
                     // forward to intermediate filter
                     ret = APRIL::topology::IntermediateFilterEntrypoint(objR, objS, mbrRelationCase, queryResult);
                     if (ret != DBERR_OK) {
@@ -527,7 +527,7 @@ namespace twolayer
         static inline DB_STATUS forwardPair(Shape* objR, Shape* objS, hec::QResultBase* queryResult) {
             DB_STATUS ret = DBERR_OK;
             // check if intermediate filter is enabled
-            if (g_config.queryMetadata.IntermediateFilter) {
+            if (g_config.queryPipeline.IntermediateFilter) {
                 // forward to intermediate filter
                 ret = APRIL::standard::IntermediateFilterEntrypoint(objR, objS, queryResult);
                 if (ret != DBERR_OK) {
@@ -536,7 +536,7 @@ namespace twolayer
                 }
             } else {
                 // forward to refinement
-                ret = refinement::relate::refinementEntrypoint(objR, objS, g_config.queryMetadata.queryType, queryResult);
+                ret = refinement::relate::refinementEntrypoint(objR, objS, g_config.queryPipeline.queryType, queryResult);
                 if (ret != DBERR_OK) {
                     logger::log_error(ret, "Refinement failed.");
                     return ret;
@@ -988,7 +988,7 @@ namespace twolayer
                     }
                 }
             }
-            logger::log_success("Computed:", queryResult->getResultCount(), "results.");
+            // logger::log_success("Computed:", queryResult->getResultCount(), "results.");
             return ret;
         }
     } // intersection mbr filter
@@ -998,7 +998,7 @@ namespace twolayer
         static inline DB_STATUS forwardPair(Shape* objR, Shape* objS, hec::QResultBase* queryResult) {
             DB_STATUS ret = DBERR_OK;
             // forward to refinement
-            ret = refinement::relate::refinementEntrypoint(objR, objS, g_config.queryMetadata.queryType, queryResult);
+            ret = refinement::relate::refinementEntrypoint(objR, objS, g_config.queryPipeline.queryType, queryResult);
             if (ret != DBERR_OK) {
                 logger::log_error(ret, "Refinement failed.");
                 return ret;
@@ -1679,7 +1679,7 @@ namespace twolayer
     DB_STATUS processQuery(hec::Query* query, hec::QResultBase* queryResult) {
         DB_STATUS ret = DBERR_OK;
         // set to global config
-        g_config.queryMetadata.queryType = (hec::QueryType) query->getQueryType();
+        g_config.queryPipeline.queryType = (hec::QueryType) query->getQueryType();
 
         // switch based on query type
         switch (query->getQueryType()) {

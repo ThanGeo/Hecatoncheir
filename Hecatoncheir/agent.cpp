@@ -9,7 +9,7 @@
 
 void terminateAgent() {
     // cleanup everything
-    g_config.clear();
+    g_config.reset();
     // wait for the rest of the processes in the intercomm to finish
     MPI_Barrier(g_agent_comm);
     // Finalize the MPI environment.

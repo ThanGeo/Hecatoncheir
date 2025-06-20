@@ -532,7 +532,8 @@ STOP_LISTENING:
             }
 
             // add the dataset structure to the config
-            ret = g_config.datasetOptions.addDataset(dataset);
+            int id = -1;
+            ret = g_config.datasetOptions.addDataset(std::move(dataset), id);
             if (ret != DBERR_OK) {
                 logger::log_error(ret, "Failed to add dataset to config options.");
                 return ret;
@@ -543,7 +544,7 @@ STOP_LISTENING:
 
             // return dataset ID
             SerializedMsg<int> msgToController(MPI_INT);
-            ret = pack::packDatasetIndexes({dataset.metadata.internalID}, msgToController);
+            ret = pack::packDatasetIndexes({id}, msgToController);
             if (ret != DBERR_OK) {
                 logger::log_error(ret, "Failed packing indexes to message.");
                 return ret;
@@ -555,6 +556,41 @@ STOP_LISTENING:
             }
             // free memory
             msgToController.clear();
+            return ret;
+        }
+
+        static DB_STATUS handleUnloadDatasetMessage(MPI_Status &status) {
+            SerializedMsg<char> msg(MPI_CHAR);
+            // receive the message
+            DB_STATUS ret = recv::receiveMessage(status, msg.type, g_agent_comm, msg);
+            if (ret != DBERR_OK) {
+                return ret;
+            }
+            // unpack
+            std::vector<int> messageContents;
+            ret = unpack::unpackIntegers(msg, messageContents);
+            if (ret != DBERR_OK) {
+                logger::log_error(ret, "Failed to unpack build index contents.");
+                return ret;
+            }
+            
+            // free message memory
+            msg.clear();
+
+            // unload datasets
+            for (auto &datasetID : messageContents) {
+                ret = g_config.datasetOptions.unloadDataset(datasetID);
+                if (ret != DBERR_OK) {
+                    return ret;
+                }
+            }
+
+            // send ACK back that the datasets has been unloaded successfully
+            ret = send::sendResponse(PARENT_RANK, MSG_ACK, g_agent_comm);
+            if (ret != DBERR_OK) {
+                logger::log_error(ret, "Send ACK failed.");
+            }
+
             return ret;
         }
 
@@ -677,7 +713,7 @@ STOP_LISTENING:
                     logger::log_error(ret, "Failed to build index");
                     return ret;
                 }
-                if (g_config.queryMetadata.IntermediateFilter) {
+                if (g_config.queryPipeline.IntermediateFilter) {
                     // generate APRIL
                     ret = dataset->buildAPRIL();
                     if (ret != DBERR_OK) {
@@ -939,6 +975,12 @@ STOP_LISTENING:
                 case MSG_PREPARE_DATASET:
                     // logger::log_success("MSG_PREPARE_DATASET");
                     ret = handlePrepareDatasetMessage(status);
+                    if (ret != DBERR_OK) {
+                        return ret;
+                    }
+                    break;
+                case MSG_UNLOAD_DATASET:
+                    ret = handleUnloadDatasetMessage(status);
                     if (ret != DBERR_OK) {
                         return ret;
                     }
@@ -1392,6 +1434,31 @@ STOP_LISTENING:
             return ret;
         }
 
+        static DB_STATUS handleUnloadDatasetMessage(MPI_Status &status) {
+            SerializedMsg<char> msg(MPI_CHAR);
+            // receive the message
+            DB_STATUS ret = recv::receiveMessage(status, msg.type, g_controller_comm, msg);
+            if (ret != DBERR_OK) {
+                return ret;
+            }
+            // forward to local agent
+            ret = send::sendMessage(msg, AGENT_RANK, status.MPI_TAG, g_agent_comm);
+            if (ret != DBERR_OK) {
+                logger::log_error(ret, "Failed forwarding unload dataset message to agent");
+                return ret;
+            }
+            // free message memory
+            msg.clear();
+
+            // wait for response by agent and forward it to the host controller when it arrives
+            ret = waitForResponse();
+            if (ret != DBERR_OK) {
+                logger::log_error(ret, "handle unload dataset message failed.");
+                return ret;
+            }
+            return ret;
+        }
+
         static DB_STATUS handleDatasetInfoMessage(MPI_Status status) {
             SerializedMsg<char> msg(MPI_CHAR);
             // receive the message
@@ -1578,6 +1645,13 @@ STOP_LISTENING:
                     ret = handlePrepareDatasetMessage(status);
                     if (ret != DBERR_OK) {
                         logger::log_error(ret, "Handling dataset metadata message failed.");
+                        return ret;
+                    }
+                    break;
+                case MSG_UNLOAD_DATASET:
+                    ret = handleUnloadDatasetMessage(status);
+                    if (ret != DBERR_OK) {
+                        logger::log_error(ret, "Handling unload dataset message failed.");
                         return ret;
                     }
                     break;
@@ -1793,7 +1867,8 @@ STOP_LISTENING:
             datasetMetadata.deserialize(msg.data, msg.count);
             // add the dataset structure to the config
             Dataset dataset(datasetMetadata);
-            ret = g_config.datasetOptions.addDataset(dataset);
+            int id = -1;
+            ret = g_config.datasetOptions.addDataset(std::move(dataset), id);
             if (ret != DBERR_OK) {
                 logger::log_error(ret, "Failed to add dataset to config options.");
                 return ret;
@@ -1823,8 +1898,59 @@ STOP_LISTENING:
                 logger::log_error(ret, "Failed sending indexes message to driver.");
                 return ret;
             }
+
             // free memory
             msgToDriver.clear();
+            return ret;
+        }
+
+        static DB_STATUS handleUnloadDatasetMessage(MPI_Status &status) {
+            SerializedMsg<char> msg(MPI_CHAR);
+            // receive the message
+            DB_STATUS ret = recv::receiveMessage(status, msg.type, g_global_intra_comm, msg);
+            if (ret != DBERR_OK) {
+                return ret;
+            }
+            
+            // broadcast message
+            ret = broadcast::broadcastMessage(msg, status.MPI_TAG);
+            if (ret != DBERR_OK) {
+                return ret;
+            }
+
+            // unpack
+            std::vector<int> messageContents;
+            ret = unpack::unpackIntegers(msg, messageContents);
+            if (ret != DBERR_OK) {
+                logger::log_error(ret, "Failed to unpack build index contents.");
+                return ret;
+            }
+            
+            // free message memory
+            msg.clear();
+
+            // unload datasets
+            for (auto &datasetID : messageContents) {
+                ret = g_config.datasetOptions.unloadDataset(datasetID);
+                if (ret != DBERR_OK) {
+                    return ret;
+                }
+            }
+
+            // wait for ACK from everyone
+            ret = gatherResponses();
+            if (ret != DBERR_OK) {
+                logger::log_error(ret, "Not all nodes finished successfully.");
+                return ret;
+            }
+            
+            // send ACK to the driver
+            ret = comm::send::sendResponse(DRIVER_GLOBAL_RANK, MSG_ACK, g_global_intra_comm);
+            if (ret != DBERR_OK) {
+                logger::log_error(ret, "Failed sending ACK message to driver.");
+                return ret;
+            }
+
             return ret;
         }
 
@@ -1850,6 +1976,10 @@ STOP_LISTENING:
             // double check if bounds are set for all datasets
             for (auto &index: datasetIndexes) {
                 Dataset* dataset = g_config.datasetOptions.getDatasetByIdx(index);
+                if (dataset == nullptr) {
+                    logger::log_error(DBERR_NULL_PTR_EXCEPTION, "Get dataset by index returned nullptr at partitioning. Index:", index);
+                    return DBERR_NULL_PTR_EXCEPTION;
+                }
                 if (!dataset->metadata.dataspaceMetadata.boundsSet) {
                     // calculate all metadata for dataset
                     ret = storage::reader::calculateDatasetMetadata(g_config.datasetOptions.getDatasetByIdx(index));
@@ -1877,7 +2007,7 @@ STOP_LISTENING:
             // perform the partitioning for each dataset in the message
             for (auto &index : datasetIndexes) {
                 // get dataset to partition
-                Dataset* dataset = g_config.datasetOptions.getDatasetByIdx(index);
+                Dataset* dataset = g_config.datasetOptions.getDatasetByIdx((DatasetIndex) index);
                 // serialize dataset metadata to send
                 SerializedMsg<char> datasetInfoMsg(MPI_CHAR);
                 ret = dataset->serialize(&datasetInfoMsg.data, datasetInfoMsg.count);
@@ -1895,7 +2025,7 @@ STOP_LISTENING:
                 datasetInfoMsg.clear();
 
                 // signal the begining of the partitioning
-                SerializedMsg<int> signal(MPI_INT);
+                SerializedMsg<char> signal(MPI_CHAR);
                 ret = pack::packIntegers(signal, index);
                 if (ret != DBERR_OK) {
                     logger::log_error(ret, "Packing partitioning init message failed.");
@@ -1924,6 +2054,9 @@ STOP_LISTENING:
                 // free memory
                 signal.clear();
             }
+
+            // logger::log_success("Partitioned, now ill wait for 10 seconds.");
+            // sleep(10);
 
             // send ACK to the driver
             ret = comm::send::sendResponse(DRIVER_GLOBAL_RANK, MSG_ACK, g_global_intra_comm);
@@ -1986,7 +2119,7 @@ STOP_LISTENING:
             // notify the controllers and the local agent to load each dataset in the message
             for (auto &index : datasetIndexes) {
                 // signal the begining of the partitioning
-                SerializedMsg<int> signal(MPI_INT);
+                SerializedMsg<char> signal(MPI_CHAR);
                 // pack
                 ret = pack::packIntegers(signal, index);
                 if (ret != DBERR_OK) {
@@ -2665,8 +2798,15 @@ STOP_LISTENING:
                     return DB_FIN;
                 case MSG_PREPARE_DATASET:
                     /* dataset metadata message */
-                    // logger::log_success("MSG_PREPARE_DATASET");
                     ret = handlePrepareDatasetMessage(status);
+                    if (ret != DBERR_OK) {
+                        logger::log_error(ret, "Failed while handling dataset metadata message.");
+                        return ret;
+                    }
+                    break;
+                case MSG_UNLOAD_DATASET:
+                    /* unload dataset message */
+                    ret = handleUnloadDatasetMessage(status);
                     if (ret != DBERR_OK) {
                         logger::log_error(ret, "Failed while handling dataset metadata message.");
                         return ret;
@@ -2674,7 +2814,6 @@ STOP_LISTENING:
                     break;
                 case MSG_PARTITION_DATASET:
                     /** initiate partitioning */
-                    // logger::log_success("MSG_PARTITION_DATASET");
                     ret = handlePartitionDatasetMessage(status);
                     if (ret != DBERR_OK) {
                         logger::log_error(ret, "Failed while handling partition dataset message.");
@@ -2683,7 +2822,6 @@ STOP_LISTENING:
                     break;
                 case MSG_LOAD_DATASET:
                     /** initiate dataset loading */
-                    // logger::log_success("MSG_LOAD_DATASET");
                     ret = handleLoadDatasetMessage(status);
                     if (ret != DBERR_OK) {
                         logger::log_error(ret, "Failed while handling load dataset message.");
@@ -2692,7 +2830,6 @@ STOP_LISTENING:
                     break;
                 case MSG_BUILD_INDEX:
                     /** initiate index building */
-                    // logger::log_success("MSG_BUILD_INDEX");
                     ret = handleBuildIndexMessage(status);
                     if (ret != DBERR_OK) {
                         logger::log_error(ret, "Failed while handling load dataset message.");
