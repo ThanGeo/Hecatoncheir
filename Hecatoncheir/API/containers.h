@@ -47,9 +47,11 @@ namespace hec
     private:
         std::string count = "COUNT";
         std::string collect = "COLLECT";
+        std::string knn = "KNN_COLLECT";
     public:
         std::string COUNT() {return count;}
         std::string COLLECT() {return collect;}
+        std::string KNN_COLLECT() {return knn;}
     };
 
     extern SupportedQueryResultTypes queryResultTypes;

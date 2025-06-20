@@ -181,7 +181,6 @@ namespace hec
         this->queryType = Q_RANGE;
         this->resultType = QR_COUNT;
         this->wktText = queryWKT;
-        
     }
 
     RangeQuery::RangeQuery(DatasetID datasetID, int id, std::string queryWKT, std::string resultTypeStr) {
@@ -247,6 +246,7 @@ namespace hec
         size += sizeof(hec::QueryType);                             // query type
         size += sizeof(hec::QueryResultType);                       // result type
         size += sizeof(hec::DatasetID);                             // dataset id
+        size += sizeof(DataType);                                   // shape type
         size += sizeof(int);                                        // wkt text length
         size += this->wktText.length() * sizeof(char);              // wkt string
         return size;
@@ -271,6 +271,8 @@ namespace hec
         localBuffer += sizeof(hec::QueryResultType);
         *reinterpret_cast<hec::DatasetID*>(localBuffer) = (hec::DatasetID) this->datasetID;
         localBuffer += sizeof(hec::DatasetID); 
+        *reinterpret_cast<DataType*>(localBuffer) = (DataType) this->shapeType;
+        localBuffer += sizeof(DataType); 
         *reinterpret_cast<int*>(localBuffer) = this->wktText.length();
         localBuffer += sizeof(int);
         std::memcpy(localBuffer, this->wktText.data(), this->wktText.length() * sizeof(char));
@@ -292,6 +294,8 @@ namespace hec
         // unpack the rest of the info
         hec::DatasetID datasetID = (hec::DatasetID) *reinterpret_cast<const hec::DatasetID*>(buffer + position);
         position += sizeof(hec::DatasetID);
+        DataType shapeType = (DataType) *reinterpret_cast<const DataType*>(buffer + position);
+        position += sizeof(DataType);
         // wkt text length + string
         int length;
         length = *reinterpret_cast<const int*>(buffer + position);
@@ -305,6 +309,7 @@ namespace hec
         this->resultType = queryResultType;
         this->datasetID = datasetID;
         this->wktText = wktText;
+        this->shapeType = shapeType;
 
         // increment original buffer
         buffer += position;

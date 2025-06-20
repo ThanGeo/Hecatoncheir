@@ -1427,7 +1427,6 @@ namespace twolayer
             DB_STATUS ret = DBERR_OK;
             Dataset* dataset = g_config.datasetOptions.getDatasetByIdx(rangeQuery->getDatasetID());
             // create shape object for window
-            // @todo fix, unitiialized shape object
             Shape window;
             ret = shape_factory::createEmpty((DataType) rangeQuery->getShapeType(), window);
             if (ret != DBERR_OK) {

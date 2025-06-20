@@ -999,7 +999,7 @@ DB_STATUS DatasetOptions::addDataset(Dataset&& dataset, int &id) {
         S->metadata.internalID = DATASET_S;
         id = DATASET_S;
     } else {
-        logger::log_error(DBERR_INVALID_PARAMETER, "Both R and S datasets exist");
+        logger::log_error(DBERR_INVALID_PARAMETER, "Both R and S datasets exist:", R->metadata.datasetName, S->metadata.datasetName);
         return DBERR_INVALID_PARAMETER;
     }
     return DBERR_OK;

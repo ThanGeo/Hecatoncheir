@@ -328,10 +328,8 @@ namespace hec {
             }
         }
 
-
-
         // all ok
-        return 0;
+        return ret;
     }
 
     int finalize() {
@@ -341,7 +339,7 @@ namespace hec {
             logger::log_error(ret, "Termination finished with errors.");
             return -1;
         }
-        return 0;
+        return ret;
     }
 
     DatasetID prepareDataset(std::string filePath, std::string fileTypeStr, std::string dataTypeStr, bool persist) {
@@ -506,7 +504,7 @@ namespace hec {
             return -1;
         }        
         logger::log_success("Unloaded dataset.");
-        return 0;
+        return ret;
     }
 
     int partition(std::vector<DatasetID> datasetIndexes) {
@@ -533,7 +531,7 @@ namespace hec {
             return -1;
         }        
         logger::log_success("Partitioned datasets.");
-        return 0;
+        return ret;
     }
 
     int buildIndex(std::vector<DatasetID> datasetIndexes, IndexType indexType) {
@@ -563,7 +561,7 @@ namespace hec {
             return -1;
         }        
         logger::log_success("Built index.");
-        return 0;
+        return ret;
     }
 
     int load(std::vector<DatasetID> datasetIndexes) {
@@ -737,6 +735,8 @@ namespace hec {
     
                 hec::RangeQuery* query = new hec::RangeQuery(datasetID, queryID, token, resultType);
                 batchQueries.emplace_back(query);
+
+                // logger::log_success("Loaded range query:", query->getWKT(), query->getShapeType());
     
                 queryID++;
             }
