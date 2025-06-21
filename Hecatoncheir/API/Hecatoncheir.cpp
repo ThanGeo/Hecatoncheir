@@ -398,6 +398,10 @@ namespace hec {
         msgFromHost.clear();
 
         // return the ID
+        if (indexes.size() != 1) {
+            logger::log_error(DBERR_INVALID_PARAMETER, "The unpacked id list does not contain a single id.");
+            return DBERR_INVALID_PARAMETER;
+        }
         return indexes[0];
     }
 
@@ -683,7 +687,7 @@ namespace hec {
         return qResPtr;
     }
 
-    std::unordered_map<int, hec::QResultBase*> query(std::vector<Query*> &queryBatch) {
+    std::unordered_map<int, hec::QResultBase*> query(std::vector<Query*> &queryBatch, hec::QueryType batchType) {
         DB_STATUS ret = DBERR_OK;
         std::unordered_map<int, hec::QResultBase*> finalResults;
 
@@ -700,10 +704,24 @@ namespace hec {
             return finalResults;
         }
         // send the query to Host Controller
-        ret = comm::send::sendMessage(msg, HOST_CONTROLLER, MSG_QUERY_BATCH, g_global_intra_comm);
-        if (ret != DBERR_OK) {
-            logger::log_error(ret, "Sending dataset load message failed.");
-            return finalResults;
+        switch (batchType) {
+            case Q_RANGE:
+                ret = comm::send::sendMessage(msg, HOST_CONTROLLER, MSG_QUERY_BATCH_RANGE, g_global_intra_comm);
+                if (ret != DBERR_OK) {
+                    logger::log_error(ret, "Sending dataset load message failed.");
+                    return finalResults;
+                }
+                break;
+            case Q_KNN:
+                ret = comm::send::sendMessage(msg, HOST_CONTROLLER, MSG_QUERY_BATCH_KNN, g_global_intra_comm);
+                if (ret != DBERR_OK) {
+                    logger::log_error(ret, "Sending dataset load message failed.");
+                    return finalResults;
+                }
+                break;
+            default:
+                logger::log_error(DBERR_FEATURE_UNSUPPORTED, "Unsupported query type for batch processing:", batchType);
+                return finalResults;
         }
         // free memory
         msg.clear();

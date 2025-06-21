@@ -795,7 +795,7 @@ void TwoLayerIndex::sortPartitionsOnY() {
     }
 }
 
-DB_STATUS TwoLayerIndex::evaluateQuery(hec::Query* query, hec::QResultBase* queryResult) {
+DB_STATUS TwoLayerIndex::evaluateQuery(hec::Query* query, std::unique_ptr<hec::QResultBase>& queryResult) {
     DB_STATUS ret = twolayer::processQuery(query, queryResult);
     if (ret != DBERR_OK) {
         logger::log_error(ret, "Failed to process query with id:", query->getQueryID());
@@ -904,7 +904,7 @@ void UniformGridIndex::sortPartitionsOnY() {
     }
 }
 
-DB_STATUS UniformGridIndex::evaluateQuery(hec::Query* query, hec::QResultBase* queryResult) {
+DB_STATUS UniformGridIndex::evaluateQuery(hec::Query* query, std::unique_ptr<hec::QResultBase>& queryResult) {
     DB_STATUS ret = uniform_grid::processQuery(query, queryResult);
     if (ret != DBERR_OK) {
         logger::log_error(ret, "Failed to process query with id:", query->getQueryID());
@@ -930,16 +930,18 @@ Dataset* DatasetOptions::getDatasetS() {
 DB_STATUS DatasetOptions::unloadDataset(int datasetIndex) {
     switch (datasetIndex) {
         case DATASET_R:
-            if (R) {
+            if (R.has_value()) {
                 R->clear();
                 R.reset();
+                // this->print();
                 return DBERR_OK;
             }
             break;
         case DATASET_S:
-            if (S) {
+            if (S.has_value()) {
                 S->clear();
                 S.reset();
+                // this->print();
                 return DBERR_OK;
             }
             break;
@@ -950,6 +952,21 @@ DB_STATUS DatasetOptions::unloadDataset(int datasetIndex) {
     
     logger::log_warning("No dataset is loaded with ID", datasetIndex);
     return DBERR_OK;
+}
+
+void DatasetOptions::print() {
+    logger::log_task("Current DatasetOptions status");
+    if (R) {
+        printf("  R is loaded. Id: %d, name: %s\n", R->metadata.internalID, R->metadata.datasetName.c_str());
+    } else {
+        printf("  R is empty.");
+    }
+
+    if (S) {
+        printf("  S is loaded. Id: %d, name: %s\n", S->metadata.internalID, S->metadata.datasetName.c_str());
+    } else {
+        printf("  S is empty.");
+    }
 }
 
 Dataset* DatasetOptions::getDatasetByIdx(int datasetIndex) {

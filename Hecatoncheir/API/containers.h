@@ -274,6 +274,11 @@ namespace hec
             resultType = QR_COUNT;
         }
 
+        virtual std::string getWKT() {
+            printf("Error: Invalid call of getWKT() for query type.");
+            return "";
+        }
+
         virtual int getK() {
             printf("Error: Invalid call of getK() for query type.");
             return -1;
@@ -321,7 +326,7 @@ namespace hec
         DatasetID getDatasetID() {
             return datasetID;
         }
-        std::string getWKT();
+        std::string getWKT() override;
         int getShapeType();
 
         int calculateBufferSize() override;
@@ -363,7 +368,7 @@ namespace hec
         DatasetID getDatasetID() {
             return datasetID;
         }
-        std::string getWKT();
+        std::string getWKT() override;
         int getShapeType();
         int getK();
 

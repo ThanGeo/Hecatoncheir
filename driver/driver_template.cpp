@@ -48,8 +48,7 @@ int main(int argc, char* argv[]) {
      * You can either count the results or collect the result ids.
      * Join queries require two dataset IDs instead and no query file.
      */
-    std::vector<hec::Query *> batch = hec::loadQueriesFromFile("path_to_query.wkt", "WKT", datasetID, hec::QR_COUNT);
-    std::unordered_map<int, hec::QResultBase *> results = hec::query(batch);
+    
 
     /**
      * Don't forget to terminate Hecatoncheir when you are done!

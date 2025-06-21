@@ -63,7 +63,8 @@ void QueryTest::test2() {
     // check results
     ASSERT_NE(result, nullptr);
     std::vector<size_t> results = result->getResultList();
-    ASSERT_EQ(results.size()/2, 5);
+    int resultsSize = results.size()/2;
+    ASSERT_EQ(resultsSize, 5);
     // free memory
     delete result;
     // unload datasets
@@ -94,7 +95,8 @@ void QueryTest::test3() {
     // check results
     ASSERT_NE(result, nullptr);
     std::vector<size_t> results = result->getResultList();
-    ASSERT_EQ(results.size()/2, 0);
+    int resultsSize = results.size()/2;
+    ASSERT_EQ(resultsSize, 0);
     // free memory
     delete result;
     // unload datasets
@@ -119,22 +121,36 @@ void QueryTest::test4() {
     std::string queriesPath = std::string(HECATONCHEIR_DIR) + "/test/samples/query_sample_points.wkt";
     int k = 2;
     std::vector<hec::Query *> batch = hec::loadKNNQueriesFromFile(queriesPath, "WKT", datasetRID, k);
-    ASSERT_EQ(batch.size(), 2);
-    std::unordered_map<int, hec::QResultBase *> results = hec::query(batch);
+    int batchSize = batch.size();
+    ASSERT_EQ(batchSize, 2);
+    std::unordered_map<int, hec::QResultBase *> results = hec::query(batch, hec::Q_KNN);
     // results
+    int resultsSize = results.size();
+    ASSERT_EQ(resultsSize, 2);
     // query 0
     ASSERT_NE(batch[0], nullptr);
     std::vector<size_t> ids = results[0]->getResultList();
+    // for (auto &it: ids) {
+    //     printf("%ld\n", it);
+    // }
+    int totalIds1 = ids.size();
+    ASSERT_EQ(totalIds1, 2);
     ASSERT_EQ(ids[0], 33);
     ASSERT_EQ(ids[1], 31);
-    delete results[0];
-    delete batch[0];
     ids.clear();
-    // query §
+    // query 1
     ASSERT_NE(batch[1], nullptr);
     ids = results[1]->getResultList();
+    // for (auto &it: ids) {
+    //     printf("%ld\n", it);
+    // }
+    int totalIds2 = ids.size();
+    ASSERT_EQ(totalIds2, 2);
     ASSERT_EQ(ids[0], 53);
     ASSERT_EQ(ids[1], 58);
+    // free memory
+    delete results[0];
+    delete batch[0];
     delete results[1];
     delete batch[1];
     // clear 
@@ -159,19 +175,21 @@ void QueryTest::test5() {
     // run query batch
     std::string queriesPath = std::string(HECATONCHEIR_DIR) + "/test/samples/query_sample_polygons.wkt";
     std::vector<hec::Query *> batch = hec::loadRangeQueriesFromFile(queriesPath, "WKT", datasetRID, hec::QR_COUNT);
-    ASSERT_EQ(batch.size(), 2);
-    std::unordered_map<int, hec::QResultBase *> results = hec::query(batch);
+    int batchSize = batch.size();
+    ASSERT_EQ(batchSize, 2);
+    std::unordered_map<int, hec::QResultBase *> results = hec::query(batch, hec::Q_RANGE);
     // results
     // query 0
     ASSERT_NE(batch[0], nullptr);
     size_t resultCount = results[0]->getResultCount();
     ASSERT_EQ(resultCount, 0);
-    delete results[0];
-    delete batch[0];
-    // query §
+    // query 1
     ASSERT_NE(batch[1], nullptr);
     resultCount = results[1]->getResultCount();
     ASSERT_EQ(resultCount, 1);
+    // free memory
+    delete results[0];
+    delete batch[0];
     delete results[1];
     delete batch[1];
     // clear 
@@ -196,19 +214,21 @@ void QueryTest::test6() {
     // run query batch
     std::string queriesPath = std::string(HECATONCHEIR_DIR) + "/test/samples/query_sample_polygons.wkt";
     std::vector<hec::Query *> batch = hec::loadRangeQueriesFromFile(queriesPath, "WKT", datasetRID, hec::QR_COLLECT);
-    ASSERT_EQ(batch.size(), 2);
-    std::unordered_map<int, hec::QResultBase *> results = hec::query(batch);
+    int batchSize = batch.size();
+    ASSERT_EQ(batchSize, 2);
+    std::unordered_map<int, hec::QResultBase *> results = hec::query(batch, hec::Q_RANGE);
     // results
     // query 0
     ASSERT_NE(batch[0], nullptr);
     size_t resultCount = results[0]->getResultCount();
     ASSERT_EQ(resultCount, 0);
-    delete results[0];
-    delete batch[0];
     // query 1
     ASSERT_NE(batch[1], nullptr);
     resultCount = results[1]->getResultCount();
     ASSERT_EQ(resultCount, 0);
+    // free memory
+    delete results[0];
+    delete batch[0];
     delete results[1];
     delete batch[1];
     // clear 

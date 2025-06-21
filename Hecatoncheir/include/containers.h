@@ -1890,7 +1890,7 @@ public:
     PartitionBase* getPartition(double x, double y, DataspaceMetadata* dataspaceMetadata, PartitioningMethod* partitioningMethod);
 
     /** @brief evaluates a query on the index */
-    virtual DB_STATUS evaluateQuery(hec::Query* query, hec::QResultBase* queryResult) = 0;
+    virtual DB_STATUS evaluateQuery(hec::Query* query, std::unique_ptr<hec::QResultBase>& queryResult) = 0;
 
     /** @brief clears all index contents */
     DB_STATUS clear();
@@ -1922,7 +1922,7 @@ public:
     void sortPartitionsOnY() override;
 
     /** @brief Evaluate the given query and store results in the queryResult object. */
-    DB_STATUS evaluateQuery(hec::Query* query, hec::QResultBase* queryResult) override;
+    DB_STATUS evaluateQuery(hec::Query* query, std::unique_ptr<hec::QResultBase>& queryResult) override;
 };
 
 /** @brief Holds all two-layer related index information.
@@ -1950,7 +1950,7 @@ public:
     void sortPartitionsOnY() override;
 
     /** @brief Evaluate the given query and store results in the queryResult object. */
-    DB_STATUS evaluateQuery(hec::Query* query, hec::QResultBase* queryResult);
+    DB_STATUS evaluateQuery(hec::Query* query, std::unique_ptr<hec::QResultBase>& queryResult);
 };
 
 /**
@@ -2028,13 +2028,10 @@ struct Dataset{
  */
 struct DatasetOptions {
 private:
-    // Dataset* S = nullptr;
-    // Dataset* R = nullptr;
     std::optional<Dataset> R;  // Uses std::optional to indicate presence/absence
     std::optional<Dataset> S;
 
 public:
-    // std::unordered_map<DatasetIndex, Dataset> datasets;
     DataspaceMetadata dataspaceMetadata;
 
     void clear();
@@ -2046,12 +2043,10 @@ public:
     Dataset* getDatasetS();
 
     Dataset* getDatasetByIdx(int datasetIndex);
-    // DB_STATUS getDatasetByIdx(int datasetIndex, Dataset **datasetRef);
 
     /**
     @brief adds a Dataset to the configuration's dataset metadata
      */
-    // DB_STATUS addDataset(DatasetIndex datasetIdx, Dataset &dataset);
     DB_STATUS addDataset(DatasetIndex datasetIdx, Dataset&& dataset);
 
     /**
@@ -2065,6 +2060,8 @@ public:
 
     void updateDataspace();
     void updateDatasetDataspaceToGlobal();
+
+    void print();
 };
 
 
@@ -2096,11 +2093,12 @@ DB_STATUS mergeResultObjects(hec::QResultBase *out, hec::QResultBase *in);
 DB_STATUS mergeBatchResultMaps(std::unordered_map<int, hec::QResultBase*> &dest, std::unordered_map<int, hec::QResultBase*> &src);
 
 // Declare the parallel reduction function for merging query results into a single query result object
-// #pragma omp declare reduction(query_output_reduction: hec::QResultBase*: mergeResultObjects(omp_out, omp_in)) initializer(omp_priv = omp_orig)
-#pragma omp declare reduction(query_output_reduction: hec::QResultBase*: mergeResultObjects(omp_out, omp_in)) initializer(omp_priv = omp_orig->cloneEmpty())
+// #pragma omp declare reduction(query_output_reduction: hec::QResultBase*: mergeResultObjects(omp_out, omp_in)) initializer(omp_priv = omp_orig->cloneEmpty())
+#pragma omp declare reduction(query_output_reduction : std::unique_ptr<hec::QResultBase> : mergeResultObjects(omp_out.get(), omp_in.get())) initializer(omp_priv = std::unique_ptr<hec::QResultBase>(omp_orig->cloneEmpty()))
+
+
 
 // Declare the parallel reduction function for merging batch query result objects into a single map
-// #pragma omp declare reduction(merge_batch_results_maps : std::unordered_map<int, hec::QResultBase*> : mergeBatchResultMaps(omp_out, omp_in)) initializer(omp_priv = omp_orig)
 #pragma omp declare reduction(merge_batch_results_maps : std::unordered_map<int, hec::QResultBase*> : mergeBatchResultMaps(omp_out, omp_in)) initializer(omp_priv = std::unordered_map<int, hec::QResultBase*>())
 
 #endif

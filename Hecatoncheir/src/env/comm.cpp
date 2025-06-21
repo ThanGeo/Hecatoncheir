@@ -826,12 +826,13 @@ STOP_LISTENING:
             msg.clear();
 
             // setup query result object
-            hec::QResultBase* queryResult;
-            int res = qresult_factory::createNew(queryPtr, &queryResult);
+            hec::QResultBase* rawResult = nullptr;
+            int res = qresult_factory::createNew(queryPtr, &rawResult);
             if (res != 0) {
                 logger::log_error(DBERR_OBJ_CREATION_FAILED, "Failed to create query result objects.");
                 return DBERR_OBJ_CREATION_FAILED;
             }
+            std::unique_ptr<hec::QResultBase> queryResult(rawResult);
 
             // evaluate query based on index (stored in R dataset)
             ret = g_config.datasetOptions.getDatasetR()->index->evaluateQuery(queryPtr, queryResult);
@@ -855,13 +856,10 @@ STOP_LISTENING:
             // free query memory
             delete queryPtr;
 
-            // free query result memory
-            delete queryResult;
-
             return ret;
         }
 
-        static DB_STATUS handleQueryBatchMessage(MPI_Status &status) {
+        static DB_STATUS handleQueryBatchRangeMessage(MPI_Status &status) {
             SerializedMsg<char> msg(MPI_CHAR);
             // receive the message
             DB_STATUS ret = recv::receiveMessage(status, msg.type, g_agent_comm, msg);
@@ -882,23 +880,25 @@ STOP_LISTENING:
             msg.clear();
             
             // holds all the final batch results
-            std::unordered_map<int, hec::QResultBase*> batchResults;
-            
-            std::vector<std::unordered_map<int, hec::QResultBase*>> threadLocalMaps(MAX_THREADS);
+            std::unordered_map<int, std::unique_ptr<hec::QResultBase>> batchResults;
+            std::vector<std::unordered_map<int, std::unique_ptr<hec::QResultBase>>> threadLocalMaps(MAX_THREADS);
+
             #pragma omp parallel num_threads(MAX_THREADS)
             {
                 int tid = omp_get_thread_num();
                 auto& localResults = threadLocalMaps[tid];
                 #pragma omp for
                 for (int i = 0; i < queryBatch.size(); i++) {
-                    hec::QResultBase* queryResult = nullptr;
-
-                    int res = qresult_factory::createNew(queryBatch[i], &queryResult);
+                    hec::QResultBase* rawResult = nullptr;
+                    int res = qresult_factory::createNew(queryBatch[i], &rawResult);
                     if (res != 0) {
-                        logger::log_error(DBERR_OBJ_CREATION_FAILED, "Failed to create query result objects.");
+                        logger::log_error(DBERR_OBJ_CREATION_FAILED, "Failed to create query result object.");
                         #pragma omp cancel for
                         ret = DBERR_OBJ_CREATION_FAILED;
+                        continue;
                     }
+
+                    std::unique_ptr<hec::QResultBase> queryResult(rawResult);
 
                     DB_STATUS local_ret = g_config.datasetOptions.getDatasetR()->index->evaluateQuery(queryBatch[i], queryResult);
                     if (local_ret != DBERR_OK) {
@@ -906,44 +906,45 @@ STOP_LISTENING:
                         ret = local_ret;
                     }
 
-                    localResults[queryBatch[i]->getQueryID()] = queryResult;
+                    int queryID = queryBatch[i]->getQueryID();
+                    localResults[queryID] = std::move(queryResult);
                 }
             }
             if (ret != DBERR_OK) {
                 return ret;
             }
             // After parallel region, merge maps
-            for (auto& map : threadLocalMaps) {
-                mergeBatchResultMaps(batchResults, map);
+            for (auto& localMap : threadLocalMaps) {
+                for (auto& [qid, resultPtr] : localMap) {
+                    batchResults[qid] = std::move(resultPtr);
+                }
+            }
+            // Extract raw pointers for packing
+            std::unordered_map<int, hec::QResultBase*> rawResults;
+            for (auto& [qid, resultPtr] : batchResults) {
+                rawResults[qid] = resultPtr.get();
             }
 
-            // pack results to send
+            // Pack results
             SerializedMsg<char> batchResultMsg(MPI_CHAR);
-            ret = pack::packBatchResults(batchResults, batchResultMsg);
+            ret = pack::packBatchResults(rawResults, batchResultMsg);
             if (ret != DBERR_OK) {
                 logger::log_error(ret, "Failed to pack batch results.");
+                for (auto& q : queryBatch) delete q;
                 return ret;
             }
 
-            // logger::log_success("Packed results for", batchResults.size(), "queries");
-
-            // send results
+            // Send results
             ret = send::sendMessage(batchResultMsg, PARENT_RANK, MSG_QUERY_BATCH_RESULT, g_agent_comm);
             if (ret != DBERR_OK) {
+                for (auto& q : queryBatch) delete q;
                 return ret;
             }
 
-            // free message memory
+            // Cleanup
             batchResultMsg.clear();
-
-            // delete queries
-            for (auto &it: queryBatch) {
-                delete it;
-            }
-
-            // delete query results
-            for (auto& [key, value] : batchResults) {
-                delete value;
+            for (auto& q : queryBatch) {
+                delete q;
             }
             batchResults.clear();
 
@@ -1023,17 +1024,21 @@ STOP_LISTENING:
                     }
                     break;
                 case MSG_QUERY:
-                    // logger::log_success("MSG_QUERY");
                     ret = handleQueryMessage(status);
                     if (ret != DBERR_OK) {
                         return ret;
                     }
                     break;
-                case MSG_QUERY_BATCH:
-                    ret = handleQueryBatchMessage(status);
+                case MSG_QUERY_BATCH_RANGE:
+                    ret = handleQueryBatchRangeMessage(status);
                     if (ret != DBERR_OK) {
                         return ret;
                     }
+                    break;
+                case MSG_QUERY_BATCH_KNN:
+                    // unsupported yet
+                    logger::log_error(DBERR_FEATURE_UNSUPPORTED, "Unsupported batch KNN on agent.");
+                    return DBERR_FEATURE_UNSUPPORTED;
                     break;
                 default:
                     logger::log_error(DBERR_COMM_WRONG_MESSAGE_ORDER, "Didn't expect message with tag", status.MPI_TAG);
@@ -1691,7 +1696,8 @@ STOP_LISTENING:
                     }
                     break;
                 case MSG_QUERY:
-                case MSG_QUERY_BATCH:
+                case MSG_QUERY_BATCH_RANGE:
+                case MSG_QUERY_BATCH_KNN:
                     ret = handleQueryMessage(status);
                     if (ret != DBERR_OK) {
                         logger::log_error(ret, "Failed while handling query message.");
@@ -2081,6 +2087,9 @@ STOP_LISTENING:
                 return ret;
             }
 
+            // free memory
+            msg.clear();
+
             // wait for ACK from everyone
             ret = gatherResponses();
             if (ret != DBERR_OK) {
@@ -2176,7 +2185,7 @@ STOP_LISTENING:
             return ret;
         }
         
-        static DB_STATUS gatherJoinResults(hec::Query* query, hec::QResultBase* totalResults) {
+        static DB_STATUS gatherJoinResults(hec::Query* query, std::unique_ptr<hec::QResultBase>& totalResults) {
             if (!totalResults) {
                 logger::log_error(DBERR_NULL_PTR_EXCEPTION, "Null query result pointer while gathering join results.");
                 return DBERR_NULL_PTR_EXCEPTION;
@@ -2217,23 +2226,27 @@ STOP_LISTENING:
                                 ret = local_ret;
                             }
                             // unpack
-                            hec::QResultBase* localResult;
-                            int res = qresult_factory::createNew(query, &localResult);
+                            hec::QResultBase* localRaw = nullptr;
+                            int res = qresult_factory::createNew(query, &localRaw);
                             if (res != 0) {
                                 #pragma omp cancel for
                                 logger::log_error(DBERR_OBJ_CREATION_FAILED, "Failed to create query result objects.");
                                 ret = DBERR_OBJ_CREATION_FAILED;
+                                continue;
                             }
+                            std::unique_ptr<hec::QResultBase> localResult(localRaw);
+
                             localResult->deserialize(msg.data, msg.count);
                             // add results
-                            local_ret = mergeResultObjects(totalResults, localResult);
+                            local_ret = mergeResultObjects(totalResults.get(), localResult.get());
                             if (local_ret != DBERR_OK) {
                                 logger::log_error(ret, "Merging query results failed.");
                                 #pragma omp cancel for
                                 ret = local_ret;
                             }
                             // free memory
-                            delete localResult;
+                            msg.clear();
+                            // delete localResult;
                         }
                     } else {
                         // wait for workers' responses (each thread with id X receives from worker with rank X)
@@ -2261,23 +2274,26 @@ STOP_LISTENING:
                                 logger::log_error(ret, "Received NACK from agent.");
                             }
                             // unpack
-                            hec::QResultBase* localResult = nullptr;
-                            int res = qresult_factory::createNew(query, &localResult);
+                            hec::QResultBase* localRaw = nullptr;
+                            int res = qresult_factory::createNew(query, &localRaw);
                             if (res != 0) {
                                 #pragma omp cancel for
                                 logger::log_error(DBERR_OBJ_CREATION_FAILED, "Failed to create query result objects.");
                                 ret = DBERR_OBJ_CREATION_FAILED;
+                                continue;
                             }
+                            std::unique_ptr<hec::QResultBase> localResult(localRaw);
                             localResult->deserialize(msg.data, msg.count);
                             // add results
-                            local_ret = mergeResultObjects(totalResults, localResult);
+                            local_ret = mergeResultObjects(totalResults.get(), localResult.get());
                             if (local_ret != DBERR_OK) {
                                 logger::log_error(ret, "Merging query results failed.");
                                 #pragma omp cancel for
                                 ret = local_ret;
                             }
                             // free memory
-                            delete localResult;
+                            msg.clear();
+                            // delete localResult;
                         }
                     }
                 }
@@ -2335,7 +2351,8 @@ STOP_LISTENING:
                                 logger::log_error(ret, "Failed to unpack batch results from message.");
                                 return ret;
                             }
-                            // logger::log_success("Unpacked results for", batchResultsMap.size(), "queries");
+                            // free memory
+                            msg.clear();
                         } else if (status.MPI_TAG == MSG_QUERY_RESULT) {
                             // single query result
                             hec::QResultBase* localResult;
@@ -2358,6 +2375,7 @@ STOP_LISTENING:
                                 batchResultsMap[localResult->getQueryID()]->mergeResults(localResult);
                             }
                             // free memory
+                            msg.clear();
                             delete localResult;
                             // logger::log_task("Received result for query", localResult.getID(), "from agent");
                         } else {
@@ -2411,7 +2429,8 @@ STOP_LISTENING:
                                 logger::log_error(ret, "Failed to unpack batch results from message.");
                                 return ret;
                             }
-                            // logger::log_success("Unpacked results for", batchResultsMap.size(), "queries");
+                            // free memory
+                            msg.clear();
                         } else if (status.MPI_TAG == MSG_QUERY_RESULT) {
                             // single query result
                             hec::QResultBase* localResult;
@@ -2434,6 +2453,7 @@ STOP_LISTENING:
                                 batchResultsMap[localResult->getQueryID()]->mergeResults(localResult);
                             }
                             // free memory
+                            msg.clear();
                             delete localResult;
                         } else {
                             // wrong message tag
@@ -2455,13 +2475,14 @@ STOP_LISTENING:
                 return ret;
             }
             // create query result object
-            hec::QResultBase* totalResults;
-            // peek query and result types
-            int res = qresult_factory::createNew(query, &totalResults);
+            hec::QResultBase* rawTotalResults = nullptr;
+            int res = qresult_factory::createNew(query, &rawTotalResults);
             if (res != 0) {
                 logger::log_error(DBERR_OBJ_CREATION_FAILED, "Failed to create query result object.");
                 return DBERR_OBJ_CREATION_FAILED;
             }
+            std::unique_ptr<hec::QResultBase> totalResults(rawTotalResults);
+
 
             // wait for result
             ret = gatherJoinResults(query, totalResults);
@@ -2480,11 +2501,11 @@ STOP_LISTENING:
             
             // free memory
             resultMsg.clear();
-            delete totalResults;
+            // delete totalResults;
             return ret;
         }
 
-        static DB_STATUS gatherkNNResults(hec::Query* query, hec::QResultBase* totalResults) {
+        static DB_STATUS gatherkNNResults(hec::Query* query, std::unique_ptr<hec::QResultBase>& totalResults) {
             if (!totalResults) {
                 logger::log_error(DBERR_NULL_PTR_EXCEPTION, "Null query result pointer while gathering join results.");
                 return DBERR_NULL_PTR_EXCEPTION;
@@ -2495,7 +2516,6 @@ STOP_LISTENING:
             {
                 DB_STATUS local_ret = DBERR_OK;
                 MPI_Status status;
-
                 #pragma omp for
                 for (int i=0; i<g_world_size; i++) {
                     // probe for responses
@@ -2525,23 +2545,23 @@ STOP_LISTENING:
                                 ret = local_ret;
                             }
                             // unpack
-                            hec::QResultBase* localResult;
-                            int res = qresult_factory::createNew(query, &localResult);
+                            hec::QResultBase* localRaw = nullptr;
+                            int res = qresult_factory::createNew(query, &localRaw);
                             if (res != 0) {
                                 #pragma omp cancel for
                                 logger::log_error(DBERR_OBJ_CREATION_FAILED, "Failed to create query result objects.");
                                 ret = DBERR_OBJ_CREATION_FAILED;
+                                continue;
                             }
+                            std::unique_ptr<hec::QResultBase> localResult(localRaw);
                             localResult->deserialize(msg.data, msg.count);
                             // add results
-                            local_ret = mergeResultObjects(totalResults, localResult);
+                            local_ret = mergeResultObjects(totalResults.get(), localResult.get());
                             if (local_ret != DBERR_OK) {
                                 logger::log_error(ret, "Merging query results failed.");
                                 #pragma omp cancel for
                                 ret = local_ret;
                             }
-                            // free memory
-                            delete localResult;
                         }
                     } else {
                         // wait for workers' responses (each thread with id X receives from worker with rank X)
@@ -2569,23 +2589,24 @@ STOP_LISTENING:
                                 logger::log_error(ret, "Received NACK from agent.");
                             }
                             // unpack
-                            hec::QResultBase* localResult = nullptr;
-                            int res = qresult_factory::createNew(query, &localResult);
+                            hec::QResultBase* localRaw = nullptr;
+                            int res = qresult_factory::createNew(query, &localRaw);
                             if (res != 0) {
                                 #pragma omp cancel for
                                 logger::log_error(DBERR_OBJ_CREATION_FAILED, "Failed to create query result objects.");
                                 ret = DBERR_OBJ_CREATION_FAILED;
+                                continue;
                             }
+                            std::unique_ptr<hec::QResultBase> localResult(localRaw);
+
                             localResult->deserialize(msg.data, msg.count);
                             // add results
-                            local_ret = mergeResultObjects(totalResults, localResult);
+                            local_ret = mergeResultObjects(totalResults.get(), localResult.get());
                             if (local_ret != DBERR_OK) {
                                 logger::log_error(ret, "Merging query results failed.");
                                 #pragma omp cancel for
                                 ret = local_ret;
                             }
-                            // free memory
-                            delete localResult;
                         }
                     }
                 }
@@ -2595,20 +2616,19 @@ STOP_LISTENING:
 
         static DB_STATUS performKnnQuery(MPI_Status &status, SerializedMsg<char> &msg, hec::Query* query) {
             DB_STATUS ret = DBERR_OK;
-            // broadcast join query to every worker
+            // broadcast knn query to every worker
             ret = broadcast::broadcastMessage(msg, status.MPI_TAG);
             if (ret != DBERR_OK) {
                 return ret;
             }
             // create query result object
-            hec::QResultBase* totalResults;
-            // peek query and result types
-            int res = qresult_factory::createNew(query, &totalResults);
+            hec::QResultBase* rawTotalResults = nullptr;
+            int res = qresult_factory::createNew(query, &rawTotalResults);
             if (res != 0) {
                 logger::log_error(DBERR_OBJ_CREATION_FAILED, "Failed to create query result object.");
                 return DBERR_OBJ_CREATION_FAILED;
             }
-
+            std::unique_ptr<hec::QResultBase> totalResults(rawTotalResults);
             // wait for result
             ret = gatherkNNResults(query, totalResults);
             if (ret != DBERR_OK) {
@@ -2626,7 +2646,6 @@ STOP_LISTENING:
 
             // free memory
             resultMsg.clear();
-            delete totalResults;
             return ret;
         }
 
@@ -2680,7 +2699,7 @@ STOP_LISTENING:
             return ret;
         }
 
-        static DB_STATUS handleQueryBatchMessageParallel(MPI_Status &status) {
+        static DB_STATUS handleQueryBatchRangeMessageParallel(MPI_Status &status) {
             SerializedMsg<char> msg(MPI_CHAR);
             // receive the message
             DB_STATUS ret = recv::receiveMessage(status, msg.type, g_global_intra_comm, msg);
@@ -2716,7 +2735,7 @@ STOP_LISTENING:
                 // logger::log_success("Packed", splitBatch.size(), "queries.");
                 
                 // broadcast range query to every worker
-                ret = broadcast::broadcastMessage(batchMsg, MSG_QUERY_BATCH);
+                ret = broadcast::broadcastMessage(batchMsg, MSG_QUERY_BATCH_RANGE);
                 if (ret != DBERR_OK) {
                     return ret;
                 }
@@ -2737,6 +2756,99 @@ STOP_LISTENING:
                 }
 
                 // logger::log_success("I have results for", batchResultsMap.size(), "queries so far");
+            }
+
+            // delete queries
+            for (auto &it: queryBatch) {
+                delete it;
+            }
+
+            // serialize final batch results
+            SerializedMsg<char> finalResultsMsg(MPI_CHAR);
+            ret = pack::packBatchResults(batchResultsMap, finalResultsMsg);
+            if (ret != DBERR_OK) {
+                logger::log_error(ret, "Failed to pack final results.");
+                return ret;
+            }
+
+            // send back to driver
+            ret = send::sendMessage(finalResultsMsg, DRIVER_GLOBAL_RANK, MSG_QUERY_BATCH_RESULT, g_global_intra_comm);
+            if (ret != DBERR_OK) {
+                logger::log_error(ret, "Couldn't send results to Driver.");
+                return ret;
+            }
+
+            // free memory
+            finalResultsMsg.clear();
+
+            // delete query results
+            for (auto& [key, value] : batchResultsMap) {
+                delete value;
+            }
+            batchResultsMap.clear();
+            return ret;
+        }
+
+        static DB_STATUS handleQueryBatchKNNMessage(MPI_Status &status) {
+            SerializedMsg<char> msg(MPI_CHAR);
+            // receive the message
+            DB_STATUS ret = recv::receiveMessage(status, msg.type, g_global_intra_comm, msg);
+            if (ret != DBERR_OK) {
+                return ret;
+            }
+
+            // unpack query batch
+            std::vector<hec::Query*> queryBatch;
+            ret = unpack::unpackQueryBatch(msg, &queryBatch);
+            if (ret != DBERR_OK) {
+                logger::log_error(ret, "Failed to unpack query batch message.");
+                return ret;
+            }
+
+            // free msg memory
+            msg.clear();
+
+            // buffer all results
+            std::unordered_map<int, hec::QResultBase*> batchResultsMap;
+
+            // evaluate queries one-by-one, not really parallelizable for KNN
+            // @todo: make parallelizable (super asynchronous)
+            for (int i=0; i<queryBatch.size(); i++) {
+                // create query msg to send
+                SerializedMsg<char> queryMsg(MPI_CHAR);
+                int res = queryBatch[i]->serialize(&queryMsg.data, queryMsg.count);
+                if (res != 0) {
+                    logger::log_error(DBERR_SERIALIZE_FAILED, "Failed to serialize knn query to message.");
+                    return DBERR_SERIALIZE_FAILED;
+                }
+                // broadcast knn query to every worker
+                ret = broadcast::broadcastMessage(queryMsg, MSG_QUERY);
+                if (ret != DBERR_OK) {
+                    return ret;
+                }
+                // free memory
+                queryMsg.clear();
+                // create query result object
+                hec::QResultBase* rawQueryResults = nullptr;
+                res = qresult_factory::createNew(queryBatch[i], &rawQueryResults);
+                if (res != 0) {
+                    logger::log_error(DBERR_OBJ_CREATION_FAILED, "Failed to create query result object.");
+                    return DBERR_OBJ_CREATION_FAILED;
+                }
+                std::unique_ptr<hec::QResultBase> queryResults(rawQueryResults);
+                // wait for result
+                ret = gatherkNNResults(queryBatch[i], queryResults);
+                if (ret != DBERR_OK) {
+                    logger::log_error(ret, "Failed while gathering results for query.");
+                    return ret;
+                }
+                // std::vector<size_t> results = queryResults->getResultList();
+                // logger::log_task("Query", queryBatch[i]->getQueryID(), queryBatch[i]->getWKT(), "results:");
+                // for (auto &it: results) {
+                //     logger::log_task(".  ", it);
+                // }
+                // add to batch
+                batchResultsMap[i] = queryResults.release();
             }
 
             // delete queries
@@ -2845,10 +2957,17 @@ STOP_LISTENING:
                         return ret;
                     }
                     break;
-                case MSG_QUERY_BATCH:
+                case MSG_QUERY_BATCH_RANGE:
                     /** Initiate query */
-                    // logger::log_success("MSG_QUERY_BATCH");
-                    ret = handleQueryBatchMessageParallel(status);
+                    ret = handleQueryBatchRangeMessageParallel(status);
+                    if (ret != DBERR_OK) {
+                        logger::log_error(ret, "Failed while handling query message.");
+                        return ret;
+                    }
+                    break;
+                case MSG_QUERY_BATCH_KNN:
+                    /** Initiate query */
+                    ret = handleQueryBatchKNNMessage(status);
                     if (ret != DBERR_OK) {
                         logger::log_error(ret, "Failed while handling query message.");
                         return ret;

@@ -187,10 +187,8 @@ namespace pack
         for (auto& query : *batch) {
             char* tempBuffer = nullptr;
             int tempSize = 0;
-
-            tempSize = query->calculateBufferSize(); // get size
+            // tempSize = query->calculateBufferSize(); // get size
             int res = query->serialize(&tempBuffer, tempSize); // allocates + writes
-
             if (res < 0 || tempBuffer == nullptr) {
                 logger::log_error(DBERR_SERIALIZE_FAILED, "Query batch serialization failed for query", query->getQueryID());
                 free(batchMsg.data); // cleanup

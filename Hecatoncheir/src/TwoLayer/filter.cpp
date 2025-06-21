@@ -429,7 +429,7 @@ namespace twolayer
          * optimized two-layer MBR filter for find topological relation queries, with intermediate filter forwarding
          */
         
-        static DB_STATUS evaluate(hec::JoinQuery *joinQuery, hec::QResultBase* queryResult) {
+        static DB_STATUS evaluate(hec::JoinQuery *joinQuery, std::unique_ptr<hec::QResultBase>& queryResult) {
             if (!queryResult) {
                 logger::log_error(DBERR_NULL_PTR_EXCEPTION, "Null query resylt pointer during evaluation.");
                 return DBERR_NULL_PTR_EXCEPTION;
@@ -453,63 +453,63 @@ namespace twolayer
                     if (partitionS != nullptr) {
                         // common partition found
                         // R_A - S_A
-                        local_ret = sweepRollY_1(partitionR->getContents(CLASS_A), partitionS->getContents(CLASS_A), queryResult);
+                        local_ret = sweepRollY_1(partitionR->getContents(CLASS_A), partitionS->getContents(CLASS_A), queryResult.get());
                         if (local_ret != DBERR_OK) {
                             logger::log_error(ret, "R_A - S_A sweep roll failed");
                             #pragma omp cancel for
                             ret = local_ret;
                         }
                         // S_B - R_A
-                        local_ret = sweepRollY_2(partitionS->getContents(CLASS_B), partitionR->getContents(CLASS_A), 1, queryResult);
+                        local_ret = sweepRollY_2(partitionS->getContents(CLASS_B), partitionR->getContents(CLASS_A), 1, queryResult.get());
                         if (local_ret != DBERR_OK) {
                             logger::log_error(ret, "S_B - R_A sweep roll failed");
                             #pragma omp cancel for
                             ret = local_ret;
                         }
                         // R_A - S_C
-                        local_ret = sweepRollY_3(partitionR->getContents(CLASS_A), partitionS->getContents(CLASS_C), 0, queryResult);
+                        local_ret = sweepRollY_3(partitionR->getContents(CLASS_A), partitionS->getContents(CLASS_C), 0, queryResult.get());
                         if (local_ret != DBERR_OK) {
                             logger::log_error(ret, "R_A - S_C sweep roll failed");
                             #pragma omp cancel for
                             ret = local_ret;
                         }
                         // S_D - R_A
-                        local_ret = sweepRollY_5(partitionS->getContents(CLASS_D), partitionR->getContents(CLASS_A), 1, queryResult);
+                        local_ret = sweepRollY_5(partitionS->getContents(CLASS_D), partitionR->getContents(CLASS_A), 1, queryResult.get());
                         if (local_ret != DBERR_OK) {
                             logger::log_error(ret, "S_D - R_A sweep roll failed");
                             #pragma omp cancel for
                             ret = local_ret;
                         }
                         // R_B - S_A
-                        local_ret = sweepRollY_2(partitionR->getContents(CLASS_B), partitionS->getContents(CLASS_A), 0, queryResult);
+                        local_ret = sweepRollY_2(partitionR->getContents(CLASS_B), partitionS->getContents(CLASS_A), 0, queryResult.get());
                         if (local_ret != DBERR_OK) {
                             logger::log_error(ret, "R_B - S_A sweep roll failed");
                             #pragma omp cancel for
                             ret = local_ret;
                         }
                         // R_B - S_C
-                        local_ret = sweepRollY_4(partitionR->getContents(CLASS_B), partitionS->getContents(CLASS_C), 0, queryResult);
+                        local_ret = sweepRollY_4(partitionR->getContents(CLASS_B), partitionS->getContents(CLASS_C), 0, queryResult.get());
                         if (local_ret != DBERR_OK) {
                             logger::log_error(ret, "R_B - S_C sweep roll failed");
                             #pragma omp cancel for
                             ret = local_ret;
                         }
                         // S_A - R_C
-                        local_ret = sweepRollY_3(partitionS->getContents(CLASS_A), partitionR->getContents(CLASS_C), 1, queryResult);
+                        local_ret = sweepRollY_3(partitionS->getContents(CLASS_A), partitionR->getContents(CLASS_C), 1, queryResult.get());
                         if (local_ret != DBERR_OK) {
                             logger::log_error(ret, "S_A - R_C sweep roll failed");
                             #pragma omp cancel for
                             ret = local_ret;
                         }
                         // S_B - R_C
-                        local_ret = sweepRollY_4(partitionS->getContents(CLASS_B), partitionR->getContents(CLASS_C), 1, queryResult);
+                        local_ret = sweepRollY_4(partitionS->getContents(CLASS_B), partitionR->getContents(CLASS_C), 1, queryResult.get());
                         if (local_ret != DBERR_OK) {
                             logger::log_error(ret, "S_B - R_C sweep roll failed");
                             #pragma omp cancel for
                             ret = local_ret;
                         }
                         // R_D - S_A
-                        local_ret = sweepRollY_5(partitionR->getContents(CLASS_D), partitionS->getContents(CLASS_A), 0, queryResult);
+                        local_ret = sweepRollY_5(partitionR->getContents(CLASS_D), partitionS->getContents(CLASS_A), 0, queryResult.get());
                         if (local_ret != DBERR_OK) {
                             logger::log_error(ret, "R_D - S_A sweep roll failed");
                             #pragma omp cancel for
@@ -864,7 +864,7 @@ namespace twolayer
          * simple two-layer MBR intersection filter with intermediate filter forwarding
          */
         
-        static DB_STATUS evaluate(hec::JoinQuery *joinQuery, hec::QResultBase* queryResult) {
+        static DB_STATUS evaluate(hec::JoinQuery *joinQuery, std::unique_ptr<hec::QResultBase>& queryResult) {
             DB_STATUS ret = DBERR_OK;
             Dataset* R = g_config.datasetOptions.getDatasetByIdx(joinQuery->getDatasetRid());
             Dataset* S = g_config.datasetOptions.getDatasetByIdx(joinQuery->getDatasetSid());
@@ -891,7 +891,7 @@ namespace twolayer
                         //     logger::log_task("RA-SA");
                         // }
                          // printf("RA-SA\n");
-                        local_ret = sweepRollY_1(partitionR->getContents(CLASS_A), partitionS->getContents(CLASS_A), queryResult);
+                        local_ret = sweepRollY_1(partitionR->getContents(CLASS_A), partitionS->getContents(CLASS_A), queryResult.get());
                         if (local_ret != DBERR_OK) {
                             logger::log_error(ret, "R_A - S_A sweep roll failed");
                             #pragma omp cancel for
@@ -902,7 +902,7 @@ namespace twolayer
                         // if (partitionR->partitionID == 651299 || partitionR->partitionID == 651300) {
                         //     logger::log_task("RA-SB");
                         // }
-                        local_ret = sweepRollY_2(partitionS->getContents(CLASS_B), partitionR->getContents(CLASS_A), 1, queryResult);
+                        local_ret = sweepRollY_2(partitionS->getContents(CLASS_B), partitionR->getContents(CLASS_A), 1, queryResult.get());
                         if (local_ret != DBERR_OK) {
                             logger::log_error(ret, "S_B - R_A sweep roll failed");
                             #pragma omp cancel for
@@ -913,7 +913,7 @@ namespace twolayer
                         // if (partitionR->partitionID == 651299 || partitionR->partitionID == 651300) {
                         //     logger::log_task("RA-SC");
                         // }
-                        local_ret = sweepRollY_3(partitionR->getContents(CLASS_A), partitionS->getContents(CLASS_C), 0, queryResult);
+                        local_ret = sweepRollY_3(partitionR->getContents(CLASS_A), partitionS->getContents(CLASS_C), 0, queryResult.get());
                         if (local_ret != DBERR_OK) {
                             logger::log_error(ret, "R_A - S_C sweep roll failed");
                             #pragma omp cancel for
@@ -924,7 +924,7 @@ namespace twolayer
                         //     logger::log_task("RA-SD");
                         // }
                         // printf("SD-RA\n");
-                        local_ret = sweepRollY_5(partitionS->getContents(CLASS_D), partitionR->getContents(CLASS_A), 1, queryResult);
+                        local_ret = sweepRollY_5(partitionS->getContents(CLASS_D), partitionR->getContents(CLASS_A), 1, queryResult.get());
                         if (local_ret != DBERR_OK) {
                             logger::log_error(ret, "S_D - R_A sweep roll failed");
                             #pragma omp cancel for
@@ -935,7 +935,7 @@ namespace twolayer
                         //     logger::log_task("RB-SA");
                         // }
                         // printf("RA-SA\n");
-                        local_ret = sweepRollY_2(partitionR->getContents(CLASS_B), partitionS->getContents(CLASS_A), 0, queryResult);
+                        local_ret = sweepRollY_2(partitionR->getContents(CLASS_B), partitionS->getContents(CLASS_A), 0, queryResult.get());
                         if (local_ret != DBERR_OK) {
                             logger::log_error(ret, "R_B - S_A sweep roll failed");
                             #pragma omp cancel for
@@ -946,7 +946,7 @@ namespace twolayer
                         //     logger::log_task("RB-SC");
                         // }
                         // printf("RB-SC\n");
-                        local_ret = sweepRollY_4(partitionR->getContents(CLASS_B), partitionS->getContents(CLASS_C), 0, queryResult);
+                        local_ret = sweepRollY_4(partitionR->getContents(CLASS_B), partitionS->getContents(CLASS_C), 0, queryResult.get());
                         if (local_ret != DBERR_OK) {
                             logger::log_error(ret, "R_B - S_C sweep roll failed");
                             #pragma omp cancel for
@@ -957,7 +957,7 @@ namespace twolayer
                         //     logger::log_task("RC-SA");
                         // }
                         // printf("SA-RC\n");
-                        local_ret = sweepRollY_3(partitionS->getContents(CLASS_A), partitionR->getContents(CLASS_C), 1, queryResult);
+                        local_ret = sweepRollY_3(partitionS->getContents(CLASS_A), partitionR->getContents(CLASS_C), 1, queryResult.get());
                         if (local_ret != DBERR_OK) {
                             logger::log_error(ret, "S_A - R_C sweep roll failed");
                             #pragma omp cancel for
@@ -968,7 +968,7 @@ namespace twolayer
                         //     logger::log_task("RC-SB");
                         // }
                         // printf("SB-RC\n");
-                        local_ret = sweepRollY_4(partitionS->getContents(CLASS_B), partitionR->getContents(CLASS_C), 1, queryResult);
+                        local_ret = sweepRollY_4(partitionS->getContents(CLASS_B), partitionR->getContents(CLASS_C), 1, queryResult.get());
                         if (local_ret != DBERR_OK) {
                             logger::log_error(ret, "S_B - R_C sweep roll failed");
                             #pragma omp cancel for
@@ -979,7 +979,7 @@ namespace twolayer
                         //     logger::log_task("RD-SA");
                         // }
                         // printf("RD-SA\n");
-                        local_ret = sweepRollY_5(partitionR->getContents(CLASS_D), partitionS->getContents(CLASS_A), 0, queryResult);
+                        local_ret = sweepRollY_5(partitionR->getContents(CLASS_D), partitionS->getContents(CLASS_A), 0, queryResult.get());
                         if (local_ret != DBERR_OK) {
                             logger::log_error(ret, "R_D - S_A sweep roll failed");
                             #pragma omp cancel for
@@ -1423,7 +1423,7 @@ namespace twolayer
             return ret;
         }
 
-        static DB_STATUS evaluate(hec::RangeQuery *rangeQuery, hec::QResultBase* queryResult) {
+        static DB_STATUS evaluate(hec::RangeQuery *rangeQuery, std::unique_ptr<hec::QResultBase>& queryResult) {
             DB_STATUS ret = DBERR_OK;
             Dataset* dataset = g_config.datasetOptions.getDatasetByIdx(rangeQuery->getDatasetID());
             // create shape object for window
@@ -1455,7 +1455,7 @@ namespace twolayer
                     // valid partition
                     // check A,B,C,D
                     for (int tl_class=CLASS_A; tl_class<=CLASS_D; tl_class++) {    
-                        ret = RangeCorners(partition->getContents((TwoLayerClass) tl_class), &window, queryResult);
+                        ret = RangeCorners(partition->getContents((TwoLayerClass) tl_class), &window, queryResult.get());
                         if (ret != DBERR_OK) {
                             return ret;
                         }
@@ -1469,7 +1469,7 @@ namespace twolayer
                     // valid partition
                     // check A,B,C,D
                     for (int tl_class=CLASS_A; tl_class<=CLASS_D; tl_class++) {    
-                        ret = RangeCorners(partition->getContents((TwoLayerClass) tl_class), &window, queryResult);
+                        ret = RangeCorners(partition->getContents((TwoLayerClass) tl_class), &window, queryResult.get());
                         if (ret != DBERR_OK) {
                             return ret;
                         }
@@ -1482,7 +1482,7 @@ namespace twolayer
                     if (partition != nullptr) {
                         // range B class, check A,B
                         for (int tl_class=CLASS_A; tl_class<=CLASS_B; tl_class++) {    
-                            ret = RangeB_Class(partition->getContents((TwoLayerClass) tl_class), &window, queryResult);
+                            ret = RangeB_Class(partition->getContents((TwoLayerClass) tl_class), &window, queryResult.get());
                             if (ret != DBERR_OK) {
                                 return ret;
                             }
@@ -1495,7 +1495,7 @@ namespace twolayer
                 if (partition != nullptr) {
                     // check A,B
                     for (int tl_class=CLASS_A; tl_class<=CLASS_B; tl_class++) {    
-                        ret = RangeCorners(partition->getContents((TwoLayerClass) tl_class), &window, queryResult);
+                        ret = RangeCorners(partition->getContents((TwoLayerClass) tl_class), &window, queryResult.get());
                         if (ret != DBERR_OK) {
                             return ret;
                         }
@@ -1509,7 +1509,7 @@ namespace twolayer
                     // valid partition
                     // check A,B,C,D
                     for (int tl_class=CLASS_A; tl_class<=CLASS_D; tl_class++) {    
-                        ret = RangeCorners(partition->getContents((TwoLayerClass) tl_class), &window, queryResult);
+                        ret = RangeCorners(partition->getContents((TwoLayerClass) tl_class), &window, queryResult.get());
                         if (ret != DBERR_OK) {
                             return ret;
                         }
@@ -1521,11 +1521,11 @@ namespace twolayer
                     partition = dataset->index->getPartition(partitionID);
                     if (partition != nullptr) {
                         // check A,C
-                        ret = RangeC_Class(partition->getContents((TwoLayerClass) CLASS_A), &window, queryResult);
+                        ret = RangeC_Class(partition->getContents((TwoLayerClass) CLASS_A), &window, queryResult.get());
                         if (ret != DBERR_OK) {
                             return ret;
                         }
-                        ret = RangeC_Class(partition->getContents((TwoLayerClass) CLASS_C), &window, queryResult);
+                        ret = RangeC_Class(partition->getContents((TwoLayerClass) CLASS_C), &window, queryResult.get());
                         if (ret != DBERR_OK) {
                             return ret;
                         }
@@ -1536,12 +1536,12 @@ namespace twolayer
                 partition = dataset->index->getPartition(partitionID);
                 if (partition != nullptr) {
                     // check A
-                    ret = RangeCorners(partition->getContents((TwoLayerClass) CLASS_A), &window, queryResult);
+                    ret = RangeCorners(partition->getContents((TwoLayerClass) CLASS_A), &window, queryResult.get());
                     if (ret != DBERR_OK) {
                         return ret;
                     }
                     // check C
-                    ret = RangeCorners(partition->getContents((TwoLayerClass) CLASS_C), &window, queryResult);
+                    ret = RangeCorners(partition->getContents((TwoLayerClass) CLASS_C), &window, queryResult.get());
                     if (ret != DBERR_OK) {
                         return ret;
                     }
@@ -1554,7 +1554,7 @@ namespace twolayer
                 if (partition != nullptr) {
                     // valid partition
                     for (int tl_class=CLASS_A; tl_class<=CLASS_D; tl_class++) {    
-                        ret = RangeCorners_ABCD(partition->getContents((TwoLayerClass) tl_class), &window, queryResult);
+                        ret = RangeCorners_ABCD(partition->getContents((TwoLayerClass) tl_class), &window, queryResult.get());
                         if (ret != DBERR_OK) {
                             return ret;
                         }
@@ -1567,7 +1567,7 @@ namespace twolayer
                     partition = dataset->index->getPartition(partitionID);
                     if (partition != nullptr) {
                         for (int tl_class=CLASS_A; tl_class<=CLASS_B; tl_class++) {    
-                            ret = RangeBorders_AB(partition->getContents((TwoLayerClass) tl_class), &window, queryResult);
+                            ret = RangeBorders_AB(partition->getContents((TwoLayerClass) tl_class), &window, queryResult.get());
                             if (ret != DBERR_OK) {
                                 return ret;
                             }
@@ -1580,7 +1580,7 @@ namespace twolayer
                 if (partition != nullptr) {
                     for (int tl_class=CLASS_A; tl_class<=CLASS_B; tl_class++) {    
                         // range borders AB
-                        ret = RangeCorners_AB(partition->getContents((TwoLayerClass) tl_class), &window, queryResult);
+                        ret = RangeCorners_AB(partition->getContents((TwoLayerClass) tl_class), &window, queryResult.get());
                         if (ret != DBERR_OK) {
                             return ret;
                         }
@@ -1594,11 +1594,11 @@ namespace twolayer
                     partitionID = g_config.partitioningMethod->getPartitionID(partitionMinX, j, g_config.partitioningMethod->getGlobalPPD());
                     partition = dataset->index->getPartition(partitionID);
                     if (partition != nullptr) {
-                        ret = RangeBorders_AC(partition->getContents(CLASS_A), &window, queryResult);
+                        ret = RangeBorders_AC(partition->getContents(CLASS_A), &window, queryResult.get());
                         if (ret != DBERR_OK) {
                             return ret;
                         }
-                        ret = RangeBorders_AC(partition->getContents(CLASS_C), &window, queryResult);
+                        ret = RangeBorders_AC(partition->getContents(CLASS_C), &window, queryResult.get());
                         if (ret != DBERR_OK) {
                             return ret;
                         }
@@ -1622,7 +1622,7 @@ namespace twolayer
                     partitionID = g_config.partitioningMethod->getPartitionID(partitionMaxX, j, g_config.partitioningMethod->getGlobalPPD());
                     partition = dataset->index->getPartition(partitionID);
                     if (partition != nullptr) {
-                        ret = RangeBorders_A_Vertically(partition->getContents(CLASS_A), &window, queryResult);
+                        ret = RangeBorders_A_Vertically(partition->getContents(CLASS_A), &window, queryResult.get());
                         if (ret != DBERR_OK) {
                             return ret;
                         }
@@ -1634,11 +1634,11 @@ namespace twolayer
                 partitionID = g_config.partitioningMethod->getPartitionID(partitionMinX, partitionMaxY, g_config.partitioningMethod->getGlobalPPD());
                 partition = dataset->index->getPartition(partitionID);
                 if (partition != nullptr) {
-                    ret = RangeCorners_AC(partition->getContents(CLASS_A), &window, queryResult);
+                    ret = RangeCorners_AC(partition->getContents(CLASS_A), &window, queryResult.get());
                     if (ret != DBERR_OK) {
                         return ret;
                     }
-                    ret = RangeCorners_AC(partition->getContents(CLASS_C), &window, queryResult);
+                    ret = RangeCorners_AC(partition->getContents(CLASS_C), &window, queryResult.get());
                     if (ret != DBERR_OK) {
                         return ret;
                     }
@@ -1650,7 +1650,7 @@ namespace twolayer
                     partition = dataset->index->getPartition(partitionID);
                     if (partition != nullptr) {
                         // check A horizontally
-                        ret = RangeBorders_A_Horizontally(partition->getContents(CLASS_A), &window, queryResult);
+                        ret = RangeBorders_A_Horizontally(partition->getContents(CLASS_A), &window, queryResult.get());
                         if (ret != DBERR_OK) {
                             return ret;
                         }
@@ -1663,7 +1663,7 @@ namespace twolayer
                 partition = dataset->index->getPartition(partitionID);
                 if (partition != nullptr) {  
                     // check A corners  
-                    ret = RangeCorners_A(partition->getContents(CLASS_A), &window, queryResult);
+                    ret = RangeCorners_A(partition->getContents(CLASS_A), &window, queryResult.get());
                     if (ret != DBERR_OK) {
                         return ret;
                     }
@@ -1675,7 +1675,7 @@ namespace twolayer
     } // range query mbr filter
 
 
-    DB_STATUS processQuery(hec::Query* query, hec::QResultBase* queryResult) {
+    DB_STATUS processQuery(hec::Query* query, std::unique_ptr<hec::QResultBase>& queryResult) {
         DB_STATUS ret = DBERR_OK;
         // set to global config
         g_config.queryPipeline.queryType = (hec::QueryType) query->getQueryType();

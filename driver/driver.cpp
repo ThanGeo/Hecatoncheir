@@ -85,7 +85,7 @@ void batchKNNScenario() {
     std::vector<hec::Query *> batch = hec::loadKNNQueriesFromFile(queriesPath, "WKT", pointDatasetID, k);
     double total_time = 0;
     start = hec::time::getTime();
-    std::unordered_map<int, hec::QResultBase *> results = hec::query(batch);
+    std::unordered_map<int, hec::QResultBase *> results = hec::query(batch, hec::Q_KNN);
     total_time += hec::time::getTime() - start;
     // results
     for (auto &it : batch) {
@@ -121,7 +121,7 @@ void batchRangeScenario() {
     std::vector<hec::Query *> batch = hec::loadRangeQueriesFromFile(queriesPath, "WKT", pointDatasetID, hec::QR_COUNT);
     double total_time = 0;
     start = hec::time::getTime();
-    std::unordered_map<int, hec::QResultBase *> results = hec::query(batch);
+    std::unordered_map<int, hec::QResultBase *> results = hec::query(batch, hec::Q_RANGE);
     total_time += hec::time::getTime() - start;
     for (auto &it : batch) {
         // printf("Query %d results: %ld\n", it->getQueryID(), results[it->getQueryID()]->getResultCount());

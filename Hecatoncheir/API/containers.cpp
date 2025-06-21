@@ -45,7 +45,7 @@ namespace hec
                 query = new JoinQuery();
                 break;
             default:
-                logger::log_error(DBERR_QUERY_INVALID_TYPE, "Invalid query type in message.");
+                logger::log_error(DBERR_QUERY_INVALID_TYPE, "Invalid query type in message. Type:", type);
                 return nullptr;
         }
 
@@ -726,7 +726,7 @@ namespace hec
     }
 
     bool QResultkNN::checkDistance(double distance) {
-        if (maxHeap.empty()) {
+        if (maxHeap.size() < k) {
             return true;
         } else if (distance < maxHeap.top().first) {
             return true;

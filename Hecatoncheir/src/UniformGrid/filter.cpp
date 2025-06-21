@@ -308,7 +308,7 @@ namespace uniform_grid
         }
     } // range query mbr filter
 
-    DB_STATUS processQuery(hec::Query* query, hec::QResultBase* queryResult) {
+    DB_STATUS processQuery(hec::Query* query, std::unique_ptr<hec::QResultBase>& queryResult) {
         DB_STATUS ret = DBERR_OK;
         // set to global config
         g_config.queryPipeline.queryType = (hec::QueryType) query->getQueryType();
@@ -320,7 +320,7 @@ namespace uniform_grid
                     // cast
                     hec::RangeQuery* rangeQuery = dynamic_cast<hec::RangeQuery*>(query);
                     // evaluate
-                    ret = mbr_range_query_filter::evaluate(rangeQuery, queryResult);
+                    ret = mbr_range_query_filter::evaluate(rangeQuery, queryResult.get());
                     if (ret != DBERR_OK) {
                         return ret;
                     }
@@ -331,16 +331,10 @@ namespace uniform_grid
                     // cast
                     hec::KNNQuery* kNNQuery = dynamic_cast<hec::KNNQuery*>(query);
                     // evaluate
-                    ret = knn_filter::evaluate(kNNQuery, queryResult);
+                    ret = knn_filter::evaluate(kNNQuery, queryResult.get());
                     if (ret != DBERR_OK) {
                         return ret;
                     }
-                    // auto results = queryResult->getResultList();
-                    // logger::log_task("Results:");
-                    // for (auto &it: results) {
-                    //     printf(" %ld,", it);
-                    // }
-                    // printf("\n");
                 }
                 break;
             default:
