@@ -33,6 +33,9 @@ namespace hec
             case Q_KNN:
                 query = new KNNQuery();
                 break;
+            case Q_DISTANCE_JOIN:
+                query = new DistanceJoinQuery();
+                break;
             case Q_INTERSECTION_JOIN:
             case Q_INSIDE_JOIN:
             case Q_DISJOINT_JOIN:
@@ -42,7 +45,7 @@ namespace hec
             case Q_MEET_JOIN:
             case Q_EQUAL_JOIN:
             case Q_FIND_RELATION_JOIN:
-                query = new JoinQuery();
+                query = new PredicateJoinQuery();
                 break;
             default:
                 logger::log_error(DBERR_QUERY_INVALID_TYPE, "Invalid query type in message. Type:", type);
@@ -60,7 +63,7 @@ namespace hec
 
     // JOIN QUERY
 
-    JoinQuery::JoinQuery(DatasetID Rid, DatasetID Sid, int id, std::string predicateStr) {
+    PredicateJoinQuery::PredicateJoinQuery(DatasetID Rid, DatasetID Sid, int id, std::string predicateStr) {
         QueryType queryType = mapping::queryTypeStrToInt(predicateStr);
         if (queryType != Q_NONE) {
             this->Rid = Rid;
@@ -73,7 +76,7 @@ namespace hec
         logger::log_error(DBERR_QUERY_INVALID_TYPE, "Invalid predicate for a join query:", predicateStr);
     }
 
-    JoinQuery::JoinQuery(DatasetID Rid, DatasetID Sid, int id, std::string predicateStr, std::string resultTypeStr) {
+    PredicateJoinQuery::PredicateJoinQuery(DatasetID Rid, DatasetID Sid, int id, std::string predicateStr, std::string resultTypeStr) {
         QueryType queryType = mapping::queryTypeStrToInt(predicateStr);
         hec::QueryResultType queryResultTypes = mapping::queryResultTypeStrToInt(resultTypeStr);
         if (queryType != Q_NONE) {
@@ -87,7 +90,7 @@ namespace hec
         logger::log_error(DBERR_QUERY_INVALID_TYPE, "Invalid predicate for a join query:", predicateStr);
     }
 
-    JoinQuery::JoinQuery(DatasetID Rid, DatasetID Sid, int id, QueryType predicate, QueryResultType resultType) {
+    PredicateJoinQuery::PredicateJoinQuery(DatasetID Rid, DatasetID Sid, int id, QueryType predicate, QueryResultType resultType) {
         if (predicate != Q_NONE && predicate != Q_RANGE) {
             this->Rid = Rid;
             this->Sid = Sid;
@@ -99,7 +102,7 @@ namespace hec
         logger::log_error(DBERR_QUERY_INVALID_TYPE, "Invalid predicate for a join query:", predicate);
     }
 
-    int JoinQuery::calculateBufferSize() {
+    int PredicateJoinQuery::calculateBufferSize() {
         int size = 0;
         size += sizeof(int);                                       // query id
         size += sizeof(hec::QueryType);                            // query type
@@ -108,7 +111,7 @@ namespace hec
         return size;
     }
 
-    int JoinQuery::serialize(char **buffer, int &bufferSize) {
+    int PredicateJoinQuery::serialize(char **buffer, int &bufferSize) {
          // calculate size
         bufferSize = calculateBufferSize();
         // allocate space
@@ -132,7 +135,7 @@ namespace hec
         return 0;
     }
 
-    int JoinQuery::deserialize(char*& buffer) {
+    int PredicateJoinQuery::deserialize(char*& buffer) {
         int position = 0;
         // query id
         int id = (int) *reinterpret_cast<const int*>(buffer + position);
@@ -155,6 +158,117 @@ namespace hec
         this->resultType = queryResultType;
         this->Rid = datasetRid;
         this->Sid = datasetSid;
+
+        // increment original buffer
+        buffer += position;
+        return 0;
+    }
+
+    // DISTANCE JOIN
+
+    DistanceJoinQuery::DistanceJoinQuery(DatasetID Rid, DatasetID Sid, int id, double d) {
+        if (d <= 0) {
+            logger::log_error(DBERR_INVALID_PARAMETER, "Distance value for Distance Join can not be less or equal to zero. Distance:", d);
+            return;
+        }
+        this->Rid = Rid;
+        this->Sid = Sid;
+        this->queryID = id;
+        this->queryType = Q_DISTANCE_JOIN;
+        this->d = d;
+        this->resultType = QR_COUNT;
+        return;
+    }
+
+    DistanceJoinQuery::DistanceJoinQuery(DatasetID Rid, DatasetID Sid, int id, std::string resultTypeStr, double d) {
+        hec::QueryResultType queryResultType = mapping::queryResultTypeStrToInt(resultTypeStr);
+        if (d <= 0) {
+            logger::log_error(DBERR_INVALID_PARAMETER, "Distance value for Distance Join can not be less or equal to zero. Distance:", d);
+            return;
+        }
+        this->Rid = Rid;
+        this->Sid = Sid;
+        this->queryID = id;
+        this->queryType = Q_DISTANCE_JOIN;
+        this->d = d;
+        this->resultType = queryResultType;
+    }
+
+    DistanceJoinQuery::DistanceJoinQuery(DatasetID Rid, DatasetID Sid, int id, QueryResultType resultType, double d) {
+        if (d <= 0) {
+            logger::log_error(DBERR_INVALID_PARAMETER, "Distance value for Distance Join can not be less or equal to zero. Distance:", d);
+            return;
+        }
+        this->Rid = Rid;
+        this->Sid = Sid;
+        this->queryID = id;
+        this->queryType = Q_DISTANCE_JOIN;
+        this->d = d;
+        this->resultType = resultType;
+    }
+
+    int DistanceJoinQuery::calculateBufferSize() {
+        int size = 0;
+        size += sizeof(int);                                        // query id
+        size += sizeof(hec::QueryType);                             // query type
+        size += sizeof(hec::QueryResultType);                       // result type
+        size += 2 * sizeof(hec::DatasetID);                         // dataset IDs
+        size += sizeof(double);                                     // d
+        return size;
+    }
+
+    int DistanceJoinQuery::serialize(char **buffer, int &bufferSize) {
+         // calculate size
+        bufferSize = calculateBufferSize();
+        // allocate space
+        (*buffer) = (char*) malloc(bufferSize * sizeof(char));
+        if (*buffer == NULL) {
+            // malloc failed
+            logger::log_error(DBERR_MALLOC_FAILED, "Malloc failed on serialization of QResultCount object.");
+            return -1;
+        }
+        char* localBuffer = *buffer;
+        *reinterpret_cast<int*>(localBuffer) = (int) this->queryID;
+        localBuffer += sizeof(int);
+        *reinterpret_cast<hec::QueryType*>(localBuffer) = (hec::QueryType) this->queryType;
+        localBuffer += sizeof(hec::QueryType);
+        *reinterpret_cast<hec::QueryResultType*>(localBuffer) = this->resultType;
+        localBuffer += sizeof(hec::QueryResultType);
+        *reinterpret_cast<hec::DatasetID*>(localBuffer) = (hec::DatasetID) this->Rid;
+        localBuffer += sizeof(hec::DatasetID);
+        *reinterpret_cast<hec::DatasetID*>(localBuffer) = (hec::DatasetID) this->Sid;
+        localBuffer += sizeof(hec::DatasetID);
+        *reinterpret_cast<double*>(localBuffer) = (double) this->d;
+        localBuffer += sizeof(double);
+        return 0;
+    }
+
+    int DistanceJoinQuery::deserialize(char*& buffer) {
+        int position = 0;
+        // query id
+        int id = (int) *reinterpret_cast<const int*>(buffer + position);
+        position += sizeof(int);
+        // query type
+        hec::QueryType queryType = (hec::QueryType) *reinterpret_cast<const hec::QueryType*>(buffer + position);
+        position += sizeof(hec::QueryType);
+        // query result type
+        hec::QueryResultType queryResultType = (hec::QueryResultType) *reinterpret_cast<const hec::QueryResultType*>(buffer + position);
+        position += sizeof(hec::QueryResultType);
+        // unpack the rest of the info
+        hec::DatasetID datasetRid = (hec::DatasetID) *reinterpret_cast<const hec::DatasetID*>(buffer + position);
+        position += sizeof(hec::DatasetID);
+        hec::DatasetID datasetSid = (hec::DatasetID) *reinterpret_cast<const hec::DatasetID*>(buffer + position);
+        position += sizeof(hec::DatasetID); 
+        double d = (double) *reinterpret_cast<const double*>(buffer + position);
+        position += sizeof(double); 
+        
+        // set object 
+        this->queryID = id;
+        this->queryType = queryType;
+        this->resultType = queryResultType;
+        this->Rid = datasetRid;
+        this->Sid = datasetSid;
+        this->d = d;
 
         // increment original buffer
         buffer += position;

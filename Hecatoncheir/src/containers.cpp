@@ -913,6 +913,15 @@ DB_STATUS UniformGridIndex::evaluateQuery(hec::Query* query, std::unique_ptr<hec
     return ret;
 }
 
+DB_STATUS UniformGridIndex::evaluateQuery(hec::Query* query, std::unordered_map<int, std::vector<size_t>> &borderObjectsMap, std::unique_ptr<hec::QResultBase>& queryResult) {
+    DB_STATUS ret = uniform_grid::processQuery(query, queryResult);
+    if (ret != DBERR_OK) {
+        logger::log_error(ret, "Failed to process query with id:", query->getQueryID());
+        return ret;
+    }
+    return ret;
+}
+
 void DatasetOptions::clear() {
     R.reset();
     S.reset();
@@ -1361,6 +1370,7 @@ namespace qresult_factory
             case hec::Q_CONTAINS_JOIN:
             case hec::Q_COVERS_JOIN:
             case hec::Q_COVERED_BY_JOIN:
+            case hec::Q_DISTANCE_JOIN:
                 switch (resultType) {
                     case hec::QR_COLLECT:
                         (*object) = new hec::QPairResultCollect(queryID, queryType, resultType);
@@ -1431,6 +1441,7 @@ namespace qresult_factory
             case hec::Q_CONTAINS_JOIN:
             case hec::Q_COVERS_JOIN:
             case hec::Q_COVERED_BY_JOIN:
+            case hec::Q_DISTANCE_JOIN:
                 switch (query->getResultType()) {
                     case hec::QR_COLLECT:
                         (*object) = new hec::QPairResultCollect(query->getQueryID(), query->getQueryType(), query->getResultType());

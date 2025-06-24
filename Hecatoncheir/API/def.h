@@ -25,6 +25,7 @@ namespace hec
         Q_COVERS_JOIN,
         Q_COVERED_BY_JOIN,
         Q_FIND_RELATION_JOIN,    // find what type of topological relation is there
+        Q_DISTANCE_JOIN,
         Q_KNN,
         Q_NONE = 777, // no query
     };

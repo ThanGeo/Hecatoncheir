@@ -308,6 +308,43 @@ namespace uniform_grid
         }
     } // range query mbr filter
 
+    namespace distance_filter
+    {
+        static DB_STATUS evaluate(hec::DistanceJoinQuery *knnQuery, std::unordered_map<int, std::vector<size_t>> &borderObjectsMap, hec::QResultBase* queryResult) {
+            
+            logger::log_warning("TODO evaluate");
+            return DBERR_FEATURE_UNSUPPORTED;
+        }
+
+        DB_STATUS processQuery(hec::Query* query, std::unordered_map<int, std::vector<size_t>> &borderObjectsMap, std::unique_ptr<hec::QResultBase>& queryResult) {
+            DB_STATUS ret = DBERR_OK;
+            // set to global config
+            g_config.queryPipeline.queryType = (hec::QueryType) query->getQueryType();
+
+            // switch based on query type
+            switch (query->getQueryType()) {
+                case hec::Q_DISTANCE_JOIN:
+                    {
+                        // cast
+                        hec::DistanceJoinQuery* distanceQuery = dynamic_cast<hec::DistanceJoinQuery*>(query);
+                        // evaluate
+                        ret = distance_filter::evaluate(distanceQuery, borderObjectsMap, queryResult.get());
+                        if (ret != DBERR_OK) {
+                            return ret;
+                        }
+                    }
+                    break;
+                default:
+                    logger::log_error(DBERR_FEATURE_UNSUPPORTED, "Query type must be distance join for this version of uniform index query processing. Type:", mapping::queryTypeIntToStr((hec::QueryType) query->getQueryType()));
+                    return DBERR_FEATURE_UNSUPPORTED;
+            }
+
+            return ret;
+        }
+
+    }
+
+
     DB_STATUS processQuery(hec::Query* query, std::unique_ptr<hec::QResultBase>& queryResult) {
         DB_STATUS ret = DBERR_OK;
         // set to global config
@@ -344,4 +381,6 @@ namespace uniform_grid
 
         return ret;
     }
+
+    
 }

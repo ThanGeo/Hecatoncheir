@@ -23,62 +23,93 @@ namespace pack
             std::cout << std::endl;
         }
     }
-
-    // Base function to calculate total size (terminates recursion)
-    inline int calculateCountINT() {
+    
+    // Base case to calculate count
+    template<typename T>
+    inline int calculateCount() {
         return 0;
     }
 
-    // Variadic function to calculate the total size of integers
-    template <typename... Args>
-    int calculateCountINT(int first, Args... rest) {
-        return 1 + calculateCountINT(rest...);
+    // Recursive variadic template to count arguments
+    template<typename T, typename... Args>
+    int calculateCount(const T&, const Args&... rest) {
+        return 1 + calculateCount<T>(rest...);
     }
 
-    // Base function to add integers to the buffer (terminates recursion)
+    // Base case for buffer writing
+    template<typename T>
     inline void addToBuffer(char*&) {}
 
-    // Variadic function to add integers to the buffer
-    template <typename... Args>
-    void addToBuffer(char*& buffer, int first, Args... rest) {
-        *reinterpret_cast<int*>(buffer) = first;    // Store int into char buffer
-        buffer += sizeof(int);                     // Move buffer pointer
-        addToBuffer(buffer, rest...);              // Recur
+    // Recursive function to copy values into the buffer
+    template<typename T, typename... Args>
+    void addToBuffer(char*& buffer, const T& first, const Args&... rest) {
+        *reinterpret_cast<T*>(buffer) = first;
+        buffer += sizeof(T);
+        addToBuffer<T>(buffer, rest...);
     }
 
-    /** @brief packs any number of integers into a message */
-    template <typename... Args>
-    DB_STATUS packIntegers(SerializedMsg<char>& msg, Args... integers) {
-        int count = calculateCountINT(integers...);
+    // Main generic pack function — now stores count as header
+    template<typename T, typename... Args>
+    DB_STATUS packValues(SerializedMsg<char>& msg, const T& first, const Args&... rest) {
+        static_assert(std::is_trivially_copyable<T>::value, "T must be trivially copyable");
+        static_assert((std::is_same<T, Args>::value && ...), "All arguments must be of the same type");
 
-        msg.count = count * sizeof(int);  // Total number of bytes
-        msg.data = (char*)malloc(msg.count);
-        if (msg.data == NULL) {
-            logger::log_error(DBERR_MALLOC_FAILED, "Malloc for pack dataset integers failed");
+        size_t count = 1 + sizeof...(rest);
+        msg.count = sizeof(size_t) + count * sizeof(T);  // total buffer size in bytes
+
+        msg.data = static_cast<char*>(malloc(msg.count));
+        if (msg.data == nullptr) {
+            logger::log_error(DBERR_MALLOC_FAILED, "Malloc for pack values failed");
             return DBERR_MALLOC_FAILED;
         }
 
-        char* localBuffer = msg.data;
+        char* buffer = msg.data;
 
-        // Add the integers to the buffer
-        addToBuffer(localBuffer, integers...);
+        // Store count at the beginning
+        *reinterpret_cast<size_t*>(buffer) = count;
+        buffer += sizeof(size_t);
+
+        // Store the actual data
+        addToBuffer<T>(buffer, first, rest...);
 
         return DBERR_OK;
     }
 
-    /** @brief Packs a vector of integers into a serialized message */
-    DB_STATUS packIntegers(SerializedMsg<char>& msg, std::vector<int>& integers);
+
+    /** @brief Packs a vector of type T values into a serialized message */
+    template<typename T>
+    DB_STATUS packValues(SerializedMsg<char>& msg, const std::vector<T>& values) {
+        static_assert(std::is_trivially_copyable<T>::value, "T must be trivially copyable");
+
+        size_t count = values.size();
+        msg.count = sizeof(size_t) + count * sizeof(T);
+
+        msg.data = static_cast<char*>(malloc(msg.count));
+        if (msg.data == nullptr) {
+            logger::log_error(DBERR_MALLOC_FAILED, "Malloc for packed values failed");
+            return DBERR_MALLOC_FAILED;
+        }
+
+        char* buffer = msg.data;
+
+        // Store count
+        *reinterpret_cast<size_t*>(buffer) = count;
+        buffer += sizeof(size_t);
+
+        // Store values
+        std::memcpy(buffer, values.data(), count * sizeof(T));
+
+        return DBERR_OK;
+    }
+
 
     /** @brief Packs necessary system metadata for broadcast like number of partitions, system setup type etc. */
     DB_STATUS packSystemMetadata(SerializedMsg<char> &sysMetadataMsg);
 
-    /** @brief Packs a vector of dataset indexes into a single message */
-    DB_STATUS packDatasetIndexes(std::vector<int> indexes, SerializedMsg<int> &msg);
-
     DB_STATUS packShape(Shape *shape, SerializedMsg<char> &msg);
 
     /** @brief Packs the april configuration metadata into a serialized message. */
-    DB_STATUS packAPRILMetadata(AprilConfig &aprilConfig, SerializedMsg<int> &aprilMetadataMsg);
+    DB_STATUS packAPRILMetadata(AprilConfig &aprilConfig, SerializedMsg<char> &aprilMetadataMsg);
 
     /** @brief Packs a batch of queries into a serialized message. */
     DB_STATUS packQueryBatch(std::vector<hec::Query*> *batch, SerializedMsg<char> &batchMsg);
@@ -86,33 +117,43 @@ namespace pack
     /** @brief Packs a batch of results into a serialized message. */
     DB_STATUS packBatchResults(std::unordered_map<int, hec::QResultBase*> &batchResults, SerializedMsg<char> &batchMsg);
 
-    DB_STATUS packBatchResults(std::unordered_map<int, std::unique_ptr<hec::QResultBase>> &batchResults, SerializedMsg<char> &msg);
+    // DB_STATUS packBatchResults(std::unordered_map<int, std::unique_ptr<hec::QResultBase>> &batchResults, SerializedMsg<char> &msg);
 }
 
 /** @brief Methos that unpack serialized messages and extract their contents, based on message type. */
 namespace unpack
 {   
-    /** @brief Unpacks a message containg integers to the given vector. The integer count is stored in the message count. */
-    DB_STATUS unpackIntegers(SerializedMsg<int> &integersMsg, std::vector<int> &integers);
-    DB_STATUS unpackIntegers(SerializedMsg<char> &msg, std::vector<int> &integers);
+    /** @brief Unpacks a message containg type T values to the given vector of the same type.*/
+    template<typename T>
+    DB_STATUS unpackValues(const SerializedMsg<char>& msg, std::vector<T>& values) {
+        static_assert(std::is_trivially_copyable<T>::value, "T must be trivially copyable");
+
+        if (msg.count < sizeof(size_t)) {
+            logger::log_error(DBERR_INVALID_PARAMETER, "Serialized message too small for unpacking");
+            return DBERR_INVALID_PARAMETER;
+        }
+
+        const char* buffer = msg.data;
+        size_t count = *reinterpret_cast<const size_t*>(buffer);
+        buffer += sizeof(size_t);
+
+        size_t expected_size = sizeof(size_t) + count * sizeof(T);
+        if (msg.count != expected_size) {
+            logger::log_error(DBERR_INVALID_PARAMETER, "Serialized message size does not match expected size");
+            return DBERR_INVALID_PARAMETER;
+        }
+
+        values.resize(count);
+        std::memcpy(values.data(), buffer, count * sizeof(T));
+
+        return DBERR_OK;
+    }
 
     /** @brief Unpacks a system metadata serialized message. */
     DB_STATUS unpackSystemMetadata(SerializedMsg<char> &sysMetadataMsg);
 
     /** @brief Unpacks an APRIL configuration metadata serialized message. */
-    DB_STATUS unpackAPRILMetadata(SerializedMsg<int> &aprilMetadataMsg);
-
-    /** @brief Unpacks an query metadata serialized message. */
-    DB_STATUS unpackQueryMetadata(SerializedMsg<int> &queryMetadataMsg);
-
-    /** @brief Unpacks a serialized message containing a single dataset index. */
-    DB_STATUS unpackDatasetIndexes(SerializedMsg<int> &msg, std::vector<int> &datasetIndexes);
-
-    /** @brief Unpacks a datasets' nicknames serialized message. */
-    DB_STATUS unpackDatasetsNicknames(SerializedMsg<char> &msg, std::vector<std::string> &nicknames);
-
-    /** @brief Unpacks a 'dataset load' message. Results are stored in the dataset and datasetIndex arguments. */
-    DB_STATUS unpackDatasetLoadMsg(SerializedMsg<char> &msg, Dataset &dataset, DatasetIndex &datasetIndex);
+    DB_STATUS unpackAPRILMetadata(SerializedMsg<char> &aprilMetadataMsg);
 
     /** @brief Unpacks a query batch message. 
      */
@@ -120,7 +161,6 @@ namespace unpack
 
     /** @brief unpacks a shape appropriately based on its type. */
     DB_STATUS unpackShape(SerializedMsg<char> &msg, Shape &shape);
-
 
     /** @brief unpacks a message containg the results of a batch of queries. */
     DB_STATUS unpackBatchResults(SerializedMsg<char> &msg, std::unordered_map<int, hec::QResultBase*> &batchResults);

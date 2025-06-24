@@ -429,7 +429,7 @@ namespace twolayer
          * optimized two-layer MBR filter for find topological relation queries, with intermediate filter forwarding
          */
         
-        static DB_STATUS evaluate(hec::JoinQuery *joinQuery, std::unique_ptr<hec::QResultBase>& queryResult) {
+        static DB_STATUS evaluate(hec::PredicateJoinQuery *joinQuery, std::unique_ptr<hec::QResultBase>& queryResult) {
             if (!queryResult) {
                 logger::log_error(DBERR_NULL_PTR_EXCEPTION, "Null query resylt pointer during evaluation.");
                 return DBERR_NULL_PTR_EXCEPTION;
@@ -864,7 +864,7 @@ namespace twolayer
          * simple two-layer MBR intersection filter with intermediate filter forwarding
          */
         
-        static DB_STATUS evaluate(hec::JoinQuery *joinQuery, std::unique_ptr<hec::QResultBase>& queryResult) {
+        static DB_STATUS evaluate(hec::PredicateJoinQuery *joinQuery, std::unique_ptr<hec::QResultBase>& queryResult) {
             DB_STATUS ret = DBERR_OK;
             Dataset* R = g_config.datasetOptions.getDatasetByIdx(joinQuery->getDatasetRid());
             Dataset* S = g_config.datasetOptions.getDatasetByIdx(joinQuery->getDatasetSid());
@@ -1703,7 +1703,7 @@ namespace twolayer
             case hec::Q_COVERED_BY_JOIN: 
             {
                 // cast
-                hec::JoinQuery* joinQuery = dynamic_cast<hec::JoinQuery*>(query);
+                hec::PredicateJoinQuery* joinQuery = dynamic_cast<hec::PredicateJoinQuery*>(query);
                 // evaluate
                 ret = mbr_intersection_join_filter::evaluate(joinQuery, queryResult);
                 if (ret != DBERR_OK) {
@@ -1714,7 +1714,7 @@ namespace twolayer
             case hec::Q_FIND_RELATION_JOIN: 
             {
                 // cast
-                hec::JoinQuery* joinQuery = dynamic_cast<hec::JoinQuery*>(query);
+                hec::PredicateJoinQuery* joinQuery = dynamic_cast<hec::PredicateJoinQuery*>(query);
                 // evaluate
                 ret = mbr_topological_join_filter::evaluate(joinQuery, queryResult);
                 if (ret != DBERR_OK) {

@@ -2,50 +2,6 @@
 
 namespace pack
 {
-    DB_STATUS packIntegers(SerializedMsg<char>& msg, std::vector<int>& integers) {
-        // Calculate total size in bytes
-        int count = integers.size();
-        msg.count = count * sizeof(int);
-
-        // Allocate memory for the message
-        msg.data = (char*)malloc(msg.count);
-        if (msg.data == NULL) {
-            logger::log_error(DBERR_MALLOC_FAILED, "Malloc for pack dataset integers failed");
-            return DBERR_MALLOC_FAILED;
-        }
-
-        char* localBuffer = msg.data;
-
-        // Add the integers to the buffer
-        for (const auto& integer : integers) {
-            *reinterpret_cast<int*>(localBuffer) = integer;
-            localBuffer += sizeof(int);
-        }
-
-        return DBERR_OK;
-    }
-
-
-    DB_STATUS packDatasetIndexes(std::vector<int> indexes, SerializedMsg<int> &msg) {
-        msg.count = 1 + indexes.size();
-        msg.data = (int*) malloc(msg.count * sizeof(int));
-        if (msg.data == NULL) {
-            // malloc failed
-            logger::log_error(DBERR_MALLOC_FAILED, "Malloc for pack dataset index failed");
-            return DBERR_MALLOC_FAILED;
-        }
-        int* localBuffer = msg.data;
-
-        // put objects in buffer
-        *reinterpret_cast<int*>(localBuffer) = (int) indexes.size();
-        localBuffer += 1;
-        for (int i=0; i<indexes.size(); i++) {
-            *reinterpret_cast<int*>(localBuffer) = indexes[i];
-            localBuffer += 1;
-        }
-        return DBERR_OK;
-    }
-
     DB_STATUS packShape(Shape *shape, SerializedMsg<char> &msg) {
         DB_STATUS ret = DBERR_OK;
         // calculate size
@@ -144,22 +100,23 @@ namespace pack
         return DBERR_OK;
     }
 
-    DB_STATUS packAPRILMetadata(AprilConfig &aprilConfig, SerializedMsg<int> &aprilMetadataMsg) {
-        aprilMetadataMsg.count = 0;
-        aprilMetadataMsg.count += 3;     // N, compression, partitions
+    DB_STATUS packAPRILMetadata(AprilConfig &aprilConfig, SerializedMsg<char> &aprilMetadataMsg) {
+        aprilMetadataMsg.count = 3 * sizeof(int);  // 3 integers: N, compression, partitions
 
-        // allocate space
-        aprilMetadataMsg.data = (int*) malloc(aprilMetadataMsg.count * sizeof(int));
-        if (aprilMetadataMsg.data == NULL) {
-            // malloc failed
+        // Allocate raw byte buffer
+        aprilMetadataMsg.data = (char*) malloc(aprilMetadataMsg.count);
+        if (aprilMetadataMsg.data == nullptr) {
             logger::log_error(DBERR_MALLOC_FAILED, "Malloc for april metadata failed");
             return DBERR_MALLOC_FAILED;
         }
 
-        // put objects in buffer
-        aprilMetadataMsg.data[0] = aprilConfig.getN();
-        aprilMetadataMsg.data[1] = aprilConfig.compression;
-        aprilMetadataMsg.data[2] = aprilConfig.partitions;
+        // Write values into buffer
+        char* buffer = aprilMetadataMsg.data;
+        *reinterpret_cast<int*>(buffer) = aprilConfig.getN();
+        buffer += sizeof(int);
+        *reinterpret_cast<int*>(buffer) = aprilConfig.compression;
+        buffer += sizeof(int);
+        *reinterpret_cast<int*>(buffer) = aprilConfig.partitions;
 
         return DBERR_OK;
     }
@@ -342,39 +299,11 @@ namespace pack
         }
         return ret;
     }
+
 }
 
 namespace unpack
 {
-    DB_STATUS unpackIntegers(SerializedMsg<int> &integersMsg, std::vector<int> &integers) {
-        integers.reserve(integersMsg.count);
-        for (int i=0; i<integersMsg.count; i++) {
-            integers.push_back(integersMsg.data[i]);
-        }
-        return DBERR_OK;
-    }
-
-    DB_STATUS unpackIntegers(SerializedMsg<char>& msg, std::vector<int>& integers) {
-        // Ensure msg.count is divisible by sizeof(int)
-        if (msg.count % sizeof(int) != 0) {
-            logger::log_error(DBERR_INVALID_PARAMETER, "Serialized message size is not a multiple of int size");
-            return DBERR_INVALID_PARAMETER;
-        }
-
-        int count = msg.count / sizeof(int);
-        integers.reserve(count);
-
-        char* buffer = msg.data;
-        for (int i = 0; i < count; ++i) {
-            int value = *reinterpret_cast<int*>(buffer);
-            integers.push_back(value);
-            buffer += sizeof(int);
-        }
-
-        return DBERR_OK;
-    }
-
-
     DB_STATUS unpackSystemMetadata(SerializedMsg<char> &sysMetadataMsg) {
         PartitioningType partitioningType;
         int partPartitionsPerDim, distPartitionsPerDim;
@@ -421,71 +350,42 @@ namespace unpack
         return DBERR_OK;
     }
 
-    DB_STATUS unpackAPRILMetadata(SerializedMsg<int> &aprilMetadataMsg) {
-        // N
-        int N = aprilMetadataMsg.data[0];
+    DB_STATUS unpackAPRILMetadata(SerializedMsg<char>& aprilMetadataMsg) {
+        if (aprilMetadataMsg.count != 3 * sizeof(int)) {
+            logger::log_error(DBERR_INVALID_PARAMETER, "Invalid APRIL metadata size");
+            return DBERR_INVALID_PARAMETER;
+        }
+
+        char* buffer = aprilMetadataMsg.data;
+
+        int N = *reinterpret_cast<int*>(buffer);
+        buffer += sizeof(int);
+
+        int compression = *reinterpret_cast<int*>(buffer);
+        buffer += sizeof(int);
+
+        int partitions = *reinterpret_cast<int*>(buffer);
+
+        // Update global config
         g_config.approximationMetadata.aprilConfig.setN(N);
-        // compression
-        g_config.approximationMetadata.aprilConfig.compression = aprilMetadataMsg.data[1];
-        // partitions
-        g_config.approximationMetadata.aprilConfig.partitions = aprilMetadataMsg.data[2];
-        // set type
+        g_config.approximationMetadata.aprilConfig.compression = compression;
+        g_config.approximationMetadata.aprilConfig.partitions = partitions;
         g_config.approximationMetadata.type = AT_APRIL;
-        if (g_config.datasetOptions.getDatasetR()) {
-            g_config.datasetOptions.getDatasetR()->approxType = AT_APRIL;
-            g_config.datasetOptions.getDatasetR()->aprilConfig.setN(N);
-            g_config.datasetOptions.getDatasetR()->aprilConfig.compression = g_config.approximationMetadata.aprilConfig.compression;
-            g_config.datasetOptions.getDatasetR()->aprilConfig.partitions = g_config.approximationMetadata.aprilConfig.partitions;
+
+        if (auto* datasetR = g_config.datasetOptions.getDatasetR()) {
+            datasetR->approxType = AT_APRIL;
+            datasetR->aprilConfig.setN(N);
+            datasetR->aprilConfig.compression = compression;
+            datasetR->aprilConfig.partitions = partitions;
         }
 
-        if (g_config.datasetOptions.getDatasetS()) {
-            g_config.datasetOptions.getDatasetS()->approxType = AT_APRIL;
-            g_config.datasetOptions.getDatasetS()->aprilConfig.setN(N);
-            g_config.datasetOptions.getDatasetS()->aprilConfig.compression = g_config.approximationMetadata.aprilConfig.compression;
-            g_config.datasetOptions.getDatasetS()->aprilConfig.partitions = g_config.approximationMetadata.aprilConfig.partitions;
+        if (auto* datasetS = g_config.datasetOptions.getDatasetS()) {
+            datasetS->approxType = AT_APRIL;
+            datasetS->aprilConfig.setN(N);
+            datasetS->aprilConfig.compression = compression;
+            datasetS->aprilConfig.partitions = partitions;
         }
 
-        return DBERR_OK;
-    }
-
-    DB_STATUS unpackDatasetIndexes(SerializedMsg<int> &msg, std::vector<int> &datasetIndexes) {
-        int count = msg.data[0];
-        datasetIndexes.clear();
-        datasetIndexes.reserve(count);
-        for (int i=1; i<=count; i++) {
-            datasetIndexes.push_back(msg.data[i]);
-        }
-        return DBERR_OK;
-    }
-
-    DB_STATUS unpackDatasetsNicknames(SerializedMsg<char> &msg, std::vector<std::string> &nicknames) {
-        char *localBuffer = msg.data;
-        int length;
-        // R
-        length = *reinterpret_cast<const int*>(localBuffer);
-        localBuffer += sizeof(int);
-        std::string nickname(localBuffer, localBuffer + length);
-        localBuffer += length * sizeof(char);
-        // append
-        nicknames.emplace_back(nickname);
-        // S
-        length = *reinterpret_cast<const int*>(localBuffer);
-        localBuffer += sizeof(int);
-        if (length > 0) {
-            std::string nickname(localBuffer, localBuffer + length);
-            localBuffer += length * sizeof(char);
-            // append
-            nicknames.emplace_back(nickname);
-        }
-
-        return DBERR_OK;
-    }
-
-    DB_STATUS unpackDatasetLoadMsg(SerializedMsg<char> &msg, Dataset &dataset, DatasetIndex &datasetIndex) {
-        char *localBuffer = msg.data;
-        // dataset index
-        datasetIndex = (DatasetIndex) *reinterpret_cast<const int*>(localBuffer);
-        localBuffer += sizeof(int);
         return DBERR_OK;
     }
 

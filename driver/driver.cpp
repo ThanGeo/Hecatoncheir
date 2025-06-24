@@ -19,7 +19,7 @@ void spatialJoinScenario() {
     ret = hec::buildIndex({landmarkID, waterID}, hec::IT_TWO_LAYER);
     printf("Indexes built in %0.2f seconds.\n", hec::time::getTime() - start);
     // query
-    hec::JoinQuery joinQuery(landmarkID, waterID, 0, hec::Q_INTERSECTION_JOIN, hec::QR_COUNT);
+    hec::PredicateJoinQuery joinQuery(landmarkID, waterID, 0, hec::Q_INTERSECTION_JOIN, hec::QR_COUNT);
     start = hec::time::getTime();
     hec::QResultBase* result = hec::query(&joinQuery);
     double total_time = hec::time::getTime() - start;
@@ -135,6 +135,36 @@ void batchRangeScenario() {
     ret = hec::unloadDataset(pointDatasetID);
 }
 
+void distanceJoinScenario() {
+    // prepare
+    std::string pathR = "/home/hec/datasets/T2_lo48_points.tsv";
+    int RID = hec::prepareDataset(pathR, "WKT", "POINT", false);
+    std::string pathS = "/home/hec/datasets/USA_queries/NN_queries.wkt";
+    int SID = hec::prepareDataset(pathS, "WKT", "POINT", false);
+    // partition
+    double start = hec::time::getTime();
+    int ret = hec::partition({RID, SID});
+    printf("Partitioning finished in %0.2f seconds.\n", hec::time::getTime() - start);
+    // index
+    start = hec::time::getTime();
+    ret = hec::buildIndex({RID, SID}, hec::IT_UNIFORM_GRID);
+    printf("Indexes built in %0.2f seconds.\n", hec::time::getTime() - start);
+    // query
+    hec::DistanceJoinQuery distanceQuery(RID, SID, 0, hec::QR_COUNT, 0.001);
+    start = hec::time::getTime();
+    hec::QResultBase* result = hec::query(&distanceQuery);
+    double total_time = hec::time::getTime() - start;
+    // results
+    ssize_t resCount = result->getResultCount();
+    printf("Results: %ld\n", resCount);
+    printf("Query finished in %0.2f seconds.\n", total_time);
+    delete result;
+
+    // unload
+    ret = hec::unloadDataset(RID);
+    ret = hec::unloadDataset(SID);
+}
+
 int main(int argc, char* argv[]) {
     /** Your hosts list. It is mandatory to define each node as:
      * <hostname>:1 
@@ -153,12 +183,14 @@ int main(int argc, char* argv[]) {
 
     int RUNS = 1;
     for (int i=0; i<RUNS; i++) {
-        printf("Run %d: Running Join Scenario...\n", i);
-        spatialJoinScenario();
+        // printf("Run %d: Running Join Scenario...\n", i);
+        // spatialJoinScenario();
         // printf("Run %d: Running batch KNN Scenario...\n", i);
         // batchKNNScenario();
         // printf("Run %d: Running batch range Scenario...\n", i);
         // batchRangeScenario();
+        printf("Run %d: Running Distance Scenario...\n", i);
+        distanceJoinScenario();
     }
 
     /**

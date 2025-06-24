@@ -334,15 +334,15 @@ namespace hec
         int deserialize(char*& buffer) override;
     };
 
-    struct JoinQuery : public Query {
+    struct PredicateJoinQuery : public Query {
     private:
         DatasetID Rid = -1;
         DatasetID Sid = -1;
     public:
-        JoinQuery(){}
-        JoinQuery(DatasetID Rid, DatasetID Sid, int queryID, std::string predicate);
-        JoinQuery(DatasetID Rid, DatasetID Sid, int queryID, std::string predicate, std::string resultTypeStr);
-        JoinQuery(DatasetID Rid, DatasetID Sid, int queryID, QueryType predicate, QueryResultType resultType);
+        PredicateJoinQuery(){}
+        PredicateJoinQuery(DatasetID Rid, DatasetID Sid, int queryID, std::string predicate);
+        PredicateJoinQuery(DatasetID Rid, DatasetID Sid, int queryID, std::string predicate, std::string resultTypeStr);
+        PredicateJoinQuery(DatasetID Rid, DatasetID Sid, int queryID, QueryType predicate, QueryResultType resultType);
 
         DatasetID getDatasetRid() {
             return Rid;
@@ -350,6 +350,34 @@ namespace hec
 
         DatasetID getDatasetSid() {
             return Sid;
+        }
+
+        int calculateBufferSize() override;
+        int serialize(char **buffer, int &bufferSize) override;
+        int deserialize(char*& buffer) override;
+    };
+
+    struct DistanceJoinQuery : public Query {
+    private:
+        DatasetID Rid = -1;
+        DatasetID Sid = -1;
+        double d = 0.0f;    // positive
+    public:
+        DistanceJoinQuery(){}
+        DistanceJoinQuery(DatasetID Rid, DatasetID Sid, int queryID, double d);
+        DistanceJoinQuery(DatasetID Rid, DatasetID Sid, int queryID, std::string resultTypeStr, double d);
+        DistanceJoinQuery(DatasetID Rid, DatasetID Sid, int queryID, QueryResultType resultType, double d);
+
+        DatasetID getDatasetRid() {
+            return Rid;
+        }
+
+        DatasetID getDatasetSid() {
+            return Sid;
+        }
+
+        double getDistanceValue() {
+            return d;
         }
 
         int calculateBufferSize() override;
@@ -376,6 +404,7 @@ namespace hec
         int serialize(char **buffer, int &bufferSize) override;
         int deserialize(char*& buffer) override;
     };
+
 }
 
 

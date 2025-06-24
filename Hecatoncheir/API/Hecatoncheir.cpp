@@ -373,7 +373,7 @@ namespace hec {
 
         // wait for response with dataset internal ID
         MPI_Status status;
-        SerializedMsg<int> msgFromHost;
+        SerializedMsg<char> msgFromHost;
         // probe
         ret = comm::probe(HOST_CONTROLLER, MSG_DATASET_INDEX, g_global_intra_comm, status);
         if (ret != DBERR_OK) {
@@ -388,7 +388,7 @@ namespace hec {
         }
         // unpack
         std::vector<int> indexes;
-        ret = unpack::unpackDatasetIndexes(msgFromHost, indexes);
+        ret = unpack::unpackValues(msgFromHost, indexes);
         if (ret != DBERR_OK) {
             logger::log_error(ret, "Error unpacking dataset indexes.");
             return ret;
@@ -455,7 +455,7 @@ namespace hec {
 
         // wait for response with dataset internal ID
         MPI_Status status;
-        SerializedMsg<int> msgFromHost;
+        SerializedMsg<char> msgFromHost;
         // probe
         ret = comm::probe(HOST_CONTROLLER, MSG_DATASET_INDEX, g_global_intra_comm, status);
         if (ret != DBERR_OK) {
@@ -470,7 +470,7 @@ namespace hec {
         }
         // unpack
         std::vector<int> indexes;
-        ret = unpack::unpackDatasetIndexes(msgFromHost, indexes);
+        ret = unpack::unpackValues(msgFromHost, indexes);
         if (ret != DBERR_OK) {
             logger::log_error(ret, "Error unpacking dataste indexes.");
             return ret;
@@ -485,7 +485,7 @@ namespace hec {
 
     int unloadDataset(DatasetID datasetID) {
         SerializedMsg<char> msg(MPI_CHAR);
-        DB_STATUS ret = pack::packIntegers(msg, datasetID);
+        DB_STATUS ret = pack::packValues(msg, datasetID);
         if (ret != DBERR_OK) {
             logger::log_error(ret, "Packing dataset id failed.");
             return -1;
@@ -513,7 +513,7 @@ namespace hec {
 
     int partition(std::vector<DatasetID> datasetIndexes) {
         SerializedMsg<char> msg(MPI_CHAR);
-        DB_STATUS ret = pack::packIntegers(msg, datasetIndexes);
+        DB_STATUS ret = pack::packValues(msg, datasetIndexes);
         if (ret != DBERR_OK) {
             logger::log_error(ret, "Packing dataset indexes failed.");
             return -1;
@@ -543,7 +543,7 @@ namespace hec {
         std::vector<int> indexTypeAndDatasets = {indexType};
         indexTypeAndDatasets.insert(indexTypeAndDatasets.end(), datasetIndexes.begin(), datasetIndexes.end());
 
-        DB_STATUS ret = pack::packIntegers(msg, indexTypeAndDatasets);
+        DB_STATUS ret = pack::packValues(msg, indexTypeAndDatasets);
         if (ret != DBERR_OK) {
             logger::log_error(ret, "Packing build index info failed.");
             return -1;
@@ -570,7 +570,7 @@ namespace hec {
 
     int load(std::vector<DatasetID> datasetIndexes) {
         SerializedMsg<char> msg(MPI_CHAR);
-        DB_STATUS ret = pack::packIntegers(msg, datasetIndexes);
+        DB_STATUS ret = pack::packValues(msg, datasetIndexes);
         if (ret != DBERR_OK) {
             logger::log_error(ret, "Packing dataset indexes failed.");
             return -1;
@@ -621,6 +621,7 @@ namespace hec {
             case Q_CONTAINS_JOIN:
             case Q_COVERS_JOIN:
             case Q_COVERED_BY_JOIN:
+            case Q_DISTANCE_JOIN:
                 // create query result object
                 switch (query->getResultType()) {
                     case QR_COUNT:

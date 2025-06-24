@@ -45,7 +45,7 @@ namespace controller
 }
 
 static DB_STATUS initAPRILCreation() {
-    SerializedMsg<int> aprilMetadataMsg(MPI_INT);
+    SerializedMsg<char> aprilMetadataMsg(MPI_CHAR);
     // pack the APRIL metadata
     DB_STATUS ret = pack::packAPRILMetadata(g_config.approximationMetadata.aprilConfig, aprilMetadataMsg);
     if (ret != DBERR_OK) {
@@ -74,7 +74,7 @@ static DB_STATUS initAPRILCreation() {
 }
 
 static DB_STATUS initLoadAPRIL() {
-    SerializedMsg<int> aprilMetadataMsg(MPI_INT);
+    SerializedMsg<char> aprilMetadataMsg(MPI_CHAR);
     // pack the APRIL metadata
     DB_STATUS ret = pack::packAPRILMetadata(g_config.approximationMetadata.aprilConfig, aprilMetadataMsg);
     if (ret != DBERR_OK) {

@@ -543,8 +543,8 @@ STOP_LISTENING:
             msg.clear();
 
             // return dataset ID
-            SerializedMsg<int> msgToController(MPI_INT);
-            ret = pack::packDatasetIndexes({id}, msgToController);
+            SerializedMsg<char> msgToController(MPI_CHAR);
+            ret = pack::packValues(msgToController, id);
             if (ret != DBERR_OK) {
                 logger::log_error(ret, "Failed packing indexes to message.");
                 return ret;
@@ -568,7 +568,7 @@ STOP_LISTENING:
             }
             // unpack
             std::vector<int> messageContents;
-            ret = unpack::unpackIntegers(msg, messageContents);
+            ret = unpack::unpackValues(msg, messageContents);
             if (ret != DBERR_OK) {
                 logger::log_error(ret, "Failed to unpack build index contents.");
                 return ret;
@@ -627,7 +627,7 @@ STOP_LISTENING:
         }
 
         static DB_STATUS handlePartitionDatasetMessage(MPI_Status &status) {
-            SerializedMsg<int> msg(MPI_INT);
+            SerializedMsg<char> msg(MPI_CHAR);
             // receive the message
             DB_STATUS ret = recv::receiveMessage(status, msg.type, g_agent_comm, msg);
             if (ret != DBERR_OK) {
@@ -635,7 +635,7 @@ STOP_LISTENING:
             }
             // unpack
             std::vector<int> datasetIndexes;
-            ret = unpack::unpackIntegers(msg, datasetIndexes);
+            ret = unpack::unpackValues(msg, datasetIndexes);
             if (ret != DBERR_OK) {
                 logger::log_error(ret, "Failed to unpack dataset indexes.");
                 return ret;
@@ -684,7 +684,7 @@ STOP_LISTENING:
         }
 
         static DB_STATUS handleBuildIndexMessage(MPI_Status &status) {
-            SerializedMsg<int> msg(MPI_INT);
+            SerializedMsg<char> msg(MPI_CHAR);
             // receive the message
             DB_STATUS ret = recv::receiveMessage(status, msg.type, g_agent_comm, msg);
             if (ret != DBERR_OK) {
@@ -692,7 +692,7 @@ STOP_LISTENING:
             }
             // unpack
             std::vector<int> messageContents;
-            ret = unpack::unpackIntegers(msg, messageContents);
+            ret = unpack::unpackValues(msg, messageContents);
             if (ret != DBERR_OK) {
                 logger::log_error(ret, "Failed to unpack build index contents.");
                 return ret;
@@ -733,7 +733,7 @@ STOP_LISTENING:
         }
 
         static DB_STATUS handleLoadDatasetMessage(MPI_Status &status) {
-            SerializedMsg<int> msg(MPI_INT);
+            SerializedMsg<char> msg(MPI_CHAR);
             // receive the message
             DB_STATUS ret = recv::receiveMessage(status, msg.type, g_agent_comm, msg);
             if (ret != DBERR_OK) {
@@ -741,7 +741,7 @@ STOP_LISTENING:
             }
             // unpack
             std::vector<int> datasetIndexes;
-            ret = unpack::unpackIntegers(msg, datasetIndexes);
+            ret = unpack::unpackValues(msg, datasetIndexes);
             if (ret != DBERR_OK) {
                 logger::log_error(ret, "Failed to unpack dataset indexes.");
                 return ret;
@@ -839,6 +839,67 @@ STOP_LISTENING:
             if (ret != DBERR_OK) {
                 return ret;
             }
+
+            // pack results to send
+            SerializedMsg<char> resultMsg(MPI_CHAR);
+            queryResult->serialize(&resultMsg.data, resultMsg.count);
+
+            // send results
+            ret = send::sendMessage(resultMsg, PARENT_RANK, MSG_QUERY_RESULT, g_agent_comm);
+            if (ret != DBERR_OK) {
+                return ret;
+            }
+
+            // free message memory
+            resultMsg.clear();
+
+            // free query memory
+            delete queryPtr;
+
+            return ret;
+        }
+
+        static DB_STATUS handleDistanceJoinQueryMessage(MPI_Status &status) {
+            SerializedMsg<char> msg(MPI_CHAR);
+            // receive the message
+            DB_STATUS ret = recv::receiveMessage(status, msg.type, g_agent_comm, msg);
+            if (ret != DBERR_OK) {
+                return ret;
+            }
+            // unpack query
+            char* localBuffer = msg.data;
+            hec::Query* queryPtr = hec::Query::createFromBuffer(localBuffer);
+            if (queryPtr == nullptr) {
+                logger::log_error(ret, "Failed to create query from message buffer.");
+                return ret;
+            }
+
+            // free message memory
+            msg.clear();
+
+            // setup query result object
+            hec::QResultBase* rawResult = nullptr;
+            int res = qresult_factory::createNew(queryPtr, &rawResult);
+            if (res != 0) {
+                logger::log_error(DBERR_OBJ_CREATION_FAILED, "Failed to create query result objects.");
+                return DBERR_OBJ_CREATION_FAILED;
+            }
+            std::unique_ptr<hec::QResultBase> queryResult(rawResult);
+
+            // batches of objects that rest on border areas
+            std::unordered_map<int, std::vector<size_t>> borderObjectsMap;
+            
+            // evaluate local distances and find the border objects
+            ret = g_config.datasetOptions.getDatasetR()->index->evaluateQuery(queryPtr, borderObjectsMap, queryResult);
+            if (ret != DBERR_OK) {
+                return ret;
+            }
+
+            // send border batch sizes to controller
+
+
+
+
 
             // pack results to send
             SerializedMsg<char> resultMsg(MPI_CHAR);
@@ -1029,6 +1090,12 @@ STOP_LISTENING:
                         return ret;
                     }
                     break;
+                case MSG_QUERY_DJ_INIT:
+                    ret = handleDistanceJoinQueryMessage(status);
+                    if (ret != DBERR_OK) {
+                        return ret;
+                    }
+                    break;
                 case MSG_QUERY_BATCH_RANGE:
                     ret = handleQueryBatchRangeMessage(status);
                     if (ret != DBERR_OK) {
@@ -1185,7 +1252,7 @@ STOP_LISTENING:
             }
 
             static DB_STATUS forwardAPRILMetadataMessage(MPI_Comm sourceComm, int destRank, MPI_Comm destComm, MPI_Status &status) {
-                SerializedMsg<int> msg(MPI_INT);
+                SerializedMsg<char> msg(MPI_CHAR);
                 // receive the message
                 DB_STATUS ret = recv::receiveMessage(status, msg.type, sourceComm, msg);
                 if (ret != DBERR_OK) {
@@ -1207,7 +1274,7 @@ STOP_LISTENING:
             }
 
             static DB_STATUS forwardQueryResultsMessage(MPI_Comm sourceComm, int destRank, MPI_Comm destComm, MPI_Status &status) {
-                SerializedMsg<int> msg(MPI_INT);
+                SerializedMsg<char> msg(MPI_CHAR);
                 // receive the message
                 DB_STATUS ret = recv::receiveMessage(status, msg.type, sourceComm, msg);
                 if (ret != DBERR_OK) {
@@ -1270,7 +1337,7 @@ STOP_LISTENING:
             }
 
             static DB_STATUS forwardQueryMetadataMessage(MPI_Comm sourceComm, int destRank, MPI_Comm destComm, MPI_Status &status) {
-                SerializedMsg<int> msg(MPI_INT);
+                SerializedMsg<char> msg(MPI_CHAR);
                 // receive the message
                 DB_STATUS ret = recv::receiveMessage(status, msg.type, sourceComm, msg);
                 if (ret != DBERR_OK) {
@@ -1425,7 +1492,7 @@ STOP_LISTENING:
             // free message memory
             msg.clear();
             // wait for response from agent with the dataset ID
-            SerializedMsg<int> msgFromAgent(MPI_INT);
+            SerializedMsg<char> msgFromAgent(MPI_CHAR);
             ret = probe(AGENT_RANK, MSG_DATASET_INDEX, g_agent_comm, status);
             if (ret != DBERR_OK) {
                 logger::log_error(ret, "Probing failed agent response.");
@@ -1483,7 +1550,7 @@ STOP_LISTENING:
         }
 
         static DB_STATUS handlePartitionDatasetMessage(MPI_Status &status) {
-            SerializedMsg<int> msg(MPI_INT);
+            SerializedMsg<char> msg(MPI_CHAR);
             // receive the message
             DB_STATUS ret = recv::receiveMessage(status, msg.type, g_controller_comm, msg);
             if (ret != DBERR_OK) {
@@ -1514,7 +1581,7 @@ STOP_LISTENING:
         }
 
         static DB_STATUS handleBuildIndexMessage(MPI_Status &status) {
-            SerializedMsg<int> msg(MPI_INT);
+            SerializedMsg<char> msg(MPI_CHAR);
             // receive the message
             DB_STATUS ret = recv::receiveMessage(status, msg.type, g_controller_comm, msg);
             if (ret != DBERR_OK) {
@@ -1539,7 +1606,7 @@ STOP_LISTENING:
         }
 
         static DB_STATUS handleLoadDatasetMessage(MPI_Status &status) {
-            SerializedMsg<int> msg(MPI_INT);
+            SerializedMsg<char> msg(MPI_CHAR);
             // receive the message
             DB_STATUS ret = recv::receiveMessage(status, msg.type, g_controller_comm, msg);
             if (ret != DBERR_OK) {
@@ -1884,7 +1951,7 @@ STOP_LISTENING:
             msg.clear();
 
             // wait for response from agent with the dataset ID
-            SerializedMsg<int> msgToDriver(MPI_INT);
+            SerializedMsg<char> msgToDriver(MPI_CHAR);
             // probe
             ret = probe(AGENT_RANK, MSG_DATASET_INDEX, g_agent_comm, status);
             if (ret != DBERR_OK) {
@@ -1926,7 +1993,7 @@ STOP_LISTENING:
 
             // unpack
             std::vector<int> messageContents;
-            ret = unpack::unpackIntegers(msg, messageContents);
+            ret = unpack::unpackValues(msg, messageContents);
             if (ret != DBERR_OK) {
                 logger::log_error(ret, "Failed to unpack build index contents.");
                 return ret;
@@ -1961,8 +2028,7 @@ STOP_LISTENING:
         }
 
         static DB_STATUS handlePartitionDatasetMessage(MPI_Status &status) {
-            SerializedMsg<int> msg(MPI_INT);
-            std::vector<int> datasetIndexes;
+            SerializedMsg<char> msg(MPI_CHAR);
             // receive the message
             DB_STATUS ret = recv::receiveMessage(status, msg.type, g_global_intra_comm, msg);
             if (ret != DBERR_OK) {
@@ -1970,7 +2036,8 @@ STOP_LISTENING:
             }
             
             // unpack the indexes of the datasets to partition
-            ret = unpack::unpackIntegers(msg, datasetIndexes);
+            std::vector<int> datasetIndexes;
+            ret = unpack::unpackValues(msg, datasetIndexes);
             if (ret != DBERR_OK) {
                 logger::log_error(ret, "Failed to unpack dataset indexes.");
                 return ret;
@@ -2032,7 +2099,7 @@ STOP_LISTENING:
 
                 // signal the begining of the partitioning
                 SerializedMsg<char> signal(MPI_CHAR);
-                ret = pack::packIntegers(signal, index);
+                ret = pack::packValues(signal, index);
                 if (ret != DBERR_OK) {
                     logger::log_error(ret, "Packing partitioning init message failed.");
                     return ret;
@@ -2061,9 +2128,6 @@ STOP_LISTENING:
                 signal.clear();
             }
 
-            // logger::log_success("Partitioned, now ill wait for 10 seconds.");
-            // sleep(10);
-
             // send ACK to the driver
             ret = comm::send::sendResponse(DRIVER_GLOBAL_RANK, MSG_ACK, g_global_intra_comm);
             if (ret != DBERR_OK) {
@@ -2074,7 +2138,7 @@ STOP_LISTENING:
         }
 
         static DB_STATUS handleBuildIndexMessage(MPI_Status &status) {
-            SerializedMsg<int> msg(MPI_INT);
+            SerializedMsg<char> msg(MPI_CHAR);
             // receive the message
             DB_STATUS ret = recv::receiveMessage(status, msg.type, g_global_intra_comm, msg);
             if (ret != DBERR_OK) {
@@ -2107,7 +2171,7 @@ STOP_LISTENING:
         }
 
         static DB_STATUS handleLoadDatasetMessage(MPI_Status &status) {
-            SerializedMsg<int> msg(MPI_INT);
+            SerializedMsg<char> msg(MPI_CHAR);
             // receive the message
             DB_STATUS ret = recv::receiveMessage(status, msg.type, g_global_intra_comm, msg);
             if (ret != DBERR_OK) {
@@ -2116,7 +2180,7 @@ STOP_LISTENING:
             
             // unpack the indexes of the datasets to load
             std::vector<int> datasetIndexes;
-            ret = unpack::unpackIntegers(msg, datasetIndexes);
+            ret = unpack::unpackValues(msg, datasetIndexes);
             if (ret != DBERR_OK) {
                 logger::log_error(ret, "Failed to unpack dataset indexes.");
                 return ret;
@@ -2130,7 +2194,7 @@ STOP_LISTENING:
                 // signal the begining of the partitioning
                 SerializedMsg<char> signal(MPI_CHAR);
                 // pack
-                ret = pack::packIntegers(signal, index);
+                ret = pack::packValues(signal, index);
                 if (ret != DBERR_OK) {
                     logger::log_error(ret, "Packing partitioning init message failed.");
                     return ret;
@@ -2501,7 +2565,93 @@ STOP_LISTENING:
             
             // free memory
             resultMsg.clear();
-            // delete totalResults;
+            return ret;
+        }
+
+        /** @brief performs any data-exchange operations required during the distance join */
+        static DB_STATUS exchangeDistanceJoin() {
+            DB_STATUS ret = DBERR_OK;
+            int messageFound = false;
+            MPI_Status status;
+            // keep count of which nodes are finished
+            std::unordered_map<int, bool> nodeState;
+            // keep count of how many items to send/receive
+            // first = send, 
+            // second = receive
+            std::unordered_map<int, std::pair<int,int>> exchangeCount;
+            for (int i=0; i<g_world_size; i++) {
+                nodeState[i] = false;
+                exchangeCount[i] = std::pair<int,int>(-1,-1);   
+            }
+            // probe for any controller or agent
+            while (true) {
+                messageFound = false;
+                ret = probe(AGENT_RANK, MPI_ANY_TAG, g_agent_comm, status, messageFound);
+                if (ret != DBERR_OK) {
+                    return ret;
+                }
+
+                if (messageFound) {
+                    // found message from AGENT
+                }
+                
+                messageFound = false;
+                ret = probe(MPI_ANY_SOURCE, MPI_ANY_TAG, g_controller_comm, status, messageFound);
+                if (ret != DBERR_OK) {
+                    return ret;
+                }
+
+                if (messageFound) {
+                    // found message from a controller
+                }
+
+                // short interval
+                usleep(100);
+            }
+
+            return ret;
+        }
+
+        static DB_STATUS performDistanceJoinQuery(MPI_Status &status, SerializedMsg<char> &msg, hec::Query* query) {
+            DB_STATUS ret = DBERR_OK;
+            // broadcast join query to every worker
+            ret = broadcast::broadcastMessage(msg, status.MPI_TAG);
+            if (ret != DBERR_OK) {
+                return ret;
+            }
+            
+            // intermediate exchange of data
+            ret = exchangeDistanceJoin();
+            if (ret != DBERR_OK) {
+                return ret;
+            } 
+            
+            // create query result object
+            hec::QResultBase* rawTotalResults = nullptr;
+            int res = qresult_factory::createNew(query, &rawTotalResults);
+            if (res != 0) {
+                logger::log_error(DBERR_OBJ_CREATION_FAILED, "Failed to create query result object.");
+                return DBERR_OBJ_CREATION_FAILED;
+            }
+            std::unique_ptr<hec::QResultBase> totalResults(rawTotalResults);
+
+            // wait for final results result
+            ret = gatherJoinResults(query, totalResults);
+            if (ret != DBERR_OK) {
+                logger::log_error(ret, "Failed while gathering results for query.");
+                return ret;
+            }
+            // serialize to message
+            SerializedMsg<char> resultMsg(MPI_CHAR);
+            totalResults->serialize(&resultMsg.data, resultMsg.count);
+            // send result to driver
+            ret = send::sendMessage(resultMsg, DRIVER_GLOBAL_RANK, MSG_QUERY_RESULT, g_global_intra_comm);
+            if (ret != DBERR_OK) {
+                return ret;
+            }
+            
+            // free memory
+            resultMsg.clear();
             return ret;
         }
 
@@ -2677,6 +2827,13 @@ STOP_LISTENING:
                 case hec::Q_FIND_RELATION_JOIN:
                     // perform the Join
                     ret = performJoinQuery(status, msg, query);
+                    if (ret != DBERR_OK) {
+                        return ret;
+                    }
+                    break;
+                case hec::Q_DISTANCE_JOIN:
+                    // perform the distance join
+                    ret = performDistanceJoinQuery(status, msg, query);
                     if (ret != DBERR_OK) {
                         return ret;
                     }
@@ -2950,7 +3107,6 @@ STOP_LISTENING:
                     break;
                 case MSG_QUERY:
                     /** Initiate query */
-                    // logger::log_success("MSG_QUERY");
                     ret = handleQueryMessage(status);
                     if (ret != DBERR_OK) {
                         logger::log_error(ret, "Failed while handling query message.");

@@ -1891,6 +1891,15 @@ public:
 
     /** @brief evaluates a query on the index */
     virtual DB_STATUS evaluateQuery(hec::Query* query, std::unique_ptr<hec::QResultBase>& queryResult) = 0;
+    
+    
+    /** @brief Evaluate the given DISTANCE JOIN query and store results in the queryResult.
+     * the borderObjectsMap map contains a list of object IDs that need to be send to other nodes (key).
+     */
+    virtual DB_STATUS evaluateQuery(hec::Query* query, std::unordered_map<int, std::vector<size_t>> &borderObjectsMap, std::unique_ptr<hec::QResultBase>& queryResult) {
+        logger::log_error(DBERR_FORBIDDEN_METHOD_CALL, "Invalid evauluateQuery call for index type.");
+        return DBERR_FORBIDDEN_METHOD_CALL;
+    }
 
     /** @brief clears all index contents */
     DB_STATUS clear();
@@ -1951,6 +1960,8 @@ public:
 
     /** @brief Evaluate the given query and store results in the queryResult object. */
     DB_STATUS evaluateQuery(hec::Query* query, std::unique_ptr<hec::QResultBase>& queryResult);
+
+    DB_STATUS evaluateQuery(hec::Query* query, std::unordered_map<int, std::vector<size_t>> &borderObjectsMap, std::unique_ptr<hec::QResultBase>& queryResult);
 };
 
 /**

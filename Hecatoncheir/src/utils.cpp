@@ -201,6 +201,7 @@ namespace mapping
             case hec::Q_CONTAINS_JOIN: return "contains";
             case hec::Q_MEET_JOIN: return "meet";
             case hec::Q_FIND_RELATION_JOIN: return "find relation";
+            case hec::Q_DISTANCE_JOIN: return "distance";
             case hec::Q_NONE: return "no query";
             default: return "";
         }
@@ -229,6 +230,8 @@ namespace mapping
             return hec::Q_COVERS_JOIN;
         } else if (str == "find_relation") {
             return hec::Q_FIND_RELATION_JOIN;
+        } else if (str == "distance") {
+            return hec::Q_DISTANCE_JOIN;
         } else {
             return hec::Q_NONE;
         }

@@ -19,7 +19,7 @@ void QueryTest::test1() {
     ret = hec::buildIndex({datasetRID, datasetSID}, hec::IT_TWO_LAYER);
     ASSERT_EQ(DBERR_OK, ret);
     // run query
-    hec::JoinQuery intersectionJoinQuery(datasetRID, datasetSID, 0, hec::spatialQueries.FIND_RELATION(), hec::queryResultTypes.COUNT());
+    hec::PredicateJoinQuery intersectionJoinQuery(datasetRID, datasetSID, 0, hec::spatialQueries.FIND_RELATION(), hec::queryResultTypes.COUNT());
     hec::QResultBase* result;
     result = hec::query(&intersectionJoinQuery);
     // check results
@@ -57,7 +57,7 @@ void QueryTest::test2() {
     ret = hec::buildIndex({datasetRID, datasetSID}, hec::IT_TWO_LAYER);
     ASSERT_EQ(DBERR_OK, ret);
     // run query
-    hec::JoinQuery intersectionJoinQuery(datasetRID, datasetSID, 0, hec::Q_INTERSECTION_JOIN, hec::QR_COLLECT);
+    hec::PredicateJoinQuery intersectionJoinQuery(datasetRID, datasetSID, 0, hec::Q_INTERSECTION_JOIN, hec::QR_COLLECT);
     hec::QResultBase* result;
     result = hec::query(&intersectionJoinQuery);
     // check results
@@ -89,7 +89,7 @@ void QueryTest::test3() {
     ret = hec::buildIndex({datasetRID, datasetSID}, hec::IT_TWO_LAYER);
     ASSERT_EQ(DBERR_OK, ret);
     // run query
-    hec::JoinQuery intersectionJoinQuery(datasetRID, datasetSID, 0, hec::Q_INTERSECTION_JOIN, hec::QR_COLLECT);
+    hec::PredicateJoinQuery intersectionJoinQuery(datasetRID, datasetSID, 0, hec::Q_INTERSECTION_JOIN, hec::QR_COLLECT);
     hec::QResultBase* result;
     result = hec::query(&intersectionJoinQuery);
     // check results
