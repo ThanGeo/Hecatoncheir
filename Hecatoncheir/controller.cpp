@@ -14,94 +14,39 @@ static DB_STATUS terminateAllWorkers() {
 
     return DBERR_OK;
 }
-namespace controller 
-{
-    void terminate() {
-        // broadcast finalization instruction
-        if (g_node_rank == HOST_LOCAL_RANK) {
-            DB_STATUS ret = terminateAllWorkers();
-            // if (ret != DBERR_OK) {
-            //     logger::log_error(ret, "Worker termination broadcast failed");
-            // }
-            // int send_ret = comm::send::sendResponse(DRIVER_GLOBAL_RANK, MSG_NACK, g_global_intra_comm);
-        }
 
-        // Wait for the children processes to finish
-        MPI_Barrier(g_agent_comm);
-
-        // Wait for all the controllers to finish
-        MPI_Barrier(g_controller_comm);
-
-        // syncrhonize with driver
-        MPI_Barrier(g_global_intra_comm);
-
-        // Finalize the MPI environment.
-        MPI_Finalize();
-        // if (g_node_rank == HOST_LOCAL_RANK) {
-        //     logger::log_success("System finalized successfully");
+static void terminate() {
+    // broadcast finalization instruction
+    if (g_node_rank == HOST_LOCAL_RANK) {
+        DB_STATUS ret = terminateAllWorkers();
+        // if (ret != DBERR_OK) {
+        //     logger::log_error(ret, "Worker termination broadcast failed");
         // }
-        // logger::log_success("System finalized successfully");
+        // int send_ret = comm::send::sendResponse(DRIVER_GLOBAL_RANK, MSG_NACK, g_global_intra_comm);
     }
-}
 
-static DB_STATUS initAPRILCreation() {
-    SerializedMsg<char> aprilMetadataMsg(MPI_CHAR);
-    // pack the APRIL metadata
-    DB_STATUS ret = pack::packAPRILMetadata(g_config.approximationMetadata.aprilConfig, aprilMetadataMsg);
-    if (ret != DBERR_OK) {
-        logger::log_error(ret, "Failed to pack APRIL metadata");
-        return ret;
-    }
-    // send to workers
-    ret = comm::broadcast::broadcastMessage(aprilMetadataMsg, MSG_APRIL_CREATE);
-    if (ret != DBERR_OK) {
-        logger::log_error(ret, "Failed to broadcast APRIL metadata");
-        return ret;
-    }
-    // free memory
-    aprilMetadataMsg.clear();
-    // measure response time
-    double startTime;
-    startTime = mpi_timer::markTime();
-    // wait for response by workers+agent that all is ok
-    ret = comm::host::gatherResponses();
-    if (ret != DBERR_OK) {
-        return ret;
-    }
-    logger::log_success("APRIL creation finished in", mpi_timer::getElapsedTime(startTime), "seconds.");
+    // Wait for the children processes to finish
+    MPI_Barrier(g_agent_comm);
 
-    return ret;
-}
+    // Wait for all the controllers to finish
+    MPI_Barrier(g_controller_comm);
 
-static DB_STATUS initLoadAPRIL() {
-    SerializedMsg<char> aprilMetadataMsg(MPI_CHAR);
-    // pack the APRIL metadata
-    DB_STATUS ret = pack::packAPRILMetadata(g_config.approximationMetadata.aprilConfig, aprilMetadataMsg);
-    if (ret != DBERR_OK) {
-        logger::log_error(ret, "Failed to pack APRIL metadata");
-        return ret;
-    }
-    // send to workers
-    ret = comm::broadcast::broadcastMessage(aprilMetadataMsg, MSG_LOAD_APRIL);
-    if (ret != DBERR_OK) {
-        logger::log_error(ret, "Failed to broadcast APRIL metadata");
-        return ret;
-    }
-    // free memory
-    aprilMetadataMsg.clear();
-    // wait for responses by workers+agent that all is ok
-    ret = comm::host::gatherResponses();
-    if (ret != DBERR_OK) {
-        return ret;
-    }
-    return ret;
+    // syncrhonize with driver
+    MPI_Barrier(g_global_intra_comm);
+
+    // Finalize the MPI environment.
+    MPI_Finalize();
+    // if (g_node_rank == HOST_LOCAL_RANK) {
+    //     logger::log_success("System finalized successfully");
+    // }
+    // logger::log_success("System finalized successfully");
 }
 
 int main(int argc, char* argv[]) {
     // initialize MPI environment parameters
     DB_STATUS ret = configurer::initMPIController(argc, argv);
     if (ret != DBERR_OK) {
-        controller::terminate();
+        terminate();
         return ret;
     }
 
@@ -109,7 +54,7 @@ int main(int argc, char* argv[]) {
     ret = proc::setupProcesses();
     if (ret != DBERR_OK) {
         logger::log_error(ret, "Setup host process environment failed");
-        controller::terminate();
+        terminate();
         return ret;
     }
 
@@ -123,14 +68,14 @@ int main(int argc, char* argv[]) {
         ret = setup::setupSystem(argc, argv);
         if (ret != DBERR_OK) {
             logger::log_error(ret, "System setup failed");
-            controller::terminate();
+            terminate();
             return ret;
         }
         // listen for messages from the driver
         ret = comm::host::listen();
         if (ret != DBERR_OK) {
             logger::log_error(ret, "Interrupted");
-            controller::terminate();
+            terminate();
             return ret;
         }
     } else {
@@ -138,12 +83,12 @@ int main(int argc, char* argv[]) {
         ret = comm::controller::listen();
         if (ret != DBERR_OK) {
             logger::log_error(ret, "Interrupted");
-            controller::terminate();
+            terminate();
             return ret;
         }
     }
     
-    controller::terminate();
+    terminate();
     // return success
     return 0;
 }

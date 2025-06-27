@@ -14,7 +14,10 @@ namespace uniform_grid
     namespace distance_filter
     {
         /** @brief Processes the DISTANCE JOIN query. Stores the edge objects in the borderObjectsMap map for each node. */
-        DB_STATUS processQuery(hec::Query* query, std::unordered_map<int, std::vector<size_t>> &borderObjectsMap, std::unique_ptr<hec::QResultBase>& queryResult);
+        DB_STATUS processQuery(hec::Query* query, std::unordered_map<int, DJBatch> &borderObjectsMap, std::unique_ptr<hec::QResultBase>& queryResult);
+
+        /** @brief Evaluates the DISTANCE JOIN query on the objects of the batch against the already stored/indexed objects. */
+        DB_STATUS evaluateDJBatch(hec::DistanceJoinQuery *distanceJoinQuery, DJBatch& batch, std::unique_ptr<hec::QResultBase>& queryResult);
     }
 }
 

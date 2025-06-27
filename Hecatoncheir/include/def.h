@@ -50,9 +50,9 @@ extern int g_parent_original_rank;
 extern int MAX_THREADS;
 
 enum PROCESS_TYPE {
-    DRIVER,
-    CONTROLLER,
-    AGENT,
+    PT_DRIVER,
+    PT_CONTROLLER,
+    PT_AGENT,
 };
 
 extern PROCESS_TYPE g_proc_type;
@@ -158,6 +158,7 @@ enum DataType{
     DT_LINESTRING,
     DT_BOX,
     DT_POLYGON,
+    DT_INVALID = 777,
 };
 
 /** @enum FilterResult @brief Possible results for the intermediate filter. */

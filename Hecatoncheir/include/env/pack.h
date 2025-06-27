@@ -117,7 +117,10 @@ namespace pack
     /** @brief Packs a batch of results into a serialized message. */
     DB_STATUS packBatchResults(std::unordered_map<int, hec::QResultBase*> &batchResults, SerializedMsg<char> &batchMsg);
 
-    // DB_STATUS packBatchResults(std::unordered_map<int, std::unique_ptr<hec::QResultBase>> &batchResults, SerializedMsg<char> &msg);
+    /** @brief Packs the sizes of a border object map for each node. (DISTANCE JOIN) 
+     * @warning INVOKED BY AGENTS
+    */
+    DB_STATUS packBorderObjectSizes(std::unordered_map<int, DJBatch> &borderObjectsMap, SerializedMsg<char> &msg);
 }
 
 /** @brief Methos that unpack serialized messages and extract their contents, based on message type. */
@@ -139,7 +142,7 @@ namespace unpack
 
         size_t expected_size = sizeof(size_t) + count * sizeof(T);
         if (msg.count != expected_size) {
-            logger::log_error(DBERR_INVALID_PARAMETER, "Serialized message size does not match expected size");
+            logger::log_error(DBERR_INVALID_PARAMETER, "Serialized message size does not match expected size. Expected:", expected_size, "cnt:", msg.count);
             return DBERR_INVALID_PARAMETER;
         }
 

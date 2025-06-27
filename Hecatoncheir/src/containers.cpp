@@ -272,8 +272,6 @@ DB_STATUS Dataset::buildIndex(hec::IndexType indexType) {
                     return ret;
                 }
             }
-            // sort
-            this->index->sortPartitionsOnY();
             break;
         default:
             logger::log_error(DBERR_INVALID_INDEX_TYPE, "Invalid index type for build index.");
@@ -595,6 +593,288 @@ DB_STATUS DataspaceMetadata::deserialize(const double *buffer, int bufferSize) {
     return DBERR_OK;
 }
 
+/** DISTANCE JOIN BATCH */
+
+void DJBatch::addObjectR(Shape& obj) {
+    this->objectsR[obj.recID] = obj;
+}
+
+void DJBatch::addObjectS(Shape& obj) {
+    this->objectsS[obj.recID] = obj;
+}   
+
+int DJBatch::calculateBufferSize() {
+    int size = 0;
+    size += sizeof(int);                                        // destination rank
+
+    size += sizeof(DataType);                                     // datatypeR
+    size += sizeof(size_t);                                     // objectsR count
+    for (auto &it: this->objectsR) {
+        size += sizeof(size_t);                                 // recID
+        size += sizeof(DataType);                               // data type
+        size += 4 * sizeof(double);                             // mbr
+        size += sizeof(it.second.getVertexCount());                    // vertex count
+        size += it.second.getVertexCount() * 2 * sizeof(double);       // vertices
+    }
+    
+    size += sizeof(DataType);                                     // datatypeS
+    size += sizeof(size_t);                                     // objectsS count
+    for (auto &it: this->objectsS) {
+        size += sizeof(size_t);                                 // recID
+        size += sizeof(DataType);                               // data type
+        size += 4 * sizeof(double);                             // mbr
+        size += sizeof(it.second.getVertexCount());                    // vertex count
+        size += it.second.getVertexCount() * 2 * sizeof(double);       // vertices
+    }
+    
+    return size;
+}
+
+DB_STATUS DJBatch::serialize(char **buffer, int &bufferSize) {
+    DB_STATUS ret = DBERR_OK;
+    // calculate size
+    int bufferSizeRet = calculateBufferSize();
+    // allocate space
+    (*buffer) = (char*) malloc(bufferSizeRet * sizeof(char));
+    if (*buffer == NULL) {
+        // malloc failed
+        return DBERR_MALLOC_FAILED;
+    }
+    char* localBuffer = *buffer;
+
+    // add dest rank
+    *reinterpret_cast<int*>(localBuffer) = this->destRank;
+    localBuffer += sizeof(int);
+    
+    // add datatype R
+    *reinterpret_cast<DataType*>(localBuffer) = this->dataTypeR;
+    localBuffer += sizeof(DataType);
+
+    // add objects R count
+    size_t totalObjectsR = this->objectsR.size();
+    *reinterpret_cast<size_t*>(localBuffer) = totalObjectsR;
+    localBuffer += sizeof(size_t);
+
+    // add batch geometry metadata
+    for (auto &it : this->objectsR) {
+        // ID
+        *reinterpret_cast<size_t*>(localBuffer) = it.second.recID;
+        localBuffer += sizeof(size_t);
+        // type
+        *reinterpret_cast<DataType*>(localBuffer) = it.second.type;
+        localBuffer += sizeof(DataType);
+        // mbr
+        *reinterpret_cast<double*>(localBuffer) = it.second.mbr.pMin.x;
+        localBuffer += sizeof(double);
+        *reinterpret_cast<double*>(localBuffer) = it.second.mbr.pMin.y;
+        localBuffer += sizeof(double);
+        *reinterpret_cast<double*>(localBuffer) = it.second.mbr.pMax.x;
+        localBuffer += sizeof(double);
+        *reinterpret_cast<double*>(localBuffer) = it.second.mbr.pMax.y;
+        localBuffer += sizeof(double);
+        // vertex count
+        *reinterpret_cast<int*>(localBuffer) = it.second.getVertexCount();
+        localBuffer += sizeof(int);
+        // serialize and copy coordinates to buffer
+        double* bufferPtr;
+        int bufferElementCount;
+        ret = it.second.serializeCoordinates(&bufferPtr, bufferElementCount);
+        if (ret != DBERR_OK) {
+            logger::log_error(ret, "Serializing coordinates failed.");
+            free(*buffer);
+            *buffer = nullptr;
+            return ret;
+        }
+        // logger::log_task("Adding object to buffer with", bufferElementCount, "elements");
+        std::memcpy(localBuffer, bufferPtr, bufferElementCount * sizeof(double));
+        localBuffer += bufferElementCount * sizeof(double);
+        // free 
+        free(bufferPtr);
+    }
+
+    // add datatype S
+    *reinterpret_cast<DataType*>(localBuffer) = this->dataTypeS;
+    localBuffer += sizeof(DataType);
+
+    // add objects S count
+    size_t totalObjectsS = this->objectsS.size();
+    *reinterpret_cast<size_t*>(localBuffer) = totalObjectsS;
+    localBuffer += sizeof(size_t);
+
+    // add batch geometry metadata
+    for (auto &it : this->objectsS) {
+        // id
+        *reinterpret_cast<size_t*>(localBuffer) = it.second.recID;
+        localBuffer += sizeof(size_t);
+        // type
+        *reinterpret_cast<DataType*>(localBuffer) = it.second.type;
+        localBuffer += sizeof(DataType);
+        // mbr
+        *reinterpret_cast<double*>(localBuffer) = it.second.mbr.pMin.x;
+        localBuffer += sizeof(double);
+        *reinterpret_cast<double*>(localBuffer) = it.second.mbr.pMin.y;
+        localBuffer += sizeof(double);
+        *reinterpret_cast<double*>(localBuffer) = it.second.mbr.pMax.x;
+        localBuffer += sizeof(double);
+        *reinterpret_cast<double*>(localBuffer) = it.second.mbr.pMax.y;
+        localBuffer += sizeof(double);
+        // vertex count
+        *reinterpret_cast<int*>(localBuffer) = it.second.getVertexCount();
+        localBuffer += sizeof(int);
+        // serialize and copy coordinates to buffer
+        double* bufferPtr;
+        int bufferElementCount;
+        ret = it.second.serializeCoordinates(&bufferPtr, bufferElementCount);
+        if (ret != DBERR_OK) {
+            logger::log_error(ret, "Serializing coordinates failed.");
+            free(*buffer);
+            *buffer = nullptr;
+            return ret;
+        }
+        // logger::log_task("Adding object to buffer with", bufferElementCount, "elements");
+        std::memcpy(localBuffer, bufferPtr, bufferElementCount * sizeof(double));
+        localBuffer += bufferElementCount * sizeof(double);
+        // free 
+        free(bufferPtr);
+    }
+    bufferSize = bufferSizeRet;
+    return ret;
+}
+
+DB_STATUS DJBatch::deserialize(const char *buffer, int bufferSize) {
+    DB_STATUS ret = DBERR_OK;
+    int vertexCount;
+    const char *localBuffer = buffer;
+
+    // get destination rank
+    this->destRank = *reinterpret_cast<const int*>(localBuffer);
+    localBuffer += sizeof(int);
+    
+    // get datatype R
+    this->dataTypeR = *reinterpret_cast<const DataType*>(localBuffer);
+    localBuffer += sizeof(DataType);
+
+    // get object count
+    size_t objectCountR = *reinterpret_cast<const size_t*>(localBuffer);
+    localBuffer += sizeof(size_t);
+    // reserve space
+    this->objectsR.reserve(objectCountR);
+
+    // deserialize fields for each object in the batch
+    for (size_t i=0; i<objectCountR; i++) {
+        // rec id
+        size_t recID = *reinterpret_cast<const size_t*>(localBuffer);
+        localBuffer += sizeof(size_t);
+        // data type
+        DataType type = *reinterpret_cast<const DataType*>(localBuffer);
+        localBuffer += sizeof(DataType);
+        // empty shape object
+        Shape object;
+        ret = shape_factory::createEmpty(type, object);
+        if (ret != DBERR_OK) {
+            return ret;
+        }
+        object.recID = recID;
+        // mbr
+        double xMin, yMin, xMax, yMax;
+        xMin = *reinterpret_cast<const double*>(localBuffer);
+        localBuffer += sizeof(double);
+        yMin = *reinterpret_cast<const double*>(localBuffer);
+        localBuffer += sizeof(double);
+        xMax = *reinterpret_cast<const double*>(localBuffer);
+        localBuffer += sizeof(double);
+        yMax = *reinterpret_cast<const double*>(localBuffer);
+        localBuffer += sizeof(double);
+        object.setMBR(xMin, yMin, xMax, yMax);
+        // vertex count
+        vertexCount = *reinterpret_cast<const int*>(localBuffer);
+        localBuffer += sizeof(int);
+        // vertices
+        // std::vector<double> coords(vertexCount * 2);
+        const double* vertexDataPtr = reinterpret_cast<const double*>(localBuffer);
+        for (size_t j = 0; j < vertexCount * 2; j+=2) {
+            object.addPoint(vertexDataPtr[j], vertexDataPtr[j+1]);
+        }
+        localBuffer += vertexCount * 2 * sizeof(double);
+        // add to batch
+        this->addObjectR(object);
+        // for safety
+        object.reset();
+    }
+
+    // get datatype S
+    this->dataTypeS = *reinterpret_cast<const DataType*>(localBuffer);
+    localBuffer += sizeof(DataType);
+
+    // get object count
+    size_t objectCountS = *reinterpret_cast<const size_t*>(localBuffer);
+    localBuffer += sizeof(size_t);
+    // reserve space
+    this->objectsS.reserve(objectCountS);
+
+    // deserialize fields for each object in the batch
+    for (size_t i=0; i<objectCountS; i++) {
+        // rec id
+        size_t recID = *reinterpret_cast<const size_t*>(localBuffer);
+        localBuffer += sizeof(size_t);
+        // data type
+        DataType type = *reinterpret_cast<const DataType*>(localBuffer);
+        localBuffer += sizeof(DataType);
+        // empty shape object
+        Shape object;
+        ret = shape_factory::createEmpty(type, object);
+        if (ret != DBERR_OK) {
+            return ret;
+        }
+        object.recID = recID;
+        // mbr
+        double xMin, yMin, xMax, yMax;
+        xMin = *reinterpret_cast<const double*>(localBuffer);
+        localBuffer += sizeof(double);
+        yMin = *reinterpret_cast<const double*>(localBuffer);
+        localBuffer += sizeof(double);
+        xMax = *reinterpret_cast<const double*>(localBuffer);
+        localBuffer += sizeof(double);
+        yMax = *reinterpret_cast<const double*>(localBuffer);
+        localBuffer += sizeof(double);
+        object.setMBR(xMin, yMin, xMax, yMax);
+        // vertex count
+        vertexCount = *reinterpret_cast<const int*>(localBuffer);
+        localBuffer += sizeof(int);
+        // vertices
+        // std::vector<double> coords(vertexCount * 2);
+        const double* vertexDataPtr = reinterpret_cast<const double*>(localBuffer);
+        for (size_t j = 0; j < vertexCount * 2; j+=2) {
+            object.addPoint(vertexDataPtr[j], vertexDataPtr[j+1]);
+        }
+        localBuffer += vertexCount * 2 * sizeof(double);
+
+        // add to batch
+        this->addObjectS(object);
+        // for safety
+        object.reset();
+    }
+
+    return ret;
+}
+
+DB_STATUS DJBatch::probeSerializedForDestRank(const char *buffer, int bufferSize, int &destRank) {
+    if (buffer == nullptr) {
+        logger::log_error(DBERR_NULL_PTR_EXCEPTION, "Null buffer during destRank probing.");
+        return DBERR_NULL_PTR_EXCEPTION;
+    }
+
+    if (bufferSize < static_cast<int>(sizeof(int))) {
+        logger::log_error(DBERR_BUFFER_SIZE_MISMATCH, "Buffer does not contain enough bytes for the destRank probing.");
+        return DBERR_BUFFER_SIZE_MISMATCH;
+    }
+
+    std::memcpy(&destRank, buffer, sizeof(int));
+
+    return DBERR_OK;
+}
+
+
 /** BASE INDEX */
 
 std::vector<PartitionBase*>* BaseIndex::getPartitions() {
@@ -804,6 +1084,9 @@ DB_STATUS TwoLayerIndex::evaluateQuery(hec::Query* query, std::unique_ptr<hec::Q
     return ret;
 }
 
+/**
+ * UNIFORM GRID INDEX
+ */
 
 PartitionBase* UniformGridIndex::getOrCreatePartition(int partitionID) {
     auto it = partitionMap.find(partitionID);
@@ -913,14 +1196,41 @@ DB_STATUS UniformGridIndex::evaluateQuery(hec::Query* query, std::unique_ptr<hec
     return ret;
 }
 
-DB_STATUS UniformGridIndex::evaluateQuery(hec::Query* query, std::unordered_map<int, std::vector<size_t>> &borderObjectsMap, std::unique_ptr<hec::QResultBase>& queryResult) {
-    DB_STATUS ret = uniform_grid::processQuery(query, queryResult);
+DB_STATUS UniformGridIndex::evaluateQuery(hec::Query* query, std::unordered_map<int, DJBatch> &borderObjectsMap, std::unique_ptr<hec::QResultBase>& queryResult) {
+    DB_STATUS ret = uniform_grid::distance_filter::processQuery(query, borderObjectsMap, queryResult);
     if (ret != DBERR_OK) {
         logger::log_error(ret, "Failed to process query with id:", query->getQueryID());
         return ret;
     }
     return ret;
 }
+
+DB_STATUS UniformGridIndex::evaluateDJBatch(hec::Query* query, DJBatch& batch, std::unique_ptr<hec::QResultBase>& queryResult) {
+    DB_STATUS ret = DBERR_OK;
+    // switch based on query type
+    switch (query->getQueryType()) {
+        case hec::Q_DISTANCE_JOIN:
+            {
+                // cast
+                hec::DistanceJoinQuery* distanceQuery = dynamic_cast<hec::DistanceJoinQuery*>(query);
+                // evaluate
+                ret = uniform_grid::distance_filter::evaluateDJBatch(distanceQuery, batch, queryResult);
+                if (ret != DBERR_OK) {
+                    logger::log_error(ret, "Failed to process query with id:", distanceQuery->getQueryID());
+                    return ret;
+                }
+            }
+            break;
+        default:
+            logger::log_error(DBERR_FEATURE_UNSUPPORTED, "Query type must be distance join for this version of uniform index query processing. Type:", mapping::queryTypeIntToStr((hec::QueryType) query->getQueryType()));
+            return DBERR_FEATURE_UNSUPPORTED;
+    }
+    return ret;
+}
+
+/**
+ * DATASET OPTIONS
+ */
 
 void DatasetOptions::clear() {
     R.reset();
@@ -1341,6 +1651,8 @@ namespace shape_factory
                 logger::log_error(DBERR_INVALID_DATATYPE, "Invalid datatype in factory method:", dataType);
                 return DBERR_INVALID_DATATYPE;
         }
+        // set data type
+        object.type = dataType;
         return DBERR_OK;
     }
 }

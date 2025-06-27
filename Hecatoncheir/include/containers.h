@@ -212,6 +212,16 @@ public:
         return false;
     }
 
+    std::vector<std::pair<int, int>> getOverlappingPartitionOffsets (
+        int iCenter, int jCenter,
+        double delta,
+        double partitionExtentX, double partitionExtentY,
+        double globalXmin, double globalYmin) const {
+        logger::log_error(DBERR_INVALID_OPERATION, "getOverlappingPartitionOffsets computation unsupported for the invoked shapes.");
+        std::vector<std::pair<int, int>> empty;
+        return empty;
+    }
+
     template<typename OtherBoostGeometryObj>
     bool intersects(const OtherBoostGeometryObj &other) const {
         logger::log_error(DBERR_INVALID_OPERATION, "intersects predicate unsupported for the invoked shapes.");
@@ -309,7 +319,6 @@ public:
         // boost::geometry::read_wkt(wktText, geometry);
 
         /** Manually parse WKT. Works for "POINT (x y)". 
-         * @warning UNTESTED
         */
         const char* c = wktText.c_str();
         c = strchr(c, '(');
@@ -418,6 +427,34 @@ public:
         return std::sqrt(dx * dx + dy * dy);
     }
 
+    std::vector<std::pair<int, int>> getOverlappingPartitionOffsets (
+        int iCenter, int jCenter,
+        double delta,
+        double partitionExtentX, double partitionExtentY,
+        double globalXmin, double globalYmin) const {
+        
+        std::vector<std::pair<int, int>> offsets;
+        // Compute bounding box of shape + delta
+        double minX = this->geometry.x() - delta;
+        double maxX = this->geometry.x() + delta;
+        double minY = this->geometry.y() - delta;
+        double maxY = this->geometry.y() + delta;
+
+        // Compute which partitions the expanded shape touches
+        int minI = static_cast<int>(std::floor((minX - globalXmin) / partitionExtentX));
+        int maxI = static_cast<int>(std::floor((maxX - globalXmin) / partitionExtentX));
+        int minJ = static_cast<int>(std::floor((minY - globalYmin) / partitionExtentY));
+        int maxJ = static_cast<int>(std::floor((maxY - globalYmin) / partitionExtentY));
+
+        for (int i = minI; i <= maxI; ++i) {
+            for (int j = minJ; j <= maxJ; ++j) {
+                offsets.emplace_back(i - iCenter, j - jCenter);  // relative to current partition
+            }
+        }
+
+        return offsets;
+    }
+    
     template<typename OtherBoostGeometryObj>
     bool intersects(const OtherBoostGeometryObj &other) const {
         return boost::geometry::intersects(geometry, other.geometry);
@@ -593,6 +630,16 @@ public:
         // return this->distance(partitionShape);
         logger::log_error(DBERR_INVALID_OPERATION, "distanceToPartition unsupported for bg_box.");
         return 0;
+    }
+
+    std::vector<std::pair<int, int>> getOverlappingPartitionOffsets (
+        int iCenter, int jCenter,
+        double delta,
+        double partitionExtentX, double partitionExtentY,
+        double globalXmin, double globalYmin) const {
+        logger::log_error(DBERR_INVALID_OPERATION, "getOverlappingPartitionOffsets unsupported for bg_box.");
+        std::vector<std::pair<int, int>> empty;
+        return empty;
     }
 
     template<typename OtherBoostGeometryObj>
@@ -811,6 +858,16 @@ public:
         // return this->distance(partitionShape);
         logger::log_error(DBERR_INVALID_OPERATION, "distanceToPartition unsupported for bg_linestring.");
         return 0;
+    }
+
+    std::vector<std::pair<int, int>> getOverlappingPartitionOffsets (
+        int iCenter, int jCenter,
+        double delta,
+        double partitionExtentX, double partitionExtentY,
+        double globalXmin, double globalYmin) const {
+        logger::log_error(DBERR_INVALID_OPERATION, "getOverlappingPartitionOffsets unsupported for bg_linestring.");
+        std::vector<std::pair<int, int>> empty;
+        return empty;
     }
     
     template<typename OtherBoostGeometryObj>
@@ -1034,6 +1091,16 @@ public:
         return 0;
     }
 
+    std::vector<std::pair<int, int>> getOverlappingPartitionOffsets (
+        int iCenter, int jCenter,
+        double delta,
+        double partitionExtentX, double partitionExtentY,
+        double globalXmin, double globalYmin) const {
+        logger::log_error(DBERR_INVALID_OPERATION, "getOverlappingPartitionOffsets unsupported for bg_polygon.");
+        std::vector<std::pair<int, int>> empty;
+        return empty;
+    }
+
     template<typename OtherBoostGeometryObj>
     bool intersects(const OtherBoostGeometryObj &other) const {
         return boost::geometry::intersects(geometry, other.geometry);
@@ -1165,6 +1232,8 @@ public:
     MBR mbr;
     /** @brief APRIL */
     AprilData aprilData;
+    /** @brief the Shape DataType for quick access */
+    DataType type;
 
     /** @brief Default empty Shape constructor. */
     Shape() {}
@@ -1355,6 +1424,15 @@ public:
         }, shape);
     }   
 
+    std::vector<std::pair<int, int>> getOverlappingPartitionOffsets (
+        int iCenter, int jCenter,
+        double delta,
+        double partitionExtentX, double partitionExtentY,
+        double globalXmin, double globalYmin) const {
+        return std::visit([iCenter, jCenter, delta, partitionExtentX, partitionExtentY, globalXmin, globalYmin](auto&& arg) -> std::vector<std::pair<int, int>> {
+            return arg.getOverlappingPartitionOffsets(iCenter, jCenter, delta, partitionExtentX, partitionExtentY, globalXmin, globalYmin);
+        }, shape);
+    }
 
     /** @brief Returns true whether the input geometry intersects (border or area) with this geometry. False otherwise. 
      * @warning Not all geometry type combinations are supported (see data type support).
@@ -1830,17 +1908,22 @@ struct SystemOptions {
  * @brief A batch containing multiple objects for the batch partitioning/broadcasting.
  */
 struct Batch {
-    DataType dataType;
+    DataType dataType;  /** @todo data type for  batch is obsolete. carefully refactor. */
     // serializable
     size_t objectCount = 0;
     std::vector<Shape> objects;
     // unserializable/unclearable (todo: make const?)
     int destRank = -1;   // destination node rank
-    size_t maxObjectCount; 
+    size_t maxObjectCount = 0; 
     MPI_Comm* comm; // communicator that the batch will be send through
     int tag = -1;        // MPI tag = indicates spatial data type
 
     Batch();
+    Batch(int destRank, int tag, MPI_Comm* comm) {
+        this->destRank = destRank;
+        this->tag = tag;
+        this->comm = comm;
+    }
 
     bool isValid();
     void addObjectToBatch(Shape &object);
@@ -1866,6 +1949,43 @@ struct Batch {
 };
 
 
+/** @brief a batch of objects that is exchanged during Distance Joins */
+struct DJBatch {
+    int destRank = -1;
+    // std::vector<Shape> objectsR; 
+    std::unordered_map<size_t, Shape> objectsR;
+    DataType dataTypeR = DT_INVALID;
+    std::unordered_map<size_t, Shape> objectsS;
+    // std::vector<Shape> objectsS;
+    DataType dataTypeS = DT_INVALID;
+    
+    DJBatch(){
+        destRank = -1;
+        objectsR.clear();
+        objectsS.clear();
+        dataTypeR = DT_INVALID;
+        dataTypeS = DT_INVALID;
+    }
+
+    DJBatch(int destRank, DataType dataTypeR, DataType dataTypeS){
+        destRank = this->destRank;
+        objectsR.clear();
+        objectsS.clear();
+        dataTypeR = this->dataTypeR;
+        dataTypeS = this->dataTypeS;
+    }
+
+    void addObjectR(Shape& obj);    
+    void addObjectS(Shape& obj);  
+
+    int calculateBufferSize();
+    DB_STATUS serialize(char **buffer, int &bufferSize);  
+    DB_STATUS deserialize(const char *buffer, int bufferSize);
+
+    /** @brief Probes a serialized DJBatch object to get the destRank without deserializing it. */
+    static DB_STATUS probeSerializedForDestRank(const char *buffer, int bufferSize, int &destRank);
+};
+
 /** @brief Abstract base class for all index structures. */
 class BaseIndex {
 protected:
@@ -1879,6 +1999,12 @@ public:
 
     /** @brief returns the partitions */
     std::vector<PartitionBase*>* getPartitions();
+
+    /** @brief Returns the partitions that the object overlaps with in the partitionIDs vector. */
+    virtual DB_STATUS getPartitionsForMBR(Shape* objectRef, std::vector<int> &partitionIDs) {
+        logger::log_error(DBERR_FORBIDDEN_METHOD_CALL, "Invalid getPartitionsForMBR call for index type.");
+        return DBERR_FORBIDDEN_METHOD_CALL;
+    }
 
     /** @brief returns or creates (empty) the partition with the given id */
     virtual PartitionBase* getOrCreatePartition(int partitionID) = 0;
@@ -1896,8 +2022,13 @@ public:
     /** @brief Evaluate the given DISTANCE JOIN query and store results in the queryResult.
      * the borderObjectsMap map contains a list of object IDs that need to be send to other nodes (key).
      */
-    virtual DB_STATUS evaluateQuery(hec::Query* query, std::unordered_map<int, std::vector<size_t>> &borderObjectsMap, std::unique_ptr<hec::QResultBase>& queryResult) {
-        logger::log_error(DBERR_FORBIDDEN_METHOD_CALL, "Invalid evauluateQuery call for index type.");
+    virtual DB_STATUS evaluateQuery(hec::Query* query, std::unordered_map<int, DJBatch> &borderObjectsMap, std::unique_ptr<hec::QResultBase>& queryResult) {
+        logger::log_error(DBERR_FORBIDDEN_METHOD_CALL, "Invalid evaluateQuery call for index type.");
+        return DBERR_FORBIDDEN_METHOD_CALL;
+    }
+
+    virtual DB_STATUS evaluateDJBatch(hec::Query* query, DJBatch& batch, std::unique_ptr<hec::QResultBase>& queryResult) {
+        logger::log_error(DBERR_FORBIDDEN_METHOD_CALL, "Invalid evaluateDJBatch call for index type.");
         return DBERR_FORBIDDEN_METHOD_CALL;
     }
 
@@ -1945,10 +2076,10 @@ private:
     static bool compareByY(const Shape* a, const Shape* b) {
         return a->mbr.pMin.y < b->mbr.pMin.y;
     }
-    static DB_STATUS getPartitionsForMBR(Shape* objectRef, std::vector<int> &partitionIDs);
-public:
+    public:
     UniformGridIndex(){};
-
+    
+    DB_STATUS getPartitionsForMBR(Shape* objectRef, std::vector<int> &partitionIDs) override;
     DB_STATUS addObject(Shape *objectRef) override;
 
     PartitionBase* getOrCreatePartition(int partitionID) override;
@@ -1959,9 +2090,11 @@ public:
     void sortPartitionsOnY() override;
 
     /** @brief Evaluate the given query and store results in the queryResult object. */
-    DB_STATUS evaluateQuery(hec::Query* query, std::unique_ptr<hec::QResultBase>& queryResult);
+    DB_STATUS evaluateQuery(hec::Query* query, std::unique_ptr<hec::QResultBase>& queryResult) override;
 
-    DB_STATUS evaluateQuery(hec::Query* query, std::unordered_map<int, std::vector<size_t>> &borderObjectsMap, std::unique_ptr<hec::QResultBase>& queryResult);
+    DB_STATUS evaluateQuery(hec::Query* query, std::unordered_map<int, DJBatch> &borderObjectsMap, std::unique_ptr<hec::QResultBase>& queryResult) override;
+
+    DB_STATUS evaluateDJBatch(hec::Query* query, DJBatch& batch, std::unique_ptr<hec::QResultBase>& queryResult) override;
 };
 
 /**
@@ -2074,6 +2207,7 @@ public:
 
     void print();
 };
+
 
 
 /** @brief The main configuration struct. Holds all necessary configuration options. */

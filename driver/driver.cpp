@@ -24,7 +24,7 @@ void spatialJoinScenario() {
     hec::QResultBase* result = hec::query(&joinQuery);
     double total_time = hec::time::getTime() - start;
     // results
-    ssize_t resCount = result->getResultCount();
+    size_t resCount = result->getResultCount();
     printf("Results: %ld\n", resCount);
     printf("Query finished in %0.2f seconds.\n", total_time);
     delete result;
@@ -150,14 +150,18 @@ void distanceJoinScenario() {
     ret = hec::buildIndex({RID, SID}, hec::IT_UNIFORM_GRID);
     printf("Indexes built in %0.2f seconds.\n", hec::time::getTime() - start);
     // query
-    hec::DistanceJoinQuery distanceQuery(RID, SID, 0, hec::QR_COUNT, 0.001);
+    hec::DistanceJoinQuery distanceQuery(RID, SID, 0, hec::QR_COLLECT, 0.001);
     start = hec::time::getTime();
     hec::QResultBase* result = hec::query(&distanceQuery);
     double total_time = hec::time::getTime() - start;
     // results
-    ssize_t resCount = result->getResultCount();
-    printf("Results: %ld\n", resCount);
-    printf("Query finished in %0.2f seconds.\n", total_time);
+    std::vector<size_t> results = result->getResultList();
+    // for (int i=0; i<results.size(); i+=2) {
+    //     printf("%ld,%ld\n", results[i], results[i+1]);
+    // }
+    printf("Results: %ld\n", results.size()/2);
+
+    printf("Query finished in %0.5f seconds.\n", total_time);
     delete result;
 
     // unload
@@ -171,7 +175,7 @@ int main(int argc, char* argv[]) {
     */
     std::vector<std::string> hosts = {"vm1:1", "vm3:1", "vm5:1", "vm7:1", "vm9:1", "vm2:1", "vm4:1", "vm6:1", "vm8:1", "vm10:1"};
     // std::vector<std::string> hosts = {"vm1:1", "vm2:1", "vm3:1", "vm4:1"};
-    // std::vector<std::string> hosts = {"vm1:1", "vm2:1"};
+    // std::vector<std::string> hosts = {"vm1:1", "vm3:1", "vm5:1"};
     // std::vector<std::string> hosts = {"vm1:1"};
 
     /**

@@ -7,8 +7,8 @@
 /** @brief Data distribution/partitioning methods. */
 namespace partitioning
 {
-    /** @brief Prints all partitions and their assigned node ranks. */
-    void printPartitionAssignment();
+    /** @brief Initializes a batch map of objects to be sent. */
+    DB_STATUS initializeBatchMap(std::unordered_map<int,Batch> &batchMap, DataType dataType);
 
     /**
     @brief Calculates the intersecting partitions in the distribution grid for the given MBR.

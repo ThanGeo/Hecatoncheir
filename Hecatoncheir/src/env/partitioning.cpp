@@ -32,7 +32,7 @@ namespace partitioning
         return DBERR_OK;
     }
 
-    static DB_STATUS initializeBatchMap(std::unordered_map<int,Batch> &batchMap, DataType dataType) {
+    DB_STATUS initializeBatchMap(std::unordered_map<int,Batch> &batchMap, DataType dataType) {
         // initialize batches
         for (int i=0; i<g_world_size; i++) {
             Batch batch;
@@ -732,7 +732,6 @@ namespace partitioning
 
             return ret;
         }
-
 
         static DB_STATUS loadDatasetAndPartitionNoBatches(Dataset* dataset) {
             DB_STATUS ret = DBERR_OK;

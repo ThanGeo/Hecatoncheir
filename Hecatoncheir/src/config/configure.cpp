@@ -6,7 +6,7 @@ namespace configurer
         int rank, wsize;
         int provided;
         // type
-        g_proc_type = CONTROLLER;
+        g_proc_type = PT_CONTROLLER;
         // init MPI
         int mpi_ret = MPI_Init_thread(nullptr, nullptr, MPI_THREAD_MULTIPLE, &provided);
         if (mpi_ret != MPI_SUCCESS) {
@@ -83,7 +83,7 @@ namespace configurer
             return DBERR_MPI_INIT_FAILED;
         }
         // type
-        g_proc_type = AGENT;
+        g_proc_type = PT_AGENT;
 
         // get parent process intercomm
         MPI_Comm_get_parent(&g_agent_comm);

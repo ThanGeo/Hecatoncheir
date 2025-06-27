@@ -300,6 +300,37 @@ namespace pack
         return ret;
     }
 
+    DB_STATUS packBorderObjectSizes(std::unordered_map<int, DJBatch> &borderObjectsMap, SerializedMsg<char> &msg) {
+        // add all to a single vector
+        std::vector<size_t> values;
+        values.reserve(borderObjectsMap.size() * 3);
+        for (int i=0; i<g_world_size; i++) {
+            // node rank i
+            values.emplace_back(i);
+            if (i != g_parent_original_rank) {
+                // pack how many objects are on the border with node i
+                // first R, then S
+                size_t rSize = borderObjectsMap[i].objectsR.size();
+                values.emplace_back(rSize);
+                size_t sSize = borderObjectsMap[i].objectsS.size();
+                values.emplace_back(sSize);
+            } else {
+                // own rank (parent controller's), pack nothing
+                values.emplace_back(0);
+                values.emplace_back(0);
+            }
+        }
+
+        // pack into the buffer
+        DB_STATUS ret = pack::packValues(msg, values);
+        if (ret != DBERR_OK) {
+            logger::log_error(ret, "Packing border object sizes failed.");
+            return ret;
+        }
+
+        return ret;
+    }
+
 }
 
 namespace unpack

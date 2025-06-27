@@ -310,7 +310,7 @@ namespace hec {
             return DBERR_MPI_INIT_FAILED;
         }
         // set process type
-        g_proc_type = DRIVER;
+        g_proc_type = PT_DRIVER;
 
         // spawn the controllers in the hosts
         ret = spawnControllers(numProcs, hosts);

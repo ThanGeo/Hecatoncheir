@@ -1,11 +1,12 @@
 #include "UniformGrid/filter.h"
 #include "refinement/topology.h"
+#include "env/partitioning.h"
 
 namespace uniform_grid
 {
     namespace knn_filter
     {        
-        static DB_STATUS evaluate(hec::KNNQuery *knnQuery, hec::QResultBase* queryResult) {
+        static DB_STATUS evaluate(hec::KNNQuery *knnQuery, std::unique_ptr<hec::QResultBase>& queryResult) {
             Shape qPoint;
             Dataset* dataset = g_config.datasetOptions.getDatasetByIdx(knnQuery->getDatasetID());
             // create query shape
@@ -26,14 +27,13 @@ namespace uniform_grid
                     continue;
                 }
                 /** CHECK PARTITION OPTIMIZATION */
-                // check partition bounds TODO
                 int iFine = partition->partitionID % g_config.partitioningMethod->getGlobalPPD(); 
                 int jFine = partition->partitionID / g_config.partitioningMethod->getGlobalPPD(); 
                 double xFineStart = g_config.datasetOptions.dataspaceMetadata.xMinGlobal + iFine * g_config.partitioningMethod->getPartPartionExtentX();
                 double yFineStart = g_config.datasetOptions.dataspaceMetadata.yMinGlobal + jFine * g_config.partitioningMethod->getPartPartionExtentY();
                 double xFineEnd = xFineStart + g_config.partitioningMethod->getDistPartionExtentX();
                 double yFineEnd = yFineStart + g_config.partitioningMethod->getDistPartionExtentY();                
-                // calculate query point distance to coarse partition
+                // calculate query point distance to fine partition
                 double distanceToPartition = qPoint.distanceToPartition(xFineStart, yFineStart, xFineEnd, yFineEnd);
                 // if the distance to partition is larger than the current max in heap, skip this partition entirely
                 if (!queryResult->checkDistance(distanceToPartition)) {
@@ -279,21 +279,21 @@ namespace uniform_grid
         }
 
         // @todo: different evaluation for box or polygon
-        static DB_STATUS evaluate(hec::RangeQuery *rangeQuery, hec::QResultBase* queryResult) {
+        static DB_STATUS evaluate(hec::RangeQuery *rangeQuery, std::unique_ptr<hec::QResultBase>& queryResult) {
             DB_STATUS ret = DBERR_OK;
             Dataset* dataset = g_config.datasetOptions.getDatasetByIdx(rangeQuery->getDatasetID());
             // create shape object for window
             Shape window;
             if (rangeQuery->getWKT().find("POLYGON") != std::string::npos) {
                 // polygon query
-                ret = evaluatePolygonQuery(rangeQuery, queryResult);
+                ret = evaluatePolygonQuery(rangeQuery, queryResult.get());
                 if (ret != DBERR_OK) {
                     logger::log_error(ret, "Polygon query evaluation failed.");
                     return ret;
                 }
             } else if (rangeQuery->getWKT().find("BOX") != std::string::npos) {
                 // box query
-                ret = evaluateBoxQuery(rangeQuery, queryResult);
+                ret = evaluateBoxQuery(rangeQuery, queryResult.get());
                 if (ret != DBERR_OK) {
                     logger::log_error(ret, "Box query evaluation failed.");
                     return ret;
@@ -310,13 +310,237 @@ namespace uniform_grid
 
     namespace distance_filter
     {
-        static DB_STATUS evaluate(hec::DistanceJoinQuery *knnQuery, std::unordered_map<int, std::vector<size_t>> &borderObjectsMap, hec::QResultBase* queryResult) {
-            
-            logger::log_warning("TODO evaluate");
-            return DBERR_FEATURE_UNSUPPORTED;
+
+        static DB_STATUS evaluate(hec::DistanceJoinQuery *distanceJoinQuery, std::unordered_map<int, DJBatch>& borderObjectsMap, std::unique_ptr<hec::QResultBase>& queryResult) {
+            DB_STATUS ret = DBERR_OK;
+            Dataset* R = g_config.datasetOptions.getDatasetByIdx(distanceJoinQuery->getDatasetRid());
+            Dataset* S = g_config.datasetOptions.getDatasetByIdx(distanceJoinQuery->getDatasetSid());
+
+            // Thread-local storage for border objects (one per thread)
+            std::vector<std::unordered_map<int, DJBatch>> threadLocalBorderMaps(MAX_THREADS);
+
+            #pragma omp parallel num_threads(MAX_THREADS) reduction(query_output_reduction:queryResult)
+            {
+                int tid = omp_get_thread_num();
+                auto& localBorderMap = threadLocalBorderMaps[tid];
+
+                std::vector<PartitionBase *>* partitions = R->index->getPartitions();
+                #pragma omp for
+                for (int i = 0; i < partitions->size(); i++) {
+                    PartitionBase* partitionR = partitions->at(i);
+                    int iFine = partitionR->partitionID % g_config.partitioningMethod->getGlobalPPD(); 
+                    int jFine = partitionR->partitionID / g_config.partitioningMethod->getGlobalPPD(); 
+
+                    std::vector<Shape*>* objectsR = partitionR->getContents();
+                    if (objectsR != nullptr) {
+                        for (auto &obj : *objectsR) {
+                            //  Check if this R object needs to be distributed
+                            std::vector<std::pair<int,int>> overlappingPartitionOffsets = obj->getOverlappingPartitionOffsets(
+                                iFine, jFine, distanceJoinQuery->getDistanceValue(),
+                                g_config.partitioningMethod->getPartPartionExtentX(),
+                                g_config.partitioningMethod->getPartPartionExtentY(),
+                                g_config.datasetOptions.dataspaceMetadata.xMinGlobal,
+                                g_config.datasetOptions.dataspaceMetadata.yMinGlobal);
+
+                            for (auto &offset : overlappingPartitionOffsets) {
+                                int overlapPartitionID = g_config.partitioningMethod->getPartitionID(
+                                    iFine + offset.first, jFine + offset.second, 
+                                    g_config.partitioningMethod->getGlobalPPD());
+
+                                int oFineI = overlapPartitionID % g_config.partitioningMethod->getGlobalPPD(); 
+                                int oFineJ = overlapPartitionID / g_config.partitioningMethod->getGlobalPPD(); 
+
+                                int oCoarseI = oFineI / g_config.partitioningMethod->getPartitioningPPD();
+                                int oCoarseJ = oFineJ / g_config.partitioningMethod->getPartitioningPPD();
+                                int coarsePartitionID = g_config.partitioningMethod->getPartitionID(
+                                    oCoarseI, oCoarseJ, g_config.partitioningMethod->getDistributionPPD());
+                                int nodeRank = g_config.partitioningMethod->getNodeRankForPartitionID(coarsePartitionID);
+                                
+                                if (nodeRank != g_parent_original_rank) {
+                                    localBorderMap[nodeRank].addObjectR(*obj); // Thread-local, no contention
+                                } else {
+                                    // no distribution needed, evaluate locally against other local partitions
+                                    PartitionBase* partitionS = S->index->getPartition(overlapPartitionID);
+                                    if (partitionS != nullptr) {
+                                        std::vector<Shape*>* objectsS = partitionS->getContents();
+                                        if (objectsS != nullptr) {
+                                            for (auto &objectS : *objectsS) {
+                                                if (obj->distance(*objectS) <= distanceJoinQuery->getDistanceValue()) {
+                                                    queryResult->addResult(obj->recID, objectS->recID);
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Merge thread-local border maps into the global one (serial section)
+            for (auto& localMap : threadLocalBorderMaps) {
+                for (auto& [rank, batch] : localMap) {
+                    borderObjectsMap[rank].objectsR.insert(batch.objectsR.begin(), batch.objectsR.end());
+                    borderObjectsMap[rank].objectsS.insert(batch.objectsS.begin(), batch.objectsS.end());
+                }
+            }
+
+            // Thread-local storage for S border objects (one per thread)
+            std::vector<std::unordered_map<int, DJBatch>> threadLocalBorderMapsS(MAX_THREADS);
+            #pragma omp parallel num_threads(MAX_THREADS)
+            {
+                int tid = omp_get_thread_num();
+                auto& localBorderMap = threadLocalBorderMaps[tid];
+
+                std::vector<PartitionBase *>* partitions = S->index->getPartitions();
+                #pragma omp for
+                for (int i = 0; i < partitions->size(); i++) {
+                    PartitionBase* partitionS = partitions->at(i);
+                    int iFine = partitionS->partitionID % g_config.partitioningMethod->getGlobalPPD(); 
+                    int jFine = partitionS->partitionID / g_config.partitioningMethod->getGlobalPPD(); 
+
+                    std::vector<Shape*>* objectsS = partitionS->getContents();
+                    if (objectsS != nullptr) {
+                        for (auto &obj : *objectsS) {
+                            std::vector<std::pair<int,int>> overlappingPartitionOffsets = obj->getOverlappingPartitionOffsets(
+                                iFine, jFine, distanceJoinQuery->getDistanceValue(),
+                                g_config.partitioningMethod->getPartPartionExtentX(),
+                                g_config.partitioningMethod->getPartPartionExtentY(),
+                                g_config.datasetOptions.dataspaceMetadata.xMinGlobal,
+                                g_config.datasetOptions.dataspaceMetadata.yMinGlobal);
+
+                            for (auto &offset : overlappingPartitionOffsets) {
+                                int overlapPartitionID = g_config.partitioningMethod->getPartitionID(
+                                    iFine + offset.first, jFine + offset.second, 
+                                    g_config.partitioningMethod->getGlobalPPD());
+
+                                int oFineI = overlapPartitionID % g_config.partitioningMethod->getGlobalPPD(); 
+                                int oFineJ = overlapPartitionID / g_config.partitioningMethod->getGlobalPPD(); 
+
+                                int oCoarseI = oFineI / g_config.partitioningMethod->getPartitioningPPD();
+                                int oCoarseJ = oFineJ / g_config.partitioningMethod->getPartitioningPPD();
+                                int coarsePartitionID = g_config.partitioningMethod->getPartitionID(
+                                    oCoarseI, oCoarseJ, g_config.partitioningMethod->getDistributionPPD());
+                                int nodeRank = g_config.partitioningMethod->getNodeRankForPartitionID(coarsePartitionID);
+                                
+                                if (nodeRank != g_parent_original_rank) {
+                                    localBorderMap[nodeRank].addObjectS(*obj); // Thread-local, no contention
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Merge thread-local S border maps into the global one (serial section)
+            for (auto& localMap : threadLocalBorderMaps) {
+                for (auto& [rank, batch] : localMap) {
+                    borderObjectsMap[rank].objectsR.insert(batch.objectsR.begin(), batch.objectsR.end());
+                    borderObjectsMap[rank].objectsS.insert(batch.objectsS.begin(), batch.objectsS.end());
+                }
+            }
+
+            if (ret != DBERR_OK) {
+                logger::log_error(ret, "Parallel distance join failed.");
+            }
+            return ret;
         }
 
-        DB_STATUS processQuery(hec::Query* query, std::unordered_map<int, std::vector<size_t>> &borderObjectsMap, std::unique_ptr<hec::QResultBase>& queryResult) {
+        DB_STATUS evaluateDJBatch(hec::DistanceJoinQuery *distanceJoinQuery, DJBatch& batch, std::unique_ptr<hec::QResultBase>& queryResult) {
+            DB_STATUS ret = DBERR_OK;
+            Dataset* R = g_config.datasetOptions.getDatasetByIdx(distanceJoinQuery->getDatasetRid());
+            Dataset* S = g_config.datasetOptions.getDatasetByIdx(distanceJoinQuery->getDatasetSid());
+
+            // R objects in batch
+            for (auto& objectR: batch.objectsR) {
+                int iFine = std::floor((objectR.second.mbr.pMin.x - g_config.datasetOptions.dataspaceMetadata.xMinGlobal) / g_config.partitioningMethod->getPartPartionExtentX());
+                int jFine = std::floor((objectR.second.mbr.pMin.y - g_config.datasetOptions.dataspaceMetadata.yMinGlobal) / g_config.partitioningMethod->getPartPartionExtentY());
+                
+                std::vector<std::pair<int,int>> overlappingPartitionOffsets = objectR.second.getOverlappingPartitionOffsets(
+                    iFine, jFine, distanceJoinQuery->getDistanceValue(),
+                    g_config.partitioningMethod->getPartPartionExtentX(),
+                    g_config.partitioningMethod->getPartPartionExtentY(),
+                    g_config.datasetOptions.dataspaceMetadata.xMinGlobal,
+                    g_config.datasetOptions.dataspaceMetadata.yMinGlobal);
+
+                for (auto &offset : overlappingPartitionOffsets) {
+                    int overlapPartitionID = g_config.partitioningMethod->getPartitionID(
+                        iFine + offset.first, jFine + offset.second, 
+                        g_config.partitioningMethod->getGlobalPPD());
+
+                    int oFineI = overlapPartitionID % g_config.partitioningMethod->getGlobalPPD(); 
+                    int oFineJ = overlapPartitionID / g_config.partitioningMethod->getGlobalPPD(); 
+
+                    int oCoarseI = oFineI / g_config.partitioningMethod->getPartitioningPPD();
+                    int oCoarseJ = oFineJ / g_config.partitioningMethod->getPartitioningPPD();
+                    int coarsePartitionID = g_config.partitioningMethod->getPartitionID(
+                        oCoarseI, oCoarseJ, g_config.partitioningMethod->getDistributionPPD());
+                    int nodeRank = g_config.partitioningMethod->getNodeRankForPartitionID(coarsePartitionID);
+
+                    if (nodeRank == g_parent_original_rank) {
+                        // no distribution needed, evaluate locally against other local partitions
+                        PartitionBase* partitionS = S->index->getPartition(overlapPartitionID);
+                        if (partitionS != nullptr) {
+                            std::vector<Shape*>* objectsS = partitionS->getContents();
+                            if (objectsS != nullptr) {
+                                for (auto &objectS : *objectsS) {
+                                    if (objectR.second.distance(*objectS) <= distanceJoinQuery->getDistanceValue()) {
+                                        queryResult->addResult(objectR.second.recID, objectS->recID);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            // S objects in batch
+            for (auto& objectS: batch.objectsS) {
+                int iFine = std::floor((objectS.second.mbr.pMin.x - g_config.datasetOptions.dataspaceMetadata.xMinGlobal) / g_config.partitioningMethod->getPartPartionExtentX());
+                int jFine = std::floor((objectS.second.mbr.pMin.y - g_config.datasetOptions.dataspaceMetadata.yMinGlobal) / g_config.partitioningMethod->getPartPartionExtentY());
+                
+                std::vector<std::pair<int,int>> overlappingPartitionOffsets = objectS.second.getOverlappingPartitionOffsets(
+                    iFine, jFine, distanceJoinQuery->getDistanceValue(),
+                    g_config.partitioningMethod->getPartPartionExtentX(),
+                    g_config.partitioningMethod->getPartPartionExtentY(),
+                    g_config.datasetOptions.dataspaceMetadata.xMinGlobal,
+                    g_config.datasetOptions.dataspaceMetadata.yMinGlobal);
+
+                for (auto &offset : overlappingPartitionOffsets) {
+                    int overlapPartitionID = g_config.partitioningMethod->getPartitionID(
+                        iFine + offset.first, jFine + offset.second, 
+                        g_config.partitioningMethod->getGlobalPPD());
+
+                    int oFineI = overlapPartitionID % g_config.partitioningMethod->getGlobalPPD(); 
+                    int oFineJ = overlapPartitionID / g_config.partitioningMethod->getGlobalPPD(); 
+
+                    int oCoarseI = oFineI / g_config.partitioningMethod->getPartitioningPPD();
+                    int oCoarseJ = oFineJ / g_config.partitioningMethod->getPartitioningPPD();
+                    int coarsePartitionID = g_config.partitioningMethod->getPartitionID(
+                        oCoarseI, oCoarseJ, g_config.partitioningMethod->getDistributionPPD());
+                    int nodeRank = g_config.partitioningMethod->getNodeRankForPartitionID(coarsePartitionID);
+
+                    if (nodeRank == g_parent_original_rank) {
+                        // no distribution needed, evaluate locally against other local partitions
+                        PartitionBase* partitionR = R->index->getPartition(overlapPartitionID);
+                        if (partitionR != nullptr) {
+                            std::vector<Shape*>* objectsR = partitionR->getContents();
+                            if (objectsR != nullptr) {
+                                for (auto &objectR : *objectsR) {
+                                    if (objectR->distance(objectS.second) <= distanceJoinQuery->getDistanceValue()) {
+                                        queryResult->addResult(objectR->recID, objectS.second.recID);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            return ret;
+        }
+
+        DB_STATUS processQuery(hec::Query* query, std::unordered_map<int, DJBatch>& borderObjectsMap, std::unique_ptr<hec::QResultBase>& queryResult) {
             DB_STATUS ret = DBERR_OK;
             // set to global config
             g_config.queryPipeline.queryType = (hec::QueryType) query->getQueryType();
@@ -328,7 +552,7 @@ namespace uniform_grid
                         // cast
                         hec::DistanceJoinQuery* distanceQuery = dynamic_cast<hec::DistanceJoinQuery*>(query);
                         // evaluate
-                        ret = distance_filter::evaluate(distanceQuery, borderObjectsMap, queryResult.get());
+                        ret = distance_filter::evaluate(distanceQuery, borderObjectsMap, queryResult);
                         if (ret != DBERR_OK) {
                             return ret;
                         }
@@ -357,7 +581,7 @@ namespace uniform_grid
                     // cast
                     hec::RangeQuery* rangeQuery = dynamic_cast<hec::RangeQuery*>(query);
                     // evaluate
-                    ret = mbr_range_query_filter::evaluate(rangeQuery, queryResult.get());
+                    ret = mbr_range_query_filter::evaluate(rangeQuery, queryResult);
                     if (ret != DBERR_OK) {
                         return ret;
                     }
@@ -368,7 +592,7 @@ namespace uniform_grid
                     // cast
                     hec::KNNQuery* kNNQuery = dynamic_cast<hec::KNNQuery*>(query);
                     // evaluate
-                    ret = knn_filter::evaluate(kNNQuery, queryResult.get());
+                    ret = knn_filter::evaluate(kNNQuery, queryResult);
                     if (ret != DBERR_OK) {
                         return ret;
                     }

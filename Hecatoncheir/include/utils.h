@@ -96,10 +96,10 @@ namespace logger
      * Prints the node's rank and process type (Agent or Controller), coloured appropriately. */
     template<typename T, typename... Args>
     inline void log_error(int errorCode, T first, Args... rest) {
-        if (g_proc_type == AGENT) {
+        if (g_proc_type == PT_AGENT) {
             // agents
             std::cout << YELLOW "[" + std::to_string(g_parent_original_rank) + "]" NC BLUE "[A]" NC RED "[ERROR: " + std::to_string(errorCode) + "]" NC ": ";
-        } else if (g_proc_type == CONTROLLER) {
+        } else if (g_proc_type == PT_CONTROLLER) {
             // controllers
             if (g_node_rank == HOST_LOCAL_RANK) {
                 // host controller
@@ -120,10 +120,10 @@ namespace logger
      * Prints the node's rank and process type (Agent or Controller), coloured appropriately. */
     template<typename T, typename... Args>
     inline void log_warning(T first, Args... rest) {
-        if (g_proc_type == AGENT) {
+        if (g_proc_type == PT_AGENT) {
             // agents
             std::cout << YELLOW "[" + std::to_string(g_parent_original_rank) + "]" NC BLUE "[A]" NC ORANGE "[WARNING]" NC ": ";
-        } else if (g_proc_type == CONTROLLER) {
+        } else if (g_proc_type == PT_CONTROLLER) {
             // controllers
             if (g_node_rank == HOST_LOCAL_RANK) {
                 // host controller
@@ -143,10 +143,10 @@ namespace logger
      * Prints the node's rank and process type (Agent or Controller), coloured appropriately. */
     template<typename T, typename... Args>
     inline void log_success(T first, Args... rest) {
-        if (g_proc_type == AGENT) {
+        if (g_proc_type == PT_AGENT) {
             // agents
             std::cout << YELLOW "[" + std::to_string(g_parent_original_rank) + "]" NC BLUE "[A]" NC GREEN "[SUCCESS]" NC ": ";
-        } else if (g_proc_type == CONTROLLER) {
+        } else if (g_proc_type == PT_CONTROLLER) {
             // controllers
             if (g_node_rank == HOST_LOCAL_RANK) {
                 // host controller
@@ -166,10 +166,10 @@ namespace logger
      * Prints the node's rank and process type (Agent or Controller), coloured appropriately. */
     template<typename T, typename... Args>
     inline void log_task(T first, Args... rest) {
-        if (g_proc_type == AGENT) {
+        if (g_proc_type == PT_AGENT) {
             // agents
             std::cout << YELLOW "[" + std::to_string(g_parent_original_rank) + "]" NC BLUE "[A]" NC ": ";
-        } else if (g_proc_type == CONTROLLER) {
+        } else if (g_proc_type == PT_CONTROLLER) {
             // controllers
             if (g_node_rank == HOST_LOCAL_RANK) {
                 // host controller
@@ -193,7 +193,7 @@ namespace logger
     template<typename T, typename... Args>
     inline void log_task_single_node(int rank, T first, Args... rest) {
         if (g_parent_original_rank == rank) {
-            if (g_proc_type == AGENT) {
+            if (g_proc_type == PT_AGENT) {
                 // agents
                 std::cout << YELLOW "[" + std::to_string(g_parent_original_rank) + "]" NC BLUE "[A]" NC ": ";
             } else {
