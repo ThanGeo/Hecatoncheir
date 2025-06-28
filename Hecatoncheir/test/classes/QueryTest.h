@@ -11,7 +11,8 @@ private:
         {"test3", [this]() { test3(); }},
         {"test4", [this]() { test4(); }},
         {"test5", [this]() { test5(); }},
-        {"test6", [this]() { test6(); }}
+        {"test6", [this]() { test6(); }},
+        {"test7", [this]() { test7(); }}
     };
 protected:
     /** @brief Spatial find relation count join between polygons */
@@ -26,6 +27,8 @@ protected:
     void test5();
     /** @brief Batch range collect on polygons */
     void test6();
+    /** @brief Distance join collect on points */
+    void test7();
 
     /** @brief Performs any preparation required for the test */
     void prepare();

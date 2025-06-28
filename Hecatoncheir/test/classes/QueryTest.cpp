@@ -239,6 +239,38 @@ void QueryTest::test6() {
     ASSERT_EQ(DBERR_OK, ret);
 }
 
+void QueryTest::test7() {
+    // prepare dataset
+    std::string pointsR = std::string(HECATONCHEIR_DIR) + "/test/samples/data_sample_points.wkt";
+    std::string pointsS = std::string(HECATONCHEIR_DIR) + "/test/samples/query_sample_points.wkt";
+    int datasetRID = hec::prepareDataset(pointsR, "WKT", "POINT", false);
+    int datasetSID = hec::prepareDataset(pointsS, "WKT", "POINT", false);
+    ASSERT_EQ(0, datasetRID);
+    ASSERT_EQ(1, datasetSID);
+    // partition datasets
+    int ret = hec::partition({datasetRID, datasetSID});
+    ASSERT_EQ(DBERR_OK, ret);
+    // index
+    ret = hec::buildIndex({datasetRID, datasetSID}, hec::IT_UNIFORM_GRID);
+    ASSERT_EQ(DBERR_OK, ret);
+
+    // run query
+    hec::DistanceJoinQuery djQuery(datasetRID, datasetSID, 0, hec::QR_COLLECT, 7.65);
+    hec::QResultBase* result = hec::query(&djQuery);
+    // check results
+    ASSERT_NE(result, nullptr);
+    std::vector<size_t> results = result->getResultList();
+    int resultsSize = results.size()/2;
+    ASSERT_EQ(resultsSize, 5);
+    // free memory
+    delete result;
+    // unload datasets
+    ret = hec::unloadDataset(datasetRID);
+    ASSERT_EQ(DBERR_OK, ret);
+    ret = hec::unloadDataset(datasetSID);
+    ASSERT_EQ(DBERR_OK, ret);
+}
+
 void QueryTest::run() {
     // prepare
     current_test_name = "QueryTest::prepare";  // Set global name

@@ -1438,7 +1438,6 @@ STOP_LISTENING:
                 }
                 if (messageFound) {
                     // found message from AGENT
-                    // logger::log_success("Found message from AGENT!");
                     ret = distanceJoinHandleAgentMessage(status, exchangeCount, trackingCounter);
                     if (ret != DBERR_OK) {
                         return ret;
@@ -1452,7 +1451,6 @@ STOP_LISTENING:
                 }
                 if (messageFound) {
                     // found message from a controller
-                    // logger::log_success("Found message from Controller!");
                     ret = distanceJoinHandleControllerMessage(status, exchangeCount, trackingCounter);
                     if (ret != DBERR_OK) {
                         return ret;
@@ -1460,10 +1458,6 @@ STOP_LISTENING:
                 }
                 // tracking counter hits (world_size-1) * 2 + 1(all set)
                 if (trackingCounter == (g_world_size - 1) * 2 + 1) {
-                    // logger::log_success("Tracking counter:", trackingCounter, "Here's what we have:");
-                    // for (auto &it: exchangeCount) {
-                    //     logger::log_task("node", it.first, "values:", it.second.first, ",", it.second.second);
-                    // }
                     return ret;
                 }
                 // short interval
@@ -1483,8 +1477,8 @@ STOP_LISTENING:
             for (int nodeRank=0; nodeRank<g_world_size; nodeRank++) {
                 if (nodeRank != g_node_rank) {
                     // SENDER OF BATCH - only send to those nodes that have more object than this node to send back
-                    if (exchangeCount.at(nodeRank).first < exchangeCount.at(nodeRank).second) {
-                        // logger::log_task("Will send", exchangeCount.at(nodeRank).first, "objects to", nodeRank, "instead of receiving", exchangeCount.at(nodeRank).second);
+                    /** special case: send=receive. then the node with the lowest rank will SEND */
+                    if ((exchangeCount.at(nodeRank).first < exchangeCount.at(nodeRank).second) || (exchangeCount.at(nodeRank).first == exchangeCount.at(nodeRank).second && g_node_rank < nodeRank)) {                       
                         SerializedMsg<char> requestRankMsg(MPI_CHAR);
                         // pack node rank
                         ret = pack::packValues(requestRankMsg, nodeRank);
@@ -1533,7 +1527,8 @@ STOP_LISTENING:
                 if (nodeRank != g_node_rank) {
                     // RECEIVER OF BATCH - opposite of the check in DJ phase 2
                     // its expected that a batch from nodeRank has already be sent to this node
-                    if (exchangeCount.at(nodeRank).first > exchangeCount.at(nodeRank).second) {
+                    // special case: send=receive, the node with the highest rank will RECEIVE
+                    if ((exchangeCount.at(nodeRank).first > exchangeCount.at(nodeRank).second) || (exchangeCount.at(nodeRank).first == exchangeCount.at(nodeRank).second && g_node_rank > nodeRank)) {
                         // probe for the batch message from nodeRank
                         ret = probe(nodeRank, MSG_QUERY_DJ_BATCH, g_controller_comm, status);
                         if (ret != DBERR_OK) {

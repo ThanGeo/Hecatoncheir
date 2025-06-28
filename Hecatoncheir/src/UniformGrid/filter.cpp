@@ -340,7 +340,8 @@ namespace uniform_grid
                                 g_config.partitioningMethod->getPartPartionExtentX(),
                                 g_config.partitioningMethod->getPartPartionExtentY(),
                                 g_config.datasetOptions.dataspaceMetadata.xMinGlobal,
-                                g_config.datasetOptions.dataspaceMetadata.yMinGlobal);
+                                g_config.datasetOptions.dataspaceMetadata.yMinGlobal,
+                                g_config.partitioningMethod->getGlobalPPD());
 
                             for (auto &offset : overlappingPartitionOffsets) {
                                 int overlapPartitionID = g_config.partitioningMethod->getPartitionID(
@@ -355,7 +356,7 @@ namespace uniform_grid
                                 int coarsePartitionID = g_config.partitioningMethod->getPartitionID(
                                     oCoarseI, oCoarseJ, g_config.partitioningMethod->getDistributionPPD());
                                 int nodeRank = g_config.partitioningMethod->getNodeRankForPartitionID(coarsePartitionID);
-                                
+
                                 if (nodeRank != g_parent_original_rank) {
                                     localBorderMap[nodeRank].addObjectR(*obj); // Thread-local, no contention
                                 } else {
@@ -408,7 +409,8 @@ namespace uniform_grid
                                 g_config.partitioningMethod->getPartPartionExtentX(),
                                 g_config.partitioningMethod->getPartPartionExtentY(),
                                 g_config.datasetOptions.dataspaceMetadata.xMinGlobal,
-                                g_config.datasetOptions.dataspaceMetadata.yMinGlobal);
+                                g_config.datasetOptions.dataspaceMetadata.yMinGlobal,
+                                g_config.partitioningMethod->getGlobalPPD());
 
                             for (auto &offset : overlappingPartitionOffsets) {
                                 int overlapPartitionID = g_config.partitioningMethod->getPartitionID(
@@ -423,7 +425,6 @@ namespace uniform_grid
                                 int coarsePartitionID = g_config.partitioningMethod->getPartitionID(
                                     oCoarseI, oCoarseJ, g_config.partitioningMethod->getDistributionPPD());
                                 int nodeRank = g_config.partitioningMethod->getNodeRankForPartitionID(coarsePartitionID);
-                                
                                 if (nodeRank != g_parent_original_rank) {
                                     localBorderMap[nodeRank].addObjectS(*obj); // Thread-local, no contention
                                 }
@@ -462,7 +463,8 @@ namespace uniform_grid
                     g_config.partitioningMethod->getPartPartionExtentX(),
                     g_config.partitioningMethod->getPartPartionExtentY(),
                     g_config.datasetOptions.dataspaceMetadata.xMinGlobal,
-                    g_config.datasetOptions.dataspaceMetadata.yMinGlobal);
+                    g_config.datasetOptions.dataspaceMetadata.yMinGlobal,
+                    g_config.partitioningMethod->getGlobalPPD());
 
                 for (auto &offset : overlappingPartitionOffsets) {
                     int overlapPartitionID = g_config.partitioningMethod->getPartitionID(
@@ -477,7 +479,7 @@ namespace uniform_grid
                     int coarsePartitionID = g_config.partitioningMethod->getPartitionID(
                         oCoarseI, oCoarseJ, g_config.partitioningMethod->getDistributionPPD());
                     int nodeRank = g_config.partitioningMethod->getNodeRankForPartitionID(coarsePartitionID);
-
+                    
                     if (nodeRank == g_parent_original_rank) {
                         // no distribution needed, evaluate locally against other local partitions
                         PartitionBase* partitionS = S->index->getPartition(overlapPartitionID);
@@ -494,6 +496,7 @@ namespace uniform_grid
                     }
                 }
             }
+
             // S objects in batch
             for (auto& objectS: batch.objectsS) {
                 int iFine = std::floor((objectS.second.mbr.pMin.x - g_config.datasetOptions.dataspaceMetadata.xMinGlobal) / g_config.partitioningMethod->getPartPartionExtentX());
@@ -504,8 +507,10 @@ namespace uniform_grid
                     g_config.partitioningMethod->getPartPartionExtentX(),
                     g_config.partitioningMethod->getPartPartionExtentY(),
                     g_config.datasetOptions.dataspaceMetadata.xMinGlobal,
-                    g_config.datasetOptions.dataspaceMetadata.yMinGlobal);
+                    g_config.datasetOptions.dataspaceMetadata.yMinGlobal,
+                    g_config.partitioningMethod->getGlobalPPD());
 
+                
                 for (auto &offset : overlappingPartitionOffsets) {
                     int overlapPartitionID = g_config.partitioningMethod->getPartitionID(
                         iFine + offset.first, jFine + offset.second, 

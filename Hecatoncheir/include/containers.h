@@ -216,7 +216,8 @@ public:
         int iCenter, int jCenter,
         double delta,
         double partitionExtentX, double partitionExtentY,
-        double globalXmin, double globalYmin) const {
+        double globalXmin, double globalYmin,
+        int globalPPD) const {
         logger::log_error(DBERR_INVALID_OPERATION, "getOverlappingPartitionOffsets computation unsupported for the invoked shapes.");
         std::vector<std::pair<int, int>> empty;
         return empty;
@@ -431,7 +432,8 @@ public:
         int iCenter, int jCenter,
         double delta,
         double partitionExtentX, double partitionExtentY,
-        double globalXmin, double globalYmin) const {
+        double globalXmin, double globalYmin,
+        int globalPPD) const {
         
         std::vector<std::pair<int, int>> offsets;
         // Compute bounding box of shape + delta
@@ -445,6 +447,12 @@ public:
         int maxI = static_cast<int>(std::floor((maxX - globalXmin) / partitionExtentX));
         int minJ = static_cast<int>(std::floor((minY - globalYmin) / partitionExtentY));
         int maxJ = static_cast<int>(std::floor((maxY - globalYmin) / partitionExtentY));
+
+        // Clamp the partition indices to valid ranges
+        minI = std::max(minI, 0);
+        maxI = std::min(maxI, globalPPD - 1);
+        minJ = std::max(minJ, 0);
+        maxJ = std::min(maxJ, globalPPD - 1);
 
         for (int i = minI; i <= maxI; ++i) {
             for (int j = minJ; j <= maxJ; ++j) {
@@ -636,7 +644,8 @@ public:
         int iCenter, int jCenter,
         double delta,
         double partitionExtentX, double partitionExtentY,
-        double globalXmin, double globalYmin) const {
+        double globalXmin, double globalYmin,
+        int globalPPD) const {
         logger::log_error(DBERR_INVALID_OPERATION, "getOverlappingPartitionOffsets unsupported for bg_box.");
         std::vector<std::pair<int, int>> empty;
         return empty;
@@ -864,7 +873,8 @@ public:
         int iCenter, int jCenter,
         double delta,
         double partitionExtentX, double partitionExtentY,
-        double globalXmin, double globalYmin) const {
+        double globalXmin, double globalYmin,
+        int globalPPD) const {
         logger::log_error(DBERR_INVALID_OPERATION, "getOverlappingPartitionOffsets unsupported for bg_linestring.");
         std::vector<std::pair<int, int>> empty;
         return empty;
@@ -1095,7 +1105,8 @@ public:
         int iCenter, int jCenter,
         double delta,
         double partitionExtentX, double partitionExtentY,
-        double globalXmin, double globalYmin) const {
+        double globalXmin, double globalYmin,
+        int globalPPD) const {
         logger::log_error(DBERR_INVALID_OPERATION, "getOverlappingPartitionOffsets unsupported for bg_polygon.");
         std::vector<std::pair<int, int>> empty;
         return empty;
@@ -1428,9 +1439,10 @@ public:
         int iCenter, int jCenter,
         double delta,
         double partitionExtentX, double partitionExtentY,
-        double globalXmin, double globalYmin) const {
-        return std::visit([iCenter, jCenter, delta, partitionExtentX, partitionExtentY, globalXmin, globalYmin](auto&& arg) -> std::vector<std::pair<int, int>> {
-            return arg.getOverlappingPartitionOffsets(iCenter, jCenter, delta, partitionExtentX, partitionExtentY, globalXmin, globalYmin);
+        double globalXmin, double globalYmin,
+        int globalPPD) const {
+        return std::visit([iCenter, jCenter, delta, partitionExtentX, partitionExtentY, globalXmin, globalYmin, globalPPD](auto&& arg) -> std::vector<std::pair<int, int>> {
+            return arg.getOverlappingPartitionOffsets(iCenter, jCenter, delta, partitionExtentX, partitionExtentY, globalXmin, globalYmin, globalPPD);
         }, shape);
     }
 
