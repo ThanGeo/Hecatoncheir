@@ -311,6 +311,28 @@ namespace uniform_grid
     namespace distance_filter
     {
 
+        /** @brief For the given i,j offset and start partition i,j, it returns the partition ID that it corresponds to and the node that is responsible for it. */
+        static DB_STATUS getPartitionIDandNodeRankForOffset(int iFine, int jFine, std::pair<int, int> &offset, int &overlapPartitionID, int &nodeRank) {
+            overlapPartitionID = g_config.partitioningMethod->getPartitionID(
+                iFine + offset.first, jFine + offset.second, 
+                g_config.partitioningMethod->getGlobalPPD());
+
+            if (overlapPartitionID < 0) {
+                logger::log_error(DBERR_INVALID_PARTITION, "Invalid partition id:", overlapPartitionID, "for i,j", iFine, jFine, "and offsets", offset.first, offset.second);
+                return DBERR_INVALID_PARTITION;
+            }
+
+            int oFineI = overlapPartitionID % g_config.partitioningMethod->getGlobalPPD(); 
+            int oFineJ = overlapPartitionID / g_config.partitioningMethod->getGlobalPPD(); 
+
+            int oCoarseI = oFineI / g_config.partitioningMethod->getPartitioningPPD();
+            int oCoarseJ = oFineJ / g_config.partitioningMethod->getPartitioningPPD();
+            int coarsePartitionID = g_config.partitioningMethod->getPartitionID(oCoarseI, oCoarseJ, g_config.partitioningMethod->getDistributionPPD());
+            nodeRank = g_config.partitioningMethod->getNodeRankForPartitionID(coarsePartitionID);
+
+            return DBERR_OK;
+        }
+
         static DB_STATUS evaluate(hec::DistanceJoinQuery *distanceJoinQuery, std::unordered_map<int, DJBatch>& borderObjectsMap, std::unique_ptr<hec::QResultBase>& queryResult) {
             DB_STATUS ret = DBERR_OK;
             Dataset* R = g_config.datasetOptions.getDatasetByIdx(distanceJoinQuery->getDatasetRid());
@@ -323,8 +345,10 @@ namespace uniform_grid
             {
                 int tid = omp_get_thread_num();
                 auto& localBorderMap = threadLocalBorderMaps[tid];
-
                 std::vector<PartitionBase *>* partitions = R->index->getPartitions();
+                DB_STATUS local_ret = DBERR_OK;
+                int overlapPartitionID; 
+                int nodeRank;
                 #pragma omp for
                 for (int i = 0; i < partitions->size(); i++) {
                     PartitionBase* partitionR = partitions->at(i);
@@ -344,19 +368,12 @@ namespace uniform_grid
                                 g_config.partitioningMethod->getGlobalPPD());
 
                             for (auto &offset : overlappingPartitionOffsets) {
-                                int overlapPartitionID = g_config.partitioningMethod->getPartitionID(
-                                    iFine + offset.first, jFine + offset.second, 
-                                    g_config.partitioningMethod->getGlobalPPD());
-
-                                int oFineI = overlapPartitionID % g_config.partitioningMethod->getGlobalPPD(); 
-                                int oFineJ = overlapPartitionID / g_config.partitioningMethod->getGlobalPPD(); 
-
-                                int oCoarseI = oFineI / g_config.partitioningMethod->getPartitioningPPD();
-                                int oCoarseJ = oFineJ / g_config.partitioningMethod->getPartitioningPPD();
-                                int coarsePartitionID = g_config.partitioningMethod->getPartitionID(
-                                    oCoarseI, oCoarseJ, g_config.partitioningMethod->getDistributionPPD());
-                                int nodeRank = g_config.partitioningMethod->getNodeRankForPartitionID(coarsePartitionID);
-
+                                local_ret = getPartitionIDandNodeRankForOffset(iFine, jFine, offset, overlapPartitionID, nodeRank);
+                                if (local_ret != DBERR_OK) {
+                                    #pragma omp cancel for
+                                    ret = local_ret;
+                                }
+                                    
                                 if (nodeRank != g_parent_original_rank) {
                                     localBorderMap[nodeRank].addObjectR(*obj); // Thread-local, no contention
                                 } else {
@@ -378,6 +395,10 @@ namespace uniform_grid
                     }
                 }
             }
+            if (ret != DBERR_OK) {
+                logger::log_error(ret, "Parallel distance join failed.");
+                return ret;
+            }
 
             // Merge thread-local border maps into the global one (serial section)
             for (auto& localMap : threadLocalBorderMaps) {
@@ -393,8 +414,10 @@ namespace uniform_grid
             {
                 int tid = omp_get_thread_num();
                 auto& localBorderMap = threadLocalBorderMaps[tid];
-
                 std::vector<PartitionBase *>* partitions = S->index->getPartitions();
+                DB_STATUS local_ret = DBERR_OK;
+                int overlapPartitionID; 
+                int nodeRank;
                 #pragma omp for
                 for (int i = 0; i < partitions->size(); i++) {
                     PartitionBase* partitionS = partitions->at(i);
@@ -412,19 +435,13 @@ namespace uniform_grid
                                 g_config.datasetOptions.dataspaceMetadata.yMinGlobal,
                                 g_config.partitioningMethod->getGlobalPPD());
 
-                            for (auto &offset : overlappingPartitionOffsets) {
-                                int overlapPartitionID = g_config.partitioningMethod->getPartitionID(
-                                    iFine + offset.first, jFine + offset.second, 
-                                    g_config.partitioningMethod->getGlobalPPD());
-
-                                int oFineI = overlapPartitionID % g_config.partitioningMethod->getGlobalPPD(); 
-                                int oFineJ = overlapPartitionID / g_config.partitioningMethod->getGlobalPPD(); 
-
-                                int oCoarseI = oFineI / g_config.partitioningMethod->getPartitioningPPD();
-                                int oCoarseJ = oFineJ / g_config.partitioningMethod->getPartitioningPPD();
-                                int coarsePartitionID = g_config.partitioningMethod->getPartitionID(
-                                    oCoarseI, oCoarseJ, g_config.partitioningMethod->getDistributionPPD());
-                                int nodeRank = g_config.partitioningMethod->getNodeRankForPartitionID(coarsePartitionID);
+                            for (auto &offset : overlappingPartitionOffsets) {                                
+                                local_ret = getPartitionIDandNodeRankForOffset(iFine, jFine, offset, overlapPartitionID, nodeRank);
+                                if (local_ret != DBERR_OK) {
+                                    #pragma omp cancel for
+                                    ret = local_ret;
+                                }
+                                
                                 if (nodeRank != g_parent_original_rank) {
                                     localBorderMap[nodeRank].addObjectS(*obj); // Thread-local, no contention
                                 }
@@ -432,6 +449,9 @@ namespace uniform_grid
                         }
                     }
                 }
+            }
+            if (ret != DBERR_OK) {
+                logger::log_error(ret, "Parallel distance join failed.");
             }
 
             // Merge thread-local S border maps into the global one (serial section)
@@ -442,9 +462,6 @@ namespace uniform_grid
                 }
             }
 
-            if (ret != DBERR_OK) {
-                logger::log_error(ret, "Parallel distance join failed.");
-            }
             return ret;
         }
 
@@ -452,8 +469,10 @@ namespace uniform_grid
             DB_STATUS ret = DBERR_OK;
             Dataset* R = g_config.datasetOptions.getDatasetByIdx(distanceJoinQuery->getDatasetRid());
             Dataset* S = g_config.datasetOptions.getDatasetByIdx(distanceJoinQuery->getDatasetSid());
-
+            int overlapPartitionID; 
+            int nodeRank;
             // R objects in batch
+            /** @todo: parallelize */
             for (auto& objectR: batch.objectsR) {
                 int iFine = std::floor((objectR.second.mbr.pMin.x - g_config.datasetOptions.dataspaceMetadata.xMinGlobal) / g_config.partitioningMethod->getPartPartionExtentX());
                 int jFine = std::floor((objectR.second.mbr.pMin.y - g_config.datasetOptions.dataspaceMetadata.yMinGlobal) / g_config.partitioningMethod->getPartPartionExtentY());
@@ -466,20 +485,12 @@ namespace uniform_grid
                     g_config.datasetOptions.dataspaceMetadata.yMinGlobal,
                     g_config.partitioningMethod->getGlobalPPD());
 
-                for (auto &offset : overlappingPartitionOffsets) {
-                    int overlapPartitionID = g_config.partitioningMethod->getPartitionID(
-                        iFine + offset.first, jFine + offset.second, 
-                        g_config.partitioningMethod->getGlobalPPD());
+                for (auto &offset : overlappingPartitionOffsets) {                    
+                    ret = getPartitionIDandNodeRankForOffset(iFine, jFine, offset, overlapPartitionID, nodeRank);
+                    if (ret != DBERR_OK) {
+                        return ret;
+                    }
 
-                    int oFineI = overlapPartitionID % g_config.partitioningMethod->getGlobalPPD(); 
-                    int oFineJ = overlapPartitionID / g_config.partitioningMethod->getGlobalPPD(); 
-
-                    int oCoarseI = oFineI / g_config.partitioningMethod->getPartitioningPPD();
-                    int oCoarseJ = oFineJ / g_config.partitioningMethod->getPartitioningPPD();
-                    int coarsePartitionID = g_config.partitioningMethod->getPartitionID(
-                        oCoarseI, oCoarseJ, g_config.partitioningMethod->getDistributionPPD());
-                    int nodeRank = g_config.partitioningMethod->getNodeRankForPartitionID(coarsePartitionID);
-                    
                     if (nodeRank == g_parent_original_rank) {
                         // no distribution needed, evaluate locally against other local partitions
                         PartitionBase* partitionS = S->index->getPartition(overlapPartitionID);
@@ -512,18 +523,10 @@ namespace uniform_grid
 
                 
                 for (auto &offset : overlappingPartitionOffsets) {
-                    int overlapPartitionID = g_config.partitioningMethod->getPartitionID(
-                        iFine + offset.first, jFine + offset.second, 
-                        g_config.partitioningMethod->getGlobalPPD());
-
-                    int oFineI = overlapPartitionID % g_config.partitioningMethod->getGlobalPPD(); 
-                    int oFineJ = overlapPartitionID / g_config.partitioningMethod->getGlobalPPD(); 
-
-                    int oCoarseI = oFineI / g_config.partitioningMethod->getPartitioningPPD();
-                    int oCoarseJ = oFineJ / g_config.partitioningMethod->getPartitioningPPD();
-                    int coarsePartitionID = g_config.partitioningMethod->getPartitionID(
-                        oCoarseI, oCoarseJ, g_config.partitioningMethod->getDistributionPPD());
-                    int nodeRank = g_config.partitioningMethod->getNodeRankForPartitionID(coarsePartitionID);
+                    ret = getPartitionIDandNodeRankForOffset(iFine, jFine, offset, overlapPartitionID, nodeRank);
+                    if (ret != DBERR_OK) {
+                        return ret;
+                    }
 
                     if (nodeRank == g_parent_original_rank) {
                         // no distribution needed, evaluate locally against other local partitions
