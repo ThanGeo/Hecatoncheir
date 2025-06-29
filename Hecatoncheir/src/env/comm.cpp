@@ -1,6 +1,17 @@
 #include "env/comm.h"
 
+#include "config/configure.h"
+#include "env/recv.h"
+#include "env/send.h"
+#include "env/partitioning.h"
+#include "env/pack.h"
+#include "storage/write.h"
+#include "storage/utils.h"
+#include "APRIL/generate.h"
+#include "TwoLayer/filter.h"
+
 #include <unordered_set>
+#include "omp.h"
 
 namespace comm 
 {

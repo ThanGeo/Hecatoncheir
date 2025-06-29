@@ -5,6 +5,17 @@ GREEN='\033[0;32m'
 YELLOW='\e[0;33m'
 NC='\033[0m'
 
+# Check for available build systems
+if command -v ninja &> /dev/null; then
+    GENERATOR="Ninja"
+    MAKE_PROGRAM=$(which ninja)
+    echo -e "${GREEN}Ninja build system detected${NC}"
+else
+    GENERATOR="Unix Makefiles"
+    MAKE_PROGRAM=$(which make)
+    echo -e "${YELLOW}Ninja not found - falling back to Make${NC}"
+fi
+
 # Default compiler paths (can be overridden via arguments or environment variables)
 DEFAULT_C_COMPILER="mpicc.mpich"
 DEFAULT_CXX_COMPILER="mpicxx.mpich"
@@ -25,14 +36,32 @@ CXX_COMPILER=${CXX_COMPILER:-${DEFAULT_CXX_COMPILER}}
 
 echo -e "-- ${GREEN}Using C compiler: ${NC}${C_COMPILER}"
 echo -e "-- ${GREEN}Using C++ compiler: ${NC}${CXX_COMPILER}"
+echo -e "-- ${GREEN}Using generator: ${NC}${GENERATOR}"
 
-# create build directory
+# Clean and create build directory
+rm -rf build
 mkdir -p build
 
 # Build the code
 cd build
-cmake -D CMAKE_C_COMPILER="$C_COMPILER" -D CMAKE_CXX_COMPILER="$CXX_COMPILER" -D CMAKE_BUILD_TYPE=Release ..
-cmake --build .
+cmake -G "$GENERATOR" \
+    -D CMAKE_C_COMPILER="$C_COMPILER" \
+    -D CMAKE_CXX_COMPILER="$CXX_COMPILER" \
+    -D CMAKE_BUILD_TYPE=Release \
+    -D CMAKE_MAKE_PROGRAM="$MAKE_PROGRAM" ..
+    
+# Build with parallel jobs
+if [ "$GENERATOR" = "Ninja" ]; then
+    cmake --build . -- -j $(nproc) || {
+        echo -e "${RED}Build failed${NC}"
+        exit 1
+    }
+else
+    make -j $(nproc) || {
+        echo -e "${RED}Build failed${NC}"
+        exit 1
+    }
+fi
 cd ..
 
 # the nodes(addresses) are stored in the file "nodes"
@@ -55,7 +84,7 @@ done
 # sync function
 sync_code() {
   local node=$1
-  rsync -q -avz -e "ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no" --delete $SOURCE_DIR/ --exclude data/ ${node}:${DEST_DIR}/
+  rsync -q -avz -e "ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no" --delete $SOURCE_DIR/ --exclude={'data/','docs/'} ${node}:${DEST_DIR}/
 }
 
 # sync for each node

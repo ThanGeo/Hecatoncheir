@@ -2,7 +2,6 @@
 #define D_ENV_PARTITIONING_H
 
 #include "containers.h"
-#include "comm.h"
 
 /** @brief Data distribution/partitioning methods. */
 namespace partitioning

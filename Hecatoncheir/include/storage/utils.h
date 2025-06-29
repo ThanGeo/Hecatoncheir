@@ -2,7 +2,6 @@
 #define D_STORAGE_UTILS_H
 
 #include "containers.h"
-#include "fstream"
 
 /** @brief Disk-related methods for utility operations. */
 namespace storage

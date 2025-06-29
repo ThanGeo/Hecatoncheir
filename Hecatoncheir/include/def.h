@@ -9,8 +9,6 @@
 #include <boost/geometry/geometries/linestring.hpp>
 #include <boost/geometry/geometries/box.hpp>
 
-#include <omp.h>
-
 #include "config_pub.h"
 
 /** @typedef bg_point_xy @brief boost geometry point definition. */

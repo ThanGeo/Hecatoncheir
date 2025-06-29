@@ -2,6 +2,7 @@
 #include "proc.h"
 #include "config/setup.h"
 #include "env/comm.h"
+#include "env/send.h"
 #include "env/pack.h"
 
 static DB_STATUS terminateAllWorkers() {

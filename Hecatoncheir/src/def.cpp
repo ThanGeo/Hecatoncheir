@@ -1,4 +1,5 @@
 #include "def.h"
+#include <omp.h>
 
 int g_world_size;
 int g_node_rank;

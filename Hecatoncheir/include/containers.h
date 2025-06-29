@@ -10,7 +10,6 @@
 #include <unistd.h>
 #include <vector>
 #include <stdio.h>
-#include <mpi.h>
 #include <math.h>
 #include <any>
 #include <cstring>
