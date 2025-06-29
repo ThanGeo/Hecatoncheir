@@ -63,8 +63,14 @@ set(SrcFiles
     src/APRIL/join.cpp
     
     src/TwoLayer/filter.cpp
+    src/TwoLayer/range_filter.cpp
+    src/TwoLayer/intersection_join_filter.cpp
+    src/TwoLayer/topology_join_filter.cpp
 
     src/UniformGrid/filter.cpp
+    src/UniformGrid/range_filter.cpp
+    src/UniformGrid/knn_filter.cpp
+    src/UniformGrid/dj_filter.cpp
 
     src/refinement/topology.cpp
 )

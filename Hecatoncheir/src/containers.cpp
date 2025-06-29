@@ -1197,7 +1197,7 @@ DB_STATUS UniformGridIndex::evaluateQuery(hec::Query* query, std::unique_ptr<hec
 }
 
 DB_STATUS UniformGridIndex::evaluateQuery(hec::Query* query, std::unordered_map<int, DJBatch> &borderObjectsMap, std::unique_ptr<hec::QResultBase>& queryResult) {
-    DB_STATUS ret = uniform_grid::distance_filter::processQuery(query, borderObjectsMap, queryResult);
+    DB_STATUS ret = uniform_grid::processQuery(query, borderObjectsMap, queryResult);
     if (ret != DBERR_OK) {
         logger::log_error(ret, "Failed to process query with id:", query->getQueryID());
         return ret;
