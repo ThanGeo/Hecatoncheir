@@ -38,30 +38,28 @@ echo -e "-- ${GREEN}Using C compiler: ${NC}${C_COMPILER}"
 echo -e "-- ${GREEN}Using C++ compiler: ${NC}${CXX_COMPILER}"
 echo -e "-- ${GREEN}Using generator: ${NC}${GENERATOR}"
 
-# Clean and create build directory
-rm -rf build
+# Create build directory if it doesn't exist
 mkdir -p build
-
-# Build the code
 cd build
-cmake -G "$GENERATOR" \
-    -D CMAKE_C_COMPILER="$C_COMPILER" \
-    -D CMAKE_CXX_COMPILER="$CXX_COMPILER" \
-    -D CMAKE_BUILD_TYPE=Release \
-    -D CMAKE_MAKE_PROGRAM="$MAKE_PROGRAM" ..
-    
-# Build with parallel jobs
-if [ "$GENERATOR" = "Ninja" ]; then
-    cmake --build . -- -j $(nproc) || {
-        echo -e "${RED}Build failed${NC}"
-        exit 1
-    }
+
+# Run CMake only if cache doesn't exist
+if [ ! -f "CMakeCache.txt" ]; then
+    echo "-- Running cmake configuration..."
+    cmake -G "$GENERATOR" \
+        -D CMAKE_C_COMPILER="$C_COMPILER" \
+        -D CMAKE_CXX_COMPILER="$CXX_COMPILER" \
+        -D CMAKE_BUILD_TYPE=Release \
+        -D CMAKE_MAKE_PROGRAM="$MAKE_PROGRAM" ..
 else
-    make -j $(nproc) || {
-        echo -e "${RED}Build failed${NC}"
-        exit 1
-    }
+    echo "-- CMake already configured. Skipping reconfiguration."
 fi
+
+# Build the project (incremental)
+echo "-- Starting build..."
+cmake --build . -- -j $(nproc) || {
+    echo -e "${RED}Build failed${NC}"
+    exit 1
+}
 cd ..
 
 # the nodes(addresses) are stored in the file "nodes"
@@ -73,8 +71,8 @@ SOURCE_DIR=$( cd "$(dirname "${BASH_SOURCE[0]}")" ; pwd -P )/build
 
 # directory where the code should be placed on each node
 DEST_DIR="$SOURCE_DIR"
-echo -e "-- ${GREEN}Host directory: ${NC}" $SOURCE_DIR
-echo -e "-- ${GREEN}Dest directory: ${NC}" $DEST_DIR
+echo -e "-- ${GREEN}Host directory: ${NC} $SOURCE_DIR"
+echo -e "-- ${GREEN}Dest directory: ${NC} $DEST_DIR"
 
 # make the same directory in the nodes (if it does not exist)
 for node in "${NODES[@]}"; do
