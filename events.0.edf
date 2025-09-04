@@ -1,0 +1,202 @@
+201 dynamic_trace_events
+# FunctionId Group Tag "Name Type" Parameters
+0 TAUEVENT 0 ".TAU <unknown event>" TriggerValue
+1 TAU_DEFAULT 0 ".TAU application " EntryExit
+2 TAU_DEFAULT 0 "_GLOBAL__sub_I__ZN3hec4initEiRSt6vectorINSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEESaIS6_EE [{/home/hec/thanasis/Hecatoncheir/build/Hecatoncheir.pomp.cpp} {851,0}] " EntryExit
+3 TAU_DEFAULT 0 "__static_initialization_and_destruction_0(int, int) [{/home/hec/thanasis/Hecatoncheir/build/Hecatoncheir.pomp.cpp} {851,0}] " EntryExit
+4 TAU_DEFAULT 0 "_GLOBAL__sub_I__ZN3hec14spatialQueriesE [{/home/hec/thanasis/Hecatoncheir/build/containers.pomp.cpp} {1423,0}] " EntryExit
+5 TAU_DEFAULT 0 "__static_initialization_and_destruction_0(int, int) [{/home/hec/thanasis/Hecatoncheir/build/containers.pomp.cpp} {1423,0}] " EntryExit
+6 TAU_DEFAULT 0 "_GLOBAL__sub_I_g_world_size [{/home/hec/thanasis/Hecatoncheir/build/def.pomp.cpp} {19,0}] " EntryExit
+7 TAU_DEFAULT 0 "__static_initialization_and_destruction_0(int, int) [{/home/hec/thanasis/Hecatoncheir/build/def.pomp.cpp} {19,0}] " EntryExit
+8 TAU_DEFAULT 0 "_GLOBAL__sub_I_POMP2_Init_reg_eoycno522n3y8_2 [{/home/hec/thanasis/Hecatoncheir/build/containers.pomp.cpp} {1819,0}] " EntryExit
+9 TAU_DEFAULT 0 "__static_initialization_and_destruction_0(int, int) [{/home/hec/thanasis/Hecatoncheir/build/containers.pomp.cpp} {1819,0}] " EntryExit
+10 TAU_DEFAULT 0 "DataspaceMetadata::DataspaceMetadata() [{/home/hec/thanasis/Hecatoncheir/build/containers.pomp.cpp} {512,0}] " EntryExit
+11 TAU_DEFAULT 0 "_GLOBAL__sub_I__ZN7hilbert4xy2dEjjj [{/home/hec/thanasis/Hecatoncheir/build/utils.pomp.cpp} {301,0}] " EntryExit
+12 TAU_DEFAULT 0 "__static_initialization_and_destruction_0(int, int) [{/home/hec/thanasis/Hecatoncheir/build/utils.pomp.cpp} {301,0}] " EntryExit
+13 TAU_DEFAULT 0 "_GLOBAL__sub_I_POMP2_Init_reg_hoycmo522dkqk_12 [{/home/hec/thanasis/Hecatoncheir/build/comm.pomp.cpp} {3767,0}] " EntryExit
+14 TAU_DEFAULT 0 "__static_initialization_and_destruction_0(int, int) [{/home/hec/thanasis/Hecatoncheir/build/comm.pomp.cpp} {3767,0}] " EntryExit
+15 TAU_DEFAULT 0 "_GLOBAL__sub_I__ZN4comm4recv15receiveResponseEiiRiR10MPI_Status [{/home/hec/thanasis/Hecatoncheir/build/recv.pomp.cpp} {61,0}] " EntryExit
+16 TAU_DEFAULT 0 "__static_initialization_and_destruction_0(int, int) [{/home/hec/thanasis/Hecatoncheir/build/recv.pomp.cpp} {61,0}] " EntryExit
+17 TAU_DEFAULT 0 "_GLOBAL__sub_I_POMP2_Init_reg_moycso522fzf9_2 [{/home/hec/thanasis/Hecatoncheir/build/send.pomp.cpp} {116,0}] " EntryExit
+18 TAU_DEFAULT 0 "__static_initialization_and_destruction_0(int, int) [{/home/hec/thanasis/Hecatoncheir/build/send.pomp.cpp} {116,0}] " EntryExit
+19 TAU_DEFAULT 0 "_GLOBAL__sub_I__ZN4pack9packShapeEP5ShapeR13SerializedMsgIcE [{/home/hec/thanasis/Hecatoncheir/build/pack.pomp.cpp} {650,0}] " EntryExit
+20 TAU_DEFAULT 0 "__static_initialization_and_destruction_0(int, int) [{/home/hec/thanasis/Hecatoncheir/build/pack.pomp.cpp} {650,0}] " EntryExit
+21 TAU_DEFAULT 0 "_GLOBAL__sub_I_POMP2_Init_reg_koyczo52260sk_6 [{/home/hec/thanasis/Hecatoncheir/Hecatoncheir/src/env/partitioning.cpp} {946,0}] " EntryExit
+22 TAU_DEFAULT 0 "__static_initialization_and_destruction_0(int, int) [{/home/hec/thanasis/Hecatoncheir/Hecatoncheir/src/env/partitioning.cpp} {946,0}] " EntryExit
+23 TAU_DEFAULT 0 "_GLOBAL__sub_I__ZN7storage25generatePartitionFilePathEP7Dataset [{/home/hec/thanasis/Hecatoncheir/build/utils.pomp.cpp} {43,0}] " EntryExit
+24 TAU_DEFAULT 0 "__static_initialization_and_destruction_0(int, int) [{/home/hec/thanasis/Hecatoncheir/build/utils.pomp.cpp} {43,0}] " EntryExit
+25 TAU_DEFAULT 0 "_GLOBAL__sub_I__ZN7storage6writer13partitionFile36appendDatasetMetadataToPartitionFileEP8_IO_FILEP7Dataset [{/home/hec/thanasis/Hecatoncheir/build/write.pomp.cpp} {87,0}] " EntryExit
+26 TAU_DEFAULT 0 "__static_initialization_and_destruction_0(int, int) [{/home/hec/thanasis/Hecatoncheir/build/write.pomp.cpp} {87,0}] " EntryExit
+27 TAU_DEFAULT 0 "_GLOBAL__sub_I_POMP2_Init_reg_royc4p522lr2i_2 [{/home/hec/thanasis/Hecatoncheir/build/read.pomp.cpp} {528,0}] " EntryExit
+28 TAU_DEFAULT 0 "__static_initialization_and_destruction_0(int, int) [{/home/hec/thanasis/Hecatoncheir/build/read.pomp.cpp} {528,0}] " EntryExit
+29 TAU_DEFAULT 0 "_GLOBAL__sub_I__ZN10configurer17initMPIControllerEiPPc [{/home/hec/thanasis/Hecatoncheir/build/configure.pomp.cpp} {233,0}] " EntryExit
+30 TAU_DEFAULT 0 "__static_initialization_and_destruction_0(int, int) [{/home/hec/thanasis/Hecatoncheir/build/configure.pomp.cpp} {233,0}] " EntryExit
+31 TAU_DEFAULT 0 "_GLOBAL__sub_I__ZN5APRIL10generation23rasterDataspaceMetadataE [{/home/hec/thanasis/Hecatoncheir/build/generate.pomp.cpp} {599,0}] " EntryExit
+32 TAU_DEFAULT 0 "__static_initialization_and_destruction_0(int, int) [{/home/hec/thanasis/Hecatoncheir/build/generate.pomp.cpp} {599,0}] " EntryExit
+33 TAU_DEFAULT 0 "_GLOBAL__sub_I__ZN5APRIL6writer9saveAPRILEP8_IO_FILEmjP9AprilData [{/home/hec/thanasis/Hecatoncheir/build/storage.pomp.cpp} {196,0}] " EntryExit
+34 TAU_DEFAULT 0 "__static_initialization_and_destruction_0(int, int) [{/home/hec/thanasis/Hecatoncheir/build/storage.pomp.cpp} {196,0}] " EntryExit
+35 TAU_DEFAULT 0 "_GLOBAL__sub_I__ZN8twolayer12processQueryEPN3hec5QueryERSt10unique_ptrINS0_11QResultBaseESt14default_deleteIS4_EE [{/home/hec/thanasis/Hecatoncheir/build/filter.pomp.cpp} {61,0}] " EntryExit
+36 TAU_DEFAULT 0 "__static_initialization_and_destruction_0(int, int) [{/home/hec/thanasis/Hecatoncheir/build/filter.pomp.cpp} {61,0}] " EntryExit
+37 TAU_DEFAULT 0 "_GLOBAL__sub_I__ZN8twolayer12range_filter8evaluateEPN3hec10RangeQueryERSt10unique_ptrINS1_11QResultBaseESt14default_deleteIS5_EE [{/home/hec/thanasis/Hecatoncheir/build/range_filter.pomp.cpp} {687,0}] " EntryExit
+38 TAU_DEFAULT 0 "__static_initialization_and_destruction_0(int, int) [{/home/hec/thanasis/Hecatoncheir/build/range_filter.pomp.cpp} {687,0}] " EntryExit
+39 TAU_DEFAULT 0 "_GLOBAL__sub_I_POMP2_Init_reg_1oyckp522g9a1_2 [{/home/hec/thanasis/Hecatoncheir/build/intersection_join_filter.pomp.cpp} {492,0}] " EntryExit
+40 TAU_DEFAULT 0 "__static_initialization_and_destruction_0(int, int) [{/home/hec/thanasis/Hecatoncheir/build/intersection_join_filter.pomp.cpp} {492,0}] " EntryExit
+41 TAU_DEFAULT 0 "_GLOBAL__sub_I_POMP2_Init_reg_3oycnp522lumg_2 [{/home/hec/thanasis/Hecatoncheir/build/topology_join_filter.pomp.cpp} {539,0}] " EntryExit
+42 TAU_DEFAULT 0 "__static_initialization_and_destruction_0(int, int) [{/home/hec/thanasis/Hecatoncheir/build/topology_join_filter.pomp.cpp} {539,0}] " EntryExit
+43 TAU_DEFAULT 0 "_GLOBAL__sub_I__ZN12uniform_grid12processQueryEPN3hec5QueryERSt13unordered_mapIi7DJBatchSt4hashIiESt8equal_toIiESaISt4pairIKiS4_EEERSt10unique_ptrINS0_11QResultBaseESt14default_deleteISG_EE [{/home/hec/thanasis/Hecatoncheir/build/filter.pomp.cpp} {70,0}] " EntryExit
+44 TAU_DEFAULT 0 "__static_initialization_and_destruction_0(int, int) [{/home/hec/thanasis/Hecatoncheir/build/filter.pomp.cpp} {70,0}] " EntryExit
+45 TAU_DEFAULT 0 "_GLOBAL__sub_I__ZN12uniform_grid12range_filter8evaluateEPN3hec10RangeQueryERSt10unique_ptrINS1_11QResultBaseESt14default_deleteIS5_EE [{/home/hec/thanasis/Hecatoncheir/build/range_filter.pomp.cpp} {259,0}] " EntryExit
+46 TAU_DEFAULT 0 "__static_initialization_and_destruction_0(int, int) [{/home/hec/thanasis/Hecatoncheir/build/range_filter.pomp.cpp} {259,0}] " EntryExit
+47 TAU_DEFAULT 0 "_GLOBAL__sub_I__ZN12uniform_grid10knn_filter8evaluateEPN3hec8KNNQueryERSt10unique_ptrINS1_11QResultBaseESt14default_deleteIS5_EE [{/home/hec/thanasis/Hecatoncheir/build/knn_filter.pomp.cpp} {58,0}] " EntryExit
+48 TAU_DEFAULT 0 "__static_initialization_and_destruction_0(int, int) [{/home/hec/thanasis/Hecatoncheir/build/knn_filter.pomp.cpp} {58,0}] " EntryExit
+49 TAU_DEFAULT 0 "_GLOBAL__sub_I_POMP2_Init_reg_5oycvp522yenh_4 [{/home/hec/thanasis/Hecatoncheir/build/dj_filter.pomp.cpp} {283,0}] " EntryExit
+50 TAU_DEFAULT 0 "__static_initialization_and_destruction_0(int, int) [{/home/hec/thanasis/Hecatoncheir/build/dj_filter.pomp.cpp} {283,0}] " EntryExit
+51 TAU_DEFAULT 0 "_GLOBAL__sub_I__ZN10refinement8topology10insideCodeE [{/home/hec/thanasis/Hecatoncheir/build/topology.pomp.cpp} {490,0}] " EntryExit
+52 TAU_DEFAULT 0 "__static_initialization_and_destruction_0(int, int) [{/home/hec/thanasis/Hecatoncheir/build/topology.pomp.cpp} {490,0}] " EntryExit
+53 TAU_DEFAULT 0 "_GLOBAL__sub_I__ZN5APRIL28getCommonSectionIDsOfObjectsEP7DatasetS1_mm [{/home/hec/thanasis/Hecatoncheir/build/filter.pomp.cpp} {342,0}] " EntryExit
+54 TAU_DEFAULT 0 "__static_initialization_and_destruction_0(int, int) [{/home/hec/thanasis/Hecatoncheir/build/filter.pomp.cpp} {342,0}] " EntryExit
+55 TAU_DEFAULT 0 "_GLOBAL__sub_I__ZN5APRIL12uncompressed8standard21intersectionJoinAPRILEP9AprilDataS3_Ri [{/home/hec/thanasis/Hecatoncheir/build/join.pomp.cpp} {583,0}] " EntryExit
+56 TAU_DEFAULT 0 "__static_initialization_and_destruction_0(int, int) [{/home/hec/thanasis/Hecatoncheir/build/join.pomp.cpp} {583,0}] " EntryExit
+57 TAU_DEFAULT 0 "taupreload_main " EntryExit
+58 TAU_DEFAULT 0 "main [{/home/hec/thanasis/Hecatoncheir/build/driver.pomp.cpp} {275,0}] " EntryExit
+59 TAU_DEFAULT 0 "hec::init(int, std::vector<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::allocator<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > > >&) [{/home/hec/thanasis/Hecatoncheir/build/Hecatoncheir.pomp.cpp} {299,0}] " EntryExit
+60 TAU_DEFAULT 0 "hec::fixHosts(std::vector<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::allocator<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > > >&) [{/home/hec/thanasis/Hecatoncheir/build/Hecatoncheir.pomp.cpp} {249,0}] " EntryExit
+61 MPI 0 "MPI_Init_thread()  " EntryExit
+63 TAU_DEFAULT 0 "spawnControllers(int, std::vector<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::allocator<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > > > const&) [{/home/hec/thanasis/Hecatoncheir/build/Hecatoncheir.pomp.cpp} {153,0}] " EntryExit
+64 MPI 0 "MPI_Comm_rank()  " EntryExit
+65 MPI 0 "MPI_Info_create() " EntryExit
+66 MPI 0 "MPI_Comm_spawn_multiple()  " EntryExit
+67 MPI 0 "MPI_Info_free() " EntryExit
+68 MPI 0 "MPI_Intercomm_merge()  " EntryExit
+69 MPI 0 "MPI_Comm_split()  " EntryExit
+70 MPI 0 "MPI_Comm_size()  " EntryExit
+71 MPI 0 "MPI_Barrier()  " EntryExit
+72 TAU_DEFAULT 0 "waitForResponse() [{/home/hec/thanasis/Hecatoncheir/build/Hecatoncheir.pomp.cpp} {73,0}] " EntryExit
+73 TAU_DEFAULT 0 "probeBlocking(int, int, int&, MPI_Status&) [{/home/hec/thanasis/Hecatoncheir/build/Hecatoncheir.pomp.cpp} {17,0}] " EntryExit
+74 MPI 0 "MPI_Probe()  " EntryExit
+75 TAU_DEFAULT 0 "receiveResponse(int, int, int&, MPI_Status&) [{/home/hec/thanasis/Hecatoncheir/build/Hecatoncheir.pomp.cpp} {26,0}] " EntryExit
+76 MPI 0 "MPI_Recv()  " EntryExit
+78 MPI 0 "MPI_Comm_free()  " EntryExit
+79 TAU_DEFAULT 0 "hec::getExactBinaryPIDs(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&) [{/home/hec/thanasis/Hecatoncheir/build/Hecatoncheir.pomp.cpp} {258,0}] " EntryExit
+80 TAU_DEFAULT 0 "spatialJoinScenario() [{/home/hec/thanasis/Hecatoncheir/build/driver.pomp.cpp} {8,0}] " EntryExit
+81 TAU_DEFAULT 0 "hec::prepareDataset(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, bool) [{/home/hec/thanasis/Hecatoncheir/build/Hecatoncheir.pomp.cpp} {348,0}] " EntryExit
+82 TAU_DEFAULT 0 "mapping::fileTypeTextToInt(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >) [{/home/hec/thanasis/Hecatoncheir/build/utils.pomp.cpp} {281,0}] " EntryExit
+83 TAU_DEFAULT 0 "mapping::dataTypeTextToInt(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >) [{/home/hec/thanasis/Hecatoncheir/build/utils.pomp.cpp} {272,0}] " EntryExit
+84 TAU_DEFAULT 0 "DatasetMetadata::serialize(char**, int&) [{/home/hec/thanasis/Hecatoncheir/build/containers.pomp.cpp} {138,0}] " EntryExit
+85 TAU_DEFAULT 0 "DatasetMetadata::calculateBufferSize() [{/home/hec/thanasis/Hecatoncheir/build/containers.pomp.cpp} {119,0}] " EntryExit
+86 MPI 0 "MPI_Send()  " EntryExit
+90 TAU_DEFAULT 0 "comm::probe(int, int, int&, MPI_Status&) [{/home/hec/thanasis/Hecatoncheir/build/comm.pomp.cpp} {32,0}] " EntryExit
+91 MPI 0 "MPI_Get_count()  " EntryExit
+92 TAU_DEFAULT 0 "hec::time::getTime() [{/home/hec/thanasis/Hecatoncheir/build/Hecatoncheir.pomp.cpp} {846,0}] " EntryExit
+93 TAU_DEFAULT 0 "hec::partition(std::vector<int, std::allocator<int> >) [{/home/hec/thanasis/Hecatoncheir/build/Hecatoncheir.pomp.cpp} {517,0}] " EntryExit
+95 TAU_DEFAULT 0 "hec::buildIndex(std::vector<int, std::allocator<int> >, hec::IndexType) [{/home/hec/thanasis/Hecatoncheir/build/Hecatoncheir.pomp.cpp} {544,0}] " EntryExit
+97 TAU_DEFAULT 0 "hec::PredicateJoinQuery::PredicateJoinQuery(int, int, int, hec::QueryType, hec::QueryResultType) [{/home/hec/thanasis/Hecatoncheir/build/containers.pomp.cpp} {94,0}] " EntryExit
+98 TAU_DEFAULT 0 "hec::query(hec::Query*) [{/home/hec/thanasis/Hecatoncheir/build/Hecatoncheir.pomp.cpp} {600,0}] " EntryExit
+99 TAU_DEFAULT 0 "hec::QResultCount::QResultCount(int, hec::QueryType, hec::QueryResultType) [{/home/hec/thanasis/Hecatoncheir/build/containers.pomp.cpp} {581,0}] " EntryExit
+100 TAU_DEFAULT 0 "hec::PredicateJoinQuery::serialize(char**, int&) [{/home/hec/thanasis/Hecatoncheir/build/containers.pomp.cpp} {115,0}] " EntryExit
+101 TAU_DEFAULT 0 "hec::QResultCount::calculateBufferSize() [{/home/hec/thanasis/Hecatoncheir/build/containers.pomp.cpp} {597,0}] " EntryExit
+103 TAU_DEFAULT 0 "waitForResult(hec::QResultBase*) [{/home/hec/thanasis/Hecatoncheir/build/Hecatoncheir.pomp.cpp} {93,0}] " EntryExit
+104 TAU_DEFAULT 0 "receiveResult(int, int, int&, MPI_Status&, hec::QResultBase*) [{/home/hec/thanasis/Hecatoncheir/build/Hecatoncheir.pomp.cpp} {41,0}] " EntryExit
+105 TAU_DEFAULT 0 "hec::QResultCount::deserialize(char const*, int) [{/home/hec/thanasis/Hecatoncheir/build/containers.pomp.cpp} {633,0}] " EntryExit
+106 TAU_DEFAULT 0 "hec::QResultCount::getResultCount() [{/home/hec/thanasis/Hecatoncheir/build/containers.pomp.cpp} {663,0}] " EntryExit
+107 TAU_DEFAULT 0 "hec::unloadDataset(int) [{/home/hec/thanasis/Hecatoncheir/build/Hecatoncheir.pomp.cpp} {489,0}] " EntryExit
+109 TAU_DEFAULT 0 "hec::finalize() [{/home/hec/thanasis/Hecatoncheir/build/Hecatoncheir.pomp.cpp} {338,0}] " EntryExit
+110 TAU_DEFAULT 0 "terminate() [{/home/hec/thanasis/Hecatoncheir/build/Hecatoncheir.pomp.cpp} {227,0}] " EntryExit
+111 TAU_DEFAULT 0 "comm::send::sendInstructionMessage(int, int, int&) [{/home/hec/thanasis/Hecatoncheir/build/send.pomp.cpp} {34,0}] " EntryExit
+113 MPI 0 "MPI_Finalize()  " EntryExit
+62 TAUEVENT 0 "TauTraceClockOffsetStart" TriggerValue
+77 TAUEVENT 0 "Message size received from all nodes" TriggerValue
+87 TAUEVENT 0 "Message size sent to all nodes" TriggerValue
+88 TAUEVENT 0 "Message size sent to node 0" TriggerValue
+89 TAUEVENT 0 "Message size sent to node 0 : taupreload_main => main [{/home/hec/thanasis/Hecatoncheir/build/driver.pomp.cpp} {275,0}] => spatialJoinScenario() [{/home/hec/thanasis/Hecatoncheir/build/driver.pomp.cpp} {8,0}] => hec::prepareDataset(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, bool) [{/home/hec/thanasis/Hecatoncheir/build/Hecatoncheir.pomp.cpp} {348,0}] => MPI_Send()  " TriggerValue
+94 TAUEVENT 0 "Message size sent to node 0 : taupreload_main => main [{/home/hec/thanasis/Hecatoncheir/build/driver.pomp.cpp} {275,0}] => spatialJoinScenario() [{/home/hec/thanasis/Hecatoncheir/build/driver.pomp.cpp} {8,0}] => hec::partition(std::vector<int, std::allocator<int> >) [{/home/hec/thanasis/Hecatoncheir/build/Hecatoncheir.pomp.cpp} {517,0}] => MPI_Send()  " TriggerValue
+96 TAUEVENT 0 "Message size sent to node 0 : taupreload_main => main [{/home/hec/thanasis/Hecatoncheir/build/driver.pomp.cpp} {275,0}] => spatialJoinScenario() [{/home/hec/thanasis/Hecatoncheir/build/driver.pomp.cpp} {8,0}] => hec::buildIndex(std::vector<int, std::allocator<int> >, hec::IndexType) [{/home/hec/thanasis/Hecatoncheir/build/Hecatoncheir.pomp.cpp} {544,0}] => MPI_Send()  " TriggerValue
+102 TAUEVENT 0 "Message size sent to node 0 : taupreload_main => main [{/home/hec/thanasis/Hecatoncheir/build/driver.pomp.cpp} {275,0}] => spatialJoinScenario() [{/home/hec/thanasis/Hecatoncheir/build/driver.pomp.cpp} {8,0}] => hec::query(hec::Query*) [{/home/hec/thanasis/Hecatoncheir/build/Hecatoncheir.pomp.cpp} {600,0}] => MPI_Send()  " TriggerValue
+108 TAUEVENT 0 "Message size sent to node 0 : taupreload_main => main [{/home/hec/thanasis/Hecatoncheir/build/driver.pomp.cpp} {275,0}] => spatialJoinScenario() [{/home/hec/thanasis/Hecatoncheir/build/driver.pomp.cpp} {8,0}] => hec::unloadDataset(int) [{/home/hec/thanasis/Hecatoncheir/build/Hecatoncheir.pomp.cpp} {489,0}] => MPI_Send()  " TriggerValue
+112 TAUEVENT 0 "Message size sent to node 0 : taupreload_main => main [{/home/hec/thanasis/Hecatoncheir/build/driver.pomp.cpp} {275,0}] => hec::finalize() [{/home/hec/thanasis/Hecatoncheir/build/Hecatoncheir.pomp.cpp} {338,0}] => terminate() [{/home/hec/thanasis/Hecatoncheir/build/Hecatoncheir.pomp.cpp} {227,0}] => comm::send::sendInstructionMessage(int, int, int&) [{/home/hec/thanasis/Hecatoncheir/build/send.pomp.cpp} {34,0}] => MPI_Send()  " TriggerValue
+114 TAUEVENT 0 "TauTraceClockOffsetEnd" TriggerValue
+115 TAUEVENT 0 "CPU Cores | 8" TriggerValue
+116 TAUEVENT 0 "CPU MHz | 3695.998" TriggerValue
+117 TAUEVENT 0 "CPU Type | QEMU Virtual CPU version 2.5+" TriggerValue
+118 TAUEVENT 0 "CPU Vendor | GenuineIntel" TriggerValue
+119 TAUEVENT 0 "CPUs Allowed | ff" TriggerValue
+120 TAUEVENT 0 "CPUs Allowed List | 0-7" TriggerValue
+121 TAUEVENT 0 "CWD | /home/hec/thanasis/Hecatoncheir" TriggerValue
+122 TAUEVENT 0 "Cache Size | 16384 KB" TriggerValue
+123 TAUEVENT 0 "Command Line | build/driver/driver" TriggerValue
+124 TAUEVENT 0 "Executable | /home/hec/thanasis/Hecatoncheir/build/driver/driver" TriggerValue
+125 TAUEVENT 0 "Hostname | vm1" TriggerValue
+126 TAUEVENT 0 "Local Time | 2025-09-04T12:47:54+03:00" TriggerValue
+127 TAUEVENT 0 "MPI Processor Name | vm1" TriggerValue
+128 TAUEVENT 0 "Memories Allowed | 00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000001" TriggerValue
+129 TAUEVENT 0 "Memories Allowed List | 0" TriggerValue
+130 TAUEVENT 0 "Memory Size | 12247352 kB" TriggerValue
+131 TAUEVENT 0 "Node Name | vm1" TriggerValue
+132 TAUEVENT 0 "OS Machine | x86_64" TriggerValue
+133 TAUEVENT 0 "OS Name | Linux" TriggerValue
+134 TAUEVENT 0 "OS Release | 6.8.0-78-generic" TriggerValue
+135 TAUEVENT 0 "OS Version | #78~22.04.1-Ubuntu SMP PREEMPT_DYNAMIC Wed Aug 13 14:32:06 UTC 2" TriggerValue
+136 TAUEVENT 0 "Starting Timestamp | 1756979274867661" TriggerValue
+137 TAUEVENT 0 "TAU Architecture | default" TriggerValue
+138 TAUEVENT 0 "TAU Config |  -mpi -openmp -opari -bfd=download -cc=/bin/mpicc.mpich -c++=/bin/mpicxx.mpich -mpiinc=/usr/include/x86_64-linux-gnu/mpich -mpilib= -prefix=/home/hec/tau-2.34.1/mpich-install" TriggerValue
+139 TAUEVENT 0 "TAU Makefile | /home/hec/tau-2.34.1/mpich-install/x86_64/lib/Makefile.tau-mpi-openmp-opari" TriggerValue
+140 TAUEVENT 0 "TAU Version | 2.34-git" TriggerValue
+141 TAUEVENT 0 "TAU_BFD_LOOKUP | on" TriggerValue
+142 TAUEVENT 0 "TAU_CALLPATH_DEPTH | 10" TriggerValue
+143 TAUEVENT 0 "TAU_CALLSITE_DEPTH | 1" TriggerValue
+144 TAUEVENT 0 "TAU_COMM_MATRIX | on" TriggerValue
+145 TAUEVENT 0 "TAU_CUDA_BINARY_EXE | " TriggerValue
+146 TAUEVENT 0 "TAU_CUPTI_API | runtime" TriggerValue
+147 TAUEVENT 0 "TAU_CUPTI_PC | off" TriggerValue
+148 TAUEVENT 0 "TAU_CURRENT_TIMER_EXIT_PARAMS | off" TriggerValue
+149 TAUEVENT 0 "TAU_EBS_KEEP_UNRESOLVED_ADDR | off" TriggerValue
+150 TAUEVENT 0 "TAU_IBM_BG_HWP_COUNTERS | off" TriggerValue
+151 TAUEVENT 0 "TAU_MEASURE_TAU | off" TriggerValue
+152 TAUEVENT 0 "TAU_MEMDBG_PROTECT_ABOVE | off" TriggerValue
+153 TAUEVENT 0 "TAU_MEMDBG_PROTECT_BELOW | off" TriggerValue
+154 TAUEVENT 0 "TAU_MEMDBG_PROTECT_FREE | off" TriggerValue
+155 TAUEVENT 0 "TAU_MEMMGR_MAX_BLOCKS | 64" TriggerValue
+156 TAUEVENT 0 "TAU_OPENMP_RUNTIME | on" TriggerValue
+157 TAUEVENT 0 "TAU_OPENMP_RUNTIME_EVENTS | on" TriggerValue
+158 TAUEVENT 0 "TAU_OPENMP_RUNTIME_STATES | off" TriggerValue
+159 TAUEVENT 0 "TAU_OUTPUT_CUDA_CSV | off" TriggerValue
+160 TAUEVENT 0 "TAU_PAPI_MULTIPLEXING | off" TriggerValue
+161 TAUEVENT 0 "TAU_PROFILE | on" TriggerValue
+162 TAUEVENT 0 "TAU_PROFILE_FORMAT | profile" TriggerValue
+163 TAUEVENT 0 "TAU_RECYCLE_THREADS | off" TriggerValue
+164 TAUEVENT 0 "TAU_REGION_ADDRESSES | off" TriggerValue
+165 TAUEVENT 0 "TAU_SAMPLING | off" TriggerValue
+166 TAUEVENT 0 "TAU_SHOW_MEMORY_FUNCTIONS | off" TriggerValue
+167 TAUEVENT 0 "TAU_SIGNALS_GDB | off" TriggerValue
+168 TAUEVENT 0 "TAU_SYNCHRONIZE_CLOCKS | on" TriggerValue
+169 TAUEVENT 0 "TAU_THROTTLE | on" TriggerValue
+170 TAUEVENT 0 "TAU_THROTTLE_NUMCALLS | 100000" TriggerValue
+171 TAUEVENT 0 "TAU_THROTTLE_PERCALL | 10" TriggerValue
+172 TAUEVENT 0 "TAU_TRACE | on" TriggerValue
+173 TAUEVENT 0 "TAU_TRACE_FORMAT | tau" TriggerValue
+174 TAUEVENT 0 "TAU_TRACK_CUDA_CDP | off" TriggerValue
+175 TAUEVENT 0 "TAU_TRACK_CUDA_ENV | off" TriggerValue
+176 TAUEVENT 0 "TAU_TRACK_CUDA_INSTRUCTIONS | " TriggerValue
+177 TAUEVENT 0 "TAU_TRACK_CUDA_SASS | off" TriggerValue
+178 TAUEVENT 0 "TAU_TRACK_HEADROOM | off" TriggerValue
+179 TAUEVENT 0 "TAU_TRACK_HEAP | off" TriggerValue
+180 TAUEVENT 0 "TAU_TRACK_IO_PARAMS | off" TriggerValue
+181 TAUEVENT 0 "TAU_TRACK_MEMORY_FOOTPRINT | off" TriggerValue
+182 TAUEVENT 0 "TAU_TRACK_MEMORY_LEAKS | off" TriggerValue
+183 TAUEVENT 0 "TAU_TRACK_MESSAGE | on" TriggerValue
+184 TAUEVENT 0 "TAU_TRACK_SIGNALS | off" TriggerValue
+185 TAUEVENT 0 "TAU_TRACK_UNIFIED_MEMORY | off" TriggerValue
+186 TAUEVENT 0 "TAU_VERBOSE_RANK | -1" TriggerValue
+187 TAUEVENT 0 "Timestamp | 1756979274867738" TriggerValue
+188 TAUEVENT 0 "UTC Time | 2025-09-04T09:47:54Z" TriggerValue
+189 TAUEVENT 0 "pid | 602370" TriggerValue
+190 TAUEVENT 0 "tid | 602370" TriggerValue
+191 TAUEVENT 0 "username | hec" TriggerValue
+60000 TRACER 0 "EV_INIT" none
+60001 TRACER 0 "FLUSH" EntryExit
+60003 TRACER 0 "FLUSH_CLOSE" none
+60004 TRACER 0 "FLUSH_INITM" none
+60005 TRACER 0 "WALL_CLOCK" none
+60006 TRACER 0 "CONT_EVENT" none
+60007 TAU_MESSAGE -7 "MESSAGE_SEND" par
+60008 TAU_MESSAGE -8 "MESSAGE_RECV" par

@@ -38,17 +38,23 @@ namespace comm
         template <typename T> 
         DB_STATUS receiveMessage(MPI_Status &status, MPI_Datatype dataType, MPI_Comm &comm, SerializedMsg<T> &msg) {
             DB_STATUS ret = DBERR_OK;
+            int mpi_ret;
             // get message size 
-            int mpi_ret = MPI_Get_count(&status, dataType, &msg.count);
+            mpi_ret = MPI_Get_count(&status, dataType, &msg.count);
             if (mpi_ret != MPI_SUCCESS) {
                 logger::log_error(DBERR_COMM_GET_COUNT, "Failed when trying to get the message size");
                 return DBERR_COMM_GET_COUNT;
             }
 
-            // // allocate memory
-            msg.data = (T*) malloc(msg.count * sizeof(T));
+            // allocate memory
+            try {
+                msg.data = (T*) malloc(msg.count * sizeof(T));
+            } catch (const std::exception &e) {
+                logger::log_error(DBERR_EXCEPTION, "Message buffer allocation exception:", e.what());
+                return DBERR_EXCEPTION;
+            }
 
-            // // receive the message
+            // receive the message
             mpi_ret = MPI_Recv(msg.data, msg.count, dataType, status.MPI_SOURCE, status.MPI_TAG, comm, &status);
             if (mpi_ret != MPI_SUCCESS) {
                 logger::log_error(DBERR_COMM_RECV, "Failed to receive msg pack with tag", status.MPI_TAG);

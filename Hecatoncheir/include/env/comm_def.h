@@ -104,7 +104,7 @@ struct SerializedMsg {
     }
 
     void clear() {
-        type = -1;
+        type = (MPI_Datatype) -1;
         count = 0;
         if (data != nullptr){
             free(data);

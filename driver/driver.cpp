@@ -34,6 +34,66 @@ void spatialJoinScenario() {
     ret = hec::unloadDataset(waterID);
 }
 
+void spatialJoinScenario2() {
+    // prepare
+    std::string path1 = "/home/hec/datasets/OSM/O5_lakes.tsv";
+    int id1 = hec::prepareDataset(path1, "WKT", "POLYGON", false);
+    std::string path2 = "/home/hec/datasets/OSM/O6_parks.tsv";
+    int id2 = hec::prepareDataset(path2, "WKT", "POLYGON", false);
+    // partition
+    double start = hec::time::getTime();
+    int ret = hec::partition({id1, id2});
+    printf("Partitioning finished in %0.2f seconds.\n", hec::time::getTime() - start);
+    // index
+    start = hec::time::getTime();
+    ret = hec::buildIndex({id1, id2}, hec::IT_TWO_LAYER);
+    printf("Indexes built in %0.2f seconds.\n", hec::time::getTime() - start);
+    // query
+    hec::PredicateJoinQuery joinQuery(id1, id2, 0, hec::Q_INTERSECTION_JOIN, hec::QR_COUNT);
+    start = hec::time::getTime();
+    hec::QResultBase* result = hec::query(&joinQuery);
+    double total_time = hec::time::getTime() - start;
+    // results
+    size_t resCount = result->getResultCount();
+    printf("Results: %ld\n", resCount);
+    printf("Query finished in %0.2f seconds.\n", total_time);
+    delete result;
+
+    // unload
+    ret = hec::unloadDataset(id1);
+    ret = hec::unloadDataset(id2);
+}
+
+void spatialJoinScenario3() {
+    // prepare
+    std::string path1 = "/home/hec/datasets/OSM/O6_parks.tsv";
+    int id1 = hec::prepareDataset(path1, "WKT", "POLYGON", false);
+    std::string path2 = "/home/hec/datasets/T8_lo48.tsv";
+    int id2 = hec::prepareDataset(path2, "WKT", "LINESTRING", false);
+    // partition
+    double start = hec::time::getTime();
+    int ret = hec::partition({id1, id2});
+    printf("Partitioning finished in %0.2f seconds.\n", hec::time::getTime() - start);
+    // index
+    start = hec::time::getTime();
+    ret = hec::buildIndex({id1, id2}, hec::IT_TWO_LAYER);
+    printf("Indexes built in %0.2f seconds.\n", hec::time::getTime() - start);
+    // query
+    hec::PredicateJoinQuery joinQuery(id1, id2, 0, hec::Q_INTERSECTION_JOIN, hec::QR_COUNT);
+    start = hec::time::getTime();
+    hec::QResultBase* result = hec::query(&joinQuery);
+    double total_time = hec::time::getTime() - start;
+    // results
+    size_t resCount = result->getResultCount();
+    printf("Results: %ld\n", resCount);
+    printf("Query finished in %0.2f seconds.\n", total_time);
+    delete result;
+
+    // unload
+    ret = hec::unloadDataset(id1);
+    ret = hec::unloadDataset(id2);
+}
+
 void singleKNNScenario() {
     // prepare
     std::string pointsPath = "/home/hec/datasets/T2_lo48_points.tsv";
@@ -98,6 +158,48 @@ void batchKNNScenario() {
         delete results[it->getQueryID()];
         delete it;
     }
+    printf("Query finished in %0.5f seconds.\n", total_time);
+    batch.clear();
+    results.clear();
+    // unload
+    ret = hec::unloadDataset(pointDatasetID);
+}
+
+void batchKNNScenario2() {
+    /**
+     * Batch KNN QUERIES
+     */
+    // prepare
+    std::string pointsPath = "/home/hec/datasets/OSM/O3_points.wkt";
+    int pointDatasetID = hec::prepareDataset(pointsPath, "WKT", "POINT", false);
+    // partition
+    double start = hec::time::getTime();
+    int ret = hec::partition({pointDatasetID});
+    printf("Partitioning finished in %0.2f seconds.\n", hec::time::getTime() - start);
+    // index
+    start = hec::time::getTime();
+    ret = hec::buildIndex({pointDatasetID}, hec::IT_UNIFORM_GRID);
+    printf("Indexes built in %0.2f seconds.\n", hec::time::getTime() - start);
+    // queries batch
+    std::string queriesPath = "/home/hec/datasets/OSM/random_points_10K.wkt";
+    int k = 5;
+    std::vector<hec::Query *> batch = hec::loadKNNQueriesFromFile(queriesPath, "WKT", pointDatasetID, k);
+    double total_time = 0;
+    start = hec::time::getTime();
+    std::unordered_map<int, hec::QResultBase *> results = hec::query(batch, hec::Q_KNN);
+    total_time += hec::time::getTime() - start;
+    // results
+    for (auto &it : batch) {
+        // std::vector<size_t> ids = results[it->getQueryID()]->getResultList();
+        // printf("Query %d results for k=%d:\n", it->getQueryID(), k);
+        // for (auto &id : ids) {
+        //     printf(" %ld", id);
+        // }
+        // printf("\n");
+        delete results[it->getQueryID()];
+        delete it;
+    }
+    printf("Query finished in %0.5f seconds.\n", total_time);
     batch.clear();
     results.clear();
     // unload
@@ -117,7 +219,7 @@ void batchRangeScenario() {
     ret = hec::buildIndex({pointDatasetID}, hec::IT_UNIFORM_GRID);
     printf("Indexes built in %0.2f seconds.\n", hec::time::getTime() - start);
     // query
-    std::string queriesPath = "/home/hec/datasets/USA_queries/USA_c0.01_n10000_polygons.wkt";
+    std::string queriesPath = "/home/hec/datasets/USA_queries/USA_c1_n10000_polygons.wkt";
     std::vector<hec::Query *> batch = hec::loadRangeQueriesFromFile(queriesPath, "WKT", pointDatasetID, hec::QR_COUNT);
     double total_time = 0;
     start = hec::time::getTime();
@@ -173,10 +275,13 @@ int main(int argc, char* argv[]) {
     /** Your hosts list. It is mandatory to define each node as:
      * <hostname>:1 
     */
-    std::vector<std::string> hosts = {"vm1:1", "vm3:1", "vm5:1", "vm7:1", "vm9:1", "vm2:1", "vm4:1", "vm6:1", "vm8:1", "vm10:1"};
-    // std::vector<std::string> hosts = {"vm1:1", "vm2:1", "vm3:1", "vm4:1"};
-    // std::vector<std::string> hosts = {"vm1:1", "vm3:1", "vm5:1"};
     // std::vector<std::string> hosts = {"vm1:1"};
+    // std::vector<std::string> hosts = {"vm1:1", "vm3:1"};
+    // std::vector<std::string> hosts = {"vm1:1", "vm3:1", "vm5:1", "vm7:1"};
+    // std::vector<std::string> hosts = {"vm1:1", "vm3:1", "vm5:1", "vm7:1", "vm9:1", "vm2:1"};
+    // std::vector<std::string> hosts = {"vm1:1", "vm3:1", "vm5:1", "vm7:1", "vm9:1", "vm2:1", "vm4:1", "vm6:1"};
+    std::vector<std::string> hosts = {"vm1:1", "vm3:1", "vm5:1", "vm7:1", "vm9:1", "vm2:1", "vm4:1", "vm6:1", "vm8:1", "vm10:1"};
+
 
     /**
      * INIT
@@ -187,14 +292,20 @@ int main(int argc, char* argv[]) {
 
     int RUNS = 1;
     for (int i=0; i<RUNS; i++) {
-        // printf("Run %d: Running Join Scenario...\n", i);
-        // spatialJoinScenario();
+        printf("Run %d: Running Join Scenario...\n", i);
+        spatialJoinScenario();
+        // printf("Run %d: Running OSM parks-lakes Join Scenario...\n", i);
+        // spatialJoinScenario2();
+        // printf("Run %d: Running OSM parks-roads Join Scenario...\n", i);
+        // spatialJoinScenario3();
         // printf("Run %d: Running batch KNN Scenario...\n", i);
         // batchKNNScenario();
+        // printf("Run %d: Running batch KNN Scenario2...\n", i);
+        // batchKNNScenario2();
         // printf("Run %d: Running batch range Scenario...\n", i);
         // batchRangeScenario();
-        printf("Run %d: Running Distance Scenario...\n", i);
-        distanceJoinScenario();
+        // printf("Run %d: Running Distance Scenario...\n", i);
+        // distanceJoinScenario();
     }
 
     /**

@@ -1,9 +1,45 @@
-#!/bin/bash
+bash#!/bin/bash
 
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\e[0;33m'
 NC='\033[0m'
+
+# Check if TAU compilation is requested
+USE_TAU=false
+TAU_COMPILER_FLAGS="-fopenmp"
+
+# Parse arguments
+while [[ "$#" -gt 0 ]]; do
+    case $1 in
+        --use-tau) USE_TAU=true ;;
+        --c-compiler) C_COMPILER="$2"; shift ;;
+        --cxx-compiler) CXX_COMPILER="$2"; shift ;;
+        *) echo -e "${RED}Unknown parameter passed: $1${NC}"; exit 1 ;;
+    esac
+    shift
+done
+
+# Default compiler paths
+DEFAULT_C_COMPILER="mpicc.mpich"
+DEFAULT_CXX_COMPILER="mpicxx.mpich"
+
+# Use TAU wrapper compilers if requested
+if [ "$USE_TAU" = true ]; then
+    echo -e "${GREEN}Using TAU wrapper compilers${NC}"
+    DEFAULT_C_COMPILER="tau_cc.sh"
+    DEFAULT_CXX_COMPILER="tau_cxx.sh"
+    # Make sure TAU_OPTIONS includes MPI tracking
+    TAU_COMPILER_FLAGS="-tau_options=-optVerbose -optCompInst -optOpenMP -optMPI -optTRACE -optPROFILE"
+fi
+
+# Use environment variables if set, otherwise fall back to defaults
+C_COMPILER=${C_COMPILER:-${DEFAULT_C_COMPILER}}
+CXX_COMPILER=${CXX_COMPILER:-${DEFAULT_CXX_COMPILER}}
+
+# Rest of your script remains the same...
+echo -e "-- ${GREEN}Using C compiler: ${NC}${C_COMPILER}"
+echo -e "-- ${GREEN}Using C++ compiler: ${NC}${CXX_COMPILER}"
 
 # Check for available build systems
 if command -v ninja &> /dev/null; then
@@ -16,38 +52,27 @@ else
     echo -e "${YELLOW}Ninja not found - falling back to Make${NC}"
 fi
 
-# Default compiler paths (can be overridden via arguments or environment variables)
-DEFAULT_C_COMPILER="mpicc.mpich"
-DEFAULT_CXX_COMPILER="mpicxx.mpich"
-
-# Parse arguments for custom compilers
-while [[ "$#" -gt 0 ]]; do
-    case $1 in
-        --c-compiler) C_COMPILER="$2"; shift ;;
-        --cxx-compiler) CXX_COMPILER="$2"; shift ;;
-        *) echo -e "${RED}Unknown parameter passed: $1${NC}"; exit 1 ;;
-    esac
-    shift
-done
-
-# Use environment variables if set, otherwise fall back to defaults
-C_COMPILER=${C_COMPILER:-${DEFAULT_C_COMPILER}}
-CXX_COMPILER=${CXX_COMPILER:-${DEFAULT_CXX_COMPILER}}
-
-echo -e "-- ${GREEN}Using C compiler: ${NC}${C_COMPILER}"
-echo -e "-- ${GREEN}Using C++ compiler: ${NC}${CXX_COMPILER}"
-echo -e "-- ${GREEN}Using generator: ${NC}${GENERATOR}"
-
 # Create build directory if it doesn't exist
 mkdir -p build
 cd build
 
-# Run CMake only if cache doesn't exist
-if [ ! -f "CMakeCache.txt" ]; then
+# Run CMake only if cache doesn't exist or compiler changed
+if [ ! -f "CMakeCache.txt" ] || \
+   ! grep -q "CMAKE_C_COMPILER:FILEPATH=.*$C_COMPILER" CMakeCache.txt || \
+   ! grep -q "CMAKE_CXX_COMPILER:FILEPATH=.*$CXX_COMPILER" CMakeCache.txt; then
     echo "-- Running cmake configuration..."
+    
+    # Clean previous build if compiler changed
+    if [ -f "CMakeCache.txt" ]; then
+        rm -f CMakeCache.txt
+        rm -rf CMakeFiles
+    fi
+    
     cmake -G "$GENERATOR" \
         -D CMAKE_C_COMPILER="$C_COMPILER" \
         -D CMAKE_CXX_COMPILER="$CXX_COMPILER" \
+        -D CMAKE_C_FLAGS="$TAU_COMPILER_FLAGS" \
+        -D CMAKE_CXX_FLAGS="$TAU_COMPILER_FLAGS" \
         -D CMAKE_BUILD_TYPE=Release \
         -D CMAKE_MAKE_PROGRAM="$MAKE_PROGRAM" ..
 else

@@ -322,9 +322,6 @@ namespace comm
                 return DBERR_NULL_PTR_EXCEPTION;
             }
 
-            // allocate space based on total objects
-            dataset->objects.reserve(dataset->totalObjects);
-            
             // logger::log_success("Global dataspace:", g_config.datasetOptions.dataspaceMetadata.xMinGlobal, g_config.datasetOptions.dataspaceMetadata.yMinGlobal, g_config.datasetOptions.dataspaceMetadata.xMaxGlobal, g_config.datasetOptions.dataspaceMetadata.yMaxGlobal);
             // listen for dataset batches until an empty batch arrives
             while(listen) {
