@@ -1,6 +1,8 @@
-build with Debug
-
+build with Debug and compile with ASAN flags
 then:
 export ASAN_OPTIONS=verbosity=1:log_path=asan.log:detect_leaks=1
+then run:
+ASAN_OPTIONS=verbosity=2:log_path=asan.log:detect_leaks=1:malloc_context_size=20:abort_on_error=1 ASAN_SYMBOLIZER_PATH=/usr/bin/llvm-symbolizer mpirun.mpich build/driver/driver
 
-then run
+valgrind (compile with -g -O0):
+valgrind --leak-check=full --show-leak-kinds=all --track-origins=yes --verbose --log-file=valgrind_log.txt mpirun.mpich build/driver/driver

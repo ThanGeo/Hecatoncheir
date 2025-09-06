@@ -99,7 +99,7 @@ namespace logger
         if (g_proc_type == PT_AGENT) {
             // agents
             std::cout << YELLOW "[" + std::to_string(g_parent_original_rank) + "]" NC BLUE "[A]" NC RED "[ERROR: " + std::to_string(errorCode) + "]" NC ": ";
-        } else if (g_proc_type == PT_CONTROLLER) {
+        } else if (g_proc_type == PT_WORKER) {
             // controllers
             if (g_node_rank == HOST_LOCAL_RANK) {
                 // host controller
@@ -120,17 +120,14 @@ namespace logger
      * Prints the node's rank and process type (Agent or Controller), coloured appropriately. */
     template<typename T, typename... Args>
     inline void log_warning(T first, Args... rest) {
-        if (g_proc_type == PT_AGENT) {
-            // agents
-            std::cout << YELLOW "[" + std::to_string(g_parent_original_rank) + "]" NC BLUE "[A]" NC ORANGE "[WARNING]" NC ": ";
-        } else if (g_proc_type == PT_CONTROLLER) {
-            // controllers
+        if (g_proc_type == PT_WORKER) {
+            // workers
             if (g_node_rank == HOST_LOCAL_RANK) {
-                // host controller
-                std::cout << PURPLE "[" + std::to_string(g_node_rank) + "]" "[C]" NC ORANGE "[WARNING]" NC ": ";
+                // host worker
+                std::cout << PURPLE "[" + std::to_string(g_node_rank) + "]" NC ORANGE "[WARNING]" NC ": ";
             } else {
-                // worker controller
-                std::cout << YELLOW "[" + std::to_string(g_node_rank) + "]" NC PURPLE "[C]" NC ORANGE "[WARNING]" NC ": ";
+                // worker
+                std::cout << YELLOW "[" + std::to_string(g_node_rank) + "]" NC ORANGE "[WARNING]" NC ": ";
             }
         } else {
             std::cout << NAVY "[D]" NC ORANGE "[WARNING]" NC ": ";
@@ -143,17 +140,14 @@ namespace logger
      * Prints the node's rank and process type (Agent or Controller), coloured appropriately. */
     template<typename T, typename... Args>
     inline void log_success(T first, Args... rest) {
-        if (g_proc_type == PT_AGENT) {
-            // agents
-            std::cout << YELLOW "[" + std::to_string(g_parent_original_rank) + "]" NC BLUE "[A]" NC GREEN "[SUCCESS]" NC ": ";
-        } else if (g_proc_type == PT_CONTROLLER) {
-            // controllers
+        if (g_proc_type == PT_WORKER) {
+            // workers
             if (g_node_rank == HOST_LOCAL_RANK) {
-                // host controller
-                std::cout << PURPLE "[" + std::to_string(g_node_rank) + "]" "[C]" NC GREEN "[SUCCESS]" NC ": ";
+                // host worker
+                std::cout << PURPLE "[" + std::to_string(g_node_rank) + "]" NC GREEN "[SUCCESS]" NC ": ";
             } else {
-                // worker controller
-                std::cout << YELLOW "[" + std::to_string(g_node_rank) + "]" NC PURPLE "[C]" NC GREEN "[SUCCESS]" NC ": ";
+                // worker
+                std::cout << YELLOW "[" + std::to_string(g_node_rank) + "]" NC GREEN "[SUCCESS]" NC ": ";
             }
         } else {
             std::cout << NAVY "[D]" NC GREEN "[SUCCESS]" NC ": ";
@@ -166,17 +160,14 @@ namespace logger
      * Prints the node's rank and process type (Agent or Controller), coloured appropriately. */
     template<typename T, typename... Args>
     inline void log_task(T first, Args... rest) {
-        if (g_proc_type == PT_AGENT) {
-            // agents
-            std::cout << YELLOW "[" + std::to_string(g_parent_original_rank) + "]" NC BLUE "[A]" NC ": ";
-        } else if (g_proc_type == PT_CONTROLLER) {
-            // controllers
+        if (g_proc_type == PT_WORKER) {
+            // workers
             if (g_node_rank == HOST_LOCAL_RANK) {
-                // host controller
-                std::cout << PURPLE "[" + std::to_string(g_node_rank) + "]" "[C]" NC ": ";
+                // host worker
+                std::cout << PURPLE "[" + std::to_string(g_node_rank) + "]" NC ": ";
             } else {
-                // worker controller
-                std::cout << YELLOW "[" + std::to_string(g_node_rank) + "]" NC PURPLE "[C]" NC ": ";
+                // worker
+                std::cout << YELLOW "[" + std::to_string(g_node_rank) + "]" NC ": ";
             }
         } else {
             std::cout << NAVY "[D]" NC ": ";
@@ -193,18 +184,17 @@ namespace logger
     template<typename T, typename... Args>
     inline void log_task_single_node(int rank, T first, Args... rest) {
         if (g_parent_original_rank == rank) {
-            if (g_proc_type == PT_AGENT) {
-                // agents
-                std::cout << YELLOW "[" + std::to_string(g_parent_original_rank) + "]" NC BLUE "[A]" NC ": ";
-            } else {
+            if (g_proc_type == PT_WORKER) {
                 // controllers
                 if (g_node_rank == HOST_LOCAL_RANK) { 
                     // host controller
-                    std::cout << PURPLE "[" + std::to_string(g_node_rank) + "]" "[C]" NC ": ";
+                    std::cout << PURPLE "[" + std::to_string(g_node_rank) + "]" NC ": ";
                 } else {
                     // worker controller
-                    std::cout << YELLOW "[" + std::to_string(g_node_rank) + "]" NC PURPLE "[C]" NC ": ";
+                    std::cout << YELLOW "[" + std::to_string(g_node_rank) + "]" NC ": ";
                 }
+            } else {
+                std::cout << NAVY "[D]" NC ": ";
             }
             std::cout.flush();
             print_args(first, rest...);

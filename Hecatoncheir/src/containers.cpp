@@ -187,7 +187,7 @@ DB_STATUS DatasetMetadata::deserialize(const char *buffer, int bufferSize) {
     int pathLength;
     int position = 0;
     double xMin, yMin, xMax, yMax;
-
+    
     // bool
     memcpy(&persist, buffer + position, sizeof(bool));
     position += sizeof(bool);
@@ -932,6 +932,11 @@ DB_STATUS TwoLayerIndex::getPartitionsForMBR(Shape* objectRef, std::vector<int> 
     // Ensure the MBR is within bounds of the fine grid
     if (fineMinX < 0 || fineMinY < 0 || fineMaxX >= partitioning->getGlobalPPD() || fineMaxY >= partitioning->getGlobalPPD()) {
         logger::log_error(DBERR_OUT_OF_BOUNDS, "Fine grid indices out of bounds:", fineMinX, fineMinY, fineMaxX, fineMaxY);
+        if (objectRef == nullptr) {
+            logger::log_error(DBERR_OUT_OF_BOUNDS, "Null Object reference:", objectRef);
+        } else {
+            logger::log_error(DBERR_OUT_OF_BOUNDS, "Object", objectRef->recID, "MBR:", objectRef->mbr.pMin.x, objectRef->mbr.pMin.y, objectRef->mbr.pMax.x, objectRef->mbr.pMax.y);
+        }
         return DBERR_OUT_OF_BOUNDS;
     }
     // Calculate the coarse grid cell bounds
@@ -1330,10 +1335,12 @@ DB_STATUS DatasetOptions::addDataset(Dataset&& dataset, int &id) {
         R = std::move(dataset);
         R->metadata.internalID = DATASET_R;
         id = DATASET_R;
+        // logger::log_success("Set R dataset id to", R->metadata.internalID);
     } else if (!S.has_value()) {
         S = std::move(dataset);
         S->metadata.internalID = DATASET_S;
         id = DATASET_S;
+        // logger::log_success("Set S dataset id to", S->metadata.internalID);
     } else {
         logger::log_error(DBERR_INVALID_PARAMETER, "Both R and S datasets exist:", R->metadata.datasetName, S->metadata.datasetName);
         return DBERR_INVALID_PARAMETER;
@@ -1387,7 +1394,7 @@ void DatasetOptions::updateDatasetDataspaceToGlobal() {
 Batch::Batch(){}
 
 bool Batch::isValid() {
-    return !(destRank == -1 || tag == -1 || comm == nullptr);
+    return !(destRank == -1 || tag == -1);
 }
 
 void Batch::addObjectToBatch(Shape &object) {

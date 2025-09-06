@@ -4,7 +4,6 @@
 #include <sys/stat.h>
 
 #include "containers.h"
-#include "env/comm.h"
 #include "statement.h"
 #include "parse.h"
 
@@ -18,6 +17,7 @@ namespace configurer
      */
     DB_STATUS initMPIController(int argc, char* argv[]);
     DB_STATUS initMPIAgent(int argc, char* argv[]);
+    DB_STATUS initWorker(int argc, char* argv[]);
 
     /** @brief Verifies the required directories for the system and/or creates any missing ones. */
     DB_STATUS verifySystemDirectories();

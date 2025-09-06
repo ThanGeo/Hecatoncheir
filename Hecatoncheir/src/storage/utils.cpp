@@ -9,13 +9,13 @@ namespace storage
             logger::log_error(DBERR_MISSING_PATH, "Partition path is missing");
             return DBERR_MISSING_PATH;
         }
-        dataset->metadata.path = g_config.dirPaths.partitionsPath + dataset->metadata.datasetName;
+        dataset->metadata.partition_path = g_config.dirPaths.partitionsPath + dataset->metadata.datasetName;
         if (g_config.options.setupType == SYS_CLUSTER) {
             // cluster
-            dataset->metadata.path += "_" + std::to_string(g_config.partitioningMethod->getGlobalPPD()) + ".dat";
+            dataset->metadata.partition_path += "_" + std::to_string(g_config.partitioningMethod->getGlobalPPD()) + ".dat";
         } else {
             // local machine
-            dataset->metadata.path += "_Node" + std::to_string(g_parent_original_rank) + "_" + std::to_string(g_config.partitioningMethod->getGlobalPPD()) + ".dat";
+            dataset->metadata.partition_path += "_Node" + std::to_string(g_parent_original_rank) + "_" + std::to_string(g_config.partitioningMethod->getGlobalPPD()) + ".dat";
         }
         return DBERR_OK;
     }

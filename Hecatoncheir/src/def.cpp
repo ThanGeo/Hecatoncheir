@@ -14,6 +14,8 @@ MPI_Comm g_global_inter_comm;
 MPI_Comm g_global_intra_comm;
 MPI_Comm g_controller_comm;
 MPI_Comm g_agent_comm;
+MPI_Comm g_worker_comm;
 
 std::string AGENT_EXECUTABLE_PATH = "build/Hecatoncheir/agent";
 std::string CONTROLLER_EXECUTABLE_PATH = "build/Hecatoncheir/controller";
+std::string WORKER_EXECUTABLE_PATH = "build/Hecatoncheir/worker";

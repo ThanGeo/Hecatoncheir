@@ -2,7 +2,8 @@
 add_definitions("-DBOOST_ALLOW_DEPRECATED_HEADERS")
 
 set(CMAKE_CXX_FLAGS "-fopenmp")
-set(CMAKE_CXX_FLAGS_DEBUG "-g -O1 -fsanitize=address,leak -fno-omit-frame-pointer -fno-common")
+# set(CMAKE_CXX_FLAGS_DEBUG "-g -O1 -fsanitize=address,leak -fno-omit-frame-pointer -fno-common")
+set(CMAKE_CXX_FLAGS_DEBUG "-g -O0")
 set(CMAKE_CXX_FLAGS_RELEASE "-O3")
 
 add_executable(

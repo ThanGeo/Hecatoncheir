@@ -2,7 +2,8 @@ cmake_minimum_required(VERSION 3.0.0)
 project(Hecatoncheir VERSION 1.0.1)
 
 set(CMAKE_CXX_FLAGS "-fopenmp")
-set(CMAKE_CXX_FLAGS_DEBUG "-g -O1 -fsanitize=address,leak -fno-omit-frame-pointer -fno-common")
+# set(CMAKE_CXX_FLAGS_DEBUG "-g -O1 -fsanitize=address,leak -fno-omit-frame-pointer -fno-common")
+set(CMAKE_CXX_FLAGS_DEBUG "-g -O0")
 set(CMAKE_CXX_FLAGS_RELEASE "-O3")
 
 set(CMAKE_CXX_STANDARD 17)
@@ -42,7 +43,9 @@ set(SrcFiles
     src/utils.cpp
     
     src/env/comm_def.cpp
-    src/env/comm.cpp
+    src/env/comm_common.cpp
+    src/env/comm_host.cpp
+    src/env/comm_worker.cpp
     src/env/recv.cpp
     src/env/send.cpp
     src/env/pack.cpp
@@ -92,20 +95,12 @@ target_include_directories(${PROJECT_NAME} PUBLIC
 )
 target_link_libraries(${PROJECT_NAME} ${Boost_LIBRARIES} ${MPI_CXX_LIBRARIES})
 
-
-# agent executable
-add_executable(agent agent.cpp)
-target_include_directories(agent PRIVATE
+# worker executable
+add_executable(worker worker.cpp)
+target_include_directories(worker PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/include
 )
-target_link_libraries(agent ${PROJECT_NAME} ${Boost_LIBRARIES} ${MPI_CXX_LIBRARIES})
-
-# controller executable
-add_executable(controller controller.cpp)
-target_include_directories(controller PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}/include
-)
-target_link_libraries(controller ${PROJECT_NAME} ${Boost_LIBRARIES} ${MPI_CXX_LIBRARIES})
+target_link_libraries(worker ${PROJECT_NAME} ${Boost_LIBRARIES} ${MPI_CXX_LIBRARIES})
 
 # resources dir
 set(RESOURCES_DIR "${CMAKE_SOURCE_DIR}/Hecatoncheir/resources")
@@ -116,8 +111,7 @@ add_custom_target(copy_resources ALL
     COMMAND ${CMAKE_COMMAND} -E copy_directory
     ${RESOURCES_DIR} ${RESOURCES_DEST_DIR}
 )
-add_dependencies(agent copy_resources)
-add_dependencies(controller copy_resources)
+add_dependencies(worker copy_resources)
 
 # tests
 add_subdirectory(test)

@@ -28,6 +28,7 @@ typedef boost::geometry::model::polygon<bg_point_xy> bg_polygon;
 
 extern std::string AGENT_EXECUTABLE_PATH;
 extern std::string CONTROLLER_EXECUTABLE_PATH;
+extern std::string WORKER_EXECUTABLE_PATH;
 
 #define RED "\e[0;31m"
 #define GREEN "\e[0;32m"
@@ -51,6 +52,7 @@ enum PROCESS_TYPE {
     PT_DRIVER,
     PT_CONTROLLER,
     PT_AGENT,
+    PT_WORKER,
 };
 
 extern PROCESS_TYPE g_proc_type;
@@ -59,6 +61,7 @@ extern MPI_Comm g_global_inter_comm;
 extern MPI_Comm g_global_intra_comm;
 extern MPI_Comm g_controller_comm;
 extern MPI_Comm g_agent_comm;
+extern MPI_Comm g_worker_comm;
 
 #define DBBASE 100000
 

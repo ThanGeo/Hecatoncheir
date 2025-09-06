@@ -1854,27 +1854,42 @@ STOP_LISTENING:
 
         DB_STATUS serializeAndSendGeometryBatch(Batch* batch) {
             DB_STATUS ret = DBERR_OK;
-            SerializedMsg<char> msg(MPI_CHAR);
             // check if batch is valid
             if (!batch->isValid()) {
-                logger::log_error(DBERR_BATCH_FAILED, "Batch is invalid, check its destRank, tag and comm");
+                logger::log_error(DBERR_BATCH_FAILED, "Batch is invalid, check its destRank and tag");
                 return DBERR_BATCH_FAILED;
             }
-            // logger::log_success("Sending batch of size", batch->objectCount);
-            // serialize (@todo: add try/catch for segfauls, mem access etc...)   
-            ret = batch->serialize(&msg.data, msg.count);
-            if (ret != DBERR_OK) {
-                logger::log_error(DBERR_BATCH_FAILED, "Batch serialization failed");
-                return DBERR_BATCH_FAILED;
+            if (batch->destRank > HOST_LOCAL_RANK) {
+                // send batch message to workers
+                SerializedMsg<char> msg(MPI_CHAR);
+                // logger::log_success("Sending batch of size", batch->objectCount);
+                // serialize (@todo: add try/catch for segfauls, mem access etc...)   
+                ret = batch->serialize(&msg.data, msg.count);
+                if (ret != DBERR_OK) {
+                    logger::log_error(DBERR_BATCH_FAILED, "Batch serialization failed");
+                    return DBERR_BATCH_FAILED;
+                }
+                ret = comm::send::sendMessage(msg, batch->destRank, batch->tag, *batch->comm);
+                if (ret != DBERR_OK) {
+                    logger::log_error(ret, "Sending serialized geometry batch failed");
+                    return ret;
+                }
+                // free memory
+                msg.clear();
+            } else {
+                // prepare dataset object
+                Dataset* dataset = g_config.datasetOptions.getDatasetByIdx(datasetIndex);
+                if (dataset == nullptr) {
+                    logger::log_error(DBERR_NULL_PTR_EXCEPTION, "Empty dataset object (no metadata). Can not partition.");
+                    return DBERR_NULL_PTR_EXCEPTION;
+                }
+                // local batch, handle first
+                for (auto &obj : batch.objects) {
+                    dataset->storeObject(obj);
+                }
+                dataset->totalObjects = dataset->objects.size();
+
             }
-            // send batch message
-            ret = comm::send::sendMessage(msg, batch->destRank, batch->tag, *batch->comm);
-            if (ret != DBERR_OK) {
-                logger::log_error(ret, "Sending serialized geometry batch failed");
-                return ret;
-            }
-            // free memory
-            msg.clear();
             // logger::log_task("Sent batch to node", batch->destRank);
             return ret;
         }

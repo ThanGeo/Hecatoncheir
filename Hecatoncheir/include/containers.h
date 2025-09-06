@@ -1690,6 +1690,7 @@ public:
     DataType dataType;
     hec::FileType fileType;
     std::string path;
+    std::string partition_path;
     // derived from the path
     std::string datasetName;
     // holds the dataset's dataspace metadata (MBR, extent)
@@ -1920,6 +1921,7 @@ struct SystemOptions {
  */
 struct Batch {
     DataType dataType;  /** @todo data type for  batch is obsolete. carefully refactor. */
+    DatasetIndex datasetID;
     // serializable
     size_t objectCount = 0;
     std::vector<Shape> objects;
@@ -1930,7 +1932,8 @@ struct Batch {
     int tag = -1;        // MPI tag = indicates spatial data type
 
     Batch();
-    Batch(int destRank, int tag, MPI_Comm* comm) {
+    Batch(DatasetIndex datasetID, int destRank, int tag, MPI_Comm* comm) {
+        this->datasetID = datasetID;
         this->destRank = destRank;
         this->tag = tag;
         this->comm = comm;

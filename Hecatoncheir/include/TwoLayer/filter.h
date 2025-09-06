@@ -7,7 +7,9 @@
 /** @brief The two-layer MBR filter methods. */
 namespace twolayer
 {
-    /** @brief Begins the query processing specified by the query object and stores the result in the query result object. */
+    /** @brief Begins the query processing specified by the query object and stores the result in the query result object. 
+     * @todo move into the index as a member method
+    */
     DB_STATUS processQuery(hec::Query* query, std::unique_ptr<hec::QResultBase>& queryResult);
     
     namespace range_filter
