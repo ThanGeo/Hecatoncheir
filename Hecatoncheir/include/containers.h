@@ -1568,8 +1568,8 @@ namespace shape_factory
 
 namespace qresult_factory
 {
-    int createNew(int queryID, hec::QueryType queryType, hec::QueryResultType resultType, hec::QResultBase **object);
-    int createNew(hec::Query* query, hec::QResultBase **object);
+    int createNew(int queryID, hec::QueryType queryType, hec::QueryResultType resultType, std::unique_ptr<hec::QResultBase> &object);
+    int createNew(hec::Query* query, std::unique_ptr<hec::QResultBase> &object);
 }
 
 /** @brief Holds information about sections, i.e. APRIL partitions.
@@ -2250,6 +2250,7 @@ DB_STATUS mergeResultObjects(hec::QResultBase *out, hec::QResultBase *in);
 /** @brief Merges two batch query result maps into a single one.
  */
 DB_STATUS mergeBatchResultMaps(std::unordered_map<int, hec::QResultBase*> &dest, std::unordered_map<int, hec::QResultBase*> &src);
+DB_STATUS mergeBatchResultMaps(std::unordered_map<int, std::unique_ptr<hec::QResultBase>> &dest, std::unordered_map<int, std::unique_ptr<hec::QResultBase>> &src);
 
 // Declare the parallel reduction function for merging query results into a single query result object
 // #pragma omp declare reduction(query_output_reduction: hec::QResultBase*: mergeResultObjects(omp_out, omp_in)) initializer(omp_priv = omp_orig->cloneEmpty())

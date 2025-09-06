@@ -5,6 +5,7 @@
 #include <vector>
 #include <unordered_map>
 #include <queue>
+#include <memory>
 
 #include "def.h"
 
@@ -97,8 +98,8 @@ namespace hec
         virtual void serialize(char **buffer, int &bufferSize) = 0;
         virtual void deserialize(const char *buffer, int bufferSize) = 0;
 
-        QueryType getQueryTypeFromSerializedBuffer(const char *buffer, int bufferSize);
-        QueryResultType getResultTypeFromSerializedBuffer(const char *buffer, int bufferSize);
+        static QueryType getQueryTypeFromSerializedBuffer(const char *buffer, int bufferSize);
+        static QueryResultType getResultTypeFromSerializedBuffer(const char *buffer, int bufferSize);
 
         virtual void mergeResults(QResultBase* other) = 0;
 

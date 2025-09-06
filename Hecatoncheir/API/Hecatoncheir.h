@@ -62,7 +62,7 @@ namespace hec {
     hec::QResultBase* query(Query* query);
 
     /** @brief Run queries in batches. */
-    std::unordered_map<int, hec::QResultBase*> query(std::vector<Query*> &queryBatch, hec::QueryType batchType);
+    std::unordered_map<int, std::unique_ptr<hec::QResultBase>> query(std::vector<Query*> &queryBatch, hec::QueryType batchType);
 
     /** @brief Build index of indexType for the given datasets. */
     int buildIndex(std::vector<DatasetID> datasetIndexes, IndexType indexType);

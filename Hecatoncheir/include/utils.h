@@ -96,17 +96,14 @@ namespace logger
      * Prints the node's rank and process type (Agent or Controller), coloured appropriately. */
     template<typename T, typename... Args>
     inline void log_error(int errorCode, T first, Args... rest) {
-        if (g_proc_type == PT_AGENT) {
-            // agents
-            std::cout << YELLOW "[" + std::to_string(g_parent_original_rank) + "]" NC BLUE "[A]" NC RED "[ERROR: " + std::to_string(errorCode) + "]" NC ": ";
-        } else if (g_proc_type == PT_WORKER) {
+        if (g_proc_type == PT_WORKER) {
             // controllers
             if (g_node_rank == HOST_LOCAL_RANK) {
                 // host controller
-                std::cout << PURPLE "[" + std::to_string(g_node_rank) + "]" "[C]" NC RED "[ERROR: " + std::to_string(errorCode) + "]" NC ": ";
+                std::cout << PURPLE "[" + std::to_string(g_node_rank) + "]" NC RED "[ERROR: " + std::to_string(errorCode) + "]" NC ": ";
             } else {
                 // worker controller
-                std::cout << YELLOW "[" + std::to_string(g_node_rank) + "]" NC PURPLE "[C]" NC RED "[ERROR: " + std::to_string(errorCode) + "]" NC ": ";
+                std::cout << YELLOW "[" + std::to_string(g_node_rank) + "]" NC RED "[ERROR: " + std::to_string(errorCode) + "]" NC ": ";
             }
         } else {
             std::cout << NAVY "[D]" NC RED "[ERROR: " + std::to_string(errorCode) + "]" NC ": ";
@@ -183,7 +180,7 @@ namespace logger
      * @param rank The rank of the node that will log the given task message. */
     template<typename T, typename... Args>
     inline void log_task_single_node(int rank, T first, Args... rest) {
-        if (g_parent_original_rank == rank) {
+        if (g_node_rank == rank) {
             if (g_proc_type == PT_WORKER) {
                 // controllers
                 if (g_node_rank == HOST_LOCAL_RANK) { 

@@ -108,18 +108,17 @@ namespace comm
             }
 
             // setup query result object
-            hec::QResultBase* rawResult = nullptr;
-            int res = qresult_factory::createNew(queryPtr, &rawResult);
+            std::unique_ptr<hec::QResultBase> rawResult;
+            int res = qresult_factory::createNew(queryPtr, rawResult);
             if (res != 0) {
                 logger::log_error(DBERR_OBJ_CREATION_FAILED, "Failed to create query result objects.");
                 return DBERR_OBJ_CREATION_FAILED;
             }
 
             // transfer ownership to the output parameter
-            queryResult.reset(rawResult);
+            queryResult = std::move(rawResult);
 
             // evaluate query based on index (stored in R dataset)
-            logger::log_task("Evaluating query...");
             ret = g_config.datasetOptions.getDatasetR()->index->evaluateQuery(queryPtr, queryResult);
             if (ret != DBERR_OK) {
                 return ret;
@@ -127,6 +126,99 @@ namespace comm
 
             // free query memory
             delete queryPtr;
+
+            return ret;
+        }
+
+        DB_STATUS batchRangeQueries(SerializedMsg<char> &msg, std::unordered_map<int, std::unique_ptr<hec::QResultBase>> &batchResults) {
+            // unpack query batch
+            std::vector<hec::Query*> queryBatch;
+            DB_STATUS ret = unpack::unpackQueryBatch(msg, &queryBatch);
+            if (ret != DBERR_OK) {
+                logger::log_error(ret, "Failed to unpack query.");
+                return ret;
+            }
+            
+            // holds all the final batch results
+            std::vector<std::unordered_map<int, std::unique_ptr<hec::QResultBase>>> threadLocalMaps(MAX_THREADS);
+
+            #pragma omp parallel num_threads(MAX_THREADS)
+            {
+                int tid = omp_get_thread_num();
+                auto& localResults = threadLocalMaps[tid];
+                #pragma omp for
+                for (int i = 0; i < queryBatch.size(); i++) {
+                    std::unique_ptr<hec::QResultBase> queryResult;
+                    int res = qresult_factory::createNew(queryBatch[i], queryResult);
+                    if (res != 0) {
+                        logger::log_error(DBERR_OBJ_CREATION_FAILED, "Failed to create query result object.");
+                        #pragma omp cancel for
+                        ret = DBERR_OBJ_CREATION_FAILED;
+                        continue;
+                    }
+
+                    DB_STATUS local_ret = g_config.datasetOptions.getDatasetR()->index->evaluateQuery(queryBatch[i], queryResult);
+                    if (local_ret != DBERR_OK) {
+                        #pragma omp cancel for
+                        ret = local_ret;
+                    }
+
+                    int queryID = queryBatch[i]->getQueryID();
+                    localResults[queryID] = std::move(queryResult);
+                }
+            }
+            if (ret != DBERR_OK) {
+                return ret;
+            }
+            // After parallel region, merge maps
+            for (auto& localMap : threadLocalMaps) {
+                for (auto& [qid, resultPtr] : localMap) {
+                    batchResults[qid] = std::move(resultPtr);
+                }
+            }
+
+            return ret;
+        }
+
+        DB_STATUS batchRangeQueries(std::vector<hec::Query*> &queryBatch, std::unordered_map<int, std::unique_ptr<hec::QResultBase>> &batchResults) {
+            DB_STATUS ret = DBERR_OK;
+            // holds all the final batch results
+            std::vector<std::unordered_map<int, std::unique_ptr<hec::QResultBase>>> threadLocalMaps(MAX_THREADS);
+
+            #pragma omp parallel num_threads(MAX_THREADS)
+            {
+                int tid = omp_get_thread_num();
+                auto& localResults = threadLocalMaps[tid];
+                #pragma omp for
+                for (int i = 0; i < queryBatch.size(); i++) {
+                    std::unique_ptr<hec::QResultBase> queryResult;
+                    int res = qresult_factory::createNew(queryBatch[i], queryResult);
+                    if (res != 0) {
+                        logger::log_error(DBERR_OBJ_CREATION_FAILED, "Failed to create query result object.");
+                        #pragma omp cancel for
+                        ret = DBERR_OBJ_CREATION_FAILED;
+                        continue;
+                    }
+
+                    DB_STATUS local_ret = g_config.datasetOptions.getDatasetR()->index->evaluateQuery(queryBatch[i], queryResult);
+                    if (local_ret != DBERR_OK) {
+                        #pragma omp cancel for
+                        ret = local_ret;
+                    }
+
+                    int queryID = queryBatch[i]->getQueryID();
+                    localResults[queryID] = std::move(queryResult);
+                }
+            }
+            if (ret != DBERR_OK) {
+                return ret;
+            }
+            // After parallel region, merge maps
+            for (auto& localMap : threadLocalMaps) {
+                for (auto& [qid, resultPtr] : localMap) {
+                    batchResults[qid] = std::move(resultPtr);
+                }
+            }
 
             return ret;
         }

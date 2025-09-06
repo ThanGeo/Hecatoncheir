@@ -115,7 +115,7 @@ namespace pack
     DB_STATUS packQueryBatch(std::vector<hec::Query*> *batch, SerializedMsg<char> &batchMsg);
 
     /** @brief Packs a batch of results into a serialized message. */
-    DB_STATUS packBatchResults(std::unordered_map<int, hec::QResultBase*> &batchResults, SerializedMsg<char> &batchMsg);
+    DB_STATUS packBatchResults(std::unordered_map<int, std::unique_ptr<hec::QResultBase>> &batchResults, SerializedMsg<char> &batchMsg);
 
     /** @brief Packs the sizes of a border object map for each node. (DISTANCE JOIN) 
      * @warning INVOKED BY AGENTS
@@ -166,7 +166,7 @@ namespace unpack
     DB_STATUS unpackShape(SerializedMsg<char> &msg, Shape &shape);
 
     /** @brief unpacks a message containg the results of a batch of queries. */
-    DB_STATUS unpackBatchResults(SerializedMsg<char> &msg, std::unordered_map<int, hec::QResultBase*> &batchResults);
+    DB_STATUS unpackBatchResults(SerializedMsg<char> &msg, std::unordered_map<int, std::unique_ptr<hec::QResultBase>> &batchResults);
     
 }
 

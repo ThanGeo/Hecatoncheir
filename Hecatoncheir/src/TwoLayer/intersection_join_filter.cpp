@@ -31,7 +31,11 @@ namespace twolayer
         static inline DB_STATUS internal_sweepRollY_1(std::vector<Shape*>::iterator &rec, std::vector<Shape*>::iterator &firstFS, std::vector<Shape*>::iterator &lastFS, int flag, hec::QResultBase* queryResult) {
             DB_STATUS ret = DBERR_OK;
             auto pivot = firstFS;
-            while ((pivot < lastFS) && ((*rec)->mbr.pMax.y >= (*pivot)->mbr.pMin.y)) {               
+            while ((pivot < lastFS) && ((*rec)->mbr.pMax.y >= (*pivot)->mbr.pMin.y)) {     
+                // if (((*pivot)->recID == 9998 && (*rec)->recID == 139564) || ((*rec)->recID == 9998 && (*pivot)->recID == 139564)) {
+                //     logger::log_task("Spotted pair (pivot and rec):", (*pivot)->recID, (*rec)->recID);
+                //     logger::log_task(" mbrs (pivot and rec) ", (*pivot)->mbr.pMin.x, (*pivot)->mbr.pMin.y, (*pivot)->mbr.pMax.x, (*pivot)->mbr.pMax.y, "and" , (*rec)->mbr.pMin.x, (*rec)->mbr.pMin.y, (*rec)->mbr.pMax.x, (*rec)->mbr.pMax.y);
+                // }                  
                 // disjoint, skip
                 if (((*rec)->mbr.pMin.x > (*pivot)->mbr.pMax.x) || ((*rec)->mbr.pMax.x < (*pivot)->mbr.pMin.x)) {
                     pivot++;
@@ -60,6 +64,10 @@ namespace twolayer
             DB_STATUS ret = DBERR_OK;
             auto pivot = firstFS;
             while ((pivot < lastFS) && ((*rec)->mbr.pMax.y >= (*pivot)->mbr.pMin.y)) {               
+                // if (((*pivot)->recID == 9998 && (*rec)->recID == 139564) || ((*rec)->recID == 9998 && (*pivot)->recID == 139564)) {
+                //     logger::log_task("Spotted pair (pivot and rec):", (*pivot)->recID, (*rec)->recID);
+                //     logger::log_task(" mbrs (pivot and rec) ", (*pivot)->mbr.pMin.x, (*pivot)->mbr.pMin.y, (*pivot)->mbr.pMax.x, (*pivot)->mbr.pMax.y, "and" , (*rec)->mbr.pMin.x, (*rec)->mbr.pMin.y, (*rec)->mbr.pMax.x, (*rec)->mbr.pMax.y);
+                // }        
                 if (((*rec)->mbr.pMin.x > (*pivot)->mbr.pMax.x) || ((*rec)->mbr.pMax.x < (*pivot)->mbr.pMin.x)) {
                     pivot++;
                     continue;
@@ -87,7 +95,11 @@ namespace twolayer
         static inline DB_STATUS internal_sweepRollY_3_1(std::vector<Shape*>::iterator &rec, std::vector<Shape*>::iterator &firstFS, std::vector<Shape*>::iterator &lastFS, int flag, hec::QResultBase* queryResult) {
             DB_STATUS ret = DBERR_OK;
             auto pivot = firstFS;
-            while ((pivot < lastFS) && ((*rec)->mbr.pMax.y >= (*pivot)->mbr.pMin.y)) {                
+            while ((pivot < lastFS) && ((*rec)->mbr.pMax.y >= (*pivot)->mbr.pMin.y)) {    
+                // if (((*pivot)->recID == 9998 && (*rec)->recID == 139564) || ((*rec)->recID == 9998 && (*pivot)->recID == 139564)) {
+                //     logger::log_task("Spotted pair (pivot and rec):", (*pivot)->recID, (*rec)->recID);
+                //     logger::log_task(" mbrs (pivot and rec) ", (*pivot)->mbr.pMin.x, (*pivot)->mbr.pMin.y, (*pivot)->mbr.pMax.x, (*pivot)->mbr.pMax.y, "and" , (*rec)->mbr.pMin.x, (*rec)->mbr.pMin.y, (*rec)->mbr.pMax.x, (*rec)->mbr.pMax.y);
+                // }                    
                 if ((*rec)->mbr.pMin.x > (*pivot)->mbr.pMax.x) {
                     pivot++;
                     continue;
@@ -116,7 +128,11 @@ namespace twolayer
         static inline DB_STATUS internal_sweepRollY_3_2(std::vector<Shape*>::iterator &rec, std::vector<Shape*>::iterator &firstFS, std::vector<Shape*>::iterator &lastFS, int flag, hec::QResultBase* queryResult) {
             DB_STATUS ret = DBERR_OK;
             auto pivot = firstFS;
-            while ((pivot < lastFS) && ((*rec)->mbr.pMax.y >= (*pivot)->mbr.pMin.y)) {       
+            while ((pivot < lastFS) && ((*rec)->mbr.pMax.y >= (*pivot)->mbr.pMin.y)) {    
+                // if (((*pivot)->recID == 9998 && (*rec)->recID == 139564) || ((*rec)->recID == 9998 && (*pivot)->recID == 139564)) {
+                //     logger::log_task("Spotted pair (pivot and rec):", (*pivot)->recID, (*rec)->recID);
+                //     logger::log_task(" mbrs (pivot and rec) ", (*pivot)->mbr.pMin.x, (*pivot)->mbr.pMin.y, (*pivot)->mbr.pMax.x, (*pivot)->mbr.pMax.y, "and" , (*rec)->mbr.pMin.x, (*rec)->mbr.pMin.y, (*rec)->mbr.pMax.x, (*rec)->mbr.pMax.y);
+                // }           
                 if ((*pivot)->mbr.pMin.x > (*rec)->mbr.pMax.x) {
                     pivot++;
                     continue;
@@ -144,7 +160,11 @@ namespace twolayer
         static inline DB_STATUS internal_sweepRollY_4(std::vector<Shape*>::iterator &rec, std::vector<Shape*>::iterator &firstFS, std::vector<Shape*>::iterator &lastFS, int flag, hec::QResultBase* queryResult) {
             DB_STATUS ret = DBERR_OK;
             auto pivot = firstFS;
-            while ((pivot < lastFS) && ((*rec)->mbr.pMax.y >= (*pivot)->mbr.pMin.y)) {                       
+            while ((pivot < lastFS) && ((*rec)->mbr.pMax.y >= (*pivot)->mbr.pMin.y)) {  
+                // if (((*pivot)->recID == 9998 && (*rec)->recID == 139564) || ((*rec)->recID == 9998 && (*pivot)->recID == 139564)) {
+                //     logger::log_task("Spotted pair (pivot and rec):", (*pivot)->recID, (*rec)->recID);
+                //     logger::log_task(" mbrs (pivot and rec) ", (*pivot)->mbr.pMin.x, (*pivot)->mbr.pMin.y, (*pivot)->mbr.pMax.x, (*pivot)->mbr.pMax.y, "and" , (*rec)->mbr.pMin.x, (*rec)->mbr.pMin.y, (*rec)->mbr.pMax.x, (*rec)->mbr.pMax.y);
+                // }                     
                 if ((*rec)->mbr.pMin.x > (*pivot)->mbr.pMax.x) {
                     pivot++;
                     continue;
@@ -172,7 +192,11 @@ namespace twolayer
         static inline DB_STATUS internal_sweepRollY_5(std::vector<Shape*>::iterator &rec, std::vector<Shape*>::iterator &firstFS, std::vector<Shape*>::iterator &lastFS, int flag, hec::QResultBase* queryResult) {
             DB_STATUS ret = DBERR_OK;
             auto pivot = firstFS;
-            while ((pivot < lastFS) && ((*rec)->mbr.pMax.y >= (*pivot)->mbr.pMin.y)) {                
+            while ((pivot < lastFS) && ((*rec)->mbr.pMax.y >= (*pivot)->mbr.pMin.y)) {     
+                // if (((*pivot)->recID == 9998 && (*rec)->recID == 139564) || ((*rec)->recID == 9998 && (*pivot)->recID == 139564)) {
+                //     logger::log_task("Spotted pair (pivot and rec):", (*pivot)->recID, (*rec)->recID);
+                //     logger::log_task(" mbrs (pivot and rec) ", (*pivot)->mbr.pMin.x, (*pivot)->mbr.pMin.y, (*pivot)->mbr.pMax.x, (*pivot)->mbr.pMax.y, "and" , (*rec)->mbr.pMin.x, (*rec)->mbr.pMin.y, (*rec)->mbr.pMax.x, (*rec)->mbr.pMax.y);
+                // }           
                 if ((*rec)->mbr.pMax.x < (*pivot)->mbr.pMin.x) {
                     pivot++;
                     continue;
@@ -180,17 +204,11 @@ namespace twolayer
                 // forward pair
                 if (flag) {
                     // pivot is R, rec is S
-                    if ((*pivot)->recID == 129032 && (*rec)->recID == 2292762) {
-                        logger::log_task("Spotted in filter: mbrs ", (*pivot)->mbr.pMin.x, (*pivot)->mbr.pMin.y, (*pivot)->mbr.pMax.x, (*pivot)->mbr.pMax.y, "and" , (*rec)->mbr.pMin.x, (*rec)->mbr.pMin.y, (*rec)->mbr.pMax.x, (*rec)->mbr.pMax.y);
-                    }
                     ret = forwardPair(*pivot, *rec, queryResult);
                     if (ret != DBERR_OK) {
                         return ret;
                     }
                 } else {
-                    if ((*pivot)->recID == 2292762 && (*rec)->recID == 129032) {
-                        logger::log_task("Spotted in filter: mbrs ",  (*rec)->mbr.pMin.x, (*rec)->mbr.pMin.y, (*rec)->mbr.pMax.x, (*rec)->mbr.pMax.y,  "and" , (*pivot)->mbr.pMin.x, (*pivot)->mbr.pMin.y, (*pivot)->mbr.pMax.x, (*pivot)->mbr.pMax.y);
-                    }
                     // rec is R, pivot is S
                     ret = forwardPair(*rec, *pivot, queryResult);
                     if (ret != DBERR_OK) {

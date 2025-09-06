@@ -1,38 +1,21 @@
-cmake_minimum_required(VERSION 3.0.0)
+cmake_minimum_required(VERSION 3.10)  # Match top-level version
 project(Hecatoncheir VERSION 1.0.1)
 
-set(CMAKE_CXX_FLAGS "-fopenmp")
-# set(CMAKE_CXX_FLAGS_DEBUG "-g -O1 -fsanitize=address,leak -fno-omit-frame-pointer -fno-common")
-set(CMAKE_CXX_FLAGS_DEBUG "-g -O0")
-set(CMAKE_CXX_FLAGS_RELEASE "-O3")
+# Generate configuration header
+configure_file(
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/config_pub.h.in
+    ${CMAKE_CURRENT_BINARY_DIR}/config_pub.h  # Better to put in binary dir
+)
 
-set(CMAKE_CXX_STANDARD 17)
+# Include directories
+include_directories(SYSTEM ${MPI_INCLUDE_PATH})
+include_directories(${Boost_INCLUDE_DIRS})
 
-if(MSVC)
-    add_compile_options(/std::c++latest)
-    set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS TRUE)
-    set(BUILD_SHARED_LIBS TRUE)
-endif()
+# Add definitions
+add_definitions("-DBOOST_ALLOW_DEPRECATED_HEADERS")
+add_definitions("-DBOOST_BIND_GLOBAL_PLACEHOLDERS")
 
-if(NOT CMAKE_BUILD_TYPE)
-  set(CMAKE_BUILD_TYPE Release)
-endif()
-
-# find MPI
-find_package(MPI REQUIRED)
-if(MPI_FOUND)
-    include_directories(SYSTEM ${MPI_INCLUDE_PATH})
-endif()
-
-# find boost
-set(Boost_USE_STATIC_LIBS ON)
-find_package(Boost 1.71 REQUIRED)
-if(Boost_FOUND)
-    add_definitions("-DBOOST_ALLOW_DEPRECATED_HEADERS")
-    add_definitions("-DBOOST_BIND_GLOBAL_PLACEHOLDERS")
-    include_directories(${Boost_INCLUDE_DIRS})
-endif()
-
+# Source files
 set(SrcFiles
     API/Hecatoncheir.cpp
     API/containers.cpp
@@ -78,40 +61,36 @@ set(SrcFiles
     src/refinement/topology.cpp
 )
 
-# Generate a configuration header file
-configure_file(
-    ${CMAKE_CURRENT_SOURCE_DIR}/include/config_pub.h.in   # Input template file
-    ${CMAKE_CURRENT_SOURCE_DIR}/include/config_pub.h   # Output generated file
-    # ${CMAKE_CURRENT_BINARY_DIR}/config_pub.h     # Output generated file
-)
-
-# Add the binary directory to the include path
-include_directories(${PROJECT_NAME} ${CMAKE_CURRENT_BINARY_DIR})
-
-# add as library
+# Create library
 add_library(${PROJECT_NAME} STATIC ${SrcFiles})
+
+# Target-specific includes (better than global include_directories)
 target_include_directories(${PROJECT_NAME} PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${CMAKE_CURRENT_BINARY_DIR}  # For generated config header
 )
-target_link_libraries(${PROJECT_NAME} ${Boost_LIBRARIES} ${MPI_CXX_LIBRARIES})
 
-# worker executable
-add_executable(worker worker.cpp)
-target_include_directories(worker PRIVATE
+# Link dependencies the traditional way
+target_link_libraries(${PROJECT_NAME} PUBLIC 
+    ${Boost_LIBRARIES}
+    ${MPI_CXX_LIBRARIES}
+)
+
+# Make sure include directories are set
+target_include_directories(${PROJECT_NAME} PUBLIC
+    ${MPI_INCLUDE_PATH}
+    ${Boost_INCLUDE_DIRS}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${CMAKE_CURRENT_BINARY_DIR}
 )
-target_link_libraries(worker ${PROJECT_NAME} ${Boost_LIBRARIES} ${MPI_CXX_LIBRARIES})
 
-# resources dir
-set(RESOURCES_DIR "${CMAKE_SOURCE_DIR}/Hecatoncheir/resources")
-# build destination for resources dir
-set(RESOURCES_DEST_DIR "${CMAKE_BINARY_DIR}/Hecatoncheir/resources")
-# copy
-add_custom_target(copy_resources ALL
-    COMMAND ${CMAKE_COMMAND} -E copy_directory
-    ${RESOURCES_DIR} ${RESOURCES_DEST_DIR}
-)
-add_dependencies(worker copy_resources)
+# Worker executable
+add_executable(worker worker.cpp)
+target_link_libraries(worker PRIVATE ${PROJECT_NAME})
 
-# tests
+# Resources (simplified)
+file(COPY ${CMAKE_SOURCE_DIR}/Hecatoncheir/resources 
+     DESTINATION ${CMAKE_BINARY_DIR}/Hecatoncheir)
+
+# Tests subdirectory
 add_subdirectory(test)

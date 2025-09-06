@@ -15,7 +15,7 @@ namespace storage
             dataset->metadata.partition_path += "_" + std::to_string(g_config.partitioningMethod->getGlobalPPD()) + ".dat";
         } else {
             // local machine
-            dataset->metadata.partition_path += "_Node" + std::to_string(g_parent_original_rank) + "_" + std::to_string(g_config.partitioningMethod->getGlobalPPD()) + ".dat";
+            dataset->metadata.partition_path += "_Node" + std::to_string(g_node_rank) + "_" + std::to_string(g_config.partitioningMethod->getGlobalPPD()) + ".dat";
         }
         return DBERR_OK;
     }

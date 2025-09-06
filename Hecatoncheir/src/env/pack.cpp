@@ -161,7 +161,7 @@ namespace pack
         return ret;
     }
 
-    DB_STATUS packBatchResults(std::unordered_map<int, hec::QResultBase*> &batchResults, SerializedMsg<char> &msg) {       
+    DB_STATUS packBatchResults(std::unordered_map<int, std::unique_ptr<hec::QResultBase>> &batchResults, SerializedMsg<char> &msg) {       
         DB_STATUS ret = DBERR_OK;
         // count total size
         msg.count = 0;
@@ -200,7 +200,7 @@ namespace pack
                     switch (it.second->getResultType()) {
                         case hec::QR_COLLECT:
                         {
-                            auto castedPtr = dynamic_cast<hec::QResultCollect*>(it.second);
+                            auto castedPtr = dynamic_cast<hec::QResultCollect*>(it.second.get());
                             // total object ids
                             *reinterpret_cast<size_t*>(localBuffer) = castedPtr->getResultCount();
                             localBuffer += sizeof(size_t);
@@ -230,7 +230,7 @@ namespace pack
                     switch (it.second->getResultType()) {
                         case hec::QR_COLLECT:
                             {
-                                auto castedPtr = dynamic_cast<hec::QPairResultCollect*>(it.second);
+                                auto castedPtr = dynamic_cast<hec::QPairResultCollect*>(it.second.get());
                                 // total object ids
                                 *reinterpret_cast<size_t*>(localBuffer) = castedPtr->getResultCount();
                                 localBuffer += sizeof(size_t);
@@ -253,7 +253,7 @@ namespace pack
                     switch (it.second->getResultType()) {
                         case hec::QR_COLLECT:
                             {
-                                auto castedPtr = dynamic_cast<hec::QTopologyResultCollect*>(it.second);
+                                auto castedPtr = dynamic_cast<hec::QTopologyResultCollect*>(it.second.get());
                                 std::vector<std::vector<size_t>> results = castedPtr->getTopologyResultList();
                                 for (int i=0; i<castedPtr->TOTAL_RELATIONS; i++) {
                                     // total object ids
@@ -267,7 +267,7 @@ namespace pack
                             break;
                         case hec::QR_COUNT:
                         {
-                            auto castedPtr = dynamic_cast<hec::QTopologyResultCount*>(it.second);
+                            auto castedPtr = dynamic_cast<hec::QTopologyResultCount*>(it.second.get());
                             std::vector<size_t> results = castedPtr->getResultList();
                             for (int i=0; i<castedPtr->TOTAL_RELATIONS; i++) {
                                 *reinterpret_cast<size_t*>(localBuffer) = results[i];
@@ -282,7 +282,7 @@ namespace pack
                     break;
                 case hec::Q_KNN:
                     {
-                        auto castedPtr = dynamic_cast<hec::QResultkNN*>(it.second);
+                        auto castedPtr = dynamic_cast<hec::QResultkNN*>(it.second.get());
                         // total object ids
                         *reinterpret_cast<size_t*>(localBuffer) = castedPtr->getResultCount();
                         localBuffer += sizeof(size_t);
@@ -307,7 +307,7 @@ namespace pack
         for (int i=0; i<g_world_size; i++) {
             // node rank i
             values.emplace_back(i);
-            if (i != g_parent_original_rank) {
+            if (i != g_node_rank) {
                 // pack how many objects are on the border with node i
                 // first R, then S
                 size_t rSize = borderObjectsMap[i].objectsR.size();
@@ -428,7 +428,7 @@ namespace unpack
         // Total query count
         int queryCount = *reinterpret_cast<const int*>(localBuffer);
         localBuffer += sizeof(int);
-
+        
         for (int i = 0; i < queryCount; ++i) {
             hec::Query* query = hec::Query::createFromBuffer(localBuffer);
             if (query == nullptr) {
@@ -481,7 +481,7 @@ namespace unpack
         return ret;
     }
 
-    DB_STATUS unpackBatchResults(SerializedMsg<char> &msg, std::unordered_map<int, hec::QResultBase*> &batchResults) {
+    DB_STATUS unpackBatchResults(SerializedMsg<char> &msg, std::unordered_map<int, std::unique_ptr<hec::QResultBase>> &batchResults) {
         DB_STATUS ret = DBERR_OK;
         char *localBuffer = msg.data;
         // batch size
@@ -502,8 +502,8 @@ namespace unpack
             localBuffer += sizeof(hec::QueryResultType);
 
             // create new query result element
-            hec::QResultBase* queryResult;
-            int res = qresult_factory::createNew(queryID, queryType, queryResultType, &queryResult);
+            std::unique_ptr<hec::QResultBase> queryResult;
+            int res = qresult_factory::createNew(queryID, queryType, queryResultType, queryResult);
             if (res != 0) {
                 logger::log_error(DBERR_OBJ_CREATION_FAILED, "Failed to create query result object.");
                 return DBERR_OBJ_CREATION_FAILED;
@@ -523,7 +523,7 @@ namespace unpack
                             std::memcpy(ids.data(), localBuffer, idCount * sizeof(size_t));
                             localBuffer += idCount * sizeof(size_t);
                             // cast and set to object
-                            auto castedPtr = dynamic_cast<hec::QResultCollect*>(queryResult);
+                            auto castedPtr = dynamic_cast<hec::QResultCollect*>(queryResult.get());
                             castedPtr->setResult(ids);
                         }
                             break;
@@ -531,7 +531,7 @@ namespace unpack
                         {
                             size_t result = (size_t) *reinterpret_cast<const size_t*>(localBuffer);
                             localBuffer += sizeof(size_t);
-                            auto castedPtr = dynamic_cast<hec::QResultCount*>(queryResult);
+                            auto castedPtr = dynamic_cast<hec::QResultCount*>(queryResult.get());
                             castedPtr->setResult(result);
                         }
                             break;
@@ -559,7 +559,7 @@ namespace unpack
                                 std::memcpy(ids.data(), localBuffer, idsCount * sizeof(size_t));
                                 localBuffer += idsCount * sizeof(size_t);
                                 // cast and set to object
-                                auto castedPtr = dynamic_cast<hec::QPairResultCollect*>(queryResult);
+                                auto castedPtr = dynamic_cast<hec::QPairResultCollect*>(queryResult.get());
                                 castedPtr->setResult(ids);
                             }
                             break;
@@ -567,7 +567,7 @@ namespace unpack
                         {
                             size_t result = (size_t) *reinterpret_cast<const size_t*>(localBuffer);
                             localBuffer += sizeof(size_t);
-                            auto castedPtr = dynamic_cast<hec::QResultCount*>(queryResult);
+                            auto castedPtr = dynamic_cast<hec::QResultCount*>(queryResult.get());
                             castedPtr->setResult(result);
                         }
                             break;
@@ -580,7 +580,7 @@ namespace unpack
                     switch (queryResultType) {
                         case hec::QR_COLLECT:
                             {
-                                auto castedPtr = dynamic_cast<hec::QTopologyResultCollect*>(queryResult);
+                                auto castedPtr = dynamic_cast<hec::QTopologyResultCollect*>(queryResult.get());
                                 for (int i=0; i<castedPtr->TOTAL_RELATIONS; i++) {
                                     // read total ids count
                                     size_t idsCount = (size_t) *reinterpret_cast<const size_t*>(localBuffer);
@@ -596,7 +596,7 @@ namespace unpack
                             break;
                         case hec::QR_COUNT:
                         {
-                            auto castedPtr = dynamic_cast<hec::QTopologyResultCount*>(queryResult);
+                            auto castedPtr = dynamic_cast<hec::QTopologyResultCount*>(queryResult.get());
                             for (int i=0; i<castedPtr->TOTAL_RELATIONS; i++) {
                                 size_t result = (size_t) *reinterpret_cast<const size_t*>(localBuffer);
                                 localBuffer += sizeof(size_t);
@@ -624,7 +624,7 @@ namespace unpack
                             heap.emplace(it);
                         }
                         // cast and set to object
-                        auto castedPtr = dynamic_cast<hec::QResultkNN*>(queryResult);
+                        auto castedPtr = dynamic_cast<hec::QResultkNN*>(queryResult.get());
                         castedPtr->setResult(heap);
                     }
                     break;
@@ -636,11 +636,10 @@ namespace unpack
             auto it = batchResults.find(queryResult->getQueryID());
             if (it != batchResults.end()) {
                 // exists already, merge into existing object
-                it->second->mergeResults(queryResult);
-                delete queryResult;  // safe to delete after merge
+                it->second->mergeResults(queryResult.get());
             } else {
                 // new entry: take ownership directly
-                batchResults[queryResult->getQueryID()] = queryResult;
+                batchResults[queryResult->getQueryID()] = std::move(queryResult);
             }
         }
 

@@ -40,9 +40,6 @@ namespace comm
                 {
                     // local batch, handle first
                     for (auto &obj : batch->objects) {
-                        if (obj.recID == 0) {
-                            logger::log_task("Storing object with id", obj.recID, " and MBR:", obj.mbr.pMin.x, obj.mbr.pMin.y, obj.mbr.pMax.x, obj.mbr.pMax.y);
-                        }
                         dataset->storeObject(obj);
                     }
                 }
@@ -95,7 +92,6 @@ namespace comm
                 for (auto &obj : batch.objects) {
                     // store into dataset
                     dataset->storeObject(obj);
-                    // logger::log_success("Stored object", obj.recID);
                 }
             } else {
                 // empty batch, set flag to stop listening for this dataset
@@ -249,7 +245,7 @@ namespace comm
                 }
             }
 
-            logger::log_success("Received", dataset->objects.size(),"(", dataset->totalObjects, ") objects after partitioning");
+            // logger::log_success("Received", dataset->objects.size(),"(", dataset->totalObjects, ") objects after partitioning");
 
             return ret;
         }
@@ -474,8 +470,10 @@ STOP_LISTENING:
                 logger::log_error(ret, "Deserializing dataset info failed.");
                 return ret;
             }
+            // logger::log_task("temp dataset:", tempDataset.objects.size(), tempDataset.metadata.internalID);
             // get actual dataset and replace total object count + dataspace info
             Dataset* dataset = g_config.datasetOptions.getDatasetByIdx(tempDataset.metadata.internalID);
+            // logger::log_task("dataset:", dataset->objects.size(), dataset->metadata.internalID);
             dataset->totalObjects = tempDataset.totalObjects;
             dataset->metadata.dataspaceMetadata = tempDataset.metadata.dataspaceMetadata;
             g_config.datasetOptions.updateDataspace();
@@ -671,7 +669,7 @@ STOP_LISTENING:
             queryResult->serialize(&resultMsg.data, resultMsg.count);
 
             // send results
-            logger::log_task("Sending", queryResult->getResultCount(), "query results.");
+            // logger::log_task("Sending", queryResult->getResultCount(), "query results.");
             ret = send::sendMessage(resultMsg, HOST_LOCAL_RANK, MSG_QUERY_RESULT, g_worker_comm);
             if (ret != DBERR_OK) {
                 return ret;
@@ -778,13 +776,12 @@ STOP_LISTENING:
             msg.clear();
 
             // setup query result object
-            hec::QResultBase* rawResult = nullptr;
-            int res = qresult_factory::createNew(queryPtr, &rawResult);
+            std::unique_ptr<hec::QResultBase> queryResult;
+            int res = qresult_factory::createNew(queryPtr, queryResult);
             if (res != 0) {
                 logger::log_error(DBERR_OBJ_CREATION_FAILED, "Failed to create query result objects.");
                 return DBERR_OBJ_CREATION_FAILED;
             }
-            std::unique_ptr<hec::QResultBase> queryResult(rawResult);
 
             // batches of objects that rest on border areas
             std::unordered_map<int, DJBatch> borderObjectsMap;
@@ -875,86 +872,34 @@ STOP_LISTENING:
             if (ret != DBERR_OK) {
                 return ret;
             }
-            // unpack query batch
-            std::vector<hec::Query*> queryBatch;
-            ret = unpack::unpackQueryBatch(msg, &queryBatch);
-            if (ret != DBERR_OK) {
-                logger::log_error(ret, "Failed to unpack query.");
-                return ret;
-            }
-
-            // logger::log_success("Unpacked", queryBatch.size(), "queries to process.");
-
-            // free message memory
-            msg.clear();
             
             // holds all the final batch results
             std::unordered_map<int, std::unique_ptr<hec::QResultBase>> batchResults;
-            std::vector<std::unordered_map<int, std::unique_ptr<hec::QResultBase>>> threadLocalMaps(MAX_THREADS);
-
-            #pragma omp parallel num_threads(MAX_THREADS)
-            {
-                int tid = omp_get_thread_num();
-                auto& localResults = threadLocalMaps[tid];
-                #pragma omp for
-                for (int i = 0; i < queryBatch.size(); i++) {
-                    hec::QResultBase* rawResult = nullptr;
-                    int res = qresult_factory::createNew(queryBatch[i], &rawResult);
-                    if (res != 0) {
-                        logger::log_error(DBERR_OBJ_CREATION_FAILED, "Failed to create query result object.");
-                        #pragma omp cancel for
-                        ret = DBERR_OBJ_CREATION_FAILED;
-                        continue;
-                    }
-
-                    std::unique_ptr<hec::QResultBase> queryResult(rawResult);
-
-                    DB_STATUS local_ret = g_config.datasetOptions.getDatasetR()->index->evaluateQuery(queryBatch[i], queryResult);
-                    if (local_ret != DBERR_OK) {
-                        #pragma omp cancel for
-                        ret = local_ret;
-                    }
-
-                    int queryID = queryBatch[i]->getQueryID();
-                    localResults[queryID] = std::move(queryResult);
-                }
-            }
+            // evaluate batch
+            ret = execute::batchRangeQueries(msg, batchResults);
             if (ret != DBERR_OK) {
                 return ret;
             }
-            // After parallel region, merge maps
-            for (auto& localMap : threadLocalMaps) {
-                for (auto& [qid, resultPtr] : localMap) {
-                    batchResults[qid] = std::move(resultPtr);
-                }
-            }
-            // Extract raw pointers for packing
-            std::unordered_map<int, hec::QResultBase*> rawResults;
-            for (auto& [qid, resultPtr] : batchResults) {
-                rawResults[qid] = resultPtr.get();
-            }
-
+            
+            // free message memory
+            msg.clear();
+            
             // Pack results
             SerializedMsg<char> batchResultMsg(MPI_CHAR);
-            ret = pack::packBatchResults(rawResults, batchResultMsg);
+            ret = pack::packBatchResults(batchResults, batchResultMsg);
             if (ret != DBERR_OK) {
                 logger::log_error(ret, "Failed to pack batch results.");
-                for (auto& q : queryBatch) delete q;
                 return ret;
             }
 
             // Send results
             ret = send::sendMessage(batchResultMsg, HOST_LOCAL_RANK, MSG_QUERY_BATCH_RESULT, g_worker_comm);
             if (ret != DBERR_OK) {
-                for (auto& q : queryBatch) delete q;
                 return ret;
             }
 
             // Cleanup
             batchResultMsg.clear();
-            for (auto& q : queryBatch) {
-                delete q;
-            }
             batchResults.clear();
 
             return ret;

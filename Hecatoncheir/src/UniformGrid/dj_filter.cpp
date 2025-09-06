@@ -68,7 +68,7 @@ namespace uniform_grid
                                     ret = local_ret;
                                 }
                                     
-                                if (nodeRank != g_parent_original_rank) {
+                                if (nodeRank != g_node_rank) {
                                     localBorderMap[nodeRank].addObjectR(*obj); // Thread-local, no contention
                                 } else {
                                     // no distribution needed, evaluate locally against other local partitions
@@ -136,7 +136,7 @@ namespace uniform_grid
                                     ret = local_ret;
                                 }
                                 
-                                if (nodeRank != g_parent_original_rank) {
+                                if (nodeRank != g_node_rank) {
                                     localBorderMap[nodeRank].addObjectS(*obj); // Thread-local, no contention
                                 }
                             }
@@ -185,7 +185,7 @@ namespace uniform_grid
                         return ret;
                     }
 
-                    if (nodeRank == g_parent_original_rank) {
+                    if (nodeRank == g_node_rank) {
                         // no distribution needed, evaluate locally against other local partitions
                         PartitionBase* partitionS = S->index->getPartition(overlapPartitionID);
                         if (partitionS != nullptr) {
@@ -222,7 +222,7 @@ namespace uniform_grid
                         return ret;
                     }
 
-                    if (nodeRank == g_parent_original_rank) {
+                    if (nodeRank == g_node_rank) {
                         // no distribution needed, evaluate locally against other local partitions
                         PartitionBase* partitionR = R->index->getPartition(overlapPartitionID);
                         if (partitionR != nullptr) {

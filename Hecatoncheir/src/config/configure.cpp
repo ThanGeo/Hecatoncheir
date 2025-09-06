@@ -17,7 +17,6 @@ namespace configurer
         }
 
         // get inter comm with parent
-        g_parent_original_rank = PARENT_RANK;
         mpi_ret = MPI_Comm_get_parent(&g_global_inter_comm);
         if (g_global_inter_comm == MPI_COMM_NULL || mpi_ret != MPI_SUCCESS) {
             logger::log_error(DBERR_MPI_INIT_FAILED, "No parent process (driver) found.");
@@ -74,130 +73,7 @@ namespace configurer
 
         return DBERR_OK;
     }
-
-    DB_STATUS initMPIController(int argc, char* argv[]) {
-        int rank, wsize;
-        int provided;
-        // type
-        g_proc_type = PT_CONTROLLER;
-        // init MPI
-        int mpi_ret = MPI_Init_thread(nullptr, nullptr, MPI_THREAD_MULTIPLE, &provided);
-        if (mpi_ret != MPI_SUCCESS) {
-            logger::log_error(DBERR_MPI_INIT_FAILED, "Init MPI failed.");
-            return DBERR_MPI_INIT_FAILED;
-        }
-
-        // get inter comm with parent
-        g_parent_original_rank = PARENT_RANK;
-        mpi_ret = MPI_Comm_get_parent(&g_global_inter_comm);
-        if (g_global_inter_comm == MPI_COMM_NULL || mpi_ret != MPI_SUCCESS) {
-            logger::log_error(DBERR_MPI_INIT_FAILED, "No parent process (driver) found.");
-            return DBERR_MPI_INIT_FAILED;
-        }
-
-        // merge inter-comm to intra-comm
-        MPI_Intercomm_merge(g_global_inter_comm, 1, &g_global_intra_comm);
-
-        
-        // get rank in global group
-        mpi_ret = MPI_Comm_rank(g_global_intra_comm, &rank);
-        if (mpi_ret != MPI_SUCCESS) {
-            logger::log_error(DBERR_MPI_INIT_FAILED, "Init comm rank failed.");
-            return DBERR_MPI_INIT_FAILED;
-        }
-        g_global_rank = rank;
-
-        // split intra-comm to form the group
-        mpi_ret = MPI_Comm_split(g_global_intra_comm, 1, g_global_rank, &g_controller_comm);
-        if (mpi_ret != MPI_SUCCESS) {
-            logger::log_error(DBERR_MPI_INIT_FAILED, "Comm split failed. MPI ret code:", mpi_ret);
-            return DBERR_MPI_INIT_FAILED;
-        }
-        if (g_controller_comm == MPI_COMM_NULL) {
-            logger::log_error(DBERR_MPI_INIT_FAILED, "WTF, controller comm is NULL?");
-        }
-
-        // get rank in group of controllers
-        mpi_ret = MPI_Comm_rank(g_controller_comm, &rank);
-        if (mpi_ret != MPI_SUCCESS) {
-            logger::log_error(DBERR_MPI_INIT_FAILED, "Init comm rank failed.");
-            return DBERR_MPI_INIT_FAILED;
-        }
-        g_node_rank = rank;
-
-        // world size
-        mpi_ret = MPI_Comm_size(g_controller_comm, &wsize);
-        if (mpi_ret != MPI_SUCCESS) {
-            logger::log_error(DBERR_MPI_INIT_FAILED, "Init comm size failed.");
-            return DBERR_MPI_INIT_FAILED;
-        }
-        g_world_size = wsize;
-
-        // release inter-comm
-        mpi_ret = MPI_Comm_free(&g_global_inter_comm);
-        if (mpi_ret != MPI_SUCCESS) {
-            logger::log_error(DBERR_MPI_INIT_FAILED, "Freeing obsolete inter-comm failed.");
-            return DBERR_MPI_INIT_FAILED;
-        }
-
-        // logger::log_success("My rank in global is", g_global_rank);
-        // logger::log_success("My rank in g_controller_comm is", g_node_rank);
-
-        return DBERR_OK;
-    }
-
-    DB_STATUS initMPIAgent(int argc, char* argv[]) {
-        int rank, wsize;
-        int provided;
-        // init MPI
-        int mpi_ret = MPI_Init_thread(nullptr, nullptr, MPI_THREAD_MULTIPLE, &provided);
-        if (mpi_ret != MPI_SUCCESS) {
-            logger::log_error(DBERR_MPI_INIT_FAILED, "Init MPI failed.");
-            return DBERR_MPI_INIT_FAILED;
-        }
-        // type
-        g_proc_type = PT_AGENT;
-
-        // get parent process intercomm
-        MPI_Comm_get_parent(&g_agent_comm);
-        if (g_agent_comm == MPI_COMM_NULL) {
-            logger::log_error(DBERR_PROC_INIT_FAILED, "The agent can't be parentless");
-            return DBERR_PROC_INIT_FAILED;
-        }
-
-        // process rank
-        mpi_ret = MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-        if (mpi_ret != MPI_SUCCESS) {
-            logger::log_error(DBERR_MPI_INIT_FAILED, "Init comm rank failed.");
-            return DBERR_MPI_INIT_FAILED;
-        }
-        g_node_rank = rank;
-        
-        // world size
-        mpi_ret = MPI_Comm_size(g_agent_comm, &wsize);
-        if (mpi_ret != MPI_SUCCESS) {
-            logger::log_error(DBERR_MPI_INIT_FAILED, "Init comm size failed.");
-            return DBERR_MPI_INIT_FAILED;
-        }
-        g_world_size = wsize;
-
-        // receive parent's original rank from the parent
-        MPI_Status status;
-        mpi_ret = MPI_Recv(&g_parent_original_rank, 1, MPI_INT, PARENT_RANK, 0, g_agent_comm, &status);
-        if (mpi_ret) {
-            logger::log_error(DBERR_COMM_BCAST, "Receiving parent rank failed", DBERR_COMM_BCAST);
-            return DBERR_COMM_BCAST;
-        }
-        // logger::log_success("My daddy's rank is", g_parent_original_rank);
-
-        // syncrhonize with parent
-        MPI_Barrier(g_agent_comm);
-
-        // logger::log_success("My rank in g_agent_comm is", g_node_rank);
-
-        return DBERR_OK;
-    }
-
+    
     DB_STATUS verifySystemDirectories() {
         int ret;
         DB_STATUS dir_ret = verifyDirectory(g_config.dirPaths.dataPath);

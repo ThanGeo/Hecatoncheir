@@ -60,7 +60,15 @@ namespace comm
          */
         DB_STATUS joinQuery(SerializedMsg<char> &msg, std::unique_ptr<hec::QResultBase> &queryResult);
 
-    }
+        /** @brief
+         * Unpacks a message containing batch range queries and evaluates them in parallel. Results are stored in the batchResults.
+         */
+        DB_STATUS batchRangeQueries(SerializedMsg<char> &msg, std::unordered_map<int, std::unique_ptr<hec::QResultBase>> &batchResults);
+
+        /** @brief evaluates a batch of range queries. stores results in the batchResults object. */
+        DB_STATUS batchRangeQueries(std::vector<hec::Query*> &queryBatch, std::unordered_map<int, std::unique_ptr<hec::QResultBase>> &batchResults);
+
+    }  
 
 }
 

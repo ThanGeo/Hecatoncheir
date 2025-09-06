@@ -6,10 +6,6 @@
 /** @brief Process related methods. */
 namespace proc
 {   
-    /**
-    @brief Sets up the processes during initialization.
-     */
-    DB_STATUS setupProcesses();
     
 
 }

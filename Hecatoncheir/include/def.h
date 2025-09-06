@@ -23,11 +23,7 @@ typedef boost::geometry::model::polygon<bg_point_xy> bg_polygon;
 #define DRIVER_GLOBAL_RANK 0
 #define HOST_GLOBAL_RANK 1
 #define HOST_LOCAL_RANK 0
-#define AGENT_RANK 0
-#define PARENT_RANK 0
 
-extern std::string AGENT_EXECUTABLE_PATH;
-extern std::string CONTROLLER_EXECUTABLE_PATH;
 extern std::string WORKER_EXECUTABLE_PATH;
 
 #define RED "\e[0;31m"
@@ -44,7 +40,6 @@ extern std::string WORKER_EXECUTABLE_PATH;
 extern int g_world_size;
 extern int g_node_rank;
 extern int g_global_rank;
-extern int g_parent_original_rank;
 
 extern int MAX_THREADS;
 
