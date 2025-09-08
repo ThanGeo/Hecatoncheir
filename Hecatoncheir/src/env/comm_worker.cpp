@@ -316,83 +316,7 @@ STOP_LISTENING:
         {
             #define NO_OBJECTS 0
 
-            // static DB_STATUS handleDJCountMessage(SerializedMsg<char>& msg, MPI_Status &status, std::unordered_map<int, std::pair<size_t,size_t>> &exchangeCount, int &trackingCounter) {
-            //     DB_STATUS ret = DBERR_OK;
-            //     // get source
-            //     int srcRank = status.MPI_SOURCE;
-            //     auto nodeIT = exchangeCount.find(srcRank);
-            //     if (nodeIT == exchangeCount.end()) {
-            //         logger::log_error(DBERR_INVALID_KEY, "Invalid source rank in message from controller. Rank:", srcRank);
-            //         return DBERR_INVALID_KEY;
-            //     }
-                
-            //     // received already for this node, something went wrong
-            //     if (nodeIT->second.second != NO_OBJECTS) {
-            //         logger::log_error(DBERR_COMM_WRONG_MESSAGE_ORDER, "Received border object count for node", srcRank, "again. Already stored value:", nodeIT->second.second);
-            //         return DBERR_COMM_WRONG_MESSAGE_ORDER;
-            //     }
-        
-            //     // unpack message
-            //     std::vector<size_t> values;
-            //     // logger::log_task("From C: unpacking...");
-            //     ret = unpack::unpackValues(msg, values);
-            //     if (ret != DBERR_OK) {
-            //         return ret;
-            //     }
-
-            //     if (values.size() != 1) {
-            //         logger::log_error(DBERR_INVALID_PARAMETER, "Unexpected size in unpacking DJCount message. Size:", values.size());
-            //         return DBERR_INVALID_PARAMETER;
-            //     }
-        
-            //     // set 'to receive' value in the exchange count map
-            //     nodeIT->second.second = values[0];
-            //     trackingCounter++;
-                
-            //     return ret;
-            // }
-
-            static DB_STATUS handleDJCountMessage(SerializedMsg<char>& msg, MPI_Status &status, std::unordered_map<int, std::pair<size_t,size_t>> &exchangeCount, int &trackingCounter) {
-                DB_STATUS ret = DBERR_OK;
-                // unpack message
-                std::vector<size_t> values;
-                ret = unpack::unpackValues(msg, values);
-                if (ret != DBERR_OK) {
-                    return ret;
-                }
-                // set 'to send' value in the exchange count map
-                for (int i=0; i<values.size(); i+=3) {
-                    // check node rank
-                    auto nodeIT = exchangeCount.find(values[i]);
-                    if (nodeIT == exchangeCount.end()) {
-                        logger::log_error(DBERR_INVALID_KEY, "Invalid node rank in message, not initialized in map. Rank:", values[i]);
-                        return DBERR_INVALID_KEY;
-                    }
-                    // set to exchange map
-                    if (values[i] != g_node_rank) {
-                        nodeIT->second.first = values[i+1] + values[i+2];
-                    }
-                    trackingCounter++;
-                    // send to worker
-                    if (values[i] != g_node_rank) {
-                        SerializedMsg<char> msgToWorker(MPI_CHAR);
-                        ret = pack::packValues(msgToWorker, nodeIT->second.first);
-                        if (ret != DBERR_OK) {
-                            return ret;
-                        }
-                        ret = comm::send::sendMessage(msgToWorker, values[i], MSG_QUERY_DJ_COUNT, g_worker_comm);
-                        if (ret != DBERR_OK) {
-                            return ret;
-                        }
-                        // free memory
-                        msgToWorker.clear();
-                    }
-                }
-        
-                return ret;
-            }
-
-            static DB_STATUS distanceJoinHandleMessage(MPI_Status &status, std::unordered_map<int, std::pair<size_t,size_t>> &exchangeCount, int &trackingCounter) {
+            static DB_STATUS distanceJoinHandleMessage(MPI_Status &status, std::vector<std::pair<size_t,size_t>> &exchangeCount, int &trackingCounter) {
                 DB_STATUS ret = DBERR_OK;
         
                 SerializedMsg<char> msg(MPI_CHAR);
@@ -409,14 +333,8 @@ STOP_LISTENING:
                 }
                 // free memory
                 msg.clear();
-                // check node rank
-                auto nodeIT = exchangeCount.find(status.MPI_SOURCE);
-                if (nodeIT == exchangeCount.end()) {
-                    logger::log_error(DBERR_INVALID_KEY, "Invalid node rank in message, not initialized in map. Rank:", status.MPI_SOURCE);
-                    return DBERR_INVALID_KEY;
-                }
                 // set to exchange map
-                nodeIT->second.second = values[0] + values[1];
+                exchangeCount[status.MPI_SOURCE].second = values[0] + values[1];
                 // increase tracking counter
                 trackingCounter++;
                 return ret;
@@ -424,7 +342,7 @@ STOP_LISTENING:
 
             /** @brief Phase 1 of DJ trafficking comprises of figuring out which node will send objects to which other nodes.
              */
-            static DB_STATUS distanceJoinPhase1(std::unordered_map<int, std::pair<size_t,size_t>> &exchangeCount) {
+            static DB_STATUS distanceJoinPhase1(std::vector<std::pair<size_t,size_t>> &exchangeCount) {
                 DB_STATUS ret = DBERR_OK;
                 MPI_Status status;
                 // track responses
@@ -449,7 +367,7 @@ STOP_LISTENING:
             /** @brief Phase 2 of DJ sends data among the nodes.
              * Behavior: for each exchange, the node that has to send the LEAST number of elements perform the send.
              */
-            static DB_STATUS distanceJoinPhase2(const std::unordered_map<int, std::pair<size_t,size_t>> &exchangeCount, std::unordered_map<int, DJBatch> &borderObjectsMap) {
+            static DB_STATUS distanceJoinPhase2(const std::vector<std::pair<size_t,size_t>> &exchangeCount, std::unordered_map<int, DJBatch> &borderObjectsMap) {
                 DB_STATUS ret = DBERR_OK;
                 int messageFound = false;
                 MPI_Status status;
@@ -458,7 +376,7 @@ STOP_LISTENING:
                     if (nodeRank != g_node_rank) {
                         // SENDER OF BATCH - only send to those nodes that have more object than this node to send back
                         /** special case: send=receive. then the node with the lowest rank will SEND */
-                        if ((exchangeCount.at(nodeRank).first < exchangeCount.at(nodeRank).second) || (exchangeCount.at(nodeRank).first == exchangeCount.at(nodeRank).second && g_node_rank < nodeRank)) {                       
+                        if ((exchangeCount[nodeRank].first < exchangeCount[nodeRank].second) || (exchangeCount[nodeRank].first == exchangeCount[nodeRank].second && g_node_rank < nodeRank)) {                       
                             SerializedMsg<char> requestRankMsg(MPI_CHAR);
                             // pack node rank
                             ret = pack::packValues(requestRankMsg, nodeRank);
@@ -488,7 +406,7 @@ STOP_LISTENING:
              * Behavior: all nodes have sent what they need to send. Now its receivin' time.
              * Received batches are forwarded to the local AGENT for evaluation.
              */
-            static DB_STATUS distanceJoinPhase3(const std::unordered_map<int, std::pair<size_t,size_t>> &exchangeCount, hec::Query* query, const std::unique_ptr<hec::QResultBase> &queryResult) {
+            static DB_STATUS distanceJoinPhase3(const std::vector<std::pair<size_t,size_t>> &exchangeCount, hec::Query* query, const std::unique_ptr<hec::QResultBase> &queryResult) {
                 DB_STATUS ret = DBERR_OK;
                 MPI_Status status;
                 for (int nodeRank=1; nodeRank<g_world_size; nodeRank++) {
@@ -496,7 +414,7 @@ STOP_LISTENING:
                         // RECEIVER OF BATCH - opposite of the check in DJ phase 2
                         // its expected that a batch from nodeRank has already be sent to this node
                         // special case: send=receive, the node with the highest rank will RECEIVE
-                        if ((exchangeCount.at(nodeRank).first > exchangeCount.at(nodeRank).second) || (exchangeCount.at(nodeRank).first == exchangeCount.at(nodeRank).second && g_node_rank > nodeRank)) {
+                        if ((exchangeCount[nodeRank].first > exchangeCount[nodeRank].second) || (exchangeCount[nodeRank].first == exchangeCount[nodeRank].second && g_node_rank > nodeRank)) {
                             // probe for the batch message from nodeRank
                             ret = probe(nodeRank, MSG_QUERY_DJ_BATCH, g_worker_comm, status);
                             if (ret != DBERR_OK) {
@@ -889,94 +807,6 @@ STOP_LISTENING:
             return ret;
         }
 
-        static DB_STATUS handleDJBatchRequestMessage(MPI_Status &status, std::unordered_map<int, DJBatch> &borderObjectsMap) {
-            DB_STATUS ret = DBERR_OK;
-            // receive the message
-            SerializedMsg<char> requestMsg(MPI_CHAR);
-            ret = recv::receiveMessage(status, requestMsg.type, g_worker_comm, requestMsg);
-            if (ret != DBERR_OK) {
-                return ret;
-            }
-            // get node rank from message
-            std::vector<int> rank;
-            ret = unpack::unpackValues(requestMsg, rank);
-            if (ret != DBERR_OK) {
-                return ret;
-            }
-            if (rank.size() != 1) {
-                logger::log_error(DBERR_BUFFER_SIZE_MISMATCH, "Unexpected size in DJ batch request rank message.");
-                return DBERR_BUFFER_SIZE_MISMATCH;
-            }
-            int nodeRank = rank[0];
-            if (nodeRank < 1 || nodeRank > g_workers_size) {
-                logger::log_error(DBERR_INVALID_PARAMETER, "Invalid node rank in DJ batch request message. Rank:", nodeRank);
-                return DBERR_INVALID_PARAMETER;
-            }
-            // free memory
-            requestMsg.clear();
-            // create and send the batches
-            Dataset* R = g_config.datasetOptions.getDatasetR();
-            Dataset* S = g_config.datasetOptions.getDatasetS();
-            SerializedMsg<char> batchMsg(MPI_CHAR);
-            // serialize
-            ret = borderObjectsMap[nodeRank].serialize(&batchMsg.data, batchMsg.count);
-            if (ret != DBERR_OK) {
-                return ret;
-            }
-            // send
-            ret = send::sendMessage(batchMsg, HOST_LOCAL_RANK, MSG_QUERY_DJ_BATCH, g_worker_comm);
-            if (ret != DBERR_OK) {
-                return ret;
-            }
-            // free memory
-            batchMsg.clear();
-            return ret;
-        }
-
-        static DB_STATUS handleDJEvaluateBatchMessage(MPI_Status &status, hec::Query* query, std::unique_ptr<hec::QResultBase>& queryResult) {
-            DB_STATUS ret = DBERR_OK;
-            // receive the message
-            SerializedMsg<char> batchMsg(MPI_CHAR);
-            ret = recv::receiveMessage(status, batchMsg.type, g_worker_comm, batchMsg);
-            if (ret != DBERR_OK) {
-                return ret;
-            }
-
-            // unpack batch
-            DJBatch batch;
-            ret = batch.deserialize(batchMsg.data, batchMsg.count);
-            if (ret != DBERR_OK) {
-                return ret;
-            }
-
-            // evaluate the distance join on the newly received objects
-            // logger::log_success("Received", batch.objectsR.size(), "objects R and", batch.objectsS.size(), "objects S.");
-            ret = g_config.datasetOptions.getDatasetR()->index->evaluateDJBatch(query, batch, queryResult);
-            if (ret != DBERR_OK) {
-                return ret;
-            }
-
-            // send ACK for this batch
-            ret = send::sendResponse(HOST_LOCAL_RANK, MSG_ACK, g_worker_comm);
-            if (ret != DBERR_OK) {
-                return ret;
-            } 
-            
-            return ret;
-        }
-
-        static DB_STATUS broadcastDJExchangeCounts(const std::unordered_map<int, DJBatch> &borderObjectsMap) {
-            DB_STATUS ret = DBERR_OK;
-
-            for (int nodeRank=1; nodeRank<g_world_size; nodeRank++) {
-
-            }
-
-
-
-            return ret;
-        }
-
         static DB_STATUS handleDistanceJoinQueryMessage(MPI_Status status) {
             SerializedMsg<char> msg(MPI_CHAR);
             // receive the message
@@ -1000,7 +830,7 @@ STOP_LISTENING:
 
             // initialize exchange count map (send)
             // and send exchange count to other workers
-            std::unordered_map<int, std::pair<size_t,size_t>> exchangeCount;
+            std::vector<std::pair<size_t,size_t>> exchangeCount(g_world_size);
             for (int i=1; i<g_world_size; i++) {
                 // pair<send,receive>
                 exchangeCount[i] = std::pair<int,int>(borderObjectsMap[i].objectsR.size() + borderObjectsMap[i].objectsS.size(), NO_OBJECTS);  
@@ -1021,6 +851,7 @@ STOP_LISTENING:
                     borderObjectSizesMsg.clear();
                 }
             }
+
             
             // phase 1 - figure out who needs to send which data to whom. 
             // Sets exchange (receive) count for all workers

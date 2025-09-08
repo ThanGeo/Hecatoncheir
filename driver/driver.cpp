@@ -204,10 +204,10 @@ int main(int argc, char* argv[]) {
     /** Your hosts list. It is mandatory to define each node as:
      * <hostname>:1 
     */
-    // std::vector<std::string> hosts = {"vm1:1", "vm3:1", "vm5:1", "vm7:1", "vm9:1", "vm2:1", "vm4:1", "vm6:1", "vm8:1", "vm10:1"};
+    std::vector<std::string> hosts = {"vm1:1", "vm3:1", "vm5:1", "vm7:1", "vm9:1", "vm2:1", "vm4:1", "vm6:1", "vm8:1", "vm10:1"};
     // std::vector<std::string> hosts = {"vm1:1", "vm2:1", "vm3:1", "vm4:1"};
     // std::vector<std::string> hosts = {"vm1:1", "vm3:1", "vm5:1"};
-    std::vector<std::string> hosts = {"vm1:1", "vm3:1"};
+    // std::vector<std::string> hosts = {"vm1:1", "vm3:1"};
     // std::vector<std::string> hosts = {"vm1:1"};
 
     /**
