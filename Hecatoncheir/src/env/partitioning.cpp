@@ -39,7 +39,7 @@ namespace partitioning
 
     DB_STATUS initializeBatchMap(std::unordered_map<int,Batch> &batchMap, DataType dataType, DatasetIndex datasetID) {
         // initialize batches
-        for (int i=0; i<g_world_size; i++) {
+        for (int i=1; i<g_world_size; i++) {
             Batch batch;
             batch.dataType = dataType;
             batch.datasetID = datasetID;
@@ -59,9 +59,7 @@ namespace partitioning
                     return DBERR_INVALID_DATATYPE;
             }
             batch.destRank = i;
-            if (i > 0) {
-                batch.comm = &g_worker_comm;
-            }
+            batch.comm = &g_worker_comm;
             batch.maxObjectCount = g_config.partitioningMethod->getBatchSize();
             batchMap[i] = batch;
         }
@@ -88,7 +86,7 @@ namespace partitioning
             bitVector[nodeRank] = true;
         }
         // add to nodes' batches
-        for (int nodeRank=0; nodeRank<bitVector.size(); nodeRank++) {
+        for (int nodeRank=1; nodeRank<bitVector.size(); nodeRank++) {
             if (bitVector.at(nodeRank)) {
                 // if it has been marked
                 // add geometry to batch
@@ -301,7 +299,7 @@ namespace partitioning
                         }
                     }
                     // send any remaining non-empty batches
-                    for (int i=0; i<g_world_size; i++) {
+                    for (int i=1; i<g_world_size; i++) {
                         // fetch batch
                         auto it = batchMap.find(i);
                         if (it == batchMap.end()) {
@@ -336,7 +334,7 @@ namespace partitioning
                 return ret;
             }
             // send an empty pack to each worker to signal the end of the partitioning for this dataset
-            for (int i=0; i<g_world_size; i++) {
+            for (int i=1; i<g_world_size; i++) {
                 // fetch batch (it is guaranteed to be empty)
                 auto it = batchMap.find(i);
                 if (it == batchMap.end()) {
@@ -552,7 +550,7 @@ namespace partitioning
                 } // end of loop
 
                 // send any remaining non-empty batches
-                for (int i=0; i<g_world_size; i++) {
+                for (int i=1; i<g_world_size; i++) {
                     // fetch batch
                     auto it = batchMap.find(i);
                     if (it == batchMap.end()) {
@@ -586,7 +584,7 @@ namespace partitioning
 
             // logger::log_success("Partitioned", totalValidObjects, "valid objects");
             // send an empty pack to each worker to signal the end of the partitioning for this dataset
-            for (int i=0; i<g_world_size; i++) {
+            for (int i=1; i<g_world_size; i++) {
                 // fetch batch (it is guaranteed to be empty)
                 auto it = batchMap.find(i);
                 if (it == batchMap.end()) {
@@ -695,7 +693,7 @@ namespace partitioning
                 }
 
                 // Send remaining non-empty batches
-                for (int i = 0; i < g_world_size; i++) {
+                for (int i = 1; i < g_world_size; i++) {
                     auto it = batchMap.find(i);
                     if (it == batchMap.end()) {
                         logger::log_error(DBERR_INVALID_PARAMETER, "Error fetching batch for node", i);
@@ -725,7 +723,7 @@ namespace partitioning
             }
 
             // Send termination signal to workers
-            for (int i = 0; i < g_world_size; i++) {
+            for (int i = 1; i < g_world_size; i++) {
                 auto it = batchMap.find(i);
                 if (it == batchMap.end()) {
                     logger::log_error(DBERR_INVALID_PARAMETER, "Error fetching batch for node", i);

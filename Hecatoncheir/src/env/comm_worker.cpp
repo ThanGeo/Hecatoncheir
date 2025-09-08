@@ -30,20 +30,9 @@ namespace comm
                 // free memory
                 msg.clear();
             } else {
-                // prepare dataset object
-                Dataset* dataset = g_config.datasetOptions.getDatasetByIdx(batch->datasetID);
-                if (dataset == nullptr) {
-                    logger::log_error(DBERR_NULL_PTR_EXCEPTION, "Empty dataset object (no metadata). Can not partition. Batch dataset id:", batch->datasetID);
-                    return DBERR_NULL_PTR_EXCEPTION;
-                }
-                # pragma omp critical
-                {
-                    // local batch, handle first
-                    for (auto &obj : batch->objects) {
-                        dataset->storeObject(obj);
-                    }
-                }
-
+                // error, objects assigned to host. this shouldn't happen
+                logger::log_error(DBERR_INVALID_OPERATION, "Batch of objects to partition assigned to Host.");
+                return DBERR_INVALID_OPERATION;
             }
             return ret;
         }
@@ -700,7 +689,7 @@ STOP_LISTENING:
                 return DBERR_BUFFER_SIZE_MISMATCH;
             }
             int nodeRank = rank[0];
-            if (nodeRank < 0 || nodeRank > g_world_size) {
+            if (nodeRank < 1 || nodeRank > g_workers_size) {
                 logger::log_error(DBERR_INVALID_PARAMETER, "Invalid node rank in DJ batch request message. Rank:", nodeRank);
                 return DBERR_INVALID_PARAMETER;
             }

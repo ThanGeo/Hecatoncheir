@@ -60,6 +60,7 @@ namespace configurer
             return DBERR_MPI_INIT_FAILED;
         }
         g_world_size = wsize;
+        g_workers_size = g_world_size-1;
 
         // release inter-comm
         mpi_ret = MPI_Comm_free(&g_global_inter_comm);

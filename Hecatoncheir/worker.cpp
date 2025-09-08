@@ -51,7 +51,7 @@ int main(int argc, char* argv[]) {
     }
     
     // logger::log_task("Runs on cpu", sched_getcpu());
-    // logger::log_task("My rank is", g_node_rank);
+    // logger::log_task("My rank is", g_node_rank, "my world is:", g_world_size);
 
     MPI_Barrier(g_global_intra_comm);
 

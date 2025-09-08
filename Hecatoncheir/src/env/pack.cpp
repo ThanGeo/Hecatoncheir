@@ -304,7 +304,7 @@ namespace pack
         // add all to a single vector
         std::vector<size_t> values;
         values.reserve(borderObjectsMap.size() * 3);
-        for (int i=0; i<g_world_size; i++) {
+        for (int i=1; i<g_world_size; i++) {
             // node rank i
             values.emplace_back(i);
             if (i != g_node_rank) {
@@ -343,6 +343,7 @@ namespace unpack
         g_config.options.setupType = *reinterpret_cast<const SystemSetupType*>(localBuffer);
         localBuffer += sizeof(SystemSetupType);
         g_world_size = *reinterpret_cast<const int*>(localBuffer);
+        g_workers_size = g_world_size-1;
         localBuffer += sizeof(int);
         // get dist+part partitions per dimension
         distPartitionsPerDim = *reinterpret_cast<const int*>(localBuffer);

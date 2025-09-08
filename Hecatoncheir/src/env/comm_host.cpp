@@ -243,7 +243,7 @@ namespace comm
                     logger::log_error(ret, "Packing partitioning init message failed.");
                     return ret;
                 }
-                // broadcast to all workers + agent
+                // broadcast to all workers
                 ret = broadcast::broadcastMessage(signal, MSG_PARTITION_DATASET);
                 if (ret != DBERR_OK) {
                     return ret;
@@ -285,12 +285,6 @@ namespace comm
 
             // broadcast it
             ret = broadcast::broadcastMessage(msg, status.MPI_TAG);
-            if (ret != DBERR_OK) {
-                return ret;
-            }
-
-            // build the index
-            ret = comm::execute::buildIndex(msg);
             if (ret != DBERR_OK) {
                 return ret;
             }
@@ -395,71 +389,51 @@ namespace comm
             return DBERR_FEATURE_UNSUPPORTED;
         }
         
-        static DB_STATUS gatherJoinResults(hec::Query* query, std::unique_ptr<hec::QResultBase>& localResults, std::unique_ptr<hec::QResultBase>& totalResults) {
+        static DB_STATUS gatherJoinResults(hec::Query* query, std::unique_ptr<hec::QResultBase>& totalResults) {
             if (!totalResults) {
                 logger::log_error(DBERR_NULL_PTR_EXCEPTION, "Null query result pointer while gathering join results.");
                 return DBERR_NULL_PTR_EXCEPTION;
             }
             DB_STATUS ret = DBERR_OK;
-            // use threads to parallelize gathering of responses
-            #pragma omp parallel num_threads(MAX_THREADS) reduction(query_output_reduction:totalResults)
-            {
-                DB_STATUS local_ret = DBERR_OK;
-                MPI_Status status;
-
-                #pragma omp for
-                for (int i=1; i<g_world_size; i++) {
-                    local_ret = probe(MPI_ANY_SOURCE, MPI_ANY_TAG, g_worker_comm, status);
-                    if (local_ret != DBERR_OK) {
-                        #pragma omp cancel for
-                        ret = local_ret;
-                    }
-                    // check tag
-                    if (status.MPI_TAG == MSG_NACK) {
-                        // something failed during query evaluation
-                        local_ret = recv::receiveResponse(status.MPI_SOURCE, status.MPI_TAG, g_worker_comm, status);
-                        if (local_ret != DBERR_OK) {
-                            #pragma omp cancel for
-                            ret = DBERR_COMM_RECEIVED_NACK;
-                            logger::log_error(ret, "Received response from controller", i);
-                        }
-                    } else {
-                        // receive result
-                        SerializedMsg<char> msg(MPI_CHAR);
-                        local_ret = recv::receiveMessage(status, msg.type, g_worker_comm, msg);
-                        if (local_ret != DBERR_OK) {
-                            #pragma omp cancel for
-                            ret = DBERR_COMM_RECEIVED_NACK;
-                            logger::log_error(ret, "Received NACK from agent.");
-                        }
-                        // unpack
-                        std::unique_ptr<hec::QResultBase> workerResult;
-                        int res = qresult_factory::createNew(query, workerResult);
-                        if (res != 0) {
-                            #pragma omp cancel for
-                            logger::log_error(DBERR_OBJ_CREATION_FAILED, "Failed to create query result objects.");
-                            ret = DBERR_OBJ_CREATION_FAILED;
-                            continue;
-                        }
-                        workerResult->deserialize(msg.data, msg.count);
-                        // add results
-                        local_ret = mergeResultObjects(totalResults.get(), workerResult.get());
-                        if (local_ret != DBERR_OK) {
-                            logger::log_error(ret, "Merging query results failed.");
-                            #pragma omp cancel for
-                            ret = local_ret;
-                        }
-                        // free memory
-                        msg.clear();
-                    }
+            MPI_Status status;
+            for (int i=1; i<g_world_size; i++) {
+                ret = probe(MPI_ANY_SOURCE, MPI_ANY_TAG, g_worker_comm, status);
+                if (ret != DBERR_OK) {
+                    logger::log_error(DBERR_COMM_PROBE_FAILED, "Join result message probing failed.");
+                    return ret;
                 }
-            }
-            
-            // merge localResults as well
-            ret = mergeResultObjects(totalResults.get(), localResults.get());
-            if (ret != DBERR_OK) {
-                logger::log_error(ret, "Merging local query results failed.");
-                return ret;
+                // check tag
+                if (status.MPI_TAG == MSG_NACK) {
+                    // something failed during query evaluation
+                    ret = recv::receiveResponse(status.MPI_SOURCE, status.MPI_TAG, g_worker_comm, status);
+                    logger::log_error(DBERR_COMM_RECEIVED_NACK, "Received response from worker", i);
+                    return DBERR_COMM_RECEIVED_NACK;
+                } else {
+                    // receive result
+                    SerializedMsg<char> msg(MPI_CHAR);
+                    ret = recv::receiveMessage(status, msg.type, g_worker_comm, msg);
+                    if (ret != DBERR_OK) {
+                        logger::log_error(ret, "Failed to receive result message from worker", i);
+                        return ret;
+                    }
+                    // unpack
+                    std::unique_ptr<hec::QResultBase> workerResult;
+                    int res = qresult_factory::createNew(query, workerResult);
+                    if (res != 0) {
+                        logger::log_error(DBERR_OBJ_CREATION_FAILED, "Failed to create query result objects.");
+                        return DBERR_OBJ_CREATION_FAILED;
+                    }
+                    workerResult->deserialize(msg.data, msg.count);
+                    // add results
+                    ret = mergeResultObjects(totalResults.get(), workerResult.get());
+                    if (ret != DBERR_OK) {
+                        logger::log_error(ret, "Merging query results failed.");
+                        return ret;
+                    }
+                    // logger::log_task("Merged results", workerResult->getResultCount(), "from worker", i);
+                    // free memory
+                    msg.clear();
+                }
             }
 
             return ret;
@@ -471,7 +445,7 @@ namespace comm
             int messageFound;
             int finishedWorkers = 0;
 
-            while (finishedWorkers != g_world_size-1) {
+            while (finishedWorkers != g_workers_size) {
                 messageFound = 0;
                 // probe worker comm
                 ret = probe(MPI_ANY_SOURCE, MPI_ANY_TAG, g_worker_comm, status, messageFound);
@@ -560,13 +534,6 @@ namespace comm
                 return ret;
             }
 
-            // evaluate and store results in the result object (pointer)
-            std::unique_ptr<hec::QResultBase> localResults;
-            ret = execute::joinQuery(msg, localResults);
-            if (ret != DBERR_OK) {
-                return ret;
-            }
-
             // create total query result object
             std::unique_ptr<hec::QResultBase> totalResults;
             int res = qresult_factory::createNew(query, totalResults);
@@ -575,8 +542,8 @@ namespace comm
                 return DBERR_OBJ_CREATION_FAILED;
             }
 
-            // wait for result
-            ret = gatherJoinResults(query, localResults, totalResults);
+            // wait for results
+            ret = gatherJoinResults(query, totalResults);
             if (ret != DBERR_OK) {
                 logger::log_error(ret, "Failed while gathering results for query.");
                 return ret;

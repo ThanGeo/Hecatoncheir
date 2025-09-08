@@ -1757,7 +1757,7 @@ struct PartitioningMethod {
     /** @brief Returns the node's rank that's responsible for this partition. 
      * @warning Should only be called by the host controller and the input partitionID should be of the outermost (distribution) grid. */
     int getNodeRankForPartitionID(int partitionID) {
-        return (partitionID % g_world_size);
+        return (partitionID % g_workers_size) + 1;
     }
 
     /** @brief Abstract method. Returns the number of partitions per dimension in the data distribution grid. */

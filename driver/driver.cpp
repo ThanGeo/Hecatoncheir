@@ -29,9 +29,39 @@ void spatialJoinScenario() {
     printf("Query finished in %0.2f seconds.\n", total_time);
     delete result;
 
-    // unload
+    // // unload
     ret = hec::unloadDataset(landmarkID);
     ret = hec::unloadDataset(waterID);
+}
+
+void spatialJoinScenario2() {
+    // prepare
+    std::string path1 = "/home/hec/datasets/OSM/O5_lakes.tsv";
+    int id1 = hec::prepareDataset(path1, "WKT", "POLYGON", false);
+    std::string path2 = "/home/hec/datasets/OSM/O6_parks.tsv";
+    int id2 = hec::prepareDataset(path2, "WKT", "POLYGON", false);
+    // partition
+    double start = hec::time::getTime();
+    int ret = hec::partition({id1, id2});
+    printf("Partitioning finished in %0.2f seconds.\n", hec::time::getTime() - start);
+    // index
+    start = hec::time::getTime();
+    ret = hec::buildIndex({id1, id2}, hec::IT_TWO_LAYER);
+    printf("Indexes built in %0.2f seconds.\n", hec::time::getTime() - start);
+    // query
+    hec::PredicateJoinQuery joinQuery(id1, id2, 0, hec::Q_INTERSECTION_JOIN, hec::QR_COUNT);
+    start = hec::time::getTime();
+    hec::QResultBase* result = hec::query(&joinQuery);
+    double total_time = hec::time::getTime() - start;
+    // results
+    size_t resCount = result->getResultCount();
+    printf("Results: %ld\n", resCount);
+    printf("Query finished in %0.2f seconds.\n", total_time);
+    delete result;
+
+    // unload
+    ret = hec::unloadDataset(id1);
+    ret = hec::unloadDataset(id2);
 }
 
 void singleKNNScenario() {
@@ -189,10 +219,12 @@ int main(int argc, char* argv[]) {
     for (int i=0; i<RUNS; i++) {
         // printf("Run %d: Running Join Scenario...\n", i);
         // spatialJoinScenario();
+        printf("Run %d: Running OSM Lakes-Parks Join Scenario...\n", i);
+        spatialJoinScenario2();
         // printf("Run %d: Running batch KNN Scenario...\n", i);
         // batchKNNScenario();
-        printf("Run %d: Running batch range Scenario...\n", i);
-        batchRangeScenario();
+        // printf("Run %d: Running batch range Scenario...\n", i);
+        // batchRangeScenario();
         // printf("Run %d: Running Distance Scenario...\n", i);
         // distanceJoinScenario();
     }

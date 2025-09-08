@@ -2,6 +2,7 @@
 #include <omp.h>
 
 int g_world_size;
+int g_workers_size;
 int g_node_rank;
 int g_global_rank;
 PROCESS_TYPE g_proc_type;

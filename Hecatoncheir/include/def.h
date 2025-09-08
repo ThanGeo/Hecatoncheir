@@ -38,6 +38,7 @@ extern std::string WORKER_EXECUTABLE_PATH;
 #define EPS 1e-08
 
 extern int g_world_size;
+extern int g_workers_size;
 extern int g_node_rank;
 extern int g_global_rank;
 

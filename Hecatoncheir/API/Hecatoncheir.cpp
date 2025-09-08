@@ -155,67 +155,63 @@ static DB_STATUS spawnWorkers(int num_procs, const std::vector<std::string> &hos
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
     if (rank == 0) {
-        std::vector<char*> cmdsVec(num_procs, (char*) WORKER_EXECUTABLE_PATH.c_str());
+        // spawning N+1 processes in total
+        int total_processes = num_procs + 1;
+        std::vector<char*> cmdsVec(total_processes, (char*) WORKER_EXECUTABLE_PATH.c_str());
         char** cmds = cmdsVec.data();
-        int* error_codes = (int*)malloc(num_procs * sizeof(int));
-        MPI_Info* info = (MPI_Info*)malloc(num_procs * sizeof(MPI_Info));
-        int* np = (int*)malloc(num_procs * sizeof(int));
+        int* error_codes = (int*)malloc(total_processes * sizeof(int));
+        MPI_Info* info = (MPI_Info*)malloc(total_processes * sizeof(MPI_Info));
+        int* np = (int*)malloc(total_processes * sizeof(int));
 
-        // set spawn info
-        for (int i=0; i<num_procs; i++) {
-            // num procs per spawn
-            np[i] = 1;
-            // Set the host for each process using MPI_Info_set
-            MPI_Info_create(&info[i]);
-            int mpi_set_result = MPI_Info_set(info[i], "host", hosts[i].c_str());
-            if (mpi_set_result != MPI_SUCCESS) {
-                logger::log_error(DBERR_MPI_INFO_FAILED, "Failed to set MPI_Info host for process " + std::to_string(i));
-                return DBERR_MPI_INFO_FAILED;
+        // set spawn info for first two processes (ranks 0 and 1) on first host
+        for (int i = 0; i < total_processes; i++) {
+            if (i < 2) {
+                np[i] = 1;
+                MPI_Info_create(&info[i]);
+                MPI_Info_set(info[i], "host", hosts[0].c_str());
+            } else {
+                np[i] = 1;
+                MPI_Info_create(&info[i]);
+                // use host i-1 since there are N+1 processes for N workers
+                MPI_Info_set(info[i], "host", hosts[i-1].c_str());
             }
-            // logger::log_task("Spawning at", hosts[i].c_str());
         }
 
-        // spawn the controllers
-        MPI_Comm_spawn_multiple(num_procs, cmds, NULL, np, info, 0, MPI_COMM_WORLD, &g_global_inter_comm, error_codes);
-        for (int i = 0; i < num_procs; ++i) {
+        // Spawn total_processes workers
+        MPI_Comm_spawn_multiple(total_processes, cmds, NULL, np, info, 0, MPI_COMM_WORLD, &g_global_inter_comm, error_codes);
+        
+        for (int i = 0; i < total_processes; ++i) {
             if (error_codes[i] != MPI_SUCCESS) {
-                logger::log_error(DBERR_MPI_INIT_FAILED, "Failed while spawning the controllers.");
+                logger::log_error(DBERR_MPI_INIT_FAILED, "Failed while spawning process " + std::to_string(i));
                 return DBERR_MPI_INIT_FAILED;
             }
         }
 
-        // Free the MPI_Info object after use
-        for (int i=0; i<num_procs; i++) {
+        // Cleanup
+        for (int i = 0; i < total_processes; i++) {
             MPI_Info_free(&info[i]);
         }
         free(info);
         free(np);
         free(error_codes);
 
-
-        // merge inter-comm to intra-comm
+        // Rest of your existing code remains the same...
         MPI_Intercomm_merge(g_global_inter_comm, 0, &g_global_intra_comm);
-        // spit intra-comm to groups
         MPI_Comm_split(g_global_intra_comm, MPI_UNDEFINED, 0, &g_worker_comm);
-        // get driver rank
         MPI_Comm_rank(g_global_intra_comm, &rank);
         MPI_Comm_size(g_global_intra_comm, &size);
         g_global_rank = rank;
         g_world_size = size;
-        // logger::log_success("Set my rank to", g_global_rank, "world size:", g_world_size);
+        g_workers_size = g_world_size-1;
 
-        // syncrhonize with host controller
         MPI_Barrier(g_global_intra_comm);
 
-        // wait for ACK
-        MPI_Status status;
         ret = waitForResponse();
         if (ret != DBERR_OK) {
             logger::log_error(ret, "System initialization failed.");
             return ret;
         }
 
-        // release inter-comm
         MPI_Comm_free(&g_global_inter_comm);
     }
 
