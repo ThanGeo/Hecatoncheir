@@ -300,6 +300,19 @@ namespace pack
         return ret;
     }
 
+    DB_STATUS packDJBatchSize(DJBatch &batch, SerializedMsg<char> &msg) {
+        DB_STATUS ret = DBERR_OK;
+        // pack into the buffer
+        // logger::log_task("Packing: ", batch.destRank, batch.objectsR.size(), batch.objectsS.size());
+        ret = pack::packValues(msg, batch.objectsR.size(), batch.objectsS.size());
+        if (ret != DBERR_OK) {
+            logger::log_error(ret, "Packing border object sizes failed.");
+            return ret;
+        }
+
+        return ret;
+    }
+
     DB_STATUS packBorderObjectSizes(std::unordered_map<int, DJBatch> &borderObjectsMap, SerializedMsg<char> &msg) {
         // add all to a single vector
         std::vector<size_t> values;

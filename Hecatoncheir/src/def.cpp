@@ -12,8 +12,6 @@ int MAX_THREADS = omp_get_max_threads();
 
 MPI_Comm g_global_inter_comm;
 MPI_Comm g_global_intra_comm;
-MPI_Comm g_controller_comm;
-MPI_Comm g_agent_comm;
 MPI_Comm g_worker_comm;
 
 std::string WORKER_EXECUTABLE_PATH = "build/Hecatoncheir/worker";

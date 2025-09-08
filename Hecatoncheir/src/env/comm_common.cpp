@@ -96,7 +96,37 @@ namespace comm
             return ret;
         }
 
-        DB_STATUS joinQuery(SerializedMsg<char> &msg, std::unique_ptr<hec::QResultBase> &queryResult) {
+        DB_STATUS evaluateDJQuery(SerializedMsg<char> &msg, hec::Query** queryPtr, std::unordered_map<int, DJBatch> &borderObjectsMap, std::unique_ptr<hec::QResultBase> &queryResult) {
+            DB_STATUS ret = DBERR_OK;
+            // unpack query
+            char* localBuffer = msg.data;
+            *queryPtr = hec::Query::createFromBuffer(localBuffer);
+            if (*queryPtr == nullptr) {
+                logger::log_error(DBERR_NULL_PTR_EXCEPTION, "Failed to create query from message buffer.");
+                return DBERR_NULL_PTR_EXCEPTION;
+            }
+
+            // setup query result object
+            int res = qresult_factory::createNew(*queryPtr, queryResult);
+            if (res != 0) {
+                logger::log_error(DBERR_OBJ_CREATION_FAILED, "Failed to create query result objects.");
+                return DBERR_OBJ_CREATION_FAILED;
+            }
+
+            // batches of objects that rest on border areas
+            for (int i=1; i<g_world_size; i++) {
+                borderObjectsMap[i] = DJBatch(i, g_config.datasetOptions.getDatasetR()->metadata.dataType, g_config.datasetOptions.getDatasetS()->metadata.dataType);
+            }
+            // evaluate local distances and find the border objects
+            ret = g_config.datasetOptions.getDatasetR()->index->evaluateQuery(*queryPtr, borderObjectsMap, queryResult);
+            if (ret != DBERR_OK) {
+                return ret;
+            }
+
+            return ret;
+        }
+
+        DB_STATUS evaluateQuery(SerializedMsg<char> &msg, std::unique_ptr<hec::QResultBase> &queryResult) {
             DB_STATUS ret = DBERR_OK;
 
             // unpack query

@@ -564,47 +564,40 @@ namespace comm
         }
 
         static DB_STATUS performDistanceJoinQuery(MPI_Status &status, SerializedMsg<char> &msg, hec::Query* query) {
-            // DB_STATUS ret = DBERR_OK;
-            // // broadcast join query to every worker
-            // ret = broadcast::broadcastMessage(msg, MSG_QUERY_DJ_INIT);
-            // if (ret != DBERR_OK) {
-            //     return ret;
-            // }
+            DB_STATUS ret = DBERR_OK;
+            // broadcast join query to every worker
+            ret = broadcast::broadcastMessage(msg, MSG_QUERY_DJ_INIT);
+            if (ret != DBERR_OK) {
+                return ret;
+            }
             
-            // // intermediate exchange of data
-            // ret = distance_join::distanceJoinTraffic();
-            // if (ret != DBERR_OK) {
-            //     return ret;
-            // } 
-            
-            // // create query result object
-            // hec::QResultBase* rawTotalResults = nullptr;
-            // int res = qresult_factory::createNew(query, &rawTotalResults);
-            // if (res != 0) {
-            //     logger::log_error(DBERR_OBJ_CREATION_FAILED, "Failed to create query result object.");
-            //     return DBERR_OBJ_CREATION_FAILED;
-            // }
-            // std::unique_ptr<hec::QResultBase> totalResults(rawTotalResults);
+            // create query result object
+            std::unique_ptr<hec::QResultBase> totalResults;
+            int res = qresult_factory::createNew(query, totalResults);
+            if (res != 0) {
+                logger::log_error(DBERR_OBJ_CREATION_FAILED, "Failed to create query result object.");
+                return DBERR_OBJ_CREATION_FAILED;
+            }
 
-            // // wait for final results 
-            // ret = gatherJoinResults(query, totalResults);
-            // if (ret != DBERR_OK) {
-            //     logger::log_error(ret, "Failed while gathering results for query.");
-            //     return ret;
-            // }
-            // // serialize to message
-            // SerializedMsg<char> resultMsg(MPI_CHAR);
-            // totalResults->serialize(&resultMsg.data, resultMsg.count);
-            // // send result to driver
-            // ret = send::sendMessage(resultMsg, DRIVER_GLOBAL_RANK, MSG_QUERY_RESULT, g_global_intra_comm);
-            // if (ret != DBERR_OK) {
-            //     return ret;
-            // }
+            // wait for final results 
+            ret = gatherJoinResults(query, totalResults);
+            if (ret != DBERR_OK) {
+                logger::log_error(ret, "Failed while gathering results for query.");
+                return ret;
+            }
+
+            // serialize to message
+            SerializedMsg<char> resultMsg(MPI_CHAR);
+            totalResults->serialize(&resultMsg.data, resultMsg.count);
+            // send result to driver
+            ret = send::sendMessage(resultMsg, DRIVER_GLOBAL_RANK, MSG_QUERY_RESULT, g_global_intra_comm);
+            if (ret != DBERR_OK) {
+                return ret;
+            }
             
-            // // free memory
-            // resultMsg.clear();
-            // return ret;
-            return DBERR_FEATURE_UNSUPPORTED;
+            // free memory
+            resultMsg.clear();
+            return ret;
         }
 
         static DB_STATUS gatherkNNResults(hec::Query* query, std::unique_ptr<hec::QResultBase>& totalResults) {
@@ -809,25 +802,12 @@ namespace comm
                     return ret;
                 }
 
-                // evaluate queries locally
-                std::unordered_map<int, std::unique_ptr<hec::QResultBase>> batchResults;
-                ret = execute::batchRangeQueries(splitBatch, batchResults);
-                if (ret != DBERR_OK) {
-                    return ret;
-                }
-
                 // gather batch results
                 ret = gatherBatchResults(allResultsMap);
                 if (ret != DBERR_OK) {
                     return ret;
                 }
 
-                // merge local results
-                ret = mergeBatchResultMaps(allResultsMap, batchResults);
-                if (ret != DBERR_OK) {
-                    return ret;
-                }
-                // logger::log_success("I have results for", batchResultsMap.size(), "queries so far");
             }
 
             // delete queries

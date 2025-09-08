@@ -1965,16 +1965,12 @@ struct Batch {
 
 /** @brief a batch of objects that is exchanged during Distance Joins */
 struct DJBatch {
-    int destRank = -1;
-    // std::vector<Shape> objectsR; 
     std::unordered_map<size_t, Shape> objectsR;
     DataType dataTypeR = DT_INVALID;
     std::unordered_map<size_t, Shape> objectsS;
-    // std::vector<Shape> objectsS;
     DataType dataTypeS = DT_INVALID;
     
     DJBatch(){
-        destRank = -1;
         objectsR.clear();
         objectsS.clear();
         dataTypeR = DT_INVALID;
@@ -1982,7 +1978,6 @@ struct DJBatch {
     }
 
     DJBatch(int destRank, DataType dataTypeR, DataType dataTypeS){
-        destRank = this->destRank;
         objectsR.clear();
         objectsS.clear();
         dataTypeR = this->dataTypeR;
@@ -2041,7 +2036,7 @@ public:
         return DBERR_FORBIDDEN_METHOD_CALL;
     }
 
-    virtual DB_STATUS evaluateDJBatch(hec::Query* query, DJBatch& batch, std::unique_ptr<hec::QResultBase>& queryResult) {
+    virtual DB_STATUS evaluateDJBatch(hec::Query* query, DJBatch& batch, const std::unique_ptr<hec::QResultBase>& queryResult) {
         logger::log_error(DBERR_FORBIDDEN_METHOD_CALL, "Invalid evaluateDJBatch call for index type.");
         return DBERR_FORBIDDEN_METHOD_CALL;
     }
@@ -2108,7 +2103,7 @@ private:
 
     DB_STATUS evaluateQuery(hec::Query* query, std::unordered_map<int, DJBatch> &borderObjectsMap, std::unique_ptr<hec::QResultBase>& queryResult) override;
 
-    DB_STATUS evaluateDJBatch(hec::Query* query, DJBatch& batch, std::unique_ptr<hec::QResultBase>& queryResult) override;
+    DB_STATUS evaluateDJBatch(hec::Query* query, DJBatch& batch, const std::unique_ptr<hec::QResultBase>& queryResult) override;
 };
 
 /**

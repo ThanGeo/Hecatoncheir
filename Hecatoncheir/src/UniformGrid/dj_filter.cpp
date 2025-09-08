@@ -159,7 +159,7 @@ namespace uniform_grid
             return ret;
         }
 
-        DB_STATUS evaluateDJBatch(hec::DistanceJoinQuery *distanceJoinQuery, DJBatch& batch, std::unique_ptr<hec::QResultBase>& queryResult) {
+        DB_STATUS evaluateDJBatch(hec::DistanceJoinQuery *distanceJoinQuery, DJBatch& batch, const std::unique_ptr<hec::QResultBase>& queryResult) {
             DB_STATUS ret = DBERR_OK;
             Dataset* R = g_config.datasetOptions.getDatasetByIdx(distanceJoinQuery->getDatasetRid());
             Dataset* S = g_config.datasetOptions.getDatasetByIdx(distanceJoinQuery->getDatasetSid());

@@ -57,11 +57,20 @@ namespace comm
 
         /** @brief
          * Unpacks a message containing a join query and executes it, storing the results in the queryResult object.
+         * Use this method for JOIN and kNN queries.
          */
-        DB_STATUS joinQuery(SerializedMsg<char> &msg, std::unique_ptr<hec::QResultBase> &queryResult);
-
+        DB_STATUS evaluateQuery(SerializedMsg<char> &msg, std::unique_ptr<hec::QResultBase> &queryResult);
+        
+        /** @brief
+         * Unpacks a message containing a distance join query and executes it, storing the results in the queryResult object.
+         * It also identifies and buffers all objects that lie on border areas of the partitions in the grid, because they will be exchanged later.
+         * Use this method for DISTANCE JOIN queries.
+         */
+        DB_STATUS evaluateDJQuery(SerializedMsg<char> &msg, hec::Query** queryPtr, std::unordered_map<int, DJBatch> &borderObjectsMap, std::unique_ptr<hec::QResultBase> &queryResult);
+        
         /** @brief
          * Unpacks a message containing batch range queries and evaluates them in parallel. Results are stored in the batchResults.
+         * Use this method for BATCH RANGE queries.
          */
         DB_STATUS batchRangeQueries(SerializedMsg<char> &msg, std::unordered_map<int, std::unique_ptr<hec::QResultBase>> &batchResults);
 

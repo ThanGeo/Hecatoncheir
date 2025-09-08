@@ -99,7 +99,8 @@ void batchKNNScenario() {
      * Batch KNN QUERIES
      */
     // prepare
-    std::string pointsPath = "/home/hec/datasets/T2_lo48_points.tsv";
+    // std::string pointsPath = "/home/hec/datasets/T2_lo48_points.tsv";
+    std::string pointsPath = "/home/hec/datasets/OSM/O3_points.wkt";
     int pointDatasetID = hec::prepareDataset(pointsPath, "WKT", "POINT", false);
     // partition
     double start = hec::time::getTime();
@@ -129,6 +130,7 @@ void batchKNNScenario() {
     }
     batch.clear();
     results.clear();
+    printf("Query finished in %0.5f seconds.\n", total_time);
     // unload
     ret = hec::unloadDataset(pointDatasetID);
 }
@@ -202,10 +204,10 @@ int main(int argc, char* argv[]) {
     /** Your hosts list. It is mandatory to define each node as:
      * <hostname>:1 
     */
-    std::vector<std::string> hosts = {"vm1:1", "vm3:1", "vm5:1", "vm7:1", "vm9:1", "vm2:1", "vm4:1", "vm6:1", "vm8:1", "vm10:1"};
+    // std::vector<std::string> hosts = {"vm1:1", "vm3:1", "vm5:1", "vm7:1", "vm9:1", "vm2:1", "vm4:1", "vm6:1", "vm8:1", "vm10:1"};
     // std::vector<std::string> hosts = {"vm1:1", "vm2:1", "vm3:1", "vm4:1"};
     // std::vector<std::string> hosts = {"vm1:1", "vm3:1", "vm5:1"};
-    // std::vector<std::string> hosts = {"vm1:1", "vm3:1"};
+    std::vector<std::string> hosts = {"vm1:1", "vm3:1"};
     // std::vector<std::string> hosts = {"vm1:1"};
 
     /**
@@ -219,14 +221,14 @@ int main(int argc, char* argv[]) {
     for (int i=0; i<RUNS; i++) {
         // printf("Run %d: Running Join Scenario...\n", i);
         // spatialJoinScenario();
-        printf("Run %d: Running OSM Lakes-Parks Join Scenario...\n", i);
-        spatialJoinScenario2();
+        // printf("Run %d: Running OSM Lakes-Parks Join Scenario...\n", i);
+        // spatialJoinScenario2();
         // printf("Run %d: Running batch KNN Scenario...\n", i);
         // batchKNNScenario();
         // printf("Run %d: Running batch range Scenario...\n", i);
         // batchRangeScenario();
-        // printf("Run %d: Running Distance Scenario...\n", i);
-        // distanceJoinScenario();
+        printf("Run %d: Running Distance Scenario...\n", i);
+        distanceJoinScenario();
     }
     
     /**

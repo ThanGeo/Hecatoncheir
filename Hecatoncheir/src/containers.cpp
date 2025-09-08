@@ -622,7 +622,6 @@ void DJBatch::addObjectS(Shape& obj) {
 
 int DJBatch::calculateBufferSize() {
     int size = 0;
-    size += sizeof(int);                                        // destination rank
 
     size += sizeof(DataType);                                     // datatypeR
     size += sizeof(size_t);                                     // objectsR count
@@ -659,10 +658,6 @@ DB_STATUS DJBatch::serialize(char **buffer, int &bufferSize) {
     }
     char* localBuffer = *buffer;
 
-    // add dest rank
-    *reinterpret_cast<int*>(localBuffer) = this->destRank;
-    localBuffer += sizeof(int);
-    
     // add datatype R
     *reinterpret_cast<DataType*>(localBuffer) = this->dataTypeR;
     localBuffer += sizeof(DataType);
@@ -762,10 +757,6 @@ DB_STATUS DJBatch::deserialize(const char *buffer, int bufferSize) {
     DB_STATUS ret = DBERR_OK;
     int vertexCount;
     const char *localBuffer = buffer;
-
-    // get destination rank
-    this->destRank = *reinterpret_cast<const int*>(localBuffer);
-    localBuffer += sizeof(int);
     
     // get datatype R
     this->dataTypeR = *reinterpret_cast<const DataType*>(localBuffer);
@@ -1227,7 +1218,7 @@ DB_STATUS UniformGridIndex::evaluateQuery(hec::Query* query, std::unordered_map<
     return ret;
 }
 
-DB_STATUS UniformGridIndex::evaluateDJBatch(hec::Query* query, DJBatch& batch, std::unique_ptr<hec::QResultBase>& queryResult) {
+DB_STATUS UniformGridIndex::evaluateDJBatch(hec::Query* query, DJBatch& batch, const std::unique_ptr<hec::QResultBase>& queryResult) {
     DB_STATUS ret = DBERR_OK;
     // switch based on query type
     switch (query->getQueryType()) {

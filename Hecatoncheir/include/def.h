@@ -55,8 +55,6 @@ extern PROCESS_TYPE g_proc_type;
 
 extern MPI_Comm g_global_inter_comm;
 extern MPI_Comm g_global_intra_comm;
-extern MPI_Comm g_controller_comm;
-extern MPI_Comm g_agent_comm;
 extern MPI_Comm g_worker_comm;
 
 #define DBBASE 100000

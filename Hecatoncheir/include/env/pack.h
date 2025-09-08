@@ -117,6 +117,11 @@ namespace pack
     /** @brief Packs a batch of results into a serialized message. */
     DB_STATUS packBatchResults(std::unordered_map<int, std::unique_ptr<hec::QResultBase>> &batchResults, SerializedMsg<char> &batchMsg);
 
+    /** @brief Packs a Distance Join batch exchange cont information into a message.
+     * Used in phase 1 of distance joins (graph agreement).
+     */
+    DB_STATUS packDJBatchSize(DJBatch &batch, SerializedMsg<char> &msg);
+
     /** @brief Packs the sizes of a border object map for each node. (DISTANCE JOIN) 
      * @warning INVOKED BY AGENTS
     */
