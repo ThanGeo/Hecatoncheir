@@ -138,15 +138,11 @@ namespace comm
             }
 
             // setup query result object
-            std::unique_ptr<hec::QResultBase> rawResult;
-            int res = qresult_factory::createNew(queryPtr, rawResult);
+            int res = qresult_factory::createNew(queryPtr, queryResult);
             if (res != 0) {
                 logger::log_error(DBERR_OBJ_CREATION_FAILED, "Failed to create query result objects.");
                 return DBERR_OBJ_CREATION_FAILED;
             }
-
-            // transfer ownership to the output parameter
-            queryResult = std::move(rawResult);
 
             // evaluate query based on index (stored in R dataset)
             ret = g_config.datasetOptions.getDatasetR()->index->evaluateQuery(queryPtr, queryResult);

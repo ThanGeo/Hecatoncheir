@@ -99,8 +99,8 @@ void batchKNNScenario() {
      * Batch KNN QUERIES
      */
     // prepare
-    // std::string pointsPath = "/home/hec/datasets/T2_lo48_points.tsv";
-    std::string pointsPath = "/home/hec/datasets/OSM/O3_points.wkt";
+    std::string pointsPath = "/home/hec/datasets/T2_lo48_points.tsv";
+    // std::string pointsPath = "/home/hec/datasets/OSM/O3_points.wkt";
     int pointDatasetID = hec::prepareDataset(pointsPath, "WKT", "POINT", false);
     // partition
     double start = hec::time::getTime();
@@ -112,7 +112,7 @@ void batchKNNScenario() {
     printf("Indexes built in %0.2f seconds.\n", hec::time::getTime() - start);
     // queries batch
     std::string queriesPath = "/home/hec/datasets/USA_queries/NN_queries.wkt";
-    int k = 5;
+    int k = 200;
     std::vector<hec::Query *> batch = hec::loadKNNQueriesFromFile(queriesPath, "WKT", pointDatasetID, k);
     double total_time = 0;
     start = hec::time::getTime();
@@ -137,7 +137,9 @@ void batchKNNScenario() {
 
 void batchRangeScenario() {
     // prepare
-    std::string pointsPath = "/home/hec/datasets/T2_lo48_points.tsv";
+    // std::string pointsPath = "/home/hec/datasets/T2_lo48_points.tsv";
+    // int pointDatasetID = hec::prepareDataset(pointsPath, "WKT", "POINT", false);
+    std::string pointsPath = "/home/hec/datasets/OSM/O3_points.wkt";
     int pointDatasetID = hec::prepareDataset(pointsPath, "WKT", "POINT", false);
     // partition
     double start = hec::time::getTime();
@@ -148,7 +150,7 @@ void batchRangeScenario() {
     ret = hec::buildIndex({pointDatasetID}, hec::IT_UNIFORM_GRID);
     printf("Indexes built in %0.2f seconds.\n", hec::time::getTime() - start);
     // query
-    std::string queriesPath = "/home/hec/datasets/USA_queries/USA_c0.01_n10000_polygons.wkt";
+    std::string queriesPath = "/home/hec/datasets/USA_queries/USA_c1_n10000_polygons.wkt";
     std::vector<hec::Query *> batch = hec::loadRangeQueriesFromFile(queriesPath, "WKT", pointDatasetID, hec::QR_COUNT);
     double total_time = 0;
     start = hec::time::getTime();
@@ -170,7 +172,9 @@ void distanceJoinScenario() {
     // prepare
     std::string pathR = "/home/hec/datasets/T2_lo48_points.tsv";
     int RID = hec::prepareDataset(pathR, "WKT", "POINT", false);
-    std::string pathS = "/home/hec/datasets/USA_queries/NN_queries.wkt";
+    // std::string pathS = "/home/hec/datasets/USA_queries/NN_queries.wkt";
+    // int SID = hec::prepareDataset(pathS, "WKT", "POINT", false);
+    std::string pathS = "/home/hec/datasets/OSM/O3_points.wkt";
     int SID = hec::prepareDataset(pathS, "WKT", "POINT", false);
     // partition
     double start = hec::time::getTime();
@@ -181,16 +185,13 @@ void distanceJoinScenario() {
     ret = hec::buildIndex({RID, SID}, hec::IT_UNIFORM_GRID);
     printf("Indexes built in %0.2f seconds.\n", hec::time::getTime() - start);
     // query
-    hec::DistanceJoinQuery distanceQuery(RID, SID, 0, hec::QR_COLLECT, 0.001);
+    hec::DistanceJoinQuery distanceQuery(RID, SID, 0, hec::QR_COUNT, 0.001);
     start = hec::time::getTime();
     hec::QResultBase* result = hec::query(&distanceQuery);
     double total_time = hec::time::getTime() - start;
     // results
-    std::vector<size_t> results = result->getResultList();
-    // for (int i=0; i<results.size(); i+=2) {
-    //     printf("%ld,%ld\n", results[i], results[i+1]);
-    // }
-    printf("Results: %ld\n", results.size()/2);
+    size_t resultCount = result->getResultCount();
+    printf("Result pairs: %ld\n", resultCount);
 
     printf("Query finished in %0.5f seconds.\n", total_time);
     delete result;
@@ -221,14 +222,14 @@ int main(int argc, char* argv[]) {
     for (int i=0; i<RUNS; i++) {
         // printf("Run %d: Running Join Scenario...\n", i);
         // spatialJoinScenario();
-        // printf("Run %d: Running OSM Lakes-Parks Join Scenario...\n", i);
-        // spatialJoinScenario2();
+        printf("Run %d: Running OSM Lakes-Parks Join Scenario...\n", i);
+        spatialJoinScenario2();
         // printf("Run %d: Running batch KNN Scenario...\n", i);
         // batchKNNScenario();
         // printf("Run %d: Running batch range Scenario...\n", i);
         // batchRangeScenario();
-        printf("Run %d: Running Distance Scenario...\n", i);
-        distanceJoinScenario();
+        // printf("Run %d: Running Distance Scenario...\n", i);
+        // distanceJoinScenario();
     }
     
     /**
