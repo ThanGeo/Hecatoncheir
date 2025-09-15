@@ -8,17 +8,22 @@ set_tau_vars() {
   export TAU_TRACK_HEAP=1
   export TAU_TRACK_MEMORY_FOOTPRINT=1
   export TAU_SHOW_MEMORY_FUNCTIONS=1
+
+  # snapshot data, one profile per node
+  export TAU_PROFILE_FORMAT=snapshot
+  # merge data (threads)
+  # export TAU_PROFILE_FORMAT=merged
   # export TAU_OPTIONS="-tau_options=-optVerbose -optCompInst -optOpenMP -optMPI -optPROFILE"
   
   # communications
-  # export TAU_TRACK_MPI_COMMUNICATORS=1
-  # export TAU_COMM_MATRIX=1
-  # export TAU_TRACK_COMMUNICATOR_EVENTS=1
-  # export TAU_MPI_PER_COMM_RANK=1
-  # export TAU_TRACK_MESSAGE=1
-  # export TAU_TRACK_MESSAGE_SIZE=1
-  # export TAU_MPI_TRACK_SPAWN=1
-  # export TAU_SYNCHRONIZE_CLOCKS=1
+  export TAU_TRACK_MPI_COMMUNICATORS=1
+  export TAU_COMM_MATRIX=1
+  export TAU_TRACK_COMMUNICATOR_EVENTS=1
+  export TAU_MPI_PER_COMM_RANK=1
+  export TAU_TRACK_MESSAGE=1
+  export TAU_TRACK_MESSAGE_SIZE=1
+  export TAU_MPI_TRACK_SPAWN=1
+  export TAU_SYNCHRONIZE_CLOCKS=1
 
   # optional
   # export TAU_CALLPATH=1
