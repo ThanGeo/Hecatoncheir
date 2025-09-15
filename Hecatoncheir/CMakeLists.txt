@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.0.0)
+cmake_minimum_required(VERSION 3.5.0)
 project(Hecatoncheir VERSION 1.0.1)
 
 set(CMAKE_CXX_FLAGS "-fopenmp")

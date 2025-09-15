@@ -1,0 +1,35 @@
+body {
+  margin: 0;
+  /* Ensure the body itself is transparent or has a fallback color */
+  background-color: transparent;
+  position: relative; /* Needed for the ::before pseudo-element positioning */
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  /* Make sure the content of the body is above the pseudo-element */
+  z-index: 1;
+}
+
+/* Pseudo-element for the low-opacity background image */
+body::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-image: url("/home/command/Desktop/Hecatoncheir/Hecatoncheir/UI/resources/background-alt.jpeg");
+  background-size: cover;
+  background-repeat: no-repeat;
+  background-position: center center;
+  background-attachment: fixed;
+  opacity: 0.1; 
+  z-index: -1; 
+}
+
+code {
+  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
+    monospace;
+}
