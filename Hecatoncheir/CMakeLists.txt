@@ -121,3 +121,4 @@ add_dependencies(controller copy_resources)
 
 # tests
 add_subdirectory(test)
+add_subdirectory(UI)

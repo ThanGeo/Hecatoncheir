@@ -13,7 +13,8 @@ app.use(express.json());
 
 const UPLOADS_DIR = path.join(__dirname, 'uploads');
 const TEMP_FILES_DIR = path.join(__dirname, 'temp_files');
-const UNIFIED_EXECUTABLE_PATH = path.join(__dirname, 'build', 'main');
+const exec_path = "/home/command/Desktop/Hecatoncheir/build/Hecatoncheir/UI"
+const UNIFIED_EXECUTABLE_PATH = path.join(exec_path, 'hec_gui');
 
 if (!fs.existsSync(UPLOADS_DIR)) {
     fs.mkdirSync(UPLOADS_DIR);
@@ -40,7 +41,7 @@ const saveUploadedFile = (fileObject, tempFilePathsToCleanup) => {
 };
 
 const cleanupTempFiles = (tempFilePathsToCleanup, multerFiles) => {
-    // ... same implementation as before
+    // TODO
 };
 
 // Main query processing endpoint
