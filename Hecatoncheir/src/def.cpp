@@ -15,5 +15,5 @@ MPI_Comm g_global_intra_comm;
 MPI_Comm g_controller_comm;
 MPI_Comm g_agent_comm;
 
-std::string AGENT_EXECUTABLE_PATH = "build/Hecatoncheir/agent";
-std::string CONTROLLER_EXECUTABLE_PATH = "build/Hecatoncheir/controller";
+std::string AGENT_EXECUTABLE_PATH = std::string(PROJECT_BINARY_DIR) + std::string("/Hecatoncheir/agent");
+std::string CONTROLLER_EXECUTABLE_PATH = std::string(PROJECT_BINARY_DIR) + std::string("/Hecatoncheir/controller");

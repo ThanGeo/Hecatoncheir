@@ -1709,10 +1709,10 @@ public:
  * @warning Hardcoded, tread carefully when altering them.
  */
 struct DirectoryPaths {
-    std::string resourceDirPath = "Hecatoncheir/resources/"; 
+    std::string resourceDirPath = std::string(HECATONCHEIR_DIR) + std::string("/resources/"); 
     std::string configFilePath = resourceDirPath + std::string("config_cluster.ini");
     const std::string datasetsConfigPath = resourceDirPath + std::string("datasets.ini");
-    std::string dataPath = PROJECT_SOURCE_DIR + std::string("/data/");
+    std::string dataPath = std::string(PROJECT_SOURCE_DIR) + std::string("/data/");
     std::string partitionsPath = dataPath + std::string("partitions/");
     std::string approximationPath = dataPath + std::string("approximations/");
 };
