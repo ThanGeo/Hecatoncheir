@@ -24,6 +24,7 @@ const HomePage: React.FC<HomePageProps> = ({ onTerminateHec }) => {
   const [querySetType, setQuerySetType] = useState<RangeQuerySetType | KNNQuerySetType | SpatialJoinQuerySetType | null>(null);
   const [predicate, setPredicate] = useState<PredicateType>(null);
   const [isPrepareDatasetDisabled, setIsPrepareDatasetDisabled] = useState(true);
+  const [isPrepared, setIsPrepared] = useState(false);
 
   // States for the loading bar
   const [loadingProgress, setLoadingProgress] = useState(0);
@@ -106,6 +107,7 @@ const HomePage: React.FC<HomePageProps> = ({ onTerminateHec }) => {
     setSpatialDataType(null);
     setQuerySetType(null);
     setPredicate(null);
+    setIsPrepared(false);
     form.resetFields([
       'spatialDataType',
       'querySetType',
@@ -224,10 +226,11 @@ const HomePage: React.FC<HomePageProps> = ({ onTerminateHec }) => {
     setSpatialDataType(null);
     setQuerySetType(null);
     setPredicate(null);
+    setIsPrepared(false); // reset
     message.info('Form cleared!');
-    // Trigger validation after reset
     setTimeout(checkFormValidity, 0);
   };
+
 
   const handleTerminateButtonClick = async () => {
     message.info('Terminating HEC and returning to setup...');
@@ -306,6 +309,7 @@ const HomePage: React.FC<HomePageProps> = ({ onTerminateHec }) => {
         const result = await response.json();
         message.success('Dataset prepared successfully!');
         console.log('Prepare-hec response:', result);
+        setIsPrepared(true);
       } else {
         const errorText = await response.text();
         message.error(`Prepare failed: ${errorText}`);
@@ -544,7 +548,7 @@ const HomePage: React.FC<HomePageProps> = ({ onTerminateHec }) => {
               <Button type="primary" onClick={handlePrepareDataset} disabled={isPrepareDatasetDisabled || isLoading}>
                 Prepare Dataset
               </Button>
-              <Button type="primary" onClick={handleExecuteQuery} disabled={isPrepareDatasetDisabled || isLoading}>
+              <Button type="primary" onClick={handleExecuteQuery} disabled={!isPrepared || isLoading}>
                 Submit Query
               </Button>
             </Space>
