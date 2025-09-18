@@ -40,14 +40,12 @@ int main() {
 
             if (action == "init") {
                 hosts = cmd["hosts"].get<std::vector<std::string>>();
-                std::cout << hosts.size() << " " << hosts[0] << std::endl;
                 ret = hec::init(hosts.size(), hosts);
                 if(ret != DBERR_OK){
                     logger::log_error(ret, "Error in init:");
                 }
                 hec_initialized = (ret == DBERR_OK);
                 response["status"] = hec_initialized ? "success" : "error";
-
             } else if (action == "prepare") {
                 current_query_type = cmd["queryType"];
                 std::string dataset = cmd.value("dataset", "");
@@ -75,7 +73,7 @@ int main() {
                     response["message"] = "Data not prepared";
                 } else {
                     start = hec::time::getTime();
-                    // ret = hec::query(batch, ...) based on current_query_type
+                    results = hec::query(batch, hec::Q_KNN);
                     total_time = hec::time::getTime() - start;
 
                     // cleanup batch

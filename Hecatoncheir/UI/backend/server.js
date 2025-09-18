@@ -4,6 +4,7 @@ const cors = require('cors');
 const { spawn } = require('child_process');
 const path = require('path');
 const fs = require('fs');
+const { CLIENT_RENEG_LIMIT } = require('tls');
 
 const app = express();
 const port = 5000;
@@ -20,41 +21,85 @@ if (!fs.existsSync(TEMP_FILES_DIR)) fs.mkdirSync(TEMP_FILES_DIR);
 const upload = multer({ dest: UPLOADS_DIR });
 
 // Start C++ server as persistent process
-const cppServerPath = "/home/command/Desktop/Hecatoncheir/build/Hecatoncheir/UI/hec_server"; 
+const cppServerPath = "/home/hec/dimitropoulos/Hecatoncheir/build/Hecatoncheir/UI/hec_server"; 
 
 const mpiCmd = "mpirun.mpich";
 const mpiArgs = ["-np", "1", cppServerPath];
-const cppServer = spawn(mpiCmd, mpiArgs);
+
 
 let activeTempFiles = [];
 
 
+let cppServer = null;
 
-cppServer.stdout.on('data', (data) => {
+function startCppServer() {
+  cppServer = spawn(mpiCmd, mpiArgs);
+
+  cppServer.stdout.on('data', (data) => {
     console.log(`C++: ${data.toString()}`);
-});
-cppServer.stderr.on('data', (data) => {
-    console.error(`C++ ERR: ${data.toString()}`);
-});
-cppServer.on('close', (code) => {
-    console.log(`C++ server exited with code ${code}`);
-});
+  });
 
-// Send JSON command to C++ server
+  cppServer.stderr.on('data', (data) => {
+    console.error(`C++ ERR: ${data.toString()}`);
+  });
+
+  cppServer.on('close', (code) => {
+    console.log(`C++ server exited with code ${code}`);
+    cppServer = null; // mark as dead
+  });
+}
+
+
+
 function sendCommandToCpp(cmd) {
     return new Promise((resolve, reject) => {
-        const listener = (data) => {
-            try {
-                const response = JSON.parse(data.toString());
-                resolve(response);
-            } catch (err) {
-                reject(err);
+        const onData = (data) => {
+            const raw = data.toString();
+            console.log("Raw data from C++:", JSON.stringify(raw));
+
+            const lines = raw.trim().split(/\r?\n/);
+            console.log("Split lines:", lines);
+
+            for (const line of lines) {
+                const str = line.trim();
+                console.log("Processing line:", str);
+
+                if (str.startsWith("C++: {") && str.endsWith("}")) {
+                    const jsonStr = str.replace("C++: ", "");
+                    console.log("JSON candidate (prefixed):", jsonStr);
+                    try {
+                        const response = JSON.parse(jsonStr);
+                        cppServer.stdout.off('data', onData);
+                        resolve(response);
+                        return;
+                    } catch (err) {
+                        console.error("❌ JSON parse failed (prefixed):", err);
+                        reject(new Error("Failed to parse JSON from C++: " + jsonStr));
+                    }
+                } else if (str.startsWith("{") && str.endsWith("}")) {
+                    console.log("JSON candidate:", str);
+                    try {
+                        const response = JSON.parse(str);
+                        cppServer.stdout.off('data', onData);
+                        resolve(response);
+                        return;
+                    } catch (err) {
+                        console.error("JSON parse failed:", err);
+                        reject(new Error("Failed to parse JSON from C++: " + str));
+                    }
+                } else {
+                    console.log("📝 Ignored log:", str);
+                }
             }
         };
-        cppServer.stdout.once('data', listener);
+
+        cppServer.stdout.on('data', onData);
+
+        console.log("Sending command to C++:", JSON.stringify(cmd));
         cppServer.stdin.write(JSON.stringify(cmd) + '\n');
     });
 }
+
 
 // Save uploaded file temporarily
 function saveUploadedFile(file, tempFiles) {
@@ -74,16 +119,20 @@ function cleanupTempFiles(tempFiles, multerFiles) {
     }
 }
 
-// Endpoints
 app.post('/init-hec', async (req, res) => {
     try {
-        const hosts = req.body.pcs.map(pc => pc.nameOrIp + ":1");
-        const response = await sendCommandToCpp({ action: "init", hosts });
-        res.json(response);
+      if (!cppServer) {
+        console.log("⚡ Spawning fresh C++ process...");
+        startCppServer();
+      }
+      const hosts = req.body.pcs.map(pc => pc.nameOrIp + ":1");
+      const response = await sendCommandToCpp({ action: "init", hosts });
+      res.json(response);
     } catch (err) {
-        res.status(500).json({ status: 'error', message: err.message });
+      res.status(500).json({ status: 'error', message: err.message });
     }
-});
+  });
+
 
 app.post('/prepare-hec', upload.fields([
     { name: 'datasetFile', maxCount: 1 },
@@ -145,7 +194,6 @@ app.post('/terminate-hec', async (req, res) => {
         cleanupTempFiles(activeTempFiles);
         activeTempFiles = [];
         res.json(response);
-        cppServer.kill();
     } catch (err) {
         res.status(500).json({ status: 'error', message: err.message });
     }
