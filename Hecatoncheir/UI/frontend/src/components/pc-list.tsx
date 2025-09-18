@@ -42,7 +42,9 @@ const PCListDisplay: React.FC<PCListDisplayProps> = ({ pcs }) => {
           ))}
         </div>
         <Divider/>
-        <span style={{color:"green", marginLeft:"25%"}}>All nodes are running</span>
+        {pcs.length > 0 && (
+          <span style={{color:"green", marginLeft:"25%"}}>All nodes are running</span>
+        )}
       </Panel>
     </Collapse>
   );

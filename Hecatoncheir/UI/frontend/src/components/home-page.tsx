@@ -234,6 +234,102 @@ const HomePage: React.FC<HomePageProps> = ({ onTerminateHec }) => {
     onTerminateHec();
   };
 
+  const handlePrepareDataset = async () => {
+    const values = form.getFieldsValue();
+    setIsLoading(true);
+    message.loading('Preparing dataset...', 0);
+    const startTime = Date.now();
+  
+    const formData = new FormData();
+    formData.append('queryType', values.queryType || '');
+  
+    if (values.queryType === 'rangeQuery' || values.queryType === 'knnQuery') {
+      formData.append('spatialDataType', values.spatialDataType);
+      formData.append('querySetType', values.querySetType);
+  
+      if (values.datasetFile?.[0]?.originFileObj) {
+        formData.append('datasetFile', values.datasetFile[0].originFileObj);
+      }
+      if (values.queryDatasetFile?.[0]?.originFileObj) {
+        formData.append('queryDatasetFile', values.queryDatasetFile[0].originFileObj);
+      }
+      if (values.queryType === 'knnQuery' && values.kValue) {
+        formData.append('kValue', values.kValue);
+      }
+    } else if (values.queryType === 'spatialJoins') {
+      formData.append('predicate', values.predicate);
+      formData.append('spatialDataType', values.spatialDataType);
+      formData.append('querySetType', values.querySetType);
+  
+      if (values.leftDatasetFile?.[0]?.originFileObj) {
+        formData.append('leftDatasetFile', values.leftDatasetFile[0].originFileObj);
+      }
+      if (values.rightDatasetFile?.[0]?.originFileObj) {
+        formData.append('rightDatasetFile', values.rightDatasetFile[0].originFileObj);
+      }
+    }
+  
+    try {
+      const response = await fetch('http://localhost:5000/prepare-hec', {
+        method: 'POST',
+        body: formData,
+      });
+  
+      const elapsedTime = Date.now() - startTime;
+      const remainingTime = Math.max(0, MIN_LOADING_TIME - elapsedTime);
+      if (remainingTime > 0) await new Promise(r => setTimeout(r, remainingTime));
+  
+      message.destroy();
+      setIsLoading(false);
+  
+      if (response.ok) {
+        const result = await response.json();
+        message.success('Dataset prepared successfully!');
+        console.log('Prepare-hec response:', result);
+      } else {
+        const errorText = await response.text();
+        message.error(`Prepare failed: ${errorText}`);
+      }
+    } catch (err) {
+      message.destroy();
+      setIsLoading(false);
+      message.error('Network error while preparing dataset.');
+    }
+  };
+  
+  const handleExecuteQuery = async () => {
+    setIsLoading(true);
+    message.loading('Executing query...', 0);
+    const startTime = Date.now();
+  
+    try {
+      const response = await fetch('http://localhost:5000/execute-hec', {
+        method: 'POST',
+      });
+  
+      const elapsedTime = Date.now() - startTime;
+      const remainingTime = Math.max(0, MIN_LOADING_TIME - elapsedTime);
+      if (remainingTime > 0) await new Promise(r => setTimeout(r, remainingTime));
+  
+      message.destroy();
+      setIsLoading(false);
+  
+      if (response.ok) {
+        const result = await response.json();
+        message.success('Query executed successfully!');
+        console.log('Execute-hec response:', result);
+      } else {
+        const errorText = await response.text();
+        message.error(`Execution failed: ${errorText}`);
+      }
+    } catch (err) {
+      message.destroy();
+      setIsLoading(false);
+      message.error('Network error while executing query.');
+    }
+  };
+  
+
   return (
     <Form
       form={form}
@@ -425,10 +521,10 @@ const HomePage: React.FC<HomePageProps> = ({ onTerminateHec }) => {
               <Button type="default" icon={<ReloadOutlined />} onClick={handleResetForm} disabled={isLoading}>
                 Clear Form
               </Button>
-              <Button type="primary" htmlType="submit" disabled={isPrepareDatasetDisabled || isLoading}>
+              <Button type="primary" onClick={handlePrepareDataset} disabled={isPrepareDatasetDisabled || isLoading}>
                 Prepare Dataset
               </Button>
-              <Button type="primary" htmlType="submit" disabled={isPrepareDatasetDisabled || isLoading}>
+              <Button type="primary" onClick={handleExecuteQuery} disabled={isPrepareDatasetDisabled || isLoading}>
                 Submit Query
               </Button>
             </Space>

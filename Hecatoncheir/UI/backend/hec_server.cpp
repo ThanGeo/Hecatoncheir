@@ -43,7 +43,7 @@ int main() {
                 std::cout << hosts.size() << " " << hosts[0] << std::endl;
                 ret = hec::init(hosts.size(), hosts);
                 if(ret != DBERR_OK){
-                    logger::log_error(ret, "AAA:");
+                    logger::log_error(ret, "Error in init:");
                 }
                 hec_initialized = (ret == DBERR_OK);
                 response["status"] = hec_initialized ? "success" : "error";
@@ -53,7 +53,6 @@ int main() {
                 std::string dataset = cmd.value("dataset", "");
                 std::string queryDataset = cmd.value("queryDataset", "");
                 k = cmd.value("kValue", 5);
-
                 if (!hec_initialized) {
                     response["status"] = "error";
                     response["message"] = "HEC not initialized";

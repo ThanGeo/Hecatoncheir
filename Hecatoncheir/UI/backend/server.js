@@ -26,6 +26,7 @@ const mpiCmd = "mpirun.mpich";
 const mpiArgs = ["-np", "1", cppServerPath];
 const cppServer = spawn(mpiCmd, mpiArgs);
 
+let activeTempFiles = [];
 
 
 
@@ -117,7 +118,7 @@ app.post('/prepare-hec', upload.fields([
         }
 
         const response = await sendCommandToCpp(requestBody);
-        cleanupTempFiles(tempFiles, allMulterFiles);
+        activeTempFiles.push(...tempFiles);
         res.json(response);
 
     } catch (err) {
@@ -129,6 +130,9 @@ app.post('/prepare-hec', upload.fields([
 app.post('/execute-hec', async (req, res) => {
     try {
         const response = await sendCommandToCpp({ action: "execute" });
+        cleanupTempFiles(activeTempFiles);
+        activeTempFiles = [];
+
         res.json(response);
     } catch (err) {
         res.status(500).json({ status: 'error', message: err.message });
@@ -138,6 +142,8 @@ app.post('/execute-hec', async (req, res) => {
 app.post('/terminate-hec', async (req, res) => {
     try {
         const response = await sendCommandToCpp({ action: "terminate" });
+        cleanupTempFiles(activeTempFiles);
+        activeTempFiles = [];
         res.json(response);
         cppServer.kill();
     } catch (err) {
