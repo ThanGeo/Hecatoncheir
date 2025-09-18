@@ -191,6 +191,18 @@ app.post('/execute-hec', async (req, res) => {
     }
 });
 
+
+app.post('/clear', async (req, res) => {
+    try {
+        const response = await sendCommandToCpp({ action: "clear" });
+        cleanupTempFiles(activeTempFiles);
+        activeTempFiles = [];
+        res.json(response);
+    } catch (err) {
+        res.status(500).json({ status: 'error', message: err.message });
+    }
+});
+
 app.post('/terminate-hec', async (req, res) => {
     try {
         const response = await sendCommandToCpp({ action: "terminate" });

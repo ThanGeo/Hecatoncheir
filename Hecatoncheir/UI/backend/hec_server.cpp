@@ -76,26 +76,48 @@ int main() {
                     results = hec::query(batch, hec::Q_KNN);
                     total_time = hec::time::getTime() - start;
 
-                                    // cleanup batch
-                for (auto &q : batch) {
-                    delete results[q->getQueryID()];
-                    delete q;
-                }
-                batch.clear();
-                results.clear();
-
-
                     response["status"] = "success";
                     response["executionTime"] = total_time;
                 }
 
-            } else if (action == "terminate") {
+            }
+            else if (action == "clear") {
                 if (hec_initialized) {
+                    // cleanup batch
+                    for (auto &q : batch) {
+                        auto it = results.find(q->getQueryID());
+                        if (it != results.end()) {
+                            delete it->second;
+                        }
+                        delete q;
+                    }
+                    batch.clear();
+                    results.clear();
+
+                    if (data_prepared && pointDatasetID > 0) {
+                        hec::unloadDataset(pointDatasetID);
+                    }
+                    current_query_type = "";
+                    data_prepared = false;
+                }
+                response["status"] = "clear";
+            }
+            else if (action == "terminate") {
+                if (hec_initialized) {
+
+                    // cleanup batch
+                    for (auto &q : batch) {
+                        delete results[q->getQueryID()];
+                        delete q;
+                    }
+                    batch.clear();
+                    results.clear();
+
                     hec::unloadDataset(pointDatasetID);
 
                     data_prepared = false;
                     current_query_type = "";
-                    
+
                     hec::finalize();
                     hec_initialized = false;
                     data_prepared = false;

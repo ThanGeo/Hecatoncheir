@@ -226,15 +226,31 @@ const HomePage: React.FC<HomePageProps> = ({ onTerminateHec }) => {
     setSpatialDataType(null);
     setQuerySetType(null);
     setPredicate(null);
-    setIsPrepared(false); // reset
-    message.info('Form cleared!');
+    setIsPrepared(false);
     setTimeout(checkFormValidity, 0);
   };
 
-
-  const handleTerminateButtonClick = async () => {
-    message.info('Terminating HEC and returning to setup...');
+  const handleClearButtonClick = async () => {
+    try {
+      const response = await fetch('http://localhost:5000/clear', {
+        method: 'POST',
+      });
   
+      if (response.ok) {
+        const result = await response.json();
+        console.log("Clear response:", result);
+        handleResetForm()
+      } else {
+        const errorText = await response.text();
+        console.error("Clear error:", errorText);
+      }
+    } catch (err) {
+      console.error("Network error while clearing:", err);
+    }
+  };
+  
+
+  const handleTerminateButtonClick = async () => { 
     try {
       const response = await fetch('http://localhost:5000/terminate-hec', {
         method: 'POST',
@@ -542,7 +558,7 @@ const HomePage: React.FC<HomePageProps> = ({ onTerminateHec }) => {
               <Button type="default" danger onClick={handleTerminateButtonClick} disabled={isLoading}>
                 Terminate Hecatoncheir
               </Button>
-              <Button type="default" icon={<ReloadOutlined />} onClick={handleResetForm} disabled={isLoading}>
+              <Button type="default" icon={<ReloadOutlined />} onClick={handleClearButtonClick} disabled={isLoading}>
                 Clear Form
               </Button>
               <Button type="primary" onClick={handlePrepareDataset} disabled={isPrepareDatasetDisabled || isLoading}>
