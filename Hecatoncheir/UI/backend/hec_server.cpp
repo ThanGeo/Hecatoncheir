@@ -76,17 +76,14 @@ int main() {
                     results = hec::query(batch, hec::Q_KNN);
                     total_time = hec::time::getTime() - start;
 
-                    // cleanup batch
-                    for (auto &q : batch) {
-                        delete results[q->getQueryID()];
-                        delete q;
-                    }
-                    batch.clear();
-                    results.clear();
-                    hec::unloadDataset(pointDatasetID);
+                                    // cleanup batch
+                for (auto &q : batch) {
+                    delete results[q->getQueryID()];
+                    delete q;
+                }
+                batch.clear();
+                results.clear();
 
-                    data_prepared = false;
-                    current_query_type = "";
 
                     response["status"] = "success";
                     response["executionTime"] = total_time;
@@ -94,10 +91,18 @@ int main() {
 
             } else if (action == "terminate") {
                 if (hec_initialized) {
+                    hec::unloadDataset(pointDatasetID);
+
+                    data_prepared = false;
+                    current_query_type = "";
+                    
                     hec::finalize();
                     hec_initialized = false;
                     data_prepared = false;
                 }
+
+
+
                 response["status"] = "terminated";
                 std::cout << response.dump() << std::endl;
                 break;

@@ -20,8 +20,11 @@ if (!fs.existsSync(TEMP_FILES_DIR)) fs.mkdirSync(TEMP_FILES_DIR);
 
 const upload = multer({ dest: UPLOADS_DIR });
 
-// Start C++ server as persistent process
-const cppServerPath = "/home/hec/dimitropoulos/Hecatoncheir/build/Hecatoncheir/UI/hec_server"; 
+
+const projectRoot = path.resolve(__dirname, '..', '..', '..');
+const cppServerPath = path.join(projectRoot, 'build', 'Hecatoncheir', 'UI', 'hec_server');
+
+
 
 const mpiCmd = "mpirun.mpich";
 const mpiArgs = ["-np", "1", cppServerPath];
