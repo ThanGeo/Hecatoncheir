@@ -56,7 +56,6 @@ const ClusterSetup: React.FC<ClusterSetupProps> = ({
       });
 
       message.destroy();
-      debugger
       if (response.ok) {
         const result = await response.json();
         message.success('HEC cluster initialized successfully!');
