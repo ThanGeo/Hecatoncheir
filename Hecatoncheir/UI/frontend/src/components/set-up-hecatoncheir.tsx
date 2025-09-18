@@ -47,7 +47,7 @@ const ClusterSetup: React.FC<ClusterSetupProps> = ({
     };
 
     try {
-      const response = await fetch('http://localhost:5000/init-hec', {
+      const response = await fetch('http://10.7.3.84:5000/init-hec', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -56,7 +56,7 @@ const ClusterSetup: React.FC<ClusterSetupProps> = ({
       });
 
       message.destroy();
-
+      debugger
       if (response.ok) {
         const result = await response.json();
         message.success('HEC cluster initialized successfully!');

@@ -29,6 +29,7 @@ function App() {
   }, [pcNamesInput]);
 
   const handleClusterInitialization = () => {
+    console.log("Cluster initialized, switching to HomePage...");
     setIsClusterInitialized(true);
   };
 

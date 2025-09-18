@@ -229,10 +229,30 @@ const HomePage: React.FC<HomePageProps> = ({ onTerminateHec }) => {
     setTimeout(checkFormValidity, 0);
   };
 
-  const handleTerminateButtonClick = () => {
+  const handleTerminateButtonClick = async () => {
     message.info('Terminating HEC and returning to setup...');
-    onTerminateHec();
+  
+    try {
+      const response = await fetch('http://localhost:5000/terminate-hec', {
+        method: 'POST',
+      });
+  
+      if (response.ok) {
+        const result = await response.json();
+        console.log("Terminate-hec response:", result);
+        message.success("HEC terminated successfully!");
+        onTerminateHec(); // now reset UI
+      } else {
+        const errorText = await response.text();
+        console.error("Terminate error:", errorText);
+        message.error(`Failed to terminate HEC: ${errorText}`);
+      }
+    } catch (err) {
+      console.error("Network error while terminating:", err);
+      message.error("Network error while terminating HEC.");
+    }
   };
+  
 
   const handlePrepareDataset = async () => {
     const values = form.getFieldsValue();
