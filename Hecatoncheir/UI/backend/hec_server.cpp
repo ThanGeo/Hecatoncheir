@@ -13,8 +13,8 @@ using json = nlohmann::json;
 std::vector<std::string> hosts;
 std::string pointsPath;
 std::string queriesPath;
-int pointDatasetID;
-int secondPointDatasetID;
+int pointDatasetID = -1;
+int secondPointDatasetID = -1;
 int predicateValue;
 int k;
 std::string fileFormat;
@@ -53,6 +53,30 @@ int main() {
                 response["status"] = hec_initialized ? "success" : "error";
             } 
             else if (action == "prepare") {
+                if (data_prepared) {
+                    if (pointDatasetID >= 0) {
+                        hec::unloadDataset(pointDatasetID);
+                        pointDatasetID = -1;
+                    }
+                    if (secondPointDatasetID >= 0) {
+                        hec::unloadDataset(secondPointDatasetID);
+                        secondPointDatasetID = -1;
+                    }
+                    if (distanceQuery != nullptr) {
+                        delete distanceQuery;
+                        distanceQuery = nullptr;
+                    }
+                    for (auto& q : batch) {
+                        auto it = results.find(q->getQueryID());
+                        if (it != results.end()) {
+                            delete it->second;
+                        }
+                        delete q;
+                    }
+                    batch.clear();
+                    results.clear();
+                    data_prepared = false;
+                }
                 current_query_type = cmd["queryType"];
                 std::string dataset = cmd.value("dataset", "");
                 std::string queryDataset = cmd.value("queryDataset", "");
@@ -220,7 +244,7 @@ int main() {
             } 
             else if (action == "clear") {
                 if (hec_initialized) {
-                    for (auto&q : batch) {
+                    for (auto& q : batch) {
                         auto it = results.find(q->getQueryID());
                         if (it != results.end()) {
                             delete it->second;
@@ -229,23 +253,57 @@ int main() {
                     }
                     batch.clear();
                     results.clear();
-                    if (data_prepared && pointDatasetID > 0) {
+                    
+                    // Unload both datasets if they were loaded
+                    if (pointDatasetID >= 0) {
                         hec::unloadDataset(pointDatasetID);
+                        pointDatasetID = -1;
                     }
+                    if (secondPointDatasetID >= 0) {
+                        hec::unloadDataset(secondPointDatasetID);
+                        secondPointDatasetID = -1;
+                    }
+                    
+                    // Clean up distance query if it exists
+                    if (distanceQuery != nullptr) {
+                        delete distanceQuery;
+                        distanceQuery = nullptr;
+                    }
+                    
                     current_query_type = "";
                     data_prepared = false;
                 }
                 response["status"] = "clear";
             }
+            
             else if (action == "terminate") {
                 if (hec_initialized) {
                     for (auto& q : batch) {
-                        delete results[q->getQueryID()];
+                        auto it = results.find(q->getQueryID());
+                        if (it != results.end()) {
+                            delete it->second;
+                        }
                         delete q;
                     }
                     batch.clear();
                     results.clear();
-                    hec::unloadDataset(pointDatasetID);
+                    
+                    // Unload datasets if they were loaded
+                    if (pointDatasetID >= 0) {
+                        hec::unloadDataset(pointDatasetID);
+                        pointDatasetID = -1;
+                    }
+                    if (secondPointDatasetID >= 0) {
+                        hec::unloadDataset(secondPointDatasetID);
+                        secondPointDatasetID = -1;
+                    }
+                    
+                    // Clean up distance query if it exists
+                    if (distanceQuery != nullptr) {
+                        delete distanceQuery;
+                        distanceQuery = nullptr;
+                    }
+                    
                     data_prepared = false;
                     current_query_type = "";
                     hec::finalize();
@@ -255,9 +313,7 @@ int main() {
                 std::cout << "C++: " << response.dump() << std::endl;
                 std::cout.flush();
                 break;
-            } 
-
-            else {
+            }            else {
                 response["status"] = "error";
                 response["message"] = "Unknown action";
             }
