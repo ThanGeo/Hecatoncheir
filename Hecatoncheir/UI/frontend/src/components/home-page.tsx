@@ -31,9 +31,6 @@ const HomePage: React.FC<HomePageProps> = ({ onTerminateHec }) => {
   const [loadingProgress, setLoadingProgress] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
 
-  // Define a minimum display time for the loading bar (in milliseconds)
-  const MIN_LOADING_TIME = 10000; // 10 seconds
-
   const checkFormValidity = () => {
     const allFields = form.getFieldsValue();
     let allRequiredFilled = true;
@@ -73,29 +70,30 @@ const HomePage: React.FC<HomePageProps> = ({ onTerminateHec }) => {
     checkFormValidity();
   }, [queryType, spatialDataType, querySetType, predicate]);
 
-  // Effect to manage the loading bar animation
+  
   useEffect(() => {
     let interval: NodeJS.Timeout | undefined = undefined;
     if (isLoading) {
-      setLoadingProgress(0); // Reset progress when loading starts
+      setLoadingProgress(0);
       interval = setInterval(() => {
         setLoadingProgress((prevProgress) => {
-          if (prevProgress < 100) {
-            // Increment by 1% every 100ms for 10 seconds total (100 * 100ms = 10000ms)
-            return prevProgress + 1;
+          if (prevProgress < 70) {
+            return prevProgress + 2;
+          } else if (prevProgress < 90) {
+            return prevProgress + 0.5;
+          } else if (prevProgress < 99) {
+            return prevProgress + 0.1;
           }
-          clearInterval(interval!);
-          return 100;
+          return prevProgress; // stay at 99% until actual completion
         });
-      }, 100); // Update every 100ms
+      }, 200);
     } else {
       if (interval) {
         clearInterval(interval);
       }
-      setLoadingProgress(0); // Reset progress when not loading
+      setLoadingProgress(0);
     }
 
-    // Cleanup function: clears the interval if the component unmounts or isLoading changes
     return () => {
       if (interval) {
         clearInterval(interval);
@@ -141,9 +139,8 @@ const HomePage: React.FC<HomePageProps> = ({ onTerminateHec }) => {
   };
 
   const handleFinish = async (values: any) => {
-    setIsLoading(true); // Start loading animation
+    setIsLoading(true);
     message.loading('Processing query...', 0);
-    const startTime = Date.now(); // Record the start time
 
     const formData = new FormData();
 
@@ -174,51 +171,38 @@ const HomePage: React.FC<HomePageProps> = ({ onTerminateHec }) => {
       if (values.rightDatasetFile && values.rightDatasetFile.length > 0 && values.rightDatasetFile[0].originFileObj) {
         formData.append('rightDatasetFile', values.rightDatasetFile[0].originFileObj);
       }
-      
     }
 
     try {
-        const response = await fetch('http://localhost:5000/process-query', {
-            method: 'POST',
-            body: formData,
-        });
+      const response = await fetch('http://localhost:5000/process-query', {
+        method: 'POST',
+        body: formData,
+      });
 
-        const endTime = Date.now(); // Record end time
-        const elapsedTime = endTime - startTime;
+      // Complete the progress bar
+      setLoadingProgress(100);
+      await new Promise(resolve => setTimeout(resolve, 300)); // Brief pause at 100%
 
-        // Calculate remaining time to fulfill minimum loading duration
-        const remainingTime = Math.max(0, MIN_LOADING_TIME - elapsedTime);
+      message.destroy();
+      setIsLoading(false);
 
-        // Wait for the remaining time if necessary
-        if (remainingTime > 0) {
-            await new Promise(resolve => setTimeout(resolve, remainingTime));
-        }
-
-        message.destroy(); // Destroy Ant Design message *after* minimum time
-        setIsLoading(false); // Stop loading animation
-
-        if (response.ok) {
-            const result = await response.json();
-            message.success('Query submitted successfully!');
-            console.log('Backend response:', result);
-        } else {
-            const errorText = await response.text();
-            message.error(`Query failed: ${errorText}`);
-            console.error('Backend error:', response.status, errorText);
-        }
+      if (response.ok) {
+        const result = await response.json();
+        message.success('Query submitted successfully!');
+        console.log('Backend response:', result);
+      } else {
+        const errorText = await response.text();
+        message.error(`Query failed: ${errorText}`);
+        console.error('Backend error:', response.status, errorText);
+      }
     } catch (error) {
-        const endTime = Date.now(); // Record end time even on error
-        const elapsedTime = endTime - startTime;
-        const remainingTime = Math.max(0, MIN_LOADING_TIME - elapsedTime);
-
-        if (remainingTime > 0) {
-            await new Promise(resolve => setTimeout(resolve, remainingTime));
-        }
-
-        message.destroy();
-        setIsLoading(false); // Stop loading animation on network error
-        message.error('Network error or server unavailable.');
-        console.error('Fetch error:', error);
+      setLoadingProgress(100);
+      await new Promise(resolve => setTimeout(resolve, 300));
+      
+      message.destroy();
+      setIsLoading(false);
+      message.error('Network error or server unavailable.');
+      console.error('Fetch error:', error);
     }
   };
 
@@ -252,7 +236,6 @@ const HomePage: React.FC<HomePageProps> = ({ onTerminateHec }) => {
       console.error("Network error while clearing:", err);
     }
   };
-  
 
   const handleTerminateButtonClick = async () => { 
     try {
@@ -264,7 +247,7 @@ const HomePage: React.FC<HomePageProps> = ({ onTerminateHec }) => {
         const result = await response.json();
         console.log("Terminate-hec response:", result);
         message.success("HEC terminated successfully!");
-        onTerminateHec(); // now reset UI
+        onTerminateHec();
       } else {
         const errorText = await response.text();
         console.error("Terminate error:", errorText);
@@ -280,13 +263,11 @@ const HomePage: React.FC<HomePageProps> = ({ onTerminateHec }) => {
     const values = form.getFieldsValue();
     setIsLoading(true);
     message.loading('Preparing dataset...', 0);
-    const startTime = Date.now();
   
     const formData = new FormData();
     formData.append('queryType', values.queryType || '');
   
     if (values.queryType === 'rangeQuery' || values.queryType === 'knnQuery') {
-      // ✅ FIXED: Now appending spatialDataType and querySetType
       if (values.spatialDataType) formData.append('spatialDataType', values.spatialDataType);
       if (values.querySetType) formData.append('querySetType', values.querySetType);
   
@@ -300,7 +281,6 @@ const HomePage: React.FC<HomePageProps> = ({ onTerminateHec }) => {
         formData.append('kValue', values.kValue);
       }
     } else if (values.queryType === 'spatialJoins') {
-      // ✅ FIXED: Now appending all necessary fields
       if (values.predicate) formData.append('predicate', values.predicate);
       if (values.spatialDataType) formData.append('spatialDataType', values.spatialDataType);
       if (values.querySetType) formData.append('querySetType', values.querySetType);
@@ -319,9 +299,8 @@ const HomePage: React.FC<HomePageProps> = ({ onTerminateHec }) => {
         body: formData,
       });
   
-      const elapsedTime = Date.now() - startTime;
-      const remainingTime = Math.max(0, MIN_LOADING_TIME - elapsedTime);
-      if (remainingTime > 0) await new Promise(r => setTimeout(r, remainingTime));
+      setLoadingProgress(100);
+      await new Promise(r => setTimeout(r, 300));
   
       message.destroy();
       setIsLoading(false);
@@ -336,6 +315,9 @@ const HomePage: React.FC<HomePageProps> = ({ onTerminateHec }) => {
         message.error(`Prepare failed: ${errorText}`);
       }
     } catch (err) {
+      setLoadingProgress(100);
+      await new Promise(r => setTimeout(r, 300));
+      
       message.destroy();
       setIsLoading(false);
       message.error('Network error while preparing dataset.');
@@ -345,16 +327,14 @@ const HomePage: React.FC<HomePageProps> = ({ onTerminateHec }) => {
   const handleExecuteQuery = async () => {
     setIsLoading(true);
     message.loading('Executing query...', 0);
-    const startTime = Date.now();
   
     try {
       const response = await fetch('http://localhost:5000/execute-hec', {
         method: 'POST',
       });
   
-      const elapsedTime = Date.now() - startTime;
-      const remainingTime = Math.max(0, MIN_LOADING_TIME - elapsedTime);
-      if (remainingTime > 0) await new Promise(r => setTimeout(r, remainingTime));
+      setLoadingProgress(100);
+      await new Promise(r => setTimeout(r, 300));
   
       message.destroy();
       setIsLoading(false);
@@ -367,18 +347,19 @@ const HomePage: React.FC<HomePageProps> = ({ onTerminateHec }) => {
         if (result.resultsData) {
           setResultsData(result.resultsData);
         }
-
       } else {
         const errorText = await response.text();
         message.error(`Execution failed: ${errorText}`);
       }
     } catch (err) {
+      setLoadingProgress(100);
+      await new Promise(r => setTimeout(r, 300));
+      
       message.destroy();
       setIsLoading(false);
       message.error('Network error while executing query.');
     }
   };
-  
 
   const handleDownloadResults = () => {
     if (!resultsData) {
@@ -387,23 +368,16 @@ const HomePage: React.FC<HomePageProps> = ({ onTerminateHec }) => {
     }
   
     try {
-      // Convert results data to JSON string
       const jsonString = JSON.stringify(resultsData, null, 4);
-      
-      // Create a blob from the JSON string
       const blob = new Blob([jsonString], { type: 'application/json' });
-      
-      // Create a temporary URL for the blob
       const url = URL.createObjectURL(blob);
       
-      // Create a temporary anchor element and trigger download
       const a = document.createElement('a');
       a.href = url;
       a.download = `query_results_${resultsData.timestamp || Date.now()}.json`;
       document.body.appendChild(a);
       a.click();
       
-      // Cleanup
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
       
@@ -636,8 +610,8 @@ const HomePage: React.FC<HomePageProps> = ({ onTerminateHec }) => {
       {/* Loading bar, directly below the form */}
       {isLoading && (
         <div style={{ marginTop: '20px' }}>
-          <Progress percent={loadingProgress} status="active" showInfo={false} />
-          <p style={{ textAlign: 'center', marginTop: '10px', color: '#888' }}>Processing query....</p>
+          <Progress percent={loadingProgress} status="active" showInfo={true} format={(percent) => `${percent?.toFixed(1)}%`} />
+          <p style={{ textAlign: 'center', marginTop: '10px', color: '#888', fontFamily: 'monospace', letterSpacing: '1px', }}>Processing query....</p>
         </div>
       )}
     </Form>
