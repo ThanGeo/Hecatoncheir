@@ -25,13 +25,14 @@ const HomePage: React.FC<HomePageProps> = ({ onTerminateHec }) => {
   const [predicate, setPredicate] = useState<PredicateType>(null);
   const [isPrepareDatasetDisabled, setIsPrepareDatasetDisabled] = useState(true);
   const [isPrepared, setIsPrepared] = useState(false);
+  const [resultsData, setResultsData] = useState<any>(null);
 
   // States for the loading bar
   const [loadingProgress, setLoadingProgress] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
 
   // Define a minimum display time for the loading bar (in milliseconds)
-  const MIN_LOADING_TIME = 10000; // 3 seconds
+  const MIN_LOADING_TIME = 10000; // 10 seconds
 
   const checkFormValidity = () => {
     const allFields = form.getFieldsValue();
@@ -173,6 +174,7 @@ const HomePage: React.FC<HomePageProps> = ({ onTerminateHec }) => {
       if (values.rightDatasetFile && values.rightDatasetFile.length > 0 && values.rightDatasetFile[0].originFileObj) {
         formData.append('rightDatasetFile', values.rightDatasetFile[0].originFileObj);
       }
+      
     }
 
     try {
@@ -227,6 +229,7 @@ const HomePage: React.FC<HomePageProps> = ({ onTerminateHec }) => {
     setQuerySetType(null);
     setPredicate(null);
     setIsPrepared(false);
+    setResultsData(null);
     setTimeout(checkFormValidity, 0);
   };
 
@@ -239,7 +242,8 @@ const HomePage: React.FC<HomePageProps> = ({ onTerminateHec }) => {
       if (response.ok) {
         const result = await response.json();
         console.log("Clear response:", result);
-        handleResetForm()
+        handleResetForm();
+        setResultsData(null);
       } else {
         const errorText = await response.text();
         console.error("Clear error:", errorText);
@@ -271,7 +275,6 @@ const HomePage: React.FC<HomePageProps> = ({ onTerminateHec }) => {
       message.error("Network error while terminating HEC.");
     }
   };
-  
 
   const handlePrepareDataset = async () => {
     const values = form.getFieldsValue();
@@ -283,8 +286,9 @@ const HomePage: React.FC<HomePageProps> = ({ onTerminateHec }) => {
     formData.append('queryType', values.queryType || '');
   
     if (values.queryType === 'rangeQuery' || values.queryType === 'knnQuery') {
-      formData.append('spatialDataType', values.spatialDataType);
-      formData.append('querySetType', values.querySetType);
+      // ✅ FIXED: Now appending spatialDataType and querySetType
+      if (values.spatialDataType) formData.append('spatialDataType', values.spatialDataType);
+      if (values.querySetType) formData.append('querySetType', values.querySetType);
   
       if (values.datasetFile?.[0]?.originFileObj) {
         formData.append('datasetFile', values.datasetFile[0].originFileObj);
@@ -296,9 +300,10 @@ const HomePage: React.FC<HomePageProps> = ({ onTerminateHec }) => {
         formData.append('kValue', values.kValue);
       }
     } else if (values.queryType === 'spatialJoins') {
-      formData.append('predicate', values.predicate);
-      formData.append('spatialDataType', values.spatialDataType);
-      formData.append('querySetType', values.querySetType);
+      // ✅ FIXED: Now appending all necessary fields
+      if (values.predicate) formData.append('predicate', values.predicate);
+      if (values.spatialDataType) formData.append('spatialDataType', values.spatialDataType);
+      if (values.querySetType) formData.append('querySetType', values.querySetType);
   
       if (values.leftDatasetFile?.[0]?.originFileObj) {
         formData.append('leftDatasetFile', values.leftDatasetFile[0].originFileObj);
@@ -358,6 +363,11 @@ const HomePage: React.FC<HomePageProps> = ({ onTerminateHec }) => {
         const result = await response.json();
         message.success('Query executed successfully!');
         console.log('Execute-hec response:', result);
+
+        if (result.resultsData) {
+          setResultsData(result.resultsData);
+        }
+
       } else {
         const errorText = await response.text();
         message.error(`Execution failed: ${errorText}`);
@@ -370,13 +380,47 @@ const HomePage: React.FC<HomePageProps> = ({ onTerminateHec }) => {
   };
   
 
+  const handleDownloadResults = () => {
+    if (!resultsData) {
+      message.error('No results available to download.');
+      return;
+    }
+  
+    try {
+      // Convert results data to JSON string
+      const jsonString = JSON.stringify(resultsData, null, 4);
+      
+      // Create a blob from the JSON string
+      const blob = new Blob([jsonString], { type: 'application/json' });
+      
+      // Create a temporary URL for the blob
+      const url = URL.createObjectURL(blob);
+      
+      // Create a temporary anchor element and trigger download
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `query_results_${resultsData.timestamp || Date.now()}.json`;
+      document.body.appendChild(a);
+      a.click();
+      
+      // Cleanup
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      
+      message.success('Results downloaded successfully!');
+    } catch (error) {
+      console.error('Download error:', error);
+      message.error('Failed to download results.');
+    }
+  };
+
   return (
     <Form
       form={form}
       layout="vertical"
       onFinish={handleFinish}
       initialValues={{ queryType: null }}
-      style={{ maxWidth: "100%", margin: '20px auto', padding: '20px', border: '1px solid #eee', borderRadius: '8px' }}
+      style={{ maxWidth: "100%", margin: '20px auto', padding: '25px', border: '1px solid #eee', borderRadius: '8px' }}
       onValuesChange={checkFormValidity}
     >
       <Form.Item
@@ -566,6 +610,13 @@ const HomePage: React.FC<HomePageProps> = ({ onTerminateHec }) => {
               </Button>
               <Button type="primary" onClick={handleExecuteQuery} disabled={!isPrepared || isLoading}>
                 Submit Query
+              </Button>
+              <Button 
+                type="default" 
+                onClick={handleDownloadResults} 
+                disabled={!resultsData || isLoading}
+              >
+                Download Results
               </Button>
             </Space>
           </Form.Item>
