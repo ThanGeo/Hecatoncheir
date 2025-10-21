@@ -91,7 +91,7 @@ function startCppServer() {
     });
 }
 
-function sendCommandToCpp(cmd, { timeoutMs = 30000 } = {}) {
+function sendCommandToCpp(cmd, { timeoutMs = 120000 } = {}) {
     return new Promise((resolve, reject) => {
         if (cppPending) {
             return reject(new Error('Another command is already pending'));
@@ -302,7 +302,7 @@ app.post('/prepare-hec', async (req, res) => {
       }
 
       console.log('Sending to C++:', JSON.stringify(requestBody, null, 2));
-      const response = await sendCommandToCpp(requestBody, { timeoutMs: 60000 });
+      const response = await sendCommandToCpp(requestBody, { timeoutMs: 300000 });
       console.log('C++ response:', response);
       res.json(response);
 
@@ -315,7 +315,7 @@ app.post('/prepare-hec', async (req, res) => {
 app.post('/execute-hec', async (req, res) => {
     console.log('EXECUTE-HEC called');
     try {
-        const response = await sendCommandToCpp({ action: "execute" }, { timeoutMs: 120000 });
+        const response = await sendCommandToCpp({ action: "execute" }, { timeoutMs: 300000 });
         console.log('Execute response:', response);
         res.json(response);
     } catch (err) {
