@@ -1,12 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { Form, Select, Upload, Button, message, Space, Progress } from 'antd';
-import { UploadOutlined, ReloadOutlined } from '@ant-design/icons';
-import type { UploadProps } from 'antd/es/upload/interface';
-import Input from 'antd/es/input/Input';
+import { Form, Select, Button, message, Space, Progress, Input } from 'antd';
+import { ReloadOutlined, FolderOpenOutlined } from '@ant-design/icons';
 
 const { Option } = Select;
 
-type QueryType = 'rangeQuery' | 'knnQuery' | 'spatialJoins' | null;
+type QueryType = 'rangeQuery' | 'knnQuery' | 'spatialJoins' | 'distanceJoins' | null;
 type SpatialDataType = 'polygon' | 'points' | 'line' | null;
 type RangeQuerySetType = 'polygon' | 'box' | null;
 type KNNQuerySetType = 'point' | 'polygon' | null;
@@ -41,8 +39,8 @@ const HomePage: React.FC<HomePageProps> = ({ onTerminateHec }) => {
 
     if (allFields.queryType === 'rangeQuery' || allFields.queryType === 'knnQuery') {
       if (
-        !allFields.datasetFile || allFields.datasetFile.length === 0 ||
-        !allFields.queryDatasetFile || allFields.queryDatasetFile.length === 0 ||
+        !allFields.datasetPath ||
+        !allFields.queryDatasetPath ||
         !allFields.spatialDataType ||
         !allFields.querySetType
       ) {
@@ -53,11 +51,19 @@ const HomePage: React.FC<HomePageProps> = ({ onTerminateHec }) => {
       }
     } else if (allFields.queryType === 'spatialJoins') {
       if (
-        !allFields.leftDatasetFile || allFields.leftDatasetFile.length === 0 ||
-        !allFields.rightDatasetFile || allFields.rightDatasetFile.length === 0 ||
+        !allFields.leftDatasetPath ||
+        !allFields.rightDatasetPath ||
         !allFields.predicate ||
         !allFields.spatialDataType ||
         !allFields.querySetType
+      ) {
+        allRequiredFilled = false;
+      }
+    } else if (allFields.queryType === 'distanceJoins') {
+      if (
+        !allFields.datasetPath ||
+        !allFields.queryDatasetPath ||
+        !allFields.distance
       ) {
         allRequiredFilled = false;
       }
@@ -70,7 +76,6 @@ const HomePage: React.FC<HomePageProps> = ({ onTerminateHec }) => {
     checkFormValidity();
   }, [queryType, spatialDataType, querySetType, predicate]);
 
-  
   useEffect(() => {
     let interval: NodeJS.Timeout | undefined = undefined;
     if (isLoading) {
@@ -84,7 +89,7 @@ const HomePage: React.FC<HomePageProps> = ({ onTerminateHec }) => {
           } else if (prevProgress < 99) {
             return prevProgress + 0.1;
           }
-          return prevProgress; // stay at 99% until actual completion
+          return prevProgress;
         });
       }, 200);
     } else {
@@ -111,99 +116,14 @@ const HomePage: React.FC<HomePageProps> = ({ onTerminateHec }) => {
       'spatialDataType',
       'querySetType',
       'predicate',
-      'datasetFile',
-      'queryDatasetFile',
-      'leftDatasetFile',
-      'rightDatasetFile',
+      'datasetPath',
+      'queryDatasetPath',
+      'leftDatasetPath',
+      'rightDatasetPath',
       'kValue',
+      'distance',
     ]);
     setTimeout(checkFormValidity, 0);
-  };
-
-  const commonUploadProps: UploadProps = {
-    accept: '.tsv,.csv,.wkt',
-    beforeUpload: (file) => {
-      const isTsc = file.name.endsWith('.tsv');
-      const isCsv = file.name.endsWith('.csv');
-      const isWkt = file.name.endsWith('.wkt');
-      const isAllowed = isTsc || isCsv || isWkt;
-      if (!isAllowed) {
-        message.error(`${file.name} is not a .tsv, .wkt or .csv file!`);
-      }
-      return isAllowed || Upload.LIST_IGNORE;
-    },
-    maxCount: 1,
-    onRemove: () => {
-      return true;
-    },
-  };
-
-  const handleFinish = async (values: any) => {
-    setIsLoading(true);
-    message.loading('Processing query...', 0);
-
-    const formData = new FormData();
-
-    formData.append('queryType', values.queryType || '');
-
-    if (values.queryType === 'rangeQuery' || values.queryType === 'knnQuery') {
-      if (values.spatialDataType) formData.append('spatialDataType', values.spatialDataType);
-      if (values.querySetType) formData.append('querySetType', values.querySetType);
-
-      if (values.datasetFile && values.datasetFile.length > 0 && values.datasetFile[0].originFileObj) {
-        formData.append('datasetFile', values.datasetFile[0].originFileObj);
-      }
-      if (values.queryDatasetFile && values.queryDatasetFile.length > 0 && values.queryDatasetFile[0].originFileObj) {
-        formData.append('queryDatasetFile', values.queryDatasetFile[0].originFileObj);
-      }
-
-      if (values.queryType === 'knnQuery' && values.kValue) {
-        formData.append('kValue', values.kValue);
-      }
-    } else if (values.queryType === 'spatialJoins') {
-      if (values.predicate) formData.append('predicate', values.predicate);
-      if (values.spatialDataType) formData.append('spatialDataType', values.spatialDataType);
-      if (values.querySetType) formData.append('querySetType', values.querySetType);
-
-      if (values.leftDatasetFile && values.leftDatasetFile.length > 0 && values.leftDatasetFile[0].originFileObj) {
-        formData.append('leftDatasetFile', values.leftDatasetFile[0].originFileObj);
-      }
-      if (values.rightDatasetFile && values.rightDatasetFile.length > 0 && values.rightDatasetFile[0].originFileObj) {
-        formData.append('rightDatasetFile', values.rightDatasetFile[0].originFileObj);
-      }
-    }
-
-    try {
-      const response = await fetch('http://localhost:5000/process-query', {
-        method: 'POST',
-        body: formData,
-      });
-
-      // Complete the progress bar
-      setLoadingProgress(100);
-      await new Promise(resolve => setTimeout(resolve, 300)); // Brief pause at 100%
-
-      message.destroy();
-      setIsLoading(false);
-
-      if (response.ok) {
-        const result = await response.json();
-        message.success('Query submitted successfully!');
-        console.log('Backend response:', result);
-      } else {
-        const errorText = await response.text();
-        message.error(`Query failed: ${errorText}`);
-        console.error('Backend error:', response.status, errorText);
-      }
-    } catch (error) {
-      setLoadingProgress(100);
-      await new Promise(resolve => setTimeout(resolve, 300));
-      
-      message.destroy();
-      setIsLoading(false);
-      message.error('Network error or server unavailable.');
-      console.error('Fetch error:', error);
-    }
   };
 
   const handleResetForm = () => {
@@ -228,12 +148,15 @@ const HomePage: React.FC<HomePageProps> = ({ onTerminateHec }) => {
         console.log("Clear response:", result);
         handleResetForm();
         setResultsData(null);
+        message.success('Form cleared successfully!');
       } else {
         const errorText = await response.text();
         console.error("Clear error:", errorText);
+        message.error(`Clear failed: ${errorText}`);
       }
     } catch (err) {
       console.error("Network error while clearing:", err);
+      message.error('Network error while clearing.');
     }
   };
 
@@ -261,43 +184,48 @@ const HomePage: React.FC<HomePageProps> = ({ onTerminateHec }) => {
 
   const handlePrepareDataset = async () => {
     const values = form.getFieldsValue();
+    console.log('Form values:', values);
+    
     setIsLoading(true);
     message.loading('Preparing dataset...', 0);
   
-    const formData = new FormData();
-    formData.append('queryType', values.queryType || '');
+    const requestBody: any = {
+      queryType: values.queryType || '',
+    };
   
     if (values.queryType === 'rangeQuery' || values.queryType === 'knnQuery') {
-      if (values.spatialDataType) formData.append('spatialDataType', values.spatialDataType);
-      if (values.querySetType) formData.append('querySetType', values.querySetType);
+      requestBody.spatialDataType = values.spatialDataType;
+      requestBody.querySetType = values.querySetType;
+      requestBody.datasetPath = values.datasetPath;
+      requestBody.queryDatasetPath = values.queryDatasetPath;
   
-      if (values.datasetFile?.[0]?.originFileObj) {
-        formData.append('datasetFile', values.datasetFile[0].originFileObj);
-      }
-      if (values.queryDatasetFile?.[0]?.originFileObj) {
-        formData.append('queryDatasetFile', values.queryDatasetFile[0].originFileObj);
-      }
       if (values.queryType === 'knnQuery' && values.kValue) {
-        formData.append('kValue', values.kValue);
+        requestBody.kValue = values.kValue;
       }
     } else if (values.queryType === 'spatialJoins') {
-      if (values.predicate) formData.append('predicate', values.predicate);
-      if (values.spatialDataType) formData.append('spatialDataType', values.spatialDataType);
-      if (values.querySetType) formData.append('querySetType', values.querySetType);
-  
-      if (values.leftDatasetFile?.[0]?.originFileObj) {
-        formData.append('leftDatasetFile', values.leftDatasetFile[0].originFileObj);
-      }
-      if (values.rightDatasetFile?.[0]?.originFileObj) {
-        formData.append('rightDatasetFile', values.rightDatasetFile[0].originFileObj);
-      }
+      requestBody.predicate = values.predicate;
+      requestBody.spatialDataType = values.spatialDataType;
+      requestBody.querySetType = values.querySetType;
+      requestBody.leftDatasetPath = values.leftDatasetPath;
+      requestBody.rightDatasetPath = values.rightDatasetPath;
+    } else if (values.queryType === 'distanceJoins') {
+      requestBody.datasetPath = values.datasetPath;
+      requestBody.queryDatasetPath = values.queryDatasetPath;
+      requestBody.distance = parseFloat(values.distance);
     }
+    
+    console.log('Sending request body:', requestBody);
   
     try {
       const response = await fetch('http://localhost:5000/prepare-hec', {
         method: 'POST',
-        body: formData,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(requestBody),
       });
+      
+      console.log('Response status:', response.status);
   
       setLoadingProgress(100);
       await new Promise(r => setTimeout(r, 300));
@@ -311,8 +239,8 @@ const HomePage: React.FC<HomePageProps> = ({ onTerminateHec }) => {
         console.log('Prepare-hec response:', result);
         setIsPrepared(true);
       } else {
-        const errorText = await response.text();
-        message.error(`Prepare failed: ${errorText}`);
+        const errorData = await response.json();
+        message.error(`Prepare failed: ${errorData.message || 'Unknown error'}`);
       }
     } catch (err) {
       setLoadingProgress(100);
@@ -334,7 +262,9 @@ const HomePage: React.FC<HomePageProps> = ({ onTerminateHec }) => {
       });
   
       setLoadingProgress(100);
-      await new Promise(r => setTimeout(r, 300));
+      
+      // Wait longer to ensure UI renders the 100% state
+      await new Promise(r => setTimeout(r, 600));
   
       message.destroy();
       setIsLoading(false);
@@ -343,7 +273,7 @@ const HomePage: React.FC<HomePageProps> = ({ onTerminateHec }) => {
         const result = await response.json();
         message.success('Query executed successfully!');
         console.log('Execute-hec response:', result);
-
+  
         if (result.resultsData) {
           setResultsData(result.resultsData);
         }
@@ -353,14 +283,13 @@ const HomePage: React.FC<HomePageProps> = ({ onTerminateHec }) => {
       }
     } catch (err) {
       setLoadingProgress(100);
-      await new Promise(r => setTimeout(r, 300));
+      await new Promise(r => setTimeout(r, 600));
       
       message.destroy();
       setIsLoading(false);
       message.error('Network error while executing query.');
     }
   };
-
   const handleDownloadResults = () => {
     if (!resultsData) {
       message.error('No results available to download.');
@@ -392,7 +321,6 @@ const HomePage: React.FC<HomePageProps> = ({ onTerminateHec }) => {
     <Form
       form={form}
       layout="vertical"
-      onFinish={handleFinish}
       initialValues={{ queryType: null }}
       style={{ maxWidth: "100%", margin: '20px auto', padding: '25px', border: '1px solid #eee', borderRadius: '8px' }}
       onValuesChange={checkFormValidity}
@@ -406,6 +334,7 @@ const HomePage: React.FC<HomePageProps> = ({ onTerminateHec }) => {
           <Option value="rangeQuery">Range Query</Option>
           <Option value="knnQuery">KNN Query</Option>
           <Option value="spatialJoins">Spatial Join</Option>
+          <Option value="distanceJoins">Distance Join</Option>
         </Select>
       </Form.Item>
 
@@ -416,16 +345,15 @@ const HomePage: React.FC<HomePageProps> = ({ onTerminateHec }) => {
               <Space direction="vertical" style={{ width: '100%' }}>
                 <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap' }}>
                   <Form.Item
-                    name="datasetFile"
-                    label="Dataset File"
-                    valuePropName="fileList"
-                    getValueFromEvent={(e) => e && e.fileList}
-                    rules={[{ required: true, message: 'Please select a dataset file!' }]}
+                    name="datasetPath"
+                    label="Dataset File Path"
+                    rules={[{ required: true, message: 'Please enter dataset file path!' }]}
                     style={{ flex: 1, minWidth: '250px' }}
                   >
-                    <Upload {...commonUploadProps}  style={{ width:"-moz-available"}}>
-                      <Button icon={<UploadOutlined />} style={{ width: '100%' }}>Select Dataset File (.tsv, .wkt or .csv)</Button>
-                    </Upload>
+                    <Input 
+                      placeholder="/path/to/dataset.csv" 
+                      prefix={<FolderOpenOutlined />}
+                    />
                   </Form.Item>
                   <Form.Item
                     name="spatialDataType"
@@ -443,16 +371,15 @@ const HomePage: React.FC<HomePageProps> = ({ onTerminateHec }) => {
 
                 <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap' }}>
                   <Form.Item
-                    name="queryDatasetFile"
-                    label="Query Dataset File"
-                    valuePropName="fileList"
-                    getValueFromEvent={(e) => e && e.fileList}
-                    rules={[{ required: true, message: 'Please select a query dataset file!' }]}
+                    name="queryDatasetPath"
+                    label="Query Dataset File Path"
+                    rules={[{ required: true, message: 'Please enter query dataset file path!' }]}
                     style={{ flex: 1, minWidth: '250px' }}
                   >
-                    <Upload {...commonUploadProps}  style={{ width:"-moz-available"}}>
-                      <Button icon={<UploadOutlined />} style={{ width: '100%' }}>Select Query Dataset File (.tsv, .wkt or .csv)</Button>
-                    </Upload>
+                    <Input 
+                      placeholder="/path/to/queries.csv" 
+                      prefix={<FolderOpenOutlined />}
+                    />
                   </Form.Item>
                   <Form.Item
                     name="querySetType"
@@ -481,12 +408,55 @@ const HomePage: React.FC<HomePageProps> = ({ onTerminateHec }) => {
                   <Form.Item
                     name="kValue"
                     label="K Value (for KNN)"
-                    rules={[{ required: true, message: 'Please input K value!', min: 1 }]}
+                    rules={[{ required: true, message: 'Please input K value!' }]}
                     style={{ maxWidth: '250px' }}
                   >
-                    <Input type="number" placeholder="Enter K value" min="1"/>
+                    <Input type="number" placeholder="Enter K value" min={1}/>
                   </Form.Item>
                 )}
+              </Space>
+            </>
+          )}
+
+          {queryType === 'distanceJoins' && (
+            <>
+              <Space direction="vertical" style={{ width: '100%' }}>
+                <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap' }}>
+                  <Form.Item
+                    name="datasetPath"
+                    label="Dataset File Path"
+                    rules={[{ required: true, message: 'Please enter dataset file path!' }]}
+                    style={{ flex: 1, minWidth: '250px' }}
+                  >
+                    <Input 
+                      placeholder="/path/to/dataset.csv" 
+                      prefix={<FolderOpenOutlined />}
+                    />
+                  </Form.Item>
+                </div>
+
+                <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap' }}>
+                  <Form.Item
+                    name="queryDatasetPath"
+                    label="Query Dataset File Path"
+                    rules={[{ required: true, message: 'Please enter query dataset file path!' }]}
+                    style={{ flex: 1, minWidth: '250px' }}
+                  >
+                    <Input 
+                      placeholder="/path/to/queries.csv" 
+                      prefix={<FolderOpenOutlined />}
+                    />
+                  </Form.Item>
+
+                  <Form.Item
+                    name="distance"
+                    label="Distance Threshold"
+                    rules={[{ required: true, message: 'Please input distance threshold!' }]}
+                    style={{ flex: 1, minWidth: '250px' }}
+                  >
+                    <Input type="number" placeholder="Enter distance (float)" step={0.001} min={0}/>
+                  </Form.Item>
+                </div>
               </Space>
             </>
           )}
@@ -496,16 +466,15 @@ const HomePage: React.FC<HomePageProps> = ({ onTerminateHec }) => {
               <Space direction="vertical" style={{ width: '100%' }}>
                 <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap' }}>
                   <Form.Item
-                    name="leftDatasetFile"
-                    label="Left Dataset File"
-                    valuePropName="fileList"
-                    getValueFromEvent={(e) => e && e.fileList}
-                    rules={[{ required: true, message: 'Please select a left dataset file!' }]}
+                    name="leftDatasetPath"
+                    label="Left Dataset File Path"
+                    rules={[{ required: true, message: 'Please enter left dataset file path!' }]}
                     style={{ flex: 1, minWidth: '250px' }}
                   >
-                    <Upload {...commonUploadProps}  style={{ width:"-moz-available"}}>
-                      <Button icon={<UploadOutlined />} style={{ width: '100%' }}>Select Left Dataset File (.tsv, .wkt or .csv)</Button>
-                    </Upload>
+                    <Input 
+                      placeholder="/path/to/left_dataset.csv" 
+                      prefix={<FolderOpenOutlined />}
+                    />
                   </Form.Item>
 
                   <Form.Item
@@ -524,16 +493,15 @@ const HomePage: React.FC<HomePageProps> = ({ onTerminateHec }) => {
 
                 <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap' }}>
                   <Form.Item
-                    name="rightDatasetFile"
-                    label="Right Dataset File"
-                    valuePropName="fileList"
-                    getValueFromEvent={(e) => e && e.fileList}
-                    rules={[{ required: true, message: 'Please select a right dataset file!' }]}
+                    name="rightDatasetPath"
+                    label="Right Dataset File Path"
+                    rules={[{ required: true, message: 'Please enter right dataset file path!' }]}
                     style={{ flex: 1, minWidth: '250px' }}
                   >
-                    <Upload {...commonUploadProps}  style={{ width:"-moz-available"}}>
-                      <Button icon={<UploadOutlined />} style={{ width: '100%' }}>Select Right Dataset File (.tsv, .wkt or .csv)</Button>
-                    </Upload>
+                    <Input 
+                      placeholder="/path/to/right_dataset.csv" 
+                      prefix={<FolderOpenOutlined />}
+                    />
                   </Form.Item>
 
                   <Form.Item
@@ -597,14 +565,14 @@ const HomePage: React.FC<HomePageProps> = ({ onTerminateHec }) => {
         </>
       )}
 
-      { queryType == null && (
-      <>
-      <Form.Item style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '20px' }}>
-        <Button type="default" danger onClick={handleTerminateButtonClick} disabled={isLoading}>
-          Terminate Hecatoncheir
-        </Button>
-      </Form.Item>
-      </>
+      {queryType == null && (
+        <>
+          <Form.Item style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '20px' }}>
+            <Button type="default" danger onClick={handleTerminateButtonClick} disabled={isLoading}>
+              Terminate Hecatoncheir
+            </Button>
+          </Form.Item>
+        </>
       )}
 
       {/* Loading bar, directly below the form */}
