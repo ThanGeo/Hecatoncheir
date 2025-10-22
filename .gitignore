@@ -4,3 +4,4 @@ build/
 *.csv
 data/
 nodes
+node_modules/
