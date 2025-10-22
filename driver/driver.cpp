@@ -6,7 +6,7 @@
 
 void spatialJoinScenario() {
     // prepare
-    std::string path1 = "/home/hec/datasets/OSM/O6_parks.tsv";
+    std::string path1 = "/home/hec/datasets/OSM/O6_parks.wkt";
     int id1 = hec::prepareDataset(path1, "WKT", "POLYGON", false);
     std::string path2 = "/home/hec/datasets/T8_lo48.tsv";
     int id2 = hec::prepareDataset(path2, "WKT", "LINESTRING", false);
@@ -100,7 +100,7 @@ void batchKNNScenario() {
      */
     // prepare
     // std::string pointsPath = "/home/hec/datasets/T2_lo48_points.tsv";
-    std::string pointsPath = "/home/hec/datasets/OSM/O3_points.wkt";
+    std::string pointsPath = "/home/hec/datasets/OSM/O3_points.tsv";
     int pointDatasetID = hec::prepareDataset(pointsPath, "WKT", "POINT", false);
     // partition
     double start = hec::time::getTime();
@@ -111,8 +111,8 @@ void batchKNNScenario() {
     ret = hec::buildIndex({pointDatasetID}, hec::IT_UNIFORM_GRID);
     printf("Indexes built in %0.2f seconds.\n", hec::time::getTime() - start);
     // queries batch
-    std::string queriesPath = "/home/hec/datasets/USA_queries/NN_queries.wkt";
-    int k = 500;
+    std::string queriesPath = "/home/hec/datasets/USA_queries/NN_queries_100.tsv";
+    int k = 5;
     std::vector<hec::Query *> batch = hec::loadKNNQueriesFromFile(queriesPath, "WKT", pointDatasetID, k);
     double total_time = 0;
     start = hec::time::getTime();
@@ -139,7 +139,7 @@ void batchRangeScenario() {
     // prepare
     // std::string pointsPath = "/home/hec/datasets/T2_lo48_points.tsv";
     // int pointDatasetID = hec::prepareDataset(pointsPath, "WKT", "POINT", false);
-    std::string pointsPath = "/home/hec/datasets/OSM/O3_points.wkt";
+    std::string pointsPath = "/home/hec/datasets/OSM/O3_points.tsv";
     int pointDatasetID = hec::prepareDataset(pointsPath, "WKT", "POINT", false);
     // partition
     double start = hec::time::getTime();
@@ -150,7 +150,7 @@ void batchRangeScenario() {
     ret = hec::buildIndex({pointDatasetID}, hec::IT_UNIFORM_GRID);
     printf("Indexes built in %0.2f seconds.\n", hec::time::getTime() - start);
     // query
-    std::string queriesPath = "/home/hec/datasets/USA_queries/USA_c0.01_n10000_polygons.wkt";
+    std::string queriesPath = "/home/hec/datasets/USA_queries/USA_c1_n10000_polygons.wkt";
     std::vector<hec::Query *> batch = hec::loadRangeQueriesFromFile(queriesPath, "WKT", pointDatasetID, hec::QR_COUNT);
     double total_time = 0;
     start = hec::time::getTime();
@@ -172,9 +172,7 @@ void distanceJoinScenario() {
     // prepare
     std::string pathR = "/home/hec/datasets/T2_lo48_points.tsv";
     int RID = hec::prepareDataset(pathR, "WKT", "POINT", false);
-    // std::string pathS = "/home/hec/datasets/USA_queries/NN_queries.wkt";
-    // int SID = hec::prepareDataset(pathS, "WKT", "POINT", false);
-    std::string pathS = "/home/hec/datasets/OSM/O3_points.wkt";
+    std::string pathS = "/home/hec/datasets/OSM/O3_points.tsv";
     int SID = hec::prepareDataset(pathS, "WKT", "POINT", false);
     // partition
     double start = hec::time::getTime();
@@ -221,12 +219,12 @@ int main(int argc, char* argv[]) {
 
     int RUNS = 1;
     for (int i=0; i<RUNS; i++) {
-        // printf("Run %d: Running Join Scenario...\n", i);
-        // spatialJoinScenario();
+        printf("Run %d: Running Join Scenario...\n", i);
+        spatialJoinScenario();
         // printf("Run %d: Running OSM Lakes-Parks Join Scenario...\n", i);
         // spatialJoinScenario2();
-        printf("Run %d: Running batch KNN Scenario...\n", i);
-        batchKNNScenario();
+        // printf("Run %d: Running batch KNN Scenario...\n", i);
+        // batchKNNScenario();
         // printf("Run %d: Running batch range Scenario...\n", i);
         // batchRangeScenario();
         // printf("Run %d: Running Distance Scenario...\n", i);

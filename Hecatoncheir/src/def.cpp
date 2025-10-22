@@ -14,4 +14,4 @@ MPI_Comm g_global_inter_comm;
 MPI_Comm g_global_intra_comm;
 MPI_Comm g_worker_comm;
 
-std::string WORKER_EXECUTABLE_PATH = "build/Hecatoncheir/worker";
+std::string WORKER_EXECUTABLE_PATH = std::string(PROJECT_BINARY_DIR) + "/Hecatoncheir/worker";
