@@ -94,3 +94,4 @@ file(COPY ${CMAKE_SOURCE_DIR}/Hecatoncheir/resources
 
 # Tests subdirectory
 add_subdirectory(test)
+add_subdirectory(UI)

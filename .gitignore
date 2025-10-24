@@ -4,6 +4,7 @@ build/
 *.csv
 data/
 nodes
+node_modules/
 profil*
 spawn-1/
 snapshot*
