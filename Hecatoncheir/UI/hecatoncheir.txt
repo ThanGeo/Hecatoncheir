@@ -1,4 +1,4 @@
 run hecatoncheir app
 
 in the frontend folder : npm run start
-in the backend folder : node server.js
+in the Hecatoncheir folder : node Hecatoncheir/path/to/backend/folder/server.js

@@ -6,6 +6,11 @@ const fs = require('fs');
 
 const app = express();
 const port = 5000;
+const tempDir = path.join(__dirname, 'temp_files');
+if (!fs.existsSync(tempDir)) {
+    fs.mkdirSync(tempDir, { recursive: true });
+    console.log(`Temporary directory created at: ${tempDir}`);
+}
 
 app.use(cors());
 app.use(express.json({ limit: '50mb' }));
@@ -267,7 +272,6 @@ app.post('/prepare-hec', async (req, res) => {
           console.log('Prepared request body for distance joins:', requestBody);
 
       } else if (queryType === 'spatialJoins') {
-          // FIX: Use leftDatasetPath and rightDatasetPath for spatial joins
           const { leftDatasetPath, rightDatasetPath } = req.body;
           
           console.log('Left dataset path received:', leftDatasetPath);
@@ -365,10 +369,30 @@ app.post('/terminate-hec', async (req, res) => {
     }
 });
 
-// Test endpoint
-app.get('/test', (req, res) => {
-    res.json({ status: 'Server is running', timestamp: new Date().toISOString() });
+process.on('exit', () => {
+    console.log('\nCleaning up temporary files...');
+    if (fs.existsSync(tempDir)) {
+        const files = fs.readdirSync(tempDir);
+        for (const file of files) {
+            const filePath = path.join(tempDir, file);
+            try {
+                fs.unlinkSync(filePath);
+            } catch (err) {
+                console.error(`Failed to delete ${file}:`, err.message);
+            }
+        }
+    }
 });
+
+process.on('SIGINT', () => {
+    console.log('\nSIGINT received. Exiting...');
+    process.exit();
+});
+process.on('SIGTERM', () => {
+    console.log('\nSIGTERM received. Exiting...');
+    process.exit();
+});
+
 
 app.listen(port, () => {
     console.log(`\n====================================`);
