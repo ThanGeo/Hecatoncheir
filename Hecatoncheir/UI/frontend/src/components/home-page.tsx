@@ -4,6 +4,9 @@ import { ReloadOutlined, FolderOpenOutlined } from '@ant-design/icons';
 
 const { Option } = Select;
 
+// API Base URL - Change this to your server's IP
+const API_BASE_URL = 'http://10.7.3.84:5000';
+
 type QueryType = 'rangeQuery' | 'knnQuery' | 'spatialJoins' | 'distanceJoins' | null;
 type SpatialDataType = 'polygon' | 'points' | 'line' | null;
 type RangeQuerySetType = 'polygon' | 'box' | null;
@@ -139,7 +142,7 @@ const HomePage: React.FC<HomePageProps> = ({ onTerminateHec }) => {
 
   const handleClearButtonClick = async () => {
     try {
-      const response = await fetch('http://localhost:5000/clear', {
+      const response = await fetch(`${API_BASE_URL}/clear`, {
         method: 'POST',
       });
   
@@ -162,7 +165,7 @@ const HomePage: React.FC<HomePageProps> = ({ onTerminateHec }) => {
 
   const handleTerminateButtonClick = async () => { 
     try {
-      const response = await fetch('http://localhost:5000/terminate-hec', {
+      const response = await fetch(`${API_BASE_URL}/terminate-hec`, {
         method: 'POST',
       });
   
@@ -217,7 +220,7 @@ const HomePage: React.FC<HomePageProps> = ({ onTerminateHec }) => {
     console.log('Sending request body:', requestBody);
   
     try {
-      const response = await fetch('http://localhost:5000/prepare-hec', {
+      const response = await fetch(`${API_BASE_URL}/prepare-hec`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -257,7 +260,7 @@ const HomePage: React.FC<HomePageProps> = ({ onTerminateHec }) => {
     message.loading('Executing query...', 0);
   
     try {
-      const response = await fetch('http://localhost:5000/execute-hec', {
+      const response = await fetch(`${API_BASE_URL}/execute-hec`, {
         method: 'POST',
       });
   
