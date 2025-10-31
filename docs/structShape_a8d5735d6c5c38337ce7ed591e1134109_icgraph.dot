@@ -1,0 +1,31 @@
+digraph "Shape::createMaskCode"
+{
+ // LATEX_PDF_SIZE
+  bgcolor="transparent";
+  edge [fontname="Helvetica",fontsize="10",labelfontname="Helvetica",labelfontsize="10"];
+  node [fontname="Helvetica",fontsize="10",shape=record];
+  rankdir="RL";
+  Node1 [label="Shape::createMaskCode",height=0.2,width=0.4,color="black", fillcolor="grey75", style="filled", fontcolor="black",tooltip="Generates and returns the DE-9IM mask of this geometry (as R) with the input geometry (as S)"];
+  Node1 -> Node2 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node2 [label="refinement::topology\l::refineContainsCoversTruehit\lIntersect",height=0.2,width=0.4,color="black",URL="$namespacerefinement_1_1topology.html#ad8c462df79c6496f979cf90b53f724b7",tooltip="Refines for the contains and covers relation predicates, with the intersection being guaranteed."];
+  Node1 -> Node3 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node3 [label="refinement::topology\l::refineCoveredbyTrueHitIntersect",height=0.2,width=0.4,color="black",URL="$namespacerefinement_1_1topology.html#afbacbdc86abf29312cdfa8c244968ca5",tooltip="Refines for the covered relation predicate, with the intersection being guaranteed."];
+  Node1 -> Node4 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node4 [label="refinement::topology\l::refineCoversCoveredByTrue\lHitIntersect",height=0.2,width=0.4,color="black",URL="$namespacerefinement_1_1topology.html#a3e5007018514e095e047ee36e6c90e5c",tooltip="Refines for the covers and covered by relation predicates, with the intersection being guaranteed."];
+  Node1 -> Node5 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node5 [label="refinement::topology\l::refineCoversTrueHitIntersect",height=0.2,width=0.4,color="black",URL="$namespacerefinement_1_1topology.html#a7447c70dc90eb8f3d97de3645a1ea76e",tooltip="Refines for the covers relation predicate, with the intersection being guaranteed."];
+  Node1 -> Node6 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node6 [label="refinement::topology\l::refineDisjointContainsCovers\lMeetIntersect",height=0.2,width=0.4,color="black",URL="$namespacerefinement_1_1topology.html#aec20a5185db33b1779abf1b0d7b34927",tooltip="Refines for the disjoint, contains, covers, meet and intersect relation predicates."];
+  Node6 -> Node7 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node7 [label="refinement::topology\l::specializedRefinementEntrypoint",height=0.2,width=0.4,color="black",URL="$namespacerefinement_1_1topology.html#a84259591d1fe3bf816c78e179bfc7f6b",tooltip="Entrypoint function for topological relationship refinement, for when there is NO intermediate filter..."];
+  Node1 -> Node8 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node8 [label="refinement::topology\l::refineDisjointInsideCoveredby\lMeetIntersect",height=0.2,width=0.4,color="black",URL="$namespacerefinement_1_1topology.html#acbdd7cbf94855d2c82504a4b8b166af2",tooltip="Refines for the disjoint, inside, covered by, meet and intersect relation predicates."];
+  Node8 -> Node7 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node1 -> Node9 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node9 [label="refinement::topology\l::refineDisjointMeetIntersect",height=0.2,width=0.4,color="black",URL="$namespacerefinement_1_1topology.html#add8085cd6429c5f10bf831b05911db86",tooltip="Refines for the disjoint, meet and intersect relation predicates (no containment)."];
+  Node9 -> Node7 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node1 -> Node10 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node10 [label="refinement::topology\l::refineEqualCoversCoveredBy\lTrueHitIntersect",height=0.2,width=0.4,color="black",URL="$namespacerefinement_1_1topology.html#a3fd63d20c3438256591e901526ab8b5d",tooltip="Refines for the equals, covers and covered by relation predicates, with the intersection being guaran..."];
+  Node1 -> Node11 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node11 [label="refinement::topology\l::refineInsideCoveredbyTruehit\lIntersect",height=0.2,width=0.4,color="black",URL="$namespacerefinement_1_1topology.html#a54dd50193b0c8294882174fae9f313cf",tooltip="Refines for the inside and covered by relation predicates, with the intersection being guaranteed."];
+}

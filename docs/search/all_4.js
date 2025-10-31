@@ -1,0 +1,7 @@
+var searchData=
+[
+  ['equaljoinapril_76',['equalJoinAPRIL',['../namespaceAPRIL_1_1uncompressed_1_1standard.html#a9550160ac90910c539d57177119c50e0',1,'APRIL::uncompressed::standard']]],
+  ['equals_77',['equals',['../structGeometryWrapper_3_01bg__box_01_4.html#ad179e443c6554312efd1e1c268e665bc',1,'GeometryWrapper&lt; bg_box &gt;::equals()'],['../structShape.html#a2fbb9b9a688078ae99af4c289626df60',1,'Shape::equals()']]],
+  ['evaluate_78',['evaluate',['../namespaceuniform__grid_1_1range__filter.html#ac5e6c4136ada9112dd3fa38fb9edc547',1,'uniform_grid::range_filter']]],
+  ['evaluatequery_79',['evaluateQuery',['../classBaseIndex.html#a55927945bab99e4d7b184a957aba1855',1,'BaseIndex::evaluateQuery(hec::Query *query, std::unique_ptr&lt; hec::QResultBase &gt; &amp;queryResult)=0'],['../classBaseIndex.html#a485d796f0eccfcd3bb7ebb542744c459',1,'BaseIndex::evaluateQuery(hec::Query *query, std::unordered_map&lt; int, DJBatch &gt; &amp;borderObjectsMap, std::unique_ptr&lt; hec::QResultBase &gt; &amp;queryResult)'],['../structTwoLayerIndex.html#a015041653e0d84aa446d0b4a5a01c1de',1,'TwoLayerIndex::evaluateQuery()'],['../structUniformGridIndex.html#ab21c99fa3dc60cc147e86c8748377ea6',1,'UniformGridIndex::evaluateQuery(hec::Query *query, std::unique_ptr&lt; hec::QResultBase &gt; &amp;queryResult) override'],['../structUniformGridIndex.html#acf52b81bb443490e97f479d05560f2d7',1,'UniformGridIndex::evaluateQuery(hec::Query *query, std::unordered_map&lt; int, DJBatch &gt; &amp;borderObjectsMap, std::unique_ptr&lt; hec::QResultBase &gt; &amp;queryResult) override']]]
+];

@@ -8,3 +8,6 @@ node_modules/
 profil*
 spawn-1/
 snapshot*
+start-dev.sh
+stop.sh
+start-prod.sh

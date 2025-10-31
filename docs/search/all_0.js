@@ -1,0 +1,26 @@
+var searchData=
+[
+  ['action_0',['Action',['../structAction.html',1,'']]],
+  ['actionsstatement_1',['ActionsStatement',['../structActionsStatement.html',1,'']]],
+  ['adddataset_2',['addDataset',['../structDatasetOptions.html#a80728f887967e76e6a3ea8072883d299',1,'DatasetOptions::addDataset(Dataset &amp;&amp;dataset, int &amp;id)'],['../structDatasetOptions.html#a2ac1d3dab18ea9aca3e3f04aaf7fc96a',1,'DatasetOptions::addDataset(DatasetIndex datasetIdx, Dataset &amp;&amp;dataset)']]],
+  ['addintervalstoaprildata_3',['addIntervalsToAprilData',['../structDataset.html#adef87716ae0d83df28441c40e303935c',1,'Dataset']]],
+  ['addobject_4',['addObject',['../structPartitionUniformGrid.html#a9ba6659cf1f4d0d2f0d590a25006cba2',1,'PartitionUniformGrid::addObject()'],['../structPartitionTwoLayer.html#a3274bf4c4688da3e00fe95b43d6178d8',1,'PartitionTwoLayer::addObject()'],['../structPartitionBase.html#aabc92c98461dddd029784e95b7de2aaa',1,'PartitionBase::addObject()']]],
+  ['addobjectr_5',['addObjectR',['../structDJBatch.html#a58a95fe4b06af5f0b65a931907d36171',1,'DJBatch']]],
+  ['addobjecttosectionmap_6',['addObjectToSectionMap',['../structDataset.html#aad72c5baa46b4858c89e315061632f0f',1,'Dataset']]],
+  ['addpoint_7',['addPoint',['../structShape.html#aa890f29b52525ba1fcddcc48834114df',1,'Shape::addPoint()'],['../structGeometryWrapper_3_01bg__point__xy_01_4.html#a9493feed74216b33a5d05b94ea603016',1,'GeometryWrapper&lt; bg_point_xy &gt;::addPoint()']]],
+  ['appendbatchtopartitionfile_8',['appendBatchToPartitionFile',['../namespacestorage_1_1writer_1_1partitionFile.html#a39cbfdf7879d145d8ccf12d81a9900a7',1,'storage::writer::partitionFile']]],
+  ['appenddatasetmetadatatopartitionfile_9',['appendDatasetMetadataToPartitionFile',['../namespacestorage_1_1writer_1_1partitionFile.html#a4b6b13b4f072fe0a257ff2ab06090551',1,'storage::writer::partitionFile']]],
+  ['approximationmetadata_10',['ApproximationMetadata',['../structApproximationMetadata.html',1,'']]],
+  ['april_11',['APRIL',['../namespaceAPRIL.html',1,'']]],
+  ['aprilconfig_12',['AprilConfig',['../structAprilConfig.html',1,'']]],
+  ['aprildata_13',['AprilData',['../structAprilData.html',1,'']]],
+  ['aprildata_14',['aprilData',['../structShape.html#a3e2b572292920401b4845c0938b6ddde',1,'Shape']]],
+  ['disk_15',['disk',['../namespaceAPRIL_1_1generation_1_1disk.html',1,'APRIL::generation']]],
+  ['generation_16',['generation',['../namespaceAPRIL_1_1generation.html',1,'APRIL']]],
+  ['memory_17',['memory',['../namespaceAPRIL_1_1generation_1_1memory.html',1,'APRIL::generation']]],
+  ['reader_18',['reader',['../namespaceAPRIL_1_1reader.html',1,'APRIL']]],
+  ['standard_19',['standard',['../namespaceAPRIL_1_1standard.html',1,'APRIL::standard'],['../namespaceAPRIL_1_1uncompressed_1_1standard.html',1,'APRIL::uncompressed::standard']]],
+  ['topology_20',['topology',['../namespaceAPRIL_1_1topology.html',1,'APRIL::topology'],['../namespaceAPRIL_1_1uncompressed_1_1topology.html',1,'APRIL::uncompressed::topology']]],
+  ['uncompressed_21',['uncompressed',['../namespaceAPRIL_1_1uncompressed.html',1,'APRIL']]],
+  ['writer_22',['writer',['../namespaceAPRIL_1_1writer.html',1,'APRIL']]]
+];

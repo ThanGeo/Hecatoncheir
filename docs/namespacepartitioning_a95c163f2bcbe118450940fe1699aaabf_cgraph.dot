@@ -1,0 +1,15 @@
+digraph "partitioning::getPartitionsForMBR"
+{
+ // LATEX_PDF_SIZE
+  bgcolor="transparent";
+  edge [fontname="Helvetica",fontsize="10",labelfontname="Helvetica",labelfontsize="10"];
+  node [fontname="Helvetica",fontsize="10",shape=record];
+  rankdir="LR";
+  Node1 [label="partitioning::getPartitions\lForMBR",height=0.2,width=0.4,color="black", fillcolor="grey75", style="filled", fontcolor="black",tooltip="Calculates the intersecting partitions in the distribution grid for the given MBR."];
+  Node1 -> Node2 [color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node2 [label="PartitioningMethod\l::getDistributionPPD",height=0.2,width=0.4,color="black",URL="$structPartitioningMethod.html#a03f1ef0f2cdcc9ac6a5b30c170630dc7",tooltip="Abstract method. Returns the number of partitions per dimension in the data distribution grid."];
+  Node1 -> Node3 [color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node3 [label="PartitioningMethod\l::getPartitionID",height=0.2,width=0.4,color="black",URL="$structPartitioningMethod.html#a3120fb7f2adf325345336d48b421e33a",tooltip="Abstract method. Returns the partition ID in the distribution grid for the given indices,..."];
+  Node1 -> Node4 [color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node4 [label="logger::log_error",height=0.2,width=0.4,color="black",URL="$namespacelogger.html#a53f34feeb22a94db295af05b8b2aab5c",tooltip="Error logging function with template arguments. Separates input parameters with spaces...."];
+}

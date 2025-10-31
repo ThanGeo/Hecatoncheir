@@ -1,0 +1,16 @@
+digraph "Hecatoncheir" {
+  bgcolor=transparent;
+  compound=true
+  node [ fontsize="10", fontname="Helvetica"];
+  edge [ labelfontsize="10", labelfontname="Helvetica"];
+  subgraph clusterdir_4ed3ad63b30c253574b324ff5f42466b {
+    graph [ bgcolor="#eeeeff", pencolor="black", label="" URL="dir_4ed3ad63b30c253574b324ff5f42466b.html"];
+    dir_4ed3ad63b30c253574b324ff5f42466b [shape=plaintext label="Hecatoncheir"];
+  dir_9306b3e756a960b5d0adb268e02d24ac [shape=box label="API" fillcolor="white" style="filled" URL="dir_9306b3e756a960b5d0adb268e02d24ac.html"];
+  dir_5ba9491db216b99c75748e8ea468c4d7 [shape=box label="include" fillcolor="white" style="filled" color="red" URL="dir_5ba9491db216b99c75748e8ea468c4d7.html"];
+  dir_a8c530d555bc9e00098ec6f28a9865dc [shape=box label="src" fillcolor="white" style="filled" color="red" URL="dir_a8c530d555bc9e00098ec6f28a9865dc.html"];
+  dir_242f8fd166d87fe48fd10b12e50fc909 [shape=box label="test" fillcolor="white" style="filled" color="red" URL="dir_242f8fd166d87fe48fd10b12e50fc909.html"];
+  dir_04c745e8530315b05420261127c43ffc [shape=box label="UI" fillcolor="white" style="filled" color="red" URL="dir_04c745e8530315b05420261127c43ffc.html"];
+  }
+  dir_9306b3e756a960b5d0adb268e02d24ac->dir_5ba9491db216b99c75748e8ea468c4d7 [headlabel="1", labeldistance=1.5 headhref="dir_000001_000003.html"];
+}

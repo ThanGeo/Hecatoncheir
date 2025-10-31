@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.10)  # Match top-level version
+cmake_minimum_required(VERSION 3.22)  # Match top-level version
 project(Hecatoncheir VERSION 1.0.1)
 
 # Generate configuration header
