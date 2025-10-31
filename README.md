@@ -1,10 +1,10 @@
-<figure align="center">
-  <img src="logo_hec_basic.png" width="800" alt="Hecatoncheir Logo"/>
-  <figcaption style="font-family: 'Century Gothic', 'Apple Gothic', sans-serif; font-style: italic; margin-top: 0.4em; color: #555;">
+<p align="center">
+  <img src="logo_hec_basic.png" width="250" alt="Hecatoncheir Logo" style="max-width: 100%;">
+  <br>
+  <em style="font-family: 'Century Gothic', 'Apple Gothic', sans-serif; font-style: italic; color: #555;">
     Scaling Up and Out Spatial Data Management
-  </figcaption>
-</figure>
-
+  </em>
+</p>
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT) [![Documentation](https://img.shields.io/badge/Documentation-blue)](https://thangeo.github.io/Hecatoncheir/)
 
@@ -68,14 +68,14 @@ The following components will be installed:
 
 - **Ant Design** 5.26.0
 - **React 19.1.0** and **React DOM 19.1.0** for the core React runtime
-- **React Scripts 5.0.1** for build and development tools (Webpack, Babel, etc.)
+- **React Scripts 5.0.1** for build and development tools
 - **TypeScript 4.9.5** for static typing
 - **Ant Design 5.25.4** for UI components
 - **Testing** Library for React component testing
 - **Web Vitals 2.1.4** for web performance metrics
 - Various **TypeScript** type definitions
-- **Express 5.1.0**, the main Node.js web framework for API routing and middleware
-- **CORS 2.8.5** for enabling cross-origin requests between frontend and backend
+- **Express 5.1.0**, the main Node.js web framework for API routing
+- **CORS 2.8.5** for enabling cross-origin requests 
 - **Multer 2.0.1** for handling file uploads
 - **Path-to-Regexp 6.2.1** for the route pattern matching utility
 - **Node.js** latest version
