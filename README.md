@@ -1,10 +1,12 @@
-<p align="center">
-  <img src="logo_hec_basic.png" width="250" alt="Hecatoncheir Logo" style="max-width: 100%;">
-  <br>
-  <em style="font-family: 'Century Gothic', 'Apple Gothic', sans-serif; font-style: italic; color: #555;">
-    Scaling Up and Out Spatial Data Management
-  </em>
-</p>
+<div style="background-color: white; padding: 20px; border-radius: 5px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);">
+  <p align="center">
+    <img src="logo_hec_basic.png" width="250" alt="Hecatoncheir Logo" style="max-width: 100%;">
+    <br>
+    <em style="font-family: 'Century Gothic', 'Apple Gothic', sans-serif; font-style: italic; color: #555;">
+      Scaling Up and Out Spatial Data Management
+    </em>
+  </p>
+</div>
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT) [![Documentation](https://img.shields.io/badge/Documentation-blue)](https://thangeo.github.io/Hecatoncheir/)
 
