@@ -123,7 +123,7 @@ void QueryTest::test4() {
     std::vector<hec::Query *> batch = hec::loadKNNQueriesFromFile(queriesPath, "WKT", datasetRID, k);
     int batchSize = batch.size();
     ASSERT_EQ(batchSize, 2);
-    std::unordered_map<int, hec::QResultBase *> results = hec::query(batch, hec::Q_KNN);
+    std::unordered_map<int, std::unique_ptr<hec::QResultBase>> results = hec::query(batch, hec::Q_KNN);
     // results
     int resultsSize = results.size();
     ASSERT_EQ(resultsSize, 2);
@@ -149,9 +149,7 @@ void QueryTest::test4() {
     ASSERT_EQ(ids[0], 53);
     ASSERT_EQ(ids[1], 58);
     // free memory
-    delete results[0];
     delete batch[0];
-    delete results[1];
     delete batch[1];
     // clear 
     batch.clear();
@@ -177,7 +175,7 @@ void QueryTest::test5() {
     std::vector<hec::Query *> batch = hec::loadRangeQueriesFromFile(queriesPath, "WKT", datasetRID, hec::QR_COUNT);
     int batchSize = batch.size();
     ASSERT_EQ(batchSize, 2);
-    std::unordered_map<int, hec::QResultBase *> results = hec::query(batch, hec::Q_RANGE);
+    std::unordered_map<int, std::unique_ptr<hec::QResultBase>> results = hec::query(batch, hec::Q_RANGE);
     // results
     // query 0
     ASSERT_NE(batch[0], nullptr);
@@ -188,9 +186,7 @@ void QueryTest::test5() {
     resultCount = results[1]->getResultCount();
     ASSERT_EQ(resultCount, 1);
     // free memory
-    delete results[0];
     delete batch[0];
-    delete results[1];
     delete batch[1];
     // clear 
     batch.clear();
@@ -216,7 +212,7 @@ void QueryTest::test6() {
     std::vector<hec::Query *> batch = hec::loadRangeQueriesFromFile(queriesPath, "WKT", datasetRID, hec::QR_COLLECT);
     int batchSize = batch.size();
     ASSERT_EQ(batchSize, 2);
-    std::unordered_map<int, hec::QResultBase *> results = hec::query(batch, hec::Q_RANGE);
+    std::unordered_map<int, std::unique_ptr<hec::QResultBase>> results = hec::query(batch, hec::Q_RANGE);
     // results
     // query 0
     ASSERT_NE(batch[0], nullptr);
@@ -227,9 +223,7 @@ void QueryTest::test6() {
     resultCount = results[1]->getResultCount();
     ASSERT_EQ(resultCount, 0);
     // free memory
-    delete results[0];
     delete batch[0];
-    delete results[1];
     delete batch[1];
     // clear 
     batch.clear();

@@ -61,6 +61,23 @@ DB_STATUS mergeBatchResultMaps(std::unordered_map<int, hec::QResultBase*> &dest,
     return ret;
 }
 
+DB_STATUS mergeBatchResultMaps(std::unordered_map<int, std::unique_ptr<hec::QResultBase>> &dest, std::unordered_map<int, std::unique_ptr<hec::QResultBase>> &src) {
+    DB_STATUS ret = DBERR_OK;
+    for (auto& [key, value] : src) {
+        auto it = dest.find(key);
+        if (it == dest.end()) {
+            // Transfer ownership from src to dest
+            dest[key] = std::move(value);
+        } else {
+            // Merge results - note: value is now a unique_ptr
+            dest[key]->mergeResults(value.get());
+        }
+    }
+    // Clear the source map since ownership has been transferred
+    src.clear();
+    return ret;
+}
+
 /* APRIL DATA */
 
 void AprilData::printALLintervals() {
@@ -187,7 +204,7 @@ DB_STATUS DatasetMetadata::deserialize(const char *buffer, int bufferSize) {
     int pathLength;
     int position = 0;
     double xMin, yMin, xMax, yMax;
-
+    
     // bool
     memcpy(&persist, buffer + position, sizeof(bool));
     position += sizeof(bool);
@@ -605,7 +622,6 @@ void DJBatch::addObjectS(Shape& obj) {
 
 int DJBatch::calculateBufferSize() {
     int size = 0;
-    size += sizeof(int);                                        // destination rank
 
     size += sizeof(DataType);                                     // datatypeR
     size += sizeof(size_t);                                     // objectsR count
@@ -642,10 +658,6 @@ DB_STATUS DJBatch::serialize(char **buffer, int &bufferSize) {
     }
     char* localBuffer = *buffer;
 
-    // add dest rank
-    *reinterpret_cast<int*>(localBuffer) = this->destRank;
-    localBuffer += sizeof(int);
-    
     // add datatype R
     *reinterpret_cast<DataType*>(localBuffer) = this->dataTypeR;
     localBuffer += sizeof(DataType);
@@ -745,10 +757,6 @@ DB_STATUS DJBatch::deserialize(const char *buffer, int bufferSize) {
     DB_STATUS ret = DBERR_OK;
     int vertexCount;
     const char *localBuffer = buffer;
-
-    // get destination rank
-    this->destRank = *reinterpret_cast<const int*>(localBuffer);
-    localBuffer += sizeof(int);
     
     // get datatype R
     this->dataTypeR = *reinterpret_cast<const DataType*>(localBuffer);
@@ -932,6 +940,11 @@ DB_STATUS TwoLayerIndex::getPartitionsForMBR(Shape* objectRef, std::vector<int> 
     // Ensure the MBR is within bounds of the fine grid
     if (fineMinX < 0 || fineMinY < 0 || fineMaxX >= partitioning->getGlobalPPD() || fineMaxY >= partitioning->getGlobalPPD()) {
         logger::log_error(DBERR_OUT_OF_BOUNDS, "Fine grid indices out of bounds:", fineMinX, fineMinY, fineMaxX, fineMaxY);
+        if (objectRef == nullptr) {
+            logger::log_error(DBERR_OUT_OF_BOUNDS, "Null Object reference:", objectRef);
+        } else {
+            logger::log_error(DBERR_OUT_OF_BOUNDS, "Object", objectRef->recID, "MBR:", objectRef->mbr.pMin.x, objectRef->mbr.pMin.y, objectRef->mbr.pMax.x, objectRef->mbr.pMax.y);
+        }
         return DBERR_OUT_OF_BOUNDS;
     }
     // Calculate the coarse grid cell bounds
@@ -968,7 +981,7 @@ DB_STATUS TwoLayerIndex::getPartitionsForMBR(Shape* objectRef, std::vector<int> 
             //     logger::log_task("coarse x,y:", coarseX, coarseY, "id:", distPartitionID, "belongs to node", assignedNodeRank, "/", g_world_size);
             // }
             // If this rank is responsible for the coarse grid cell
-            if (assignedNodeRank == g_parent_original_rank) {
+            if (assignedNodeRank == g_node_rank) {
                 // Calculate the bounds of this coarse grid cell in fine grid coordinates
                 int coarseFineMinX = coarseX * fineCellsPerCoarseCell;
                 int coarseFineMinY = coarseY * fineCellsPerCoarseCell;
@@ -1048,7 +1061,7 @@ DB_STATUS TwoLayerIndex::addObject(Shape *objectRef) {
     if (ret != DBERR_OK) {
         return ret;
     }
-
+    
     if (partitionIDs.size() != partitionClasses.size()) {
         logger::log_error(DBERR_INVALID_PARAMETER, "Partition IDs and classes should match in number.");
         return DBERR_INVALID_PARAMETER;
@@ -1134,7 +1147,7 @@ DB_STATUS UniformGridIndex::getPartitionsForMBR(Shape* objectRef, std::vector<in
             int distPartitionID = partitioning->getPartitionID(coarseX, coarseY, partitioning->getDistributionPPD());
             int assignedNodeRank = partitioning->getNodeRankForPartitionID(distPartitionID);
             // If this rank is responsible for the coarse grid cell
-            if (assignedNodeRank == g_parent_original_rank) {
+            if (assignedNodeRank == g_node_rank) {
                 // Calculate the bounds of this coarse grid cell in fine grid coordinates
                 int coarseFineMinX = coarseX * fineCellsPerCoarseCell;
                 int coarseFineMinY = coarseY * fineCellsPerCoarseCell;
@@ -1205,7 +1218,7 @@ DB_STATUS UniformGridIndex::evaluateQuery(hec::Query* query, std::unordered_map<
     return ret;
 }
 
-DB_STATUS UniformGridIndex::evaluateDJBatch(hec::Query* query, DJBatch& batch, std::unique_ptr<hec::QResultBase>& queryResult) {
+DB_STATUS UniformGridIndex::evaluateDJBatch(hec::Query* query, DJBatch& batch, const std::unique_ptr<hec::QResultBase>& queryResult) {
     DB_STATUS ret = DBERR_OK;
     // switch based on query type
     switch (query->getQueryType()) {
@@ -1330,10 +1343,12 @@ DB_STATUS DatasetOptions::addDataset(Dataset&& dataset, int &id) {
         R = std::move(dataset);
         R->metadata.internalID = DATASET_R;
         id = DATASET_R;
+        // logger::log_success("Set R dataset id to", R->metadata.internalID);
     } else if (!S.has_value()) {
         S = std::move(dataset);
         S->metadata.internalID = DATASET_S;
         id = DATASET_S;
+        // logger::log_success("Set S dataset id to", S->metadata.internalID);
     } else {
         logger::log_error(DBERR_INVALID_PARAMETER, "Both R and S datasets exist:", R->metadata.datasetName, S->metadata.datasetName);
         return DBERR_INVALID_PARAMETER;
@@ -1387,7 +1402,7 @@ void DatasetOptions::updateDatasetDataspaceToGlobal() {
 Batch::Batch(){}
 
 bool Batch::isValid() {
-    return !(destRank == -1 || tag == -1 || comm == nullptr);
+    return !(destRank == -1 || tag == -1);
 }
 
 void Batch::addObjectToBatch(Shape &object) {
@@ -1659,15 +1674,15 @@ namespace shape_factory
 
 namespace qresult_factory
 {
-    int createNew(int queryID, hec::QueryType queryType, hec::QueryResultType resultType, hec::QResultBase **object) {
+    int createNew(int queryID, hec::QueryType queryType, hec::QueryResultType resultType, std::unique_ptr<hec::QResultBase> &object) {
         switch (queryType) {
             case hec::Q_RANGE:
                 switch (resultType) {
                     case hec::QR_COLLECT:
-                        (*object) = new hec::QResultCollect(queryID, queryType, resultType);
+                        object = std::make_unique<hec::QResultCollect>(queryID, queryType, resultType);
                         break;
                     case hec::QR_COUNT:
-                        (*object) = new hec::QResultCount(queryID, queryType, resultType);
+                        object = std::make_unique<hec::QResultCount>(queryID, queryType, resultType);
                         break;
                     default:
                         logger::log_error(DBERR_QUERY_RESULT_INVALID_TYPE, "Invalid query result type for range query. QR type:", resultType);
@@ -1685,10 +1700,10 @@ namespace qresult_factory
             case hec::Q_DISTANCE_JOIN:
                 switch (resultType) {
                     case hec::QR_COLLECT:
-                        (*object) = new hec::QPairResultCollect(queryID, queryType, resultType);
+                        object = std::make_unique<hec::QPairResultCollect>(queryID, queryType, resultType);
                         break;
                     case hec::QR_COUNT:
-                        (*object) = new hec::QResultCount(queryID, queryType, resultType);
+                        object = std::make_unique<hec::QResultCount>(queryID, queryType, resultType);
                         break;
                     default:
                         logger::log_error(DBERR_QUERY_RESULT_INVALID_TYPE, "Invalid query result type for predicate join. QR type:", resultType);
@@ -1698,10 +1713,10 @@ namespace qresult_factory
             case hec::Q_FIND_RELATION_JOIN:
                 switch (resultType) {
                     case hec::QR_COLLECT:
-                        (*object) = new hec::QTopologyResultCollect(queryID, queryType, resultType);
+                        object = std::make_unique<hec::QTopologyResultCollect>(queryID, queryType, resultType);
                         break;
                     case hec::QR_COUNT:
-                        (*object) = new hec::QTopologyResultCount(queryID, queryType, resultType);
+                        object = std::make_unique<hec::QTopologyResultCount>(queryID, queryType, resultType);
                         break;
                     default:
                         logger::log_error(DBERR_QUERY_RESULT_INVALID_TYPE, "Invalid query result type for Find Relation join. QR type:", resultType);
@@ -1711,7 +1726,7 @@ namespace qresult_factory
             case hec::Q_KNN:
                 switch (resultType) {
                     case hec::QR_KNN:
-                        (*object) = new hec::QResultkNN(queryID, 1);    // dummy value for K, will replace later
+                        object = std::make_unique<hec::QResultkNN>(queryID, 1);// dummy value for K, will replace later
                         break;
                     default:
                         logger::log_error(DBERR_QUERY_RESULT_INVALID_TYPE, "Invalid query result type for KNN query. QR type:", resultType);
@@ -1726,7 +1741,7 @@ namespace qresult_factory
         return 0;
     }
     
-    int createNew(hec::Query* query, hec::QResultBase **object) {
+    int createNew(hec::Query* query, std::unique_ptr<hec::QResultBase> &object) {
         if (query == nullptr) {
             logger::log_error(DBERR_NULL_PTR_EXCEPTION, "Query null pointer at qresult_factory::createNew.");
             return DBERR_NULL_PTR_EXCEPTION;
@@ -1735,10 +1750,10 @@ namespace qresult_factory
             case hec::Q_RANGE:
                 switch (query->getResultType()) {
                     case hec::QR_COLLECT:
-                        (*object) = new hec::QResultCollect(query->getQueryID(), query->getQueryType(), query->getResultType());
+                        object = std::make_unique<hec::QResultCollect>(query->getQueryID(), query->getQueryType(), query->getResultType());
                         break;
                     case hec::QR_COUNT:
-                        (*object) = new hec::QResultCount(query->getQueryID(), query->getQueryType(), query->getResultType());
+                        object = std::make_unique<hec::QResultCount>(query->getQueryID(), query->getQueryType(), query->getResultType());
                         break;
                     default:
                         logger::log_error(DBERR_QUERY_RESULT_INVALID_TYPE, "Invalid query result type for range query. QR type:", query->getResultType());
@@ -1756,10 +1771,10 @@ namespace qresult_factory
             case hec::Q_DISTANCE_JOIN:
                 switch (query->getResultType()) {
                     case hec::QR_COLLECT:
-                        (*object) = new hec::QPairResultCollect(query->getQueryID(), query->getQueryType(), query->getResultType());
+                        object = std::make_unique<hec::QPairResultCollect>(query->getQueryID(), query->getQueryType(), query->getResultType());
                         break;
                     case hec::QR_COUNT:
-                        (*object) = new hec::QResultCount(query->getQueryID(), query->getQueryType(), query->getResultType());
+                        object = std::make_unique<hec::QResultCount>(query->getQueryID(), query->getQueryType(), query->getResultType());
                         break;
                     default:
                         logger::log_error(DBERR_QUERY_RESULT_INVALID_TYPE, "Invalid query result type for predicate join. QR type:", query->getResultType());
@@ -1769,10 +1784,10 @@ namespace qresult_factory
             case hec::Q_FIND_RELATION_JOIN:
                 switch (query->getResultType()) {
                     case hec::QR_COLLECT:
-                        (*object) = new hec::QTopologyResultCollect(query->getQueryID(), query->getQueryType(), query->getResultType());
+                        object = std::make_unique<hec::QTopologyResultCollect>(query->getQueryID(), query->getQueryType(), query->getResultType());
                         break;
                     case hec::QR_COUNT:
-                        (*object) = new hec::QTopologyResultCount(query->getQueryID(), query->getQueryType(), query->getResultType());
+                        object = std::make_unique<hec::QTopologyResultCount>(query->getQueryID(), query->getQueryType(), query->getResultType());
                         break;
                     default:
                         logger::log_error(DBERR_QUERY_RESULT_INVALID_TYPE, "Invalid query result type for Find Relation join. QR type:", query->getResultType());
@@ -1782,7 +1797,7 @@ namespace qresult_factory
             case hec::Q_KNN:
                 switch (query->getResultType()) {
                     case hec::QR_KNN:
-                        (*object) = new hec::QResultkNN(query->getQueryID(), query->getK());
+                        object = std::make_unique<hec::QResultkNN>(query->getQueryID(), query->getK());
                         break;
                     default:
                         logger::log_error(DBERR_QUERY_RESULT_INVALID_TYPE, "Invalid query result type for KNN query. QR type:", query->getResultType());

@@ -71,8 +71,6 @@ namespace comm
 
         /**
         @brief broadcasts a serialized/packed message with the given tag to all worker nodes.
-         * Sending the same message to the agent must be handled separately
-         * 
          * @tparam T 
          * @param msg 
          * @param tag 
@@ -86,22 +84,13 @@ namespace comm
             {
                 DB_STATUS local_ret = DBERR_OK;
                 #pragma omp for
-                for(int i=0; i<g_world_size; i++) {
-                    if (i != HOST_LOCAL_RANK) {
-                        // send to controller i
-                        local_ret = send::sendMessage(msg, i, tag, g_controller_comm);
-                        if (local_ret != DBERR_OK) {
-                            #pragma omp cancel for
-                            ret = local_ret;
-                        } 
-                    } else {
-                        // send to local agent
-                        ret = comm::send::sendMessage(msg, AGENT_RANK, tag, g_agent_comm);
-                        if (local_ret != DBERR_OK) {
-                            #pragma omp cancel for
-                            ret = local_ret;
-                        }
-                    }
+                for(int i=1; i<g_world_size; i++) {
+                    // send to worker i
+                    local_ret = send::sendMessage(msg, i, tag, g_worker_comm);
+                    if (local_ret != DBERR_OK) {
+                        #pragma omp cancel for
+                        ret = local_ret;
+                    } 
                 }
             }
             return ret;

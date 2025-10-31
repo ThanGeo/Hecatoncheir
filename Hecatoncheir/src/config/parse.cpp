@@ -164,7 +164,7 @@ namespace parser
      */
     static int adjustPartitions(int ppdNum) {
         int newPartitionsPerDimension = ppdNum;
-        int modCells = ppdNum % g_world_size;
+        int modCells = ppdNum % g_workers_size;
         
         if (modCells != 1) {
             newPartitionsPerDimension += modCells + 1;
@@ -192,7 +192,7 @@ namespace parser
         int ppdNum = system_config_pt.get<int>("Partitioning.ppdNum");
         if (partitioningType == PARTITIONING_ROUND_ROBIN) {
             // Round Robin partitioning
-            if (ppdNum < g_world_size) {
+            if (ppdNum < g_workers_size) {
                 logger::log_error(DBERR_INVALID_PARAMETER, "RR: Grid's ppd should be at least as many as the number of nodes. ppdNum: ", ppdNum);
                 return DBERR_INVALID_PARAMETER;
             }
@@ -201,11 +201,11 @@ namespace parser
         } else if (partitioningType == PARTITIONING_TWO_GRID) {
             // Two-Grid partitioning
             int dgppdNum = system_config_pt.get<int>("Partitioning.dgppdNum");
-            if (dgppdNum < g_world_size) {
+            if (dgppdNum < g_workers_size) {
                 logger::log_error(DBERR_INVALID_PARAMETER, "TWOGRID: Distribution grid's ppd should be at least as many as the number of nodes. ppdNum: ", ppdNum);
                 return DBERR_INVALID_PARAMETER;
             } 
-            // if (ppdNum / dgppdNum < g_world_size) {
+            // if (ppdNum / dgppdNum < g_workers_size) {
             //     logger::log_error(DBERR_INVALID_PARAMETER, "TWOGRID: Partitioning grid's ppd divided by the distribution grid's ppd should be at least as many as the number of nodes. ppdNum / dgppdNum =", ppdNum / dgppdNum);
             //     return DBERR_INVALID_PARAMETER;
             // }

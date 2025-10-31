@@ -1,7 +1,9 @@
 #include "containers.h"
 #include "proc.h"
 #include "config/setup.h"
-#include "env/comm.h"
+#include "env/comm_common.h"
+#include "env/comm_host.h"
+#include "env/comm_worker.h"
 #include "env/send.h"
 #include "env/pack.h"
 
@@ -26,11 +28,8 @@ static void terminate() {
         // int send_ret = comm::send::sendResponse(DRIVER_GLOBAL_RANK, MSG_NACK, g_global_intra_comm);
     }
 
-    // Wait for the children processes to finish
-    MPI_Barrier(g_agent_comm);
-
-    // Wait for all the controllers to finish
-    MPI_Barrier(g_controller_comm);
+    // Wait for all the workers to finish
+    MPI_Barrier(g_worker_comm);
 
     // syncrhonize with driver
     MPI_Barrier(g_global_intra_comm);
@@ -44,25 +43,18 @@ static void terminate() {
 }
 
 int main(int argc, char* argv[]) {
-    // initialize MPI environment parameters
-    DB_STATUS ret = configurer::initMPIController(argc, argv);
+    // initialize MPI environment
+    int mpi_ret;
+    DB_STATUS ret = configurer::initWorker(argc, argv);
     if (ret != DBERR_OK) {
-        terminate();
         return ret;
     }
+    
+    // logger::log_task("Runs on cpu", sched_getcpu());
+    // logger::log_task("My rank is", g_node_rank, "my world is:", g_world_size);
 
-    // all nodes create their agent process
-    ret = proc::setupProcesses();
-    if (ret != DBERR_OK) {
-        logger::log_error(ret, "Setup host process environment failed");
-        terminate();
-        return ret;
-    }
-
-    // syncrhonize with host controller
     MPI_Barrier(g_global_intra_comm);
 
-    // logger::log_task("My global rank is", g_global_rank, "and my local rank is", g_node_rank);
     
     if (g_node_rank == HOST_LOCAL_RANK) {
         // host controller has to handle setup/user input etc.
@@ -72,26 +64,26 @@ int main(int argc, char* argv[]) {
             terminate();
             return ret;
         }
-        // listen for messages from the driver
+        // then listen from driver
         ret = comm::host::listen();
         if (ret != DBERR_OK) {
-            logger::log_error(ret, "Interrupted");
             terminate();
             return ret;
         }
     } else {
-        // listen for messages from the host controller
-        ret = comm::controller::listen();
+        // workers listen for messages from the host
+        ret = comm::worker::listen();
         if (ret != DBERR_OK) {
-            logger::log_error(ret, "Interrupted");
             terminate();
             return ret;
         }
     }
+
     
+
+    // return
     terminate();
-    // return success
+    // logger::log_success("System finalized successfully");
+
     return 0;
 }
-
-

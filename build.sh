@@ -16,19 +16,30 @@ else
     echo -e "${YELLOW}Ninja not found - falling back to Make${NC}"
 fi
 
-# Default compiler paths (can be overridden via arguments or environment variables)
+# Default compiler paths (plain MPI)
 DEFAULT_C_COMPILER="mpicc.mpich"
 DEFAULT_CXX_COMPILER="mpicxx.mpich"
 
-# Parse arguments for custom compilers
+# Flags
+USE_TAU=0
+
+# Parse arguments for custom compilers or TAU
 while [[ "$#" -gt 0 ]]; do
     case $1 in
         --c-compiler) C_COMPILER="$2"; shift ;;
         --cxx-compiler) CXX_COMPILER="$2"; shift ;;
+        --use-tau) USE_TAU=1 ;;
         *) echo -e "${RED}Unknown parameter passed: $1${NC}"; exit 1 ;;
     esac
     shift
 done
+
+# If --use-tau is passed, override compilers with TAU wrappers
+if [[ $USE_TAU -eq 1 ]]; then
+    echo -e "${YELLOW}-- TAU instrumentation enabled${NC}"
+    DEFAULT_C_COMPILER="tau_cc.sh"
+    DEFAULT_CXX_COMPILER="tau_cxx.sh"
+fi
 
 # Use environment variables if set, otherwise fall back to defaults
 C_COMPILER=${C_COMPILER:-${DEFAULT_C_COMPILER}}

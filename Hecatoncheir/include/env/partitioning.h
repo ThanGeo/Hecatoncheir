@@ -7,7 +7,7 @@
 namespace partitioning
 {
     /** @brief Initializes a batch map of objects to be sent. */
-    DB_STATUS initializeBatchMap(std::unordered_map<int,Batch> &batchMap, DataType dataType);
+    DB_STATUS initializeBatchMap(std::unordered_map<int,Batch> &batchMap, DataType dataType, DatasetIndex datasetID);
 
     /**
     @brief Calculates the intersecting partitions in the distribution grid for the given MBR.

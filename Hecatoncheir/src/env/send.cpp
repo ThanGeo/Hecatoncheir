@@ -71,22 +71,13 @@ namespace comm
             {
                 DB_STATUS local_ret = DBERR_OK;
                 #pragma omp for
-                for(int i=0; i<g_world_size; i++) {
-                    if (i != HOST_LOCAL_RANK) {
-                        // send to workers
-                        local_ret = send::sendInstructionMessage(i, tag,g_controller_comm);
-                        if (local_ret != DBERR_OK) {
-                            #pragma omp cancel for
-                            ret = local_ret;
-                        } 
-                    } else {
-                        // send to local agent
-                        local_ret = send::sendInstructionMessage(AGENT_RANK, tag, g_agent_comm);
-                        if (local_ret != DBERR_OK) {
-                            #pragma omp cancel for
-                            ret = local_ret;
-                        }
-                    }
+                for(int i=1; i<g_world_size; i++) {
+                    // send to workers
+                    local_ret = send::sendInstructionMessage(i, tag, g_worker_comm);
+                    if (local_ret != DBERR_OK) {
+                        #pragma omp cancel for
+                        ret = local_ret;
+                    } 
                 }
             }
             return ret;

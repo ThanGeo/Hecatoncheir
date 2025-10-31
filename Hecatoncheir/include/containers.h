@@ -1568,8 +1568,8 @@ namespace shape_factory
 
 namespace qresult_factory
 {
-    int createNew(int queryID, hec::QueryType queryType, hec::QueryResultType resultType, hec::QResultBase **object);
-    int createNew(hec::Query* query, hec::QResultBase **object);
+    int createNew(int queryID, hec::QueryType queryType, hec::QueryResultType resultType, std::unique_ptr<hec::QResultBase> &object);
+    int createNew(hec::Query* query, std::unique_ptr<hec::QResultBase> &object);
 }
 
 /** @brief Holds information about sections, i.e. APRIL partitions.
@@ -1690,6 +1690,7 @@ public:
     DataType dataType;
     hec::FileType fileType;
     std::string path;
+    std::string partition_path;
     // derived from the path
     std::string datasetName;
     // holds the dataset's dataspace metadata (MBR, extent)
@@ -1709,10 +1710,10 @@ public:
  * @warning Hardcoded, tread carefully when altering them.
  */
 struct DirectoryPaths {
-    std::string resourceDirPath = "Hecatoncheir/resources/"; 
+    std::string resourceDirPath = std::string(HECATONCHEIR_DIR) + std::string("/resources/"); 
     std::string configFilePath = resourceDirPath + std::string("config_cluster.ini");
     const std::string datasetsConfigPath = resourceDirPath + std::string("datasets.ini");
-    std::string dataPath = PROJECT_SOURCE_DIR + std::string("/data/");
+    std::string dataPath = std::string(PROJECT_SOURCE_DIR) + std::string("/data/");
     std::string partitionsPath = dataPath + std::string("partitions/");
     std::string approximationPath = dataPath + std::string("approximations/");
 };
@@ -1756,7 +1757,7 @@ struct PartitioningMethod {
     /** @brief Returns the node's rank that's responsible for this partition. 
      * @warning Should only be called by the host controller and the input partitionID should be of the outermost (distribution) grid. */
     int getNodeRankForPartitionID(int partitionID) {
-        return (partitionID % g_world_size);
+        return (partitionID % g_workers_size) + 1;
     }
 
     /** @brief Abstract method. Returns the number of partitions per dimension in the data distribution grid. */
@@ -1920,6 +1921,7 @@ struct SystemOptions {
  */
 struct Batch {
     DataType dataType;  /** @todo data type for  batch is obsolete. carefully refactor. */
+    DatasetIndex datasetID;
     // serializable
     size_t objectCount = 0;
     std::vector<Shape> objects;
@@ -1930,7 +1932,8 @@ struct Batch {
     int tag = -1;        // MPI tag = indicates spatial data type
 
     Batch();
-    Batch(int destRank, int tag, MPI_Comm* comm) {
+    Batch(DatasetIndex datasetID, int destRank, int tag, MPI_Comm* comm) {
+        this->datasetID = datasetID;
         this->destRank = destRank;
         this->tag = tag;
         this->comm = comm;
@@ -1962,16 +1965,12 @@ struct Batch {
 
 /** @brief a batch of objects that is exchanged during Distance Joins */
 struct DJBatch {
-    int destRank = -1;
-    // std::vector<Shape> objectsR; 
     std::unordered_map<size_t, Shape> objectsR;
     DataType dataTypeR = DT_INVALID;
     std::unordered_map<size_t, Shape> objectsS;
-    // std::vector<Shape> objectsS;
     DataType dataTypeS = DT_INVALID;
     
     DJBatch(){
-        destRank = -1;
         objectsR.clear();
         objectsS.clear();
         dataTypeR = DT_INVALID;
@@ -1979,7 +1978,6 @@ struct DJBatch {
     }
 
     DJBatch(int destRank, DataType dataTypeR, DataType dataTypeS){
-        destRank = this->destRank;
         objectsR.clear();
         objectsS.clear();
         dataTypeR = this->dataTypeR;
@@ -2038,7 +2036,7 @@ public:
         return DBERR_FORBIDDEN_METHOD_CALL;
     }
 
-    virtual DB_STATUS evaluateDJBatch(hec::Query* query, DJBatch& batch, std::unique_ptr<hec::QResultBase>& queryResult) {
+    virtual DB_STATUS evaluateDJBatch(hec::Query* query, DJBatch& batch, const std::unique_ptr<hec::QResultBase>& queryResult) {
         logger::log_error(DBERR_FORBIDDEN_METHOD_CALL, "Invalid evaluateDJBatch call for index type.");
         return DBERR_FORBIDDEN_METHOD_CALL;
     }
@@ -2105,7 +2103,7 @@ private:
 
     DB_STATUS evaluateQuery(hec::Query* query, std::unordered_map<int, DJBatch> &borderObjectsMap, std::unique_ptr<hec::QResultBase>& queryResult) override;
 
-    DB_STATUS evaluateDJBatch(hec::Query* query, DJBatch& batch, std::unique_ptr<hec::QResultBase>& queryResult) override;
+    DB_STATUS evaluateDJBatch(hec::Query* query, DJBatch& batch, const std::unique_ptr<hec::QResultBase>& queryResult) override;
 };
 
 /**
@@ -2247,6 +2245,7 @@ DB_STATUS mergeResultObjects(hec::QResultBase *out, hec::QResultBase *in);
 /** @brief Merges two batch query result maps into a single one.
  */
 DB_STATUS mergeBatchResultMaps(std::unordered_map<int, hec::QResultBase*> &dest, std::unordered_map<int, hec::QResultBase*> &src);
+DB_STATUS mergeBatchResultMaps(std::unordered_map<int, std::unique_ptr<hec::QResultBase>> &dest, std::unordered_map<int, std::unique_ptr<hec::QResultBase>> &src);
 
 // Declare the parallel reduction function for merging query results into a single query result object
 // #pragma omp declare reduction(query_output_reduction: hec::QResultBase*: mergeResultObjects(omp_out, omp_in)) initializer(omp_priv = omp_orig->cloneEmpty())

@@ -32,7 +32,7 @@ namespace uniform_grid
         DB_STATUS evaluate(hec::DistanceJoinQuery *distanceJoinQuery, std::unordered_map<int, DJBatch>& borderObjectsMap, std::unique_ptr<hec::QResultBase>& queryResult);
 
         /** @brief Evaluates the DISTANCE JOIN query on the objects of the batch against the already stored/indexed objects. */
-        DB_STATUS evaluateDJBatch(hec::DistanceJoinQuery *distanceJoinQuery, DJBatch& batch, std::unique_ptr<hec::QResultBase>& queryResult);
+        DB_STATUS evaluateDJBatch(hec::DistanceJoinQuery *distanceJoinQuery, DJBatch& batch, const std::unique_ptr<hec::QResultBase>& queryResult);
     }
 }
 

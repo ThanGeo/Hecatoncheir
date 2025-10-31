@@ -23,11 +23,8 @@ typedef boost::geometry::model::polygon<bg_point_xy> bg_polygon;
 #define DRIVER_GLOBAL_RANK 0
 #define HOST_GLOBAL_RANK 1
 #define HOST_LOCAL_RANK 0
-#define AGENT_RANK 0
-#define PARENT_RANK 0
 
-extern std::string AGENT_EXECUTABLE_PATH;
-extern std::string CONTROLLER_EXECUTABLE_PATH;
+extern std::string WORKER_EXECUTABLE_PATH;
 
 #define RED "\e[0;31m"
 #define GREEN "\e[0;32m"
@@ -41,9 +38,9 @@ extern std::string CONTROLLER_EXECUTABLE_PATH;
 #define EPS 1e-08
 
 extern int g_world_size;
+extern int g_workers_size;
 extern int g_node_rank;
 extern int g_global_rank;
-extern int g_parent_original_rank;
 
 extern int MAX_THREADS;
 
@@ -51,14 +48,14 @@ enum PROCESS_TYPE {
     PT_DRIVER,
     PT_CONTROLLER,
     PT_AGENT,
+    PT_WORKER,
 };
 
 extern PROCESS_TYPE g_proc_type;
 
 extern MPI_Comm g_global_inter_comm;
 extern MPI_Comm g_global_intra_comm;
-extern MPI_Comm g_controller_comm;
-extern MPI_Comm g_agent_comm;
+extern MPI_Comm g_worker_comm;
 
 #define DBBASE 100000
 

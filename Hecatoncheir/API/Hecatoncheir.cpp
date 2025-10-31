@@ -51,7 +51,7 @@ static DB_STATUS receiveResult(int sourceRank, int sourceTag, MPI_Comm &comm, MP
     return ret;
 }
 
-static DB_STATUS receiveResultBatch(int sourceRank, int sourceTag, MPI_Comm &comm, MPI_Status &status, std::unordered_map<int,hec::QResultBase*> &finalResults) {
+static DB_STATUS receiveResultBatch(int sourceRank, int sourceTag, MPI_Comm &comm, MPI_Status &status, std::unordered_map<int, std::unique_ptr<hec::QResultBase>> &finalResults) {
     SerializedMsg<char> msg(MPI_CHAR);
     // receive message
     DB_STATUS ret = comm::recv::receiveMessage(status, msg.type, g_global_intra_comm, msg);
@@ -119,7 +119,7 @@ static DB_STATUS waitForResult(hec::QResultBase* finalResults) {
     return ret;
 }
 
-static DB_STATUS waitForResult(std::unordered_map<int, hec::QResultBase*> &finalResults) {
+static DB_STATUS waitForResult(std::unordered_map<int, std::unique_ptr<hec::QResultBase>> &finalResults) {
     MPI_Status status;
     // wait for response by the host controller
     DB_STATUS ret = probeBlocking(1, MPI_ANY_TAG, g_global_intra_comm, status);
@@ -149,73 +149,69 @@ static DB_STATUS waitForResult(std::unordered_map<int, hec::QResultBase*> &final
     return ret;
 }
 
-static DB_STATUS spawnControllers(int num_procs, const std::vector<std::string> &hosts) {
+static DB_STATUS spawnWorkers(int num_procs, const std::vector<std::string> &hosts) {
     DB_STATUS ret = DBERR_OK;
     int rank, size;
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
     if (rank == 0) {
-        std::vector<char*> cmdsVec(num_procs, (char*) CONTROLLER_EXECUTABLE_PATH.c_str());
+        // spawning N+1 processes in total
+        int total_processes = num_procs + 1;
+        std::vector<char*> cmdsVec(total_processes, (char*) WORKER_EXECUTABLE_PATH.c_str());
         char** cmds = cmdsVec.data();
-        int* error_codes = (int*)malloc(num_procs * sizeof(int));
-        MPI_Info* info = (MPI_Info*)malloc(num_procs * sizeof(MPI_Info));
-        int* np = (int*)malloc(num_procs * sizeof(int));
+        int* error_codes = (int*)malloc(total_processes * sizeof(int));
+        MPI_Info* info = (MPI_Info*)malloc(total_processes * sizeof(MPI_Info));
+        int* np = (int*)malloc(total_processes * sizeof(int));
 
-        // set spawn info
-        for (int i=0; i<num_procs; i++) {
-            // num procs per spawn
-            np[i] = 1;
-            // Set the host for each process using MPI_Info_set
-            MPI_Info_create(&info[i]);
-            int mpi_set_result = MPI_Info_set(info[i], "host", hosts[i].c_str());
-            if (mpi_set_result != MPI_SUCCESS) {
-                logger::log_error(DBERR_MPI_INFO_FAILED, "Failed to set MPI_Info host for process " + std::to_string(i));
-                return DBERR_MPI_INFO_FAILED;
+        // set spawn info for first two processes (ranks 0 and 1) on first host
+        for (int i = 0; i < total_processes; i++) {
+            if (i < 2) {
+                np[i] = 1;
+                MPI_Info_create(&info[i]);
+                MPI_Info_set(info[i], "host", hosts[0].c_str());
+            } else {
+                np[i] = 1;
+                MPI_Info_create(&info[i]);
+                // use host i-1 since there are N+1 processes for N workers
+                MPI_Info_set(info[i], "host", hosts[i-1].c_str());
             }
-            // logger::log_task("Spawning at", hosts[i].c_str());
         }
 
-        // spawn the controllers
-        MPI_Comm_spawn_multiple(num_procs, cmds, NULL, np, info, 0, MPI_COMM_WORLD, &g_global_inter_comm, error_codes);
-        for (int i = 0; i < num_procs; ++i) {
+        // Spawn total_processes workers
+        MPI_Comm_spawn_multiple(total_processes, cmds, NULL, np, info, 0, MPI_COMM_WORLD, &g_global_inter_comm, error_codes);
+        
+        for (int i = 0; i < total_processes; ++i) {
             if (error_codes[i] != MPI_SUCCESS) {
-                logger::log_error(DBERR_MPI_INIT_FAILED, "Failed while spawning the controllers.");
+                logger::log_error(DBERR_MPI_INIT_FAILED, "Failed while spawning process " + std::to_string(i));
                 return DBERR_MPI_INIT_FAILED;
             }
         }
 
-        // Free the MPI_Info object after use
-        for (int i=0; i<num_procs; i++) {
+        // Cleanup
+        for (int i = 0; i < total_processes; i++) {
             MPI_Info_free(&info[i]);
         }
         free(info);
         free(np);
         free(error_codes);
 
-
-        // merge inter-comm to intra-comm
+        // Rest of your existing code remains the same...
         MPI_Intercomm_merge(g_global_inter_comm, 0, &g_global_intra_comm);
-        // spit intra-comm to groups
-        MPI_Comm_split(g_global_intra_comm, MPI_UNDEFINED, 0, &g_controller_comm);
-        // get driver rank
+        MPI_Comm_split(g_global_intra_comm, MPI_UNDEFINED, 0, &g_worker_comm);
         MPI_Comm_rank(g_global_intra_comm, &rank);
         MPI_Comm_size(g_global_intra_comm, &size);
         g_global_rank = rank;
         g_world_size = size;
-        // logger::log_success("Set my rank to", g_global_rank, "world size:", g_world_size);
+        g_workers_size = g_world_size-1;
 
-        // syncrhonize with host controller
         MPI_Barrier(g_global_intra_comm);
 
-        // wait for ACK
-        MPI_Status status;
         ret = waitForResponse();
         if (ret != DBERR_OK) {
             logger::log_error(ret, "System initialization failed.");
             return ret;
         }
 
-        // release inter-comm
         MPI_Comm_free(&g_global_inter_comm);
     }
 
@@ -293,8 +289,6 @@ namespace hec {
         return pids;
     }
 
-
-
     int init(int numProcs, std::vector<std::string> &hosts){
         DB_STATUS ret = DBERR_OK;
         // fix hosts
@@ -314,15 +308,14 @@ namespace hec {
         // set process type
         g_proc_type = PT_DRIVER;
 
-        // spawn the controllers in the hosts
-        ret = spawnControllers(numProcs, hosts);
+        // spawn the workers in the hosts
+        ret = spawnWorkers(numProcs, hosts);
         if (ret != DBERR_OK) {
             return -1;
         }
 
-        // get process IDs
         std::vector<std::string> all_pids;
-        for (const std::string& proc : {"build/Hecatoncheir/agent", "build/Hecatoncheir/controller", "build/driver/driver"}) {
+        for (const std::string& proc : {"build/Hecatoncheir/worker", "build/driver/driver"}) {
             std::vector<std::string> pids = getExactBinaryPIDs(proc);
             for (const auto& pid : pids) {
                 all_pids.push_back(pid);
@@ -362,7 +355,6 @@ namespace hec {
             logger::log_error(ret, "Metadata serialization failed.");
             return -1;
         }
-
         // send message to Host Controller to init the dataset's struct and get an ID for the dataset
         ret = comm::send::sendMessage(msg, HOST_CONTROLLER, MSG_PREPARE_DATASET, g_global_intra_comm);
         if (ret != DBERR_OK) {
@@ -404,6 +396,7 @@ namespace hec {
             logger::log_error(DBERR_INVALID_PARAMETER, "The unpacked id list does not contain a single id.");
             return DBERR_INVALID_PARAMETER;
         }
+
         return indexes[0];
     }
 
@@ -571,29 +564,31 @@ namespace hec {
     }
 
     int load(std::vector<DatasetID> datasetIndexes) {
-        SerializedMsg<char> msg(MPI_CHAR);
-        DB_STATUS ret = pack::packValues(msg, datasetIndexes);
-        if (ret != DBERR_OK) {
-            logger::log_error(ret, "Packing dataset indexes failed.");
-            return -1;
-        }
-        // send message to Host Controller to initiate the loading for the datasets indexes contained in the message
-        ret = comm::send::sendMessage(msg, HOST_CONTROLLER, MSG_LOAD_DATASET, g_global_intra_comm);
-        if (ret != DBERR_OK) {
-            logger::log_error(ret, "Sending dataset load message failed.");
-            return -1;
-        }
-        // free memory
-        msg.clear();
-        // wait for ACK
-        MPI_Status status;
-        ret = waitForResponse();
-        if (ret != DBERR_OK) {
-            logger::log_error(ret, "Loading finished with errors.");
-            return -1;
-        }        
-        logger::log_success("Loaded datasets.");
-        return 0;
+        // SerializedMsg<char> msg(MPI_CHAR);
+        // DB_STATUS ret = pack::packValues(msg, datasetIndexes);
+        // if (ret != DBERR_OK) {
+        //     logger::log_error(ret, "Packing dataset indexes failed.");
+        //     return -1;
+        // }
+        // // send message to Host Controller to initiate the loading for the datasets indexes contained in the message
+        // ret = comm::send::sendMessage(msg, HOST_CONTROLLER, MSG_LOAD_DATASET, g_global_intra_comm);
+        // if (ret != DBERR_OK) {
+        //     logger::log_error(ret, "Sending dataset load message failed.");
+        //     return -1;
+        // }
+        // // free memory
+        // msg.clear();
+        // // wait for ACK
+        // MPI_Status status;
+        // ret = waitForResponse();
+        // if (ret != DBERR_OK) {
+        //     logger::log_error(ret, "Loading finished with errors.");
+        //     return -1;
+        // }        
+        // logger::log_success("Loaded datasets.");
+        // return 0;
+        logger::log_error(DBERR_FEATURE_UNSUPPORTED, "Load dataset feature unsupported. Please use prepareDataset + partitionDataset + buildIndex");
+        return DBERR_FEATURE_UNSUPPORTED;
     }
 
     hec::QResultBase* query(Query* query) {
@@ -690,9 +685,9 @@ namespace hec {
         return qResPtr;
     }
 
-    std::unordered_map<int, hec::QResultBase*> query(std::vector<Query*> &queryBatch, hec::QueryType batchType) {
+    std::unordered_map<int, std::unique_ptr<hec::QResultBase>> query(std::vector<Query*> &queryBatch, hec::QueryType batchType) {
         DB_STATUS ret = DBERR_OK;
-        std::unordered_map<int, hec::QResultBase*> finalResults;
+        std::unordered_map<int, std::unique_ptr<hec::QResultBase>> finalResults;
 
         if (queryBatch.size() == 0) {
             logger::log_error(DBERR_INVALID_PARAMETER, "Query batch is empty.");

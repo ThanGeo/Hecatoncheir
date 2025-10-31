@@ -275,7 +275,7 @@ namespace storage
                     // csv dataset
                     ret = csv::calculateDatasetMetadata(dataset);
                     if (ret != DBERR_OK) {
-                        logger::log_error(DBERR_OPERATION_FAILED, "Calculating metadata failed for dataset", dataset->metadata.internalID);
+                        logger::log_error(DBERR_OPERATION_FAILED, "Calculating metadata failed csv for dataset", dataset->metadata.internalID);
                         return ret;
                     }
                     break;
@@ -283,10 +283,9 @@ namespace storage
                     // wkt dataset
                     ret = wkt::calculateDatasetMetadata(dataset);
                     if (ret != DBERR_OK) {
-                        logger::log_error(DBERR_OPERATION_FAILED, "Calculating metadata failed for dataset", dataset->metadata.internalID);
+                        logger::log_error(DBERR_OPERATION_FAILED, "Calculating metadata failed for wkt dataset", dataset->metadata.internalID);
                         return ret;
                     }
-                    // logger::log_task("Done!");
                     break;
                 default:
                     logger::log_error(DBERR_FEATURE_UNSUPPORTED, "Unsupported data file type:", dataset->metadata.fileType);

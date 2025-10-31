@@ -1,17 +1,10 @@
-# ignore BOOST deprecated headers
-add_definitions("-DBOOST_ALLOW_DEPRECATED_HEADERS")
-
-set(CMAKE_CXX_FLAGS "-fopenmp")
-set(CMAKE_CXX_FLAGS_DEBUG "-g -O1 -fsanitize=address,leak -fno-omit-frame-pointer -fno-common")
-set(CMAKE_CXX_FLAGS_RELEASE "-O3")
-
+# Driver executable
 add_executable(driver driver.cpp)
-# Include directories for the driver
+
+# Include directories
 target_include_directories(driver PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}/../Hecatoncheir/API  # Include the API directory
+    ${CMAKE_CURRENT_SOURCE_DIR}/../Hecatoncheir/API
 )
 
-find_package(MPI REQUIRED)
-if(MPI_FOUND)
-    target_link_libraries(driver Hecatoncheir ${MPI_CXX_LIBRARIES})
-endif()
+# Link dependencies - Hecatoncheir should already have MPI linked
+target_link_libraries(driver PRIVATE Hecatoncheir)
