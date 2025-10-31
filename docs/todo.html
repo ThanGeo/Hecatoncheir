@@ -70,22 +70,22 @@ $(function() {
 <div class="textblock"><dl class="reflist">
 <dt>Member <a class="el" href="structBatch.html#a3dc23ba4dbe9468310685503fdd59c24">Batch::datasetID</a>  </dt>
 <dd><a class="anchor" id="_todo000005"></a>data type for batch is obsolete. carefully refactor.  </dd>
-<dt>Member <a class="el" href="structhec_1_1QResultBase.html#a6c59fab0d92b31a68edb27bb0090910a">hec::QResultBase::serialize</a>  (char **buffer, int &amp;bufferSize)=0</dt>
-<dd><a class="anchor" id="_todo000001"></a>make return type int to return error codes (cannot do DB_STATUS in the API header)  </dd>
-<dt>Member <a class="el" href="namespacestorage.html#abfc00bc5211998fc65614e827fa42191">storage::generatePartitionFilePath</a>  (<a class="el" href="structDataset.html" title="All dataset related information.">Dataset</a> *dataset)</dt>
-<dd><a class="anchor" id="_todo000014"></a>add a better way to generate names (user defined nickname?)  </dd>
-<dt>Member <a class="el" href="namespacetwolayer.html#a19a7f56516a5423ba7d1e3a0edfc87e3">twolayer::processQuery</a>  (<a class="el" href="structhec_1_1Query.html" title="Base query class.">hec::Query</a> *query, std::unique_ptr&lt; hec::QResultBase &gt; &amp;queryResult)</dt>
-<dd><a class="anchor" id="_todo000007"></a>move into the index as a member method  </dd>
-<dt>Member <a class="el" href="namespaceuniform__grid_1_1range__filter.html#ac5e6c4136ada9112dd3fa38fb9edc547">uniform_grid::range_filter::evaluate</a>  (<a class="el" href="structhec_1_1RangeQuery.html">hec::RangeQuery</a> *rangeQuery, std::unique_ptr&lt; hec::QResultBase &gt; &amp;queryResult)</dt>
-<dd><a class="anchor" id="_todo000018"></a>: different evaluation for box or polygon  </dd>
 <dt>Namespace <a class="el" href="namespacecomm_1_1send.html">comm::send</a>  </dt>
 <dd><a class="anchor" id="_todo000006"></a>Merge some methods like sendResponse and sendInstruction message (or even more) into a single one for multi-use.  </dd>
 <dt>Member <a class="el" href="namespacehec.html#a7852b401675064560660826f41d1acb3">hec::init</a>  (int numProcs, std::vector&lt; std::string &gt; &amp;hosts)</dt>
 <dd><a class="anchor" id="_todo000002"></a>: make it context-encapsulated (see spark)  </dd>
 <dt>Member <a class="el" href="namespacehec.html#a83ac398da9cf4bd4260b5a2828fb2135">hec::load</a>  (std::vector&lt; DatasetID &gt; indexes)</dt>
 <dd><a class="anchor" id="_todo000003"></a>: make an Unload function as well.  </dd>
+<dt>Member <a class="el" href="structhec_1_1QResultBase.html#a6c59fab0d92b31a68edb27bb0090910a">hec::QResultBase::serialize</a>  (char **buffer, int &amp;bufferSize)=0</dt>
+<dd><a class="anchor" id="_todo000001"></a>make return type int to return error codes (cannot do DB_STATUS in the API header)  </dd>
 <dt>Member <a class="el" href="structShape.html#a3e76d5baef174d767258b780d0109cbb">Shape::setMBR</a>  ()</dt>
-<dd><a class="anchor" id="_todo000004"></a>: move this inside the setFromWKT() to avoid calling it manually after each setFromWKT() </dd>
+<dd><a class="anchor" id="_todo000004"></a>: move this inside the setFromWKT() to avoid calling it manually after each setFromWKT()  </dd>
+<dt>Member <a class="el" href="namespacestorage.html#abfc00bc5211998fc65614e827fa42191">storage::generatePartitionFilePath</a>  (<a class="el" href="structDataset.html" title="All dataset related information.">Dataset</a> *dataset)</dt>
+<dd><a class="anchor" id="_todo000014"></a>add a better way to generate names (user defined nickname?)  </dd>
+<dt>Member <a class="el" href="namespacetwolayer.html#a19a7f56516a5423ba7d1e3a0edfc87e3">twolayer::processQuery</a>  (<a class="el" href="structhec_1_1Query.html" title="Base query class.">hec::Query</a> *query, std::unique_ptr&lt; hec::QResultBase &gt; &amp;queryResult)</dt>
+<dd><a class="anchor" id="_todo000007"></a>move into the index as a member method  </dd>
+<dt>Member <a class="el" href="namespaceuniform__grid_1_1range__filter.html#ac5e6c4136ada9112dd3fa38fb9edc547">uniform_grid::range_filter::evaluate</a>  (<a class="el" href="structhec_1_1RangeQuery.html">hec::RangeQuery</a> *rangeQuery, std::unique_ptr&lt; hec::QResultBase &gt; &amp;queryResult)</dt>
+<dd><a class="anchor" id="_todo000018"></a>: different evaluation for box or polygon </dd>
 </dl>
 </div></div><!-- contents -->
 </div><!-- PageDoc -->
