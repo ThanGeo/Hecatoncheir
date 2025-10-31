@@ -1,0 +1,4 @@
+<map id="comm::recv::receiveResponse" name="comm::recv::receiveResponse">
+<area shape="rect" id="node1" title="Receives a response message." alt="" coords="5,5,223,32"/>
+<area shape="rect" id="node2" href="$namespacelogger.html#a53f34feeb22a94db295af05b8b2aab5c" title="Error logging function with template arguments. Separates input parameters with spaces...." alt="" coords="271,5,400,32"/>
+</map>

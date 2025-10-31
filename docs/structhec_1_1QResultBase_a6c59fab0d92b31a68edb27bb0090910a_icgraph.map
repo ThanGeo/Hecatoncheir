@@ -1,0 +1,15 @@
+<map id="hec::QResultBase::serialize" name="hec::QResultBase::serialize">
+<area shape="rect" id="node1" title=" " alt="" coords="729,183,928,209"/>
+<area shape="rect" id="node2" href="$namespacepack.html#a3e90fb79e4ed087205c3390888fb74cd" title="Packs a batch of queries into a serialized message." alt="" coords="513,81,681,108"/>
+<area shape="rect" id="node4" href="$namespacehec.html#a03d4576d9cbca196b6e525712d2a5ca7" title="Run a query described by the passed object." alt="" coords="552,208,643,235"/>
+<area shape="rect" id="node3" href="$namespacehec.html#a5f1355ba70b48b7fd5f5df35821d9f88" title="Run queries in batches." alt="" coords="314,5,405,32"/>
+<area shape="rect" id="node5" href="$structhec_1_1Query.html#aa3a10c138dac55c1f6da6d968c4e1eda" title="creates a Query instance of the appropriate derived type based on the given serialized buffer." alt="" coords="253,56,465,83"/>
+<area shape="rect" id="node7" href="$classQueryTest.html#a768797dd581d67d0d55abade399aa1e8" title="Spatial find relation count join between polygons." alt="" coords="295,107,423,133"/>
+<area shape="rect" id="node8" href="$classQueryTest.html#a94b6511d0ece11297b48f9aeeb3a5c9d" title="Spatial intersection collect join between polygons." alt="" coords="295,157,423,184"/>
+<area shape="rect" id="node9" href="$classQueryTest.html#a0d5116fe2abebe6169b9bee1fd81223a" title="Spatial equal join collect between polygons&#45;linestrings." alt="" coords="295,208,423,235"/>
+<area shape="rect" id="node10" href="$classQueryTest.html#a5b91d83aac169ec838bda1b72017ad66" title="Batch knn on points." alt="" coords="295,259,423,285"/>
+<area shape="rect" id="node11" href="$classQueryTest.html#a27ab28e9fc4da4341a416205e0bdf8ef" title="Batch range on points count." alt="" coords="295,309,423,336"/>
+<area shape="rect" id="node12" href="$classQueryTest.html#a4c79c0f0e369a6ec251d7ae577ceac0a" title="Batch range collect on polygons." alt="" coords="295,360,423,387"/>
+<area shape="rect" id="node13" href="$classQueryTest.html#a0f68fb76cb8ec8ed390c920cab0493c2" title="Distance join collect on points." alt="" coords="295,411,423,437"/>
+<area shape="rect" id="node6" href="$namespaceunpack.html#a1b47fa01177fd323f954ab95dc06d4ca" title="Unpacks a query batch message." alt="" coords="5,56,205,83"/>
+</map>

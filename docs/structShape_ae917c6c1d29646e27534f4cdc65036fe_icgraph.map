@@ -1,0 +1,6 @@
+<map id="Shape::coveredBy" name="Shape::coveredBy">
+<area shape="rect" id="node1" title="Returns true whether the geometry is covered by (inside&#45;border common points are allowed) the input g..." alt="" coords="480,46,619,73"/>
+<area shape="rect" id="node2" href="$namespacerefinement_1_1relate.html#ace238e193dd0c0d54eeda0c081202505" title="Geometrically refines two objects for &#39;R is covered by S&#39;." alt="" coords="269,39,432,80"/>
+<area shape="rect" id="node3" href="$namespaceAPRIL_1_1standard.html#af99c4d3ea62a7338703048d3b31b158c" title="Standard APRIL intermediate filter that filters two input objects. The join predicate is set in the g..." alt="" coords="5,5,221,47"/>
+<area shape="rect" id="node4" href="$namespacerefinement_1_1relate.html#a092ec15a5d78cf8615bfeb72972436d1" title="Entrypoint function for when there is NO intermediate filter." alt="" coords="29,71,197,112"/>
+</map>

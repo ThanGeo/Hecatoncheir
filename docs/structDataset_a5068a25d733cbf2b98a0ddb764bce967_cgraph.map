@@ -1,0 +1,4 @@
+<map id="Dataset::buildIndex" name="Dataset::buildIndex">
+<area shape="rect" id="node1" title="Indexes the dataset using the specified index type. Requires data to be already loaded within the dat..." alt="" coords="5,5,155,32"/>
+<area shape="rect" id="node2" href="$namespacelogger.html#a53f34feeb22a94db295af05b8b2aab5c" title="Error logging function with template arguments. Separates input parameters with spaces...." alt="" coords="203,5,332,32"/>
+</map>

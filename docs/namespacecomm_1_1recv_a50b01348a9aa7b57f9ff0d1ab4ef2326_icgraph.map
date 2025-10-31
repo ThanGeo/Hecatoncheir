@@ -1,0 +1,11 @@
+<map id="comm::recv::receiveMessage" name="comm::recv::receiveMessage">
+<area shape="rect" id="node1" title="Receives an already probed message. the msg MPI datatype parameter must already be set (constructor h..." alt="" coords="384,157,596,184"/>
+<area shape="rect" id="node2" href="$namespacehec.html#ada0d63637dbdd2a43312d12ca2b99aa3" title="Prepares a dataset object for handling. Must always be called before partitionDataset() and/or loadDa..." alt="" coords="181,157,336,184"/>
+<area shape="rect" id="node3" href="$classQueryTest.html#a768797dd581d67d0d55abade399aa1e8" title="Spatial find relation count join between polygons." alt="" coords="5,5,133,32"/>
+<area shape="rect" id="node4" href="$classQueryTest.html#a94b6511d0ece11297b48f9aeeb3a5c9d" title="Spatial intersection collect join between polygons." alt="" coords="5,56,133,83"/>
+<area shape="rect" id="node5" href="$classQueryTest.html#a0d5116fe2abebe6169b9bee1fd81223a" title="Spatial equal join collect between polygons&#45;linestrings." alt="" coords="5,107,133,133"/>
+<area shape="rect" id="node6" href="$classQueryTest.html#a5b91d83aac169ec838bda1b72017ad66" title="Batch knn on points." alt="" coords="5,157,133,184"/>
+<area shape="rect" id="node7" href="$classQueryTest.html#a27ab28e9fc4da4341a416205e0bdf8ef" title="Batch range on points count." alt="" coords="5,208,133,235"/>
+<area shape="rect" id="node8" href="$classQueryTest.html#a4c79c0f0e369a6ec251d7ae577ceac0a" title="Batch range collect on polygons." alt="" coords="5,259,133,285"/>
+<area shape="rect" id="node9" href="$classQueryTest.html#a0f68fb76cb8ec8ed390c920cab0493c2" title="Distance join collect on points." alt="" coords="5,309,133,336"/>
+</map>

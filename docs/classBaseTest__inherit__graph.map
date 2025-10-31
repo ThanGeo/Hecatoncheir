@@ -1,0 +1,5 @@
+<map id="BaseTest" name="BaseTest">
+<area shape="rect" id="node1" title=" " alt="" coords="64,5,180,141"/>
+<area shape="rect" id="node2" href="$classCoreTest.html" title=" " alt="" coords="5,219,108,384"/>
+<area shape="rect" id="node3" href="$classQueryTest.html" title=" " alt="" coords="133,189,245,413"/>
+</map>

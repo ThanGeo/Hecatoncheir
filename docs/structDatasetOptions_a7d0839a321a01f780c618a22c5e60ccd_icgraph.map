@@ -1,0 +1,5 @@
+<map id="DatasetOptions::clear" name="DatasetOptions::clear">
+<area shape="rect" id="node1" title=" " alt="" coords="281,31,444,57"/>
+<area shape="rect" id="node2" href="$structConfig.html#a2a0e3519e79eaab8352dd810b5af4b22" title="Resets configuration contents." alt="" coords="67,5,171,32"/>
+<area shape="rect" id="node3" href="$namespaceconfigurer.html#ac0d30631d9f4313516fe9aa3db83653e" title="Configures the specified dataset metadata from the input dataset statement." alt="" coords="5,56,233,83"/>
+</map>

@@ -1,0 +1,9 @@
+<map id="hec::prepareDataset" name="hec::prepareDataset">
+<area shape="rect" id="node1" title="Prepares a dataset object for handling, manually setting its bounding box." alt="" coords="5,116,160,143"/>
+<area shape="rect" id="node2" href="$namespacelogger.html#a53f34feeb22a94db295af05b8b2aab5c" title="Error logging function with template arguments. Separates input parameters with spaces...." alt="" coords="468,91,597,117"/>
+<area shape="rect" id="node3" href="$namespacecomm.html#a340ba9b73d4ba5010723650c0799028b" title="Probes for a message in a communicator (blocking)." alt="" coords="260,40,368,67"/>
+<area shape="rect" id="node4" href="$namespacecomm_1_1recv.html#a50b01348a9aa7b57f9ff0d1ab4ef2326" title="Receives an already probed message. the msg MPI datatype parameter must already be set (constructor h..." alt="" coords="208,91,420,117"/>
+<area shape="rect" id="node5" href="$namespacecomm_1_1send.html#a4f12a0d1d10e10111a2cea02c29c7b1b" title="Sends a message containing dataset metadata." alt="" coords="215,141,413,168"/>
+<area shape="rect" id="node6" href="$structDatasetMetadata.html#aebbbfc7593e867bb7d9ddda13b3bcc27" title="Serializes the dataset object." alt="" coords="215,192,413,219"/>
+<area shape="rect" id="node7" href="$namespaceunpack.html#a74ea1b9a40f323e33981e2a3075f0c0a" title="Unpacks a message containg type T values to the given vector of the same type." alt="" coords="231,243,397,269"/>
+</map>

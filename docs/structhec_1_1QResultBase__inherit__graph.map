@@ -1,0 +1,9 @@
+<map id="hec::QResultBase" name="hec::QResultBase">
+<area shape="rect" id="node1" title="Base Query Result struct." alt="" coords="469,5,696,317"/>
+<area shape="rect" id="node2" href="$structhec_1_1QPairResultCollect.html" title=" " alt="" coords="5,387,179,611"/>
+<area shape="rect" id="node3" href="$structhec_1_1QResultCollect.html" title=" " alt="" coords="203,380,375,619"/>
+<area shape="rect" id="node4" href="$structhec_1_1QResultCount.html" title=" " alt="" coords="399,387,571,611"/>
+<area shape="rect" id="node5" href="$structhec_1_1QResultkNN.html" title=" " alt="" coords="595,365,767,633"/>
+<area shape="rect" id="node6" href="$structhec_1_1QTopologyResultCollect.html" title=" " alt="" coords="791,373,998,626"/>
+<area shape="rect" id="node7" href="$structhec_1_1QTopologyResultCount.html" title=" " alt="" coords="1023,387,1223,611"/>
+</map>

@@ -1,0 +1,13 @@
+<map id="Shape::createMaskCode" name="Shape::createMaskCode">
+<area shape="rect" id="node1" title="Generates and returns the DE&#45;9IM mask of this geometry (as R) with the input geometry (as S)" alt="" coords="587,313,765,340"/>
+<area shape="rect" id="node2" href="$namespacerefinement_1_1topology.html#ad8c462df79c6496f979cf90b53f724b7" title="Refines for the contains and covers relation predicates, with the intersection being guaranteed." alt="" coords="312,5,525,61"/>
+<area shape="rect" id="node3" href="$namespacerefinement_1_1topology.html#afbacbdc86abf29312cdfa8c244968ca5" title="Refines for the covered relation predicate, with the intersection being guaranteed." alt="" coords="299,86,539,127"/>
+<area shape="rect" id="node4" href="$namespacerefinement_1_1topology.html#a3e5007018514e095e047ee36e6c90e5c" title="Refines for the covers and covered by relation predicates, with the intersection being guaranteed." alt="" coords="313,152,524,208"/>
+<area shape="rect" id="node5" href="$namespacerefinement_1_1topology.html#a7447c70dc90eb8f3d97de3645a1ea76e" title="Refines for the covers relation predicate, with the intersection being guaranteed." alt="" coords="311,233,526,274"/>
+<area shape="rect" id="node6" href="$namespacerefinement_1_1topology.html#aec20a5185db33b1779abf1b0d7b34927" title="Refines for the disjoint, contains, covers, meet and intersect relation predicates." alt="" coords="309,299,528,355"/>
+<area shape="rect" id="node8" href="$namespacerefinement_1_1topology.html#acbdd7cbf94855d2c82504a4b8b166af2" title="Refines for the disjoint, inside, covered by, meet and intersect relation predicates." alt="" coords="305,379,532,435"/>
+<area shape="rect" id="node9" href="$namespacerefinement_1_1topology.html#add8085cd6429c5f10bf831b05911db86" title="Refines for the disjoint, meet and intersect relation predicates (no containment)." alt="" coords="315,459,522,501"/>
+<area shape="rect" id="node10" href="$namespacerefinement_1_1topology.html#a3fd63d20c3438256591e901526ab8b5d" title="Refines for the equals, covers and covered by relation predicates, with the intersection being guaran..." alt="" coords="309,525,528,581"/>
+<area shape="rect" id="node11" href="$namespacerefinement_1_1topology.html#a54dd50193b0c8294882174fae9f313cf" title="Refines for the inside and covered by relation predicates, with the intersection being guaranteed." alt="" coords="309,605,529,661"/>
+<area shape="rect" id="node7" href="$namespacerefinement_1_1topology.html#a84259591d1fe3bf816c78e179bfc7f6b" title="Entrypoint function for topological relationship refinement, for when there is NO intermediate filter..." alt="" coords="5,386,251,427"/>
+</map>

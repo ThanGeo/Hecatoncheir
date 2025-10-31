@@ -1,0 +1,4 @@
+<map id="refinement::relate::refineRange" name="refinement::relate::refineRange">
+<area shape="rect" id="node1" title="Geometrically refines a window (polygon or box) with the given shape. Appends only the object&#39;s id as..." alt="" coords="221,5,360,47"/>
+<area shape="rect" id="node2" href="$namespacerefinement_1_1relate.html#a092ec15a5d78cf8615bfeb72972436d1" title="Entrypoint function for when there is NO intermediate filter." alt="" coords="5,5,173,47"/>
+</map>

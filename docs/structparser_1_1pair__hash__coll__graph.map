@@ -1,0 +1,3 @@
+<map id="parser::pair_hash" name="parser::pair_hash">
+<area shape="rect" id="node1" title="Custom hash function for std::pair&lt;QueryType, DataType&gt; objects." alt="" coords="5,5,140,83"/>
+</map>

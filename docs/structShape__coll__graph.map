@@ -1,0 +1,6 @@
+<map id="Shape" name="Shape">
+<area shape="rect" id="node1" title="A spatial object. Could be point, linestring, box or polygon, as specified by its &#39;dataType&#39; field." alt="" coords="63,359,221,597"/>
+<area shape="rect" id="node2" href="$structAprilData.html" title="Holds all the APRIL related metadata for a single object." alt="" coords="5,175,172,296"/>
+<area shape="rect" id="node3" href="$structMBR.html" title="Struct for Minimum Bounding Rectangles (MBR)." alt="" coords="197,197,274,274"/>
+<area shape="rect" id="node4" href="$structPoint.html" title="Struct for 2&#45;dimension points with double coordinates x and y (lon, lat)." alt="" coords="195,5,275,97"/>
+</map>

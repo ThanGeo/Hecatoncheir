@@ -1,0 +1,18 @@
+<map id="comm::send::sendMessage" name="comm::send::sendMessage">
+<area shape="rect" id="node1" title="Sends a message containing dataset metadata." alt="" coords="757,183,956,209"/>
+<area shape="rect" id="node2" href="$namespacehec.html#a667f9281ca7b9f4bddb29617c5c8eed3" title="Build index of indexType for the given datasets." alt="" coords="551,56,672,83"/>
+<area shape="rect" id="node10" href="$namespacehec.html#a5d57e7b4b63b7075d40c27362719ebfb" title="Partition dataset(s) across the system." alt="" coords="557,107,665,133"/>
+<area shape="rect" id="node11" href="$namespacehec.html#ada0d63637dbdd2a43312d12ca2b99aa3" title="Prepares a dataset object for handling. Must always be called before partitionDataset() and/or loadDa..." alt="" coords="534,157,689,184"/>
+<area shape="rect" id="node12" href="$namespacehec.html#a03d4576d9cbca196b6e525712d2a5ca7" title="Run a query described by the passed object." alt="" coords="566,259,657,285"/>
+<area shape="rect" id="node15" href="$namespacecomm_1_1controller.html#af0973ea7d9d0b74c64dffbd347d44fe3" title="Serializes a geometry batch and sends it to the appropriate ranks. All the information is stored in t..." alt="" coords="513,310,709,351"/>
+<area shape="rect" id="node16" href="$namespacehec.html#ae57670082120170419987ec1f9938079" title="Unloads the dataset with the given datasetID from Hecatoncheir. The datasetID will no longer be valid..." alt="" coords="537,208,685,235"/>
+<area shape="rect" id="node3" href="$classQueryTest.html#a768797dd581d67d0d55abade399aa1e8" title="Spatial find relation count join between polygons." alt="" coords="295,107,423,133"/>
+<area shape="rect" id="node4" href="$classQueryTest.html#a94b6511d0ece11297b48f9aeeb3a5c9d" title="Spatial intersection collect join between polygons." alt="" coords="295,157,423,184"/>
+<area shape="rect" id="node5" href="$classQueryTest.html#a0d5116fe2abebe6169b9bee1fd81223a" title="Spatial equal join collect between polygons&#45;linestrings." alt="" coords="295,208,423,235"/>
+<area shape="rect" id="node6" href="$classQueryTest.html#a5b91d83aac169ec838bda1b72017ad66" title="Batch knn on points." alt="" coords="295,259,423,285"/>
+<area shape="rect" id="node7" href="$classQueryTest.html#a27ab28e9fc4da4341a416205e0bdf8ef" title="Batch range on points count." alt="" coords="295,309,423,336"/>
+<area shape="rect" id="node8" href="$classQueryTest.html#a4c79c0f0e369a6ec251d7ae577ceac0a" title="Batch range collect on polygons." alt="" coords="295,5,423,32"/>
+<area shape="rect" id="node9" href="$classQueryTest.html#a0f68fb76cb8ec8ed390c920cab0493c2" title="Distance join collect on points." alt="" coords="295,56,423,83"/>
+<area shape="rect" id="node13" href="$structhec_1_1Query.html#aa3a10c138dac55c1f6da6d968c4e1eda" title="creates a Query instance of the appropriate derived type based on the given serialized buffer." alt="" coords="253,360,465,387"/>
+<area shape="rect" id="node14" href="$namespaceunpack.html#a1b47fa01177fd323f954ab95dc06d4ca" title="Unpacks a query batch message." alt="" coords="5,360,205,387"/>
+</map>

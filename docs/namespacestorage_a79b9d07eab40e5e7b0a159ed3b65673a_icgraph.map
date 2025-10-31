@@ -1,0 +1,4 @@
+<map id="storage::generateAPRILFilePath" name="storage::generateAPRILFilePath">
+<area shape="rect" id="node1" title="Generates the APRIL file path for the given dataset from the dataset&#39;s nickname." alt="" coords="199,13,424,39"/>
+<area shape="rect" id="node2" href="$namespaceAPRIL_1_1generation_1_1disk.html#a2588d072af4662dd891dec18008dd642" title="Generates the APRIL approximations for the given dataset." alt="" coords="5,5,151,47"/>
+</map>

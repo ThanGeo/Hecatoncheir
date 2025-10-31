@@ -1,0 +1,4 @@
+<map id="refinement::relate::refineRange" name="refinement::relate::refineRange">
+<area shape="rect" id="node1" title="Geometrically refines a window (polygon or box) with the given shape. Appends only the object&#39;s id as..." alt="" coords="5,5,144,47"/>
+<area shape="rect" id="node2" href="$structShape.html#a540f907bd548182b8b0ec4fcdd5e7b50" title="Returns true whether the input geometry intersects (border or area) with this geometry...." alt="" coords="192,13,327,39"/>
+</map>

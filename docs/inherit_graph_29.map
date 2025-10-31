@@ -1,0 +1,5 @@
+<map id="Graphical Class Hierarchy" name="Graphical Class Hierarchy">
+<area shape="rect" id="node1" href="$structPartitioningMethod.html" title="Base class for the partitioning methods (abstract class)." alt="" coords="5,31,151,57"/>
+<area shape="rect" id="node2" href="$structRoundRobinPartitioning.html" title="Simple round&#45;robin partitioning method. Uses a single grid for the distribution and the partitioning." alt="" coords="199,5,373,32"/>
+<area shape="rect" id="node3" href="$structTwoGridPartitioning.html" title="Two Grid partitioning method. Uses a distribution grid for data distribution and a partitioning grid ..." alt="" coords="212,56,360,83"/>
+</map>

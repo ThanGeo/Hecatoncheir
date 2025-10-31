@@ -1,0 +1,4 @@
+<map id="comm::probe" name="comm::probe">
+<area shape="rect" id="node1" title="Probes for a message in a communicator (blocking)." alt="" coords="5,5,113,32"/>
+<area shape="rect" id="node2" href="$namespacelogger.html#a53f34feeb22a94db295af05b8b2aab5c" title="Error logging function with template arguments. Separates input parameters with spaces...." alt="" coords="161,5,291,32"/>
+</map>

@@ -1,0 +1,6 @@
+<map id="Shape::inside" name="Shape::inside">
+<area shape="rect" id="node1" title="Returns true whether the geometry is completely inside (no inside&#45;border common points) the input geo..." alt="" coords="456,46,565,73"/>
+<area shape="rect" id="node2" href="$namespacerefinement_1_1relate.html#a22d26a184e94020bc7fe4198560f98a7" title="Geometrically refines two objects for &#39;R inside S&#39;." alt="" coords="269,39,408,80"/>
+<area shape="rect" id="node3" href="$namespaceAPRIL_1_1standard.html#af99c4d3ea62a7338703048d3b31b158c" title="Standard APRIL intermediate filter that filters two input objects. The join predicate is set in the g..." alt="" coords="5,5,221,47"/>
+<area shape="rect" id="node4" href="$namespacerefinement_1_1relate.html#a092ec15a5d78cf8615bfeb72972436d1" title="Entrypoint function for when there is NO intermediate filter." alt="" coords="29,71,197,112"/>
+</map>

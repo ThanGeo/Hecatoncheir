@@ -1,0 +1,5 @@
+<map id="BaseIndex" name="BaseIndex">
+<area shape="rect" id="node1" title="Abstract base class for all index structures." alt="" coords="107,5,287,259"/>
+<area shape="rect" id="node2" href="$structTwoLayerIndex.html" title="Holds all two&#45;layer related index information." alt="" coords="5,329,185,465"/>
+<area shape="rect" id="node3" href="$structUniformGridIndex.html" title="Holds all two&#45;layer related index information." alt="" coords="209,307,389,487"/>
+</map>

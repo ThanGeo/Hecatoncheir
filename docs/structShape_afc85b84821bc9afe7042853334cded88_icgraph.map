@@ -1,0 +1,6 @@
+<map id="Shape::disjoint" name="Shape::disjoint">
+<area shape="rect" id="node1" title="Returns true whether the input geometry is disjoint (no common points) with this geometry...." alt="" coords="459,46,577,73"/>
+<area shape="rect" id="node2" href="$namespacerefinement_1_1relate.html#a55a81d174754ed3ec99fa3a6f97f869f" title="Geometrically refines two objects for whether they are disjoint." alt="" coords="269,39,411,80"/>
+<area shape="rect" id="node3" href="$namespaceAPRIL_1_1standard.html#af99c4d3ea62a7338703048d3b31b158c" title="Standard APRIL intermediate filter that filters two input objects. The join predicate is set in the g..." alt="" coords="5,5,221,47"/>
+<area shape="rect" id="node4" href="$namespacerefinement_1_1relate.html#a092ec15a5d78cf8615bfeb72972436d1" title="Entrypoint function for when there is NO intermediate filter." alt="" coords="29,71,197,112"/>
+</map>

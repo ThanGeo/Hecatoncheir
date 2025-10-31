@@ -1,0 +1,5 @@
+<map id="Batch::deserialize" name="Batch::deserialize">
+<area shape="rect" id="node1" title="fills the struct with data from the input serialized buffer The caller must free the buffer memory" alt="" coords="5,5,144,32"/>
+<area shape="rect" id="node2" href="$namespaceshape__factory.html#a7d33da81d24f568bea0723f44beccf3b" title="creates an empty shape object of the specified data type." alt="" coords="192,5,396,32"/>
+<area shape="rect" id="node3" href="$namespacelogger.html#a53f34feeb22a94db295af05b8b2aab5c" title="Error logging function with template arguments. Separates input parameters with spaces...." alt="" coords="444,5,573,32"/>
+</map>

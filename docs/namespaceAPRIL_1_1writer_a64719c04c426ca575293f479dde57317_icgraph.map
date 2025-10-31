@@ -1,0 +1,4 @@
+<map id="APRIL::writer::saveAPRIL" name="APRIL::writer::saveAPRIL">
+<area shape="rect" id="node1" title="Saves the APRIL data of an object on disk, using the given file pointer." alt="" coords="235,5,416,32"/>
+<area shape="rect" id="node2" href="$namespaceAPRIL_1_1writer.html#ae61d4cc39af6822e5423f0b72759b746" title="Saves the APRIL data of all objects in a dataset on disk, using the given file pointer." alt="" coords="5,5,187,32"/>
+</map>

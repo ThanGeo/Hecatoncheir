@@ -1,0 +1,7 @@
+<map id="hec::Query" name="hec::Query">
+<area shape="rect" id="node1" title="Base query class." alt="" coords="302,5,474,259"/>
+<area shape="rect" id="node2" href="$structhec_1_1DistanceJoinQuery.html" title=" " alt="" coords="5,321,179,531"/>
+<area shape="rect" id="node3" href="$structhec_1_1KNNQuery.html" title=" " alt="" coords="203,307,375,545"/>
+<area shape="rect" id="node4" href="$structhec_1_1PredicateJoinQuery.html" title=" " alt="" coords="399,329,577,523"/>
+<area shape="rect" id="node5" href="$structhec_1_1RangeQuery.html" title=" " alt="" coords="601,321,773,531"/>
+</map>

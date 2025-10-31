@@ -1,0 +1,8 @@
+<map id="refinement::topology::specializedRefinementEntrypoint" name="refinement::topology::specializedRefinementEntrypoint">
+<area shape="rect" id="node1" title="Entrypoint function for topological relationship refinement, for when there is NO intermediate filter..." alt="" coords="5,103,251,145"/>
+<area shape="rect" id="node2" href="$namespacelogger.html#a53f34feeb22a94db295af05b8b2aab5c" title="Error logging function with template arguments. Separates input parameters with spaces...." alt="" coords="347,5,477,32"/>
+<area shape="rect" id="node3" href="$namespacerefinement_1_1topology.html#aec20a5185db33b1779abf1b0d7b34927" title="Refines for the disjoint, contains, covers, meet and intersect relation predicates." alt="" coords="303,56,521,112"/>
+<area shape="rect" id="node5" href="$namespacerefinement_1_1topology.html#acbdd7cbf94855d2c82504a4b8b166af2" title="Refines for the disjoint, inside, covered by, meet and intersect relation predicates." alt="" coords="299,136,525,192"/>
+<area shape="rect" id="node6" href="$namespacerefinement_1_1topology.html#add8085cd6429c5f10bf831b05911db86" title="Refines for the disjoint, meet and intersect relation predicates (no containment)." alt="" coords="309,217,515,258"/>
+<area shape="rect" id="node4" href="$structShape.html#a8d5735d6c5c38337ce7ed591e1134109" title="Generates and returns the DE&#45;9IM mask of this geometry (as R) with the input geometry (as S)" alt="" coords="573,151,752,177"/>
+</map>

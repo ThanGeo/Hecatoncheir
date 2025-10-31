@@ -1,0 +1,7 @@
+<map id="Graphical Class Hierarchy" name="Graphical Class Hierarchy">
+<area shape="rect" id="node1" href="$structhec_1_1Query.html" title="Base query class." alt="" coords="5,81,97,108"/>
+<area shape="rect" id="node2" href="$structhec_1_1DistanceJoinQuery.html" title=" " alt="" coords="147,5,321,32"/>
+<area shape="rect" id="node3" href="$structhec_1_1KNNQuery.html" title=" " alt="" coords="173,56,295,83"/>
+<area shape="rect" id="node4" href="$structhec_1_1PredicateJoinQuery.html" title=" " alt="" coords="145,107,323,133"/>
+<area shape="rect" id="node5" href="$structhec_1_1RangeQuery.html" title=" " alt="" coords="167,157,301,184"/>
+</map>

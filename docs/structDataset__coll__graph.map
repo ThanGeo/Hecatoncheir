@@ -1,0 +1,6 @@
+<map id="Dataset" name="Dataset">
+<area shape="rect" id="node1" title="All dataset related information." alt="" coords="100,579,311,979"/>
+<area shape="rect" id="node2" href="$structDatasetMetadata.html" title=" " alt="" coords="27,336,162,516"/>
+<area shape="rect" id="node3" href="$structDataspaceMetadata.html" title="All dataspace related metadata, filled in after loading the dataset(s)." alt="" coords="5,5,184,273"/>
+<area shape="rect" id="node4" href="$structAprilConfig.html" title="Contains all relevant APRIL configuration parameters." alt="" coords="186,358,334,494"/>
+</map>

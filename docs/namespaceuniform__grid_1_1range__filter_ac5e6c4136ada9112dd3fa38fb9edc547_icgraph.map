@@ -1,0 +1,5 @@
+<map id="uniform_grid::range_filter::evaluate" name="uniform_grid::range_filter::evaluate">
+<area shape="rect" id="node1" title="Evaluates a range query on the Uniform Grid Index." alt="" coords="507,5,657,47"/>
+<area shape="rect" id="node2" href="$namespaceuniform__grid.html#a33484af75d2072e0c75a731d6a109af4" title="Begins the query processing specified by the query object and stores the result in the query result o..." alt="" coords="256,13,459,39"/>
+<area shape="rect" id="node3" href="$structUniformGridIndex.html#ab21c99fa3dc60cc147e86c8748377ea6" title="Evaluate the given query and store results in the queryResult object." alt="" coords="5,5,208,47"/>
+</map>

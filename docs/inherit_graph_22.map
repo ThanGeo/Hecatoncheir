@@ -1,0 +1,9 @@
+<map id="Graphical Class Hierarchy" name="Graphical Class Hierarchy">
+<area shape="rect" id="node1" href="$structhec_1_1QResultBase.html" title="Base Query Result struct." alt="" coords="5,132,141,159"/>
+<area shape="rect" id="node2" href="$structhec_1_1QPairResultCollect.html" title=" " alt="" coords="206,5,379,32"/>
+<area shape="rect" id="node3" href="$structhec_1_1QResultCollect.html" title=" " alt="" coords="218,56,367,83"/>
+<area shape="rect" id="node4" href="$structhec_1_1QResultCount.html" title=" " alt="" coords="221,107,364,133"/>
+<area shape="rect" id="node5" href="$structhec_1_1QResultkNN.html" title=" " alt="" coords="227,157,359,184"/>
+<area shape="rect" id="node6" href="$structhec_1_1QTopologyResultCollect.html" title=" " alt="" coords="189,208,396,235"/>
+<area shape="rect" id="node7" href="$structhec_1_1QTopologyResultCount.html" title=" " alt="" coords="193,259,393,285"/>
+</map>

@@ -1,0 +1,5 @@
+<map id="storage::generatePartitionFilePath" name="storage::generatePartitionFilePath">
+<area shape="rect" id="node1" title="Generates the partition filepath for the given dataset, from the dataset&#39;s nickname." alt="" coords="5,35,196,76"/>
+<area shape="rect" id="node2" href="$structPartitioningMethod.html#a3ae8bcf1b9ef6993d7f32b6fec8a3fbb" title="Abstract method. Returns the number of partitions per dimension in the partitioning grid." alt="" coords="244,5,389,47"/>
+<area shape="rect" id="node3" href="$namespacelogger.html#a53f34feeb22a94db295af05b8b2aab5c" title="Error logging function with template arguments. Separates input parameters with spaces...." alt="" coords="252,71,381,98"/>
+</map>

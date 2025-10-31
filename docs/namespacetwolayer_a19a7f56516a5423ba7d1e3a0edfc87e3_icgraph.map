@@ -1,0 +1,4 @@
+<map id="twolayer::processQuery" name="twolayer::processQuery">
+<area shape="rect" id="node1" title="Begins the query processing specified by the query object and stores the result in the query result o..." alt="" coords="276,5,452,32"/>
+<area shape="rect" id="node2" href="$structTwoLayerIndex.html#a015041653e0d84aa446d0b4a5a01c1de" title="Evaluate the given query and store results in the queryResult object." alt="" coords="5,5,228,32"/>
+</map>

@@ -1,0 +1,5 @@
+<map id="hec::init" name="hec::init">
+<area shape="rect" id="node1" title="Initialize function with parameters." alt="" coords="5,31,80,57"/>
+<area shape="rect" id="node2" href="$namespacelogger.html#a53f34feeb22a94db295af05b8b2aab5c" title="Error logging function with template arguments. Separates input parameters with spaces...." alt="" coords="138,5,267,32"/>
+<area shape="rect" id="node3" href="$namespacelogger.html#a6232124565e7aac3c22650f1717cfa29" title="Success logging function with template arguments. Separates input parameters with spaces...." alt="" coords="128,56,277,83"/>
+</map>

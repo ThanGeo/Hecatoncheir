@@ -1,0 +1,6 @@
+<map id="comm::recv::receiveResponse" name="comm::recv::receiveResponse">
+<area shape="rect" id="node1" title="Receives a response message." alt="" coords="741,5,959,32"/>
+<area shape="rect" id="node2" href="$namespacecomm_1_1host.html#a5a972f79042414ad9a38bc1a92852c46" title="Gathers responses (ACK/NACK) from workers or the local agent about the last instructed action/job." alt="" coords="475,5,693,32"/>
+<area shape="rect" id="node3" href="$namespaceconfigurer.html#affed3e4dc858a1c015e05cdbfec46880" title="Configures the system based on the parsed options." alt="" coords="204,5,427,32"/>
+<area shape="rect" id="node4" href="$namespacesetup.html#a9cf6d9936c901088e77d1843146fdbfa" title="Entryway method for setting up the system." alt="" coords="5,5,156,32"/>
+</map>

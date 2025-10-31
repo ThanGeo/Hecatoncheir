@@ -1,0 +1,5 @@
+<map id="PartitionBase" name="PartitionBase">
+<area shape="rect" id="node1" title=" " alt="" coords="112,5,256,112"/>
+<area shape="rect" id="node2" href="$structPartitionTwoLayer.html" title=" " alt="" coords="5,160,168,267"/>
+<area shape="rect" id="node3" href="$structPartitionUniformGrid.html" title=" " alt="" coords="192,160,373,267"/>
+</map>

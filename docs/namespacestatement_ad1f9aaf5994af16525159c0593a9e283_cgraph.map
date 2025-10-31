@@ -1,0 +1,4 @@
+<map id="statement::getPartitioningType" name="statement::getPartitioningType">
+<area shape="rect" id="node1" title="Sets the partitioning type based on the user specification." alt="" coords="5,5,228,32"/>
+<area shape="rect" id="node2" href="$namespacelogger.html#a53f34feeb22a94db295af05b8b2aab5c" title="Error logging function with template arguments. Separates input parameters with spaces...." alt="" coords="276,5,405,32"/>
+</map>
