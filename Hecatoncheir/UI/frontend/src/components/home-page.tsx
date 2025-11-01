@@ -4,8 +4,8 @@ import { ReloadOutlined, FolderOpenOutlined } from '@ant-design/icons';
 
 const { Option } = Select;
 
-// API Base URL - Change this to your server's IP
-const API_BASE_URL = 'http://10.7.3.84:5000';
+const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:5000';
+
 
 type QueryType = 'rangeQuery' | 'knnQuery' | 'spatialJoins' | 'distanceJoins' | null;
 type SpatialDataType = 'polygon' | 'points' | 'line' | null;

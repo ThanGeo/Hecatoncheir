@@ -2,6 +2,9 @@ import React, { useEffect } from 'react';
 import { Form, Button, message } from 'antd';
 import TextArea from 'antd/es/input/TextArea';
 
+
+const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:5000';
+
 interface PC {
   nameOrIp: string;
 }
@@ -47,7 +50,7 @@ const ClusterSetup: React.FC<ClusterSetupProps> = ({
     };
 
     try {
-      const response = await fetch('http://10.7.3.84:5000/init-hec', {
+      const response = await fetch(`${API_BASE_URL}/init-hec`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
